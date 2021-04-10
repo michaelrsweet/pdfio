@@ -1,0 +1,6 @@
+*.1.dylib
+*.a
+*.o
+*.so
+/testpdfio
+
