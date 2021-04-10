@@ -83,8 +83,8 @@ install:	$(TARGETS)
 	-mkdir -p $(DESTDIR)$(prefix)/lib/pkgconfig
 	echo '"prefix="$(prefix)"' >>$(DESTDIR)$(prefix)/lib/pkgconfig/pdfio.pc
 	cat pdfio.pc.in >$(DESTDIR)$(prefix)/lib/pkgconfig/pdfio.pc
-	-mkdir -p $(DESTDIR)$(prefix)/share/doc
-	cp pdfio.html LICENSE NOTICE $(DESTDIR)$(prefix)/share/doc
+	-mkdir -p $(DESTDIR)$(prefix)/share/doc/pdfio
+	cp pdfio.html LICENSE NOTICE $(DESTDIR)$(prefix)/share/doc/pdfio
 	-mkdir -p $(DESTDIR)$(prefix)/share/man/man3
 	cp pdfio.3 LICENSE NOTICE $(DESTDIR)$(prefix)/share/man/man3
 

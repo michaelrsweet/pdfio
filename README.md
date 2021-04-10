@@ -44,7 +44,7 @@ to make to install it to another location:
 The makefile installs the pdfio header to "${prefix}/include", the library to
 "${prefix}/lib", the `pkg-config` file to "${prefix}/lib/pkgconfig", the man
 page to "${prefix}/share/man/man3", and the documentation to
-"${prefix}/share/doc".
+"${prefix}/share/doc/pdfio".
 
 The makefile supports the following variables that can be specified in the make
 command or as environment variables:
