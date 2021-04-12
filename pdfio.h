@@ -105,6 +105,7 @@ extern pdfio_obj_t	*pdfioFileGetObject(pdfio_file_t *pdf, int number) PDFIO_PUBL
 extern pdfio_obj_t	*pdfioFileGetPage(pdfio_file_t *pdf, int number) PDFIO_PUBLIC;
 extern pdfio_file_t	*pdfioFileOpen(const char *filename, const char *mode, pdfio_error_cb_t error_cb, void *error_data) PDFIO_PUBLIC;
 
+extern bool		pdfioObjectClose(pdfio_object_t *obj) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioObjectCreate(pdfio_file_t *file) PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioObjectGetDict(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern int		pdfioObjectGetGeneration(pdfio_obj_t *obj) PDFIO_PUBLIC;
