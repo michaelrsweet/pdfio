@@ -14,6 +14,9 @@
 // Include necessary headers...
 //
 
+#  include <stdbool.h>
+#  include <time.h>
+
 
 //
 // C++ magic...
@@ -41,10 +44,84 @@ extern "C" {
 // Types and constants...
 //
 
+typedef struct _pdfio_array_s pdfio_array_t;
+					// Array of PDF values
+typedef enum pdfio_compress_e		// Types of compression to use when writing streams
+{
+  PDFIO_COMPRESS_NONE,			// No compression
+  PDFIO_COMPRESS_FLATE			// Flate compression
+} pdfio_compress_t;
+typedef struct _pdfio_dict_s pdfio_dict_t;
+					// Key/value dictionary
+typedef bool (pdfio_error_cb_t)(pdfio_t *pdf, const char *message, void *data);
+					// Error callback
+typedef struct _pdfio_file_s pdfio_file_t;
+					// PDF file
+typedef struct _pdfio_obj_s pdfio_obj_t;// Numbered object in PDF file
+typedef struct pdfio_rect_s		// PDF rectangle
+{
+  float	x1;				// Lower-left X coordinate
+  float	y1;				// Lower-left Y coordinate
+  float	x2;				// Upper-right X coordinate
+  float	y2;				// Upper-right Y coordinate
+} pdfio_rect_t;
+typedef struct _pdfio_stream_s pdfio_stream_t;
+					// Object data stream in PDF file
+typedef enum pdfio_valtype_e		// PDF value types
+{
+  PDFIO_VALTYPE_NONE,			// No value, not set
+  PDFIO_VALTYPE_ARRAY,			// Array
+  PDFIO_VALTYPE_BOOLEAN,		// Boolean
+  PDFIO_VALTYPE_DATE,			// Date/time
+  PDFIO_VALTYPE_DICT,			// Dictionary
+  PDFIO_VALTYPE_INDIRECT,		// Indirect object (N G obj)
+  PDFIO_VALTYPE_NAME,			// Name
+  PDFIO_VALTYPE_NULL,			// Null object
+  PDFIO_VALTYPE_NUMBER,			// Number (integer or real)
+  PDFIO_VALTYPE_STRING			// String
+} pdfio_valtype_t;
+typedef struct _pdfio_value_s pdf_value_t;
+					// PDF value of any type
+
 
 //
 // Functions...
 //
+
+extern pdfio_dict_t	*pdfioDictCreate(void) PDFIO_PUBLIC;
+extern void		pdfioDictDelete(pdfio_dict_t *dict) PDFIO_PUBLIC;
+extern float		pdfioDictGetNumber(pdfio_dict_t *dict, const char *name) PDFIO_PUBLIC;
+extern pdfio_rect_t	*pdfioDictGetRect(pdfio_dict_t *dict, const char *name, pdfio_rect_t *rect) PDFIO_PUBLIC;
+extern const char	*pdfioDictGetString(pdfio_dict_t *dict, const char *name) PDFIO_PUBLIC;
+extern pdfio_value_t	*pdfioDictGetValue(pdfio_dict_t *dict, const char *name) PDFIO_PUBLIC;
+extern bool		pdfioDictIsSet(pdfio_dict_t *dict, const char *name) PDFIO_PUBLIC;
+extern bool		pdfioDictSetRect(pdfio_dict_t *dict, const char *name, pdfio_rect_t *rect) PDFIO_PUBLIC;
+
+extern bool		pdfioFileClose(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern const char	*pdfioFileGetName(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern int		pdfioFileGetNumObjects(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern int		pdfioFileGetNumPages(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileGetObject(pdfio_file_t *pdf, int number) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileGetPage(pdfio_file_t *pdf, int number) PDFIO_PUBLIC;
+extern pdfio_file_t	*pdfioFileOpen(const char *filename, const char *mode, pdfio_error_cb_t error_cb, void *error_data) PDFIO_PUBLIC;
+
+extern pdfio_obj_t	*pdfioObjectCreate(pdfio_file_t *file) PDFIO_PUBLIC;
+extern pdfio_dict_t	*pdfioObjectGetDict(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern int		pdfioObjectGetGeneration(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern int		pdfioObjectGetNumber(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern pdfio_stream_t	*pdfioObjectGetStream(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern const char	*pdfioObjectGetType(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern bool		pdfioObjectSetDict(pdfio_obj_t *obj, pdfio_dict_t *dict) PDFIO_PUBLIC;
+
+extern pdfio_obj_t	*pdfioPageCopy(pdfio_t *pdf, pdfio_obj_t *src) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioPageCreate(pdfio_t *pdf) PDFIO_PUBLIC;
+
+extern bool		pdfioStreamClose(pdfio_stream_t *st) PDFIO_PUBLIC;
+extern pdfio_stream_t	*pdfioStreamOpen(pdfio_obj_t *obj, pdfio_compress_t compression) PDFIO_PUBLIC;
+extern bool		pdfioStreamPrintf(pdfio_stream_t *st, const char *format, ...) PDFIO_PUBLIC PDFIO_FORMAT(2,3);
+extern bool		pdfioStreamPuts(pdfio_stream_t *st, const char *s) PDFIO_PUBLIC;
+extern ssize_t		pdfioStreamRead(pdfio_stream_t *st, void *buffer, size_t bytes) PDFIO_PUBLIC;
+extern bool		pdfioStreamWrite(pdfio_stream_t *st, const void *buffer, size_t bytes) PDFIO_PUBLIC;
 
 
 //

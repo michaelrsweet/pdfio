@@ -120,6 +120,7 @@ testpdfio:	testpdfio.o libpdfio.a
 
 # Dependencies
 $(OBJS):	pdfio.h Makefile
+$(LIBOBJS):	pdfio-private.h
 
 
 # Make documentation using Codedoc <https://www.msweet.org/codedoc>
