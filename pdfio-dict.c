@@ -27,6 +27,15 @@ pdfio_dict_t	*pdfioDictCreate(pdfio_file_t *file)
 // '()' - .
 //
 
+void	_pdfioDictDelete(pdfio_dict_t *dict)
+{
+}
+
+
+//
+// '()' - .
+//
+
 pdfio_array_t	*pdfioDictGetArray(pdfio_dict_t *dict, const char *name)
 {
 }

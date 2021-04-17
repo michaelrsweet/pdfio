@@ -137,13 +137,13 @@ extern pdfio_obj_t	*pdfioFileGetObject(pdfio_file_t *pdf, int number) PDFIO_PUBL
 extern pdfio_obj_t	*pdfioFileGetPage(pdfio_file_t *pdf, int number) PDFIO_PUBLIC;
 extern pdfio_file_t	*pdfioFileOpen(const char *filename, const char *mode, pdfio_error_cb_t error_cb, void *error_data) PDFIO_PUBLIC;
 
-extern bool		pdfioObjectClose(pdfio_object_t *obj) PDFIO_PUBLIC;
-extern pdfio_stream_t	*pdfioObjectCreateStream(pdfio_obj_t *obj, pdfio_compress_t compression) PDFIO_PUBLIC;
-extern pdfio_dict_t	*pdfioObjectGetDict(pdfio_obj_t *obj) PDFIO_PUBLIC;
-extern int		pdfioObjectGetGeneration(pdfio_obj_t *obj) PDFIO_PUBLIC;
-extern int		pdfioObjectGetNumber(pdfio_obj_t *obj) PDFIO_PUBLIC;
-extern pdfio_stream_t	*pdfioObjectGetStream(pdfio_obj_t *obj) PDFIO_PUBLIC;
-extern const char	*pdfioObjectGetType(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern bool		pdfioObjClose(pdfio_object_t *obj) PDFIO_PUBLIC;
+extern pdfio_stream_t	*pdfioObjCreateStream(pdfio_obj_t *obj, pdfio_compress_t compression) PDFIO_PUBLIC;
+extern pdfio_dict_t	*pdfioObjGetDict(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern int		pdfioObjGetGeneration(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern int		pdfioObjGetNumber(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern pdfio_stream_t	*pdfioObjGetStream(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern const char	*pdfioObjGetType(pdfio_obj_t *obj) PDFIO_PUBLIC;
 
 extern pdfio_obj_t	*pdfioPageCopy(pdfio_t *pdf, pdfio_obj_t *src) PDFIO_PUBLIC;
 

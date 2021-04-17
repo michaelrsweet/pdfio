@@ -45,6 +45,15 @@ pdfio_obj_t	*pdfioFileCreatePage(pdfio_t *pdf, pdfio_dict_t *dict)
 // '()' - .
 //
 
+void	_pdfioFileDelete(pdfio_file_t *file)
+{
+}
+
+
+//
+// '()' - .
+//
+
 const char	*pdfioFileGetName(pdfio_file_t *pdf)
 {
 }

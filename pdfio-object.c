@@ -14,3 +14,75 @@
 #include "pdfio-private.h"
 
 
+//
+// '()' - .
+//
+
+bool		pdfioObjClose(pdfio_object_t *obj)
+{
+}
+
+
+//
+// '()' - .
+//
+
+pdfio_stream_t	*pdfioObjCreateStream(pdfio_obj_t *obj, pdfio_compress_t compression)
+{
+}
+
+
+//
+// '()' - .
+//
+
+void	_pdfioObjDelete(pdfio_object_t *obj)
+{
+}
+
+
+//
+// '()' - .
+//
+
+pdfio_dict_t	*pdfioObjGetDict(pdfio_obj_t *obj)
+{
+}
+
+
+//
+// '()' - .
+//
+
+int		pdfioObjGetGeneration(pdfio_obj_t *obj)
+{
+}
+
+
+//
+// '()' - .
+//
+
+int		pdfioObjGetNumber(pdfio_obj_t *obj)
+{
+}
+
+
+//
+// '()' - .
+//
+
+pdfio_stream_t	*pdfioObjGetStream(pdfio_obj_t *obj)
+{
+}
+
+
+//
+// '()' - .
+//
+
+const char	*pdfioObjGetType(pdfio_obj_t *obj)
+{
+}
+
+

@@ -14,6 +14,8 @@
 // Include necessary headers...
 //
 
+#  include "pdfio.h"
+
 
 //
 // Visibility and other annotations...
@@ -47,10 +49,33 @@
 // Types and constants...
 //
 
+typedef struct _pdfio_value_s		// Value structure
+{
+  pdfio_valtype_t type;			// Type of value
+  union
+  {
+    pdfio_array_t *array;		// Array value
+    bool	boolean;		// Boolean value
+    time_t	date;			// Date/time value
+    pdfio_dict_t *dict;			// Dictionary value
+    pdfio_obj_t	*obj;			// Indirect object (N G obj) value
+    const char	*name;			// Name value
+    float	number;			// Number value
+    const char	*string;		// String value
+  }		value;			// Value union
+} _pdfio_value_t;
+
 
 //
 // Functions...
 //
+
+extern void	_pdfioArrayDelete(pdfio_array_t *a) PDFIO_INTERNAL;
+extern void	_pdfioDictDelete(pdfio_dict_t *dict) PDFIO_INTERNAL;
+extern void	_pdfioFileDelete(pdfio_file_t *file) PDFIO_INTERNAL;
+extern void	_pdfioObjDelete(pdfio_object_t *obj) PDFIO_INTERNAL;
+extern void	_pdfioStreamDelete(pdfio_stream_t *obj) PDFIO_INTERNAL;
+extern void	_pdfioValueDelete(pdfio_value_t *v) PDFIO_INTERNAL;
 
 
 #endif // !PDFIO_PRIVATE_H

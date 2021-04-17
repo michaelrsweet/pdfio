@@ -12,3 +12,14 @@
 //
 
 #include "pdfio-private.h"
+
+
+//
+// '()' - .
+//
+
+void	_pdfioValueDelete(pdfio_value_t *v)
+{
+}
+
+

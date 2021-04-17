@@ -27,6 +27,15 @@ bool		pdfioStreamClose(pdfio_stream_t *st)
 // '()' - .
 //
 
+void	_pdfioStreamDelete(pdfio_stream_t *obj)
+{
+}
+
+
+//
+// '()' - .
+//
+
 bool		pdfioStreamPrintf(pdfio_stream_t *st, const char *format, ...)
 {
 }

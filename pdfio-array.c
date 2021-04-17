@@ -90,6 +90,15 @@ pdfio_array_t	*pdfioArrayCreate(pdfio_file_t *file)
 // '()' - .
 //
 
+void	_pdfioArrayDelete(pdfio_array_t *a)
+{
+}
+
+
+//
+// '()' - .
+//
+
 pdfio_array_t	*pdfioArrayGetArray(pdfio_array_t *a, int n)
 {
 }
