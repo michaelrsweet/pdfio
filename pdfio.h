@@ -88,6 +88,24 @@ typedef struct _pdfio_value_s pdf_value_t;
 // Functions...
 //
 
+extern bool		pdfioArrayAppendArray(pdfio_array_t *a, pdfio_array_t *value) PDFIO_PUBLIC;
+extern bool		pdfioArrayAppendBoolean(pdfio_array_t *a, boolean value) PDFIO_PUBLIC;
+extern bool		pdfioArrayAppendDict(pdfio_array_t *a, pdfio_dict_t *value) PDFIO_PUBLIC;
+extern bool		pdfioArrayAppendName(pdfio_array_t *a, const char *value) PDFIO_PUBLIC;
+extern bool		pdfioArrayAppendNumber(pdfio_array_t *a, float value) PDFIO_PUBLIC;
+extern bool		pdfioArrayAppendObject(pdfio_array_t *a, pdfio_obj_t *value) PDFIO_PUBLIC;
+extern bool		pdfioArrayAppendString(pdfio_array_t *a, const char *value) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayCreate(pdfio_file_t *file) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayGetArray(pdfio_array_t *a, int n) PDFIO_PUBLIC;
+extern bool		pdfioArrayGetBoolean(pdfio_array_t *a, int n) PDFIO_PUBLIC;
+extern pdfio_dict_t	*pdfioArrayGetDict(pdfio_array_t *a, int n) PDFIO_PUBLIC;
+extern const char	*pdfioArrayGetName(pdfio_array_t *a, int n) PDFIO_PUBLIC;
+extern float		pdfioArrayGetNumber(pdfio_array_t *a, int n) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioArrayGetObject(pdfio_array_t *a, int n) PDFIO_PUBLIC;
+extern int		pdfioArrayGetSize(pdfio_array_t *a) PDFIO_PUBLIC;
+extern const char	*pdfioArrayGetString(pdfio_array_t *a, int n) PDFIO_PUBLIC;
+extern pdfio_valtype_t	pdfioArrayGetType(pdfio_array_t *a, int n) PDFIO_PUBLIC;
+
 extern pdfio_dict_t	*pdfioDictCreate(pdfio_file_t *file) PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioDictGetArray(pdfio_dict_t *dict, const char *name) PDFIO_PUBLIC;
 extern bool		pdfioDictGetBoolean(pdfio_dict_t *dict, const char *name) PDFIO_PUBLIC;

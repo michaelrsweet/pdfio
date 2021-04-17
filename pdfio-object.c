@@ -1,5 +1,5 @@
 //
-// PDF writing functions for pdfio.
+// PDF object functions for pdfio.
 //
 // Copyright © 2021 by Michael R Sweet.
 //
@@ -12,3 +12,5 @@
 //
 
 #include "pdfio-private.h"
+
+

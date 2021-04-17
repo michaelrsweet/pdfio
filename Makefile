@@ -37,9 +37,14 @@ prefix		=	/usr/local
 
 # Files
 LIBOBJS		=	\
+			pdfio-array.o \
 			pdfio-common.o \
-			pdfio-read.o \
-			pdfio-write.o
+			pdfio-dict.o \
+			pdfio-file.o \
+			pdfio-object.o \
+			pdfio-page.o \
+			pdfio-stream.o \
+			pdfio-value.o
 OBJS		=	\
 			$(LIBOBJS) \
 			testpdfio.o

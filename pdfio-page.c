@@ -1,5 +1,5 @@
 //
-// PDF reading functions for pdfio.
+// PDF page functions for pdfio.
 //
 // Copyright © 2021 by Michael R Sweet.
 //
@@ -12,3 +12,12 @@
 //
 
 #include "pdfio-private.h"
+
+
+//
+// '()' - .
+//
+
+pdfio_obj_t	*pdfioPageCopy(pdfio_t *pdf, pdfio_obj_t *src)
+{
+}
