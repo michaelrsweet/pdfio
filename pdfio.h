@@ -14,7 +14,10 @@
 // Include necessary headers...
 //
 
+#  include <stdio.h>
+#  include <stdlib.h>
 #  include <stdbool.h>
+#  include <sys/types.h>
 #  include <time.h>
 
 
@@ -53,10 +56,10 @@ typedef enum pdfio_compress_e		// Types of compression to use when writing strea
 } pdfio_compress_t;
 typedef struct _pdfio_dict_s pdfio_dict_t;
 					// Key/value dictionary
-typedef bool (pdfio_error_cb_t)(pdfio_t *pdf, const char *message, void *data);
-					// Error callback
 typedef struct _pdfio_file_s pdfio_file_t;
 					// PDF file
+typedef bool (pdfio_error_cb_t)(pdfio_file_t *pdf, const char *message, void *data);
+					// Error callback
 typedef struct _pdfio_obj_s pdfio_obj_t;// Numbered object in PDF file
 typedef struct pdfio_rect_s		// PDF rectangle
 {
@@ -89,22 +92,22 @@ typedef struct _pdfio_value_s pdf_value_t;
 //
 
 extern bool		pdfioArrayAppendArray(pdfio_array_t *a, pdfio_array_t *value) PDFIO_PUBLIC;
-extern bool		pdfioArrayAppendBoolean(pdfio_array_t *a, boolean value) PDFIO_PUBLIC;
+extern bool		pdfioArrayAppendBoolean(pdfio_array_t *a, bool value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendDict(pdfio_array_t *a, pdfio_dict_t *value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendName(pdfio_array_t *a, const char *value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendNumber(pdfio_array_t *a, float value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendObject(pdfio_array_t *a, pdfio_obj_t *value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendString(pdfio_array_t *a, const char *value) PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioArrayCreate(pdfio_file_t *file) PDFIO_PUBLIC;
-extern pdfio_array_t	*pdfioArrayGetArray(pdfio_array_t *a, int n) PDFIO_PUBLIC;
-extern bool		pdfioArrayGetBoolean(pdfio_array_t *a, int n) PDFIO_PUBLIC;
-extern pdfio_dict_t	*pdfioArrayGetDict(pdfio_array_t *a, int n) PDFIO_PUBLIC;
-extern const char	*pdfioArrayGetName(pdfio_array_t *a, int n) PDFIO_PUBLIC;
-extern float		pdfioArrayGetNumber(pdfio_array_t *a, int n) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioArrayGetObject(pdfio_array_t *a, int n) PDFIO_PUBLIC;
-extern int		pdfioArrayGetSize(pdfio_array_t *a) PDFIO_PUBLIC;
-extern const char	*pdfioArrayGetString(pdfio_array_t *a, int n) PDFIO_PUBLIC;
-extern pdfio_valtype_t	pdfioArrayGetType(pdfio_array_t *a, int n) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayGetArray(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
+extern bool		pdfioArrayGetBoolean(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
+extern pdfio_dict_t	*pdfioArrayGetDict(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
+extern const char	*pdfioArrayGetName(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
+extern float		pdfioArrayGetNumber(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioArrayGetObject(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
+extern size_t		pdfioArrayGetSize(pdfio_array_t *a) PDFIO_PUBLIC;
+extern const char	*pdfioArrayGetString(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
+extern pdfio_valtype_t	pdfioArrayGetType(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
 
 extern pdfio_dict_t	*pdfioDictCreate(pdfio_file_t *file) PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioDictGetArray(pdfio_dict_t *dict, const char *name) PDFIO_PUBLIC;
@@ -129,29 +132,32 @@ extern bool		pdfioDictSetStringf(pdfio_dict_t *dict, const char *name, const cha
 
 extern bool		pdfioFileClose(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateObject(pdfio_file_t *file, pdfio_dict_t *dict) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreatePage(pdfio_t *pdf, pdfio_dict_t *dict) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreatePage(pdfio_file_t *pdf, pdfio_dict_t *dict) PDFIO_PUBLIC;
 extern const char	*pdfioFileGetName(pdfio_file_t *pdf) PDFIO_PUBLIC;
-extern int		pdfioFileGetNumObjects(pdfio_file_t *pdf) PDFIO_PUBLIC;
-extern int		pdfioFileGetNumPages(pdfio_file_t *pdf) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileGetObject(pdfio_file_t *pdf, int number) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileGetPage(pdfio_file_t *pdf, int number) PDFIO_PUBLIC;
+extern unsigned		pdfioFileGetNumObjects(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern unsigned		pdfioFileGetNumPages(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileGetObject(pdfio_file_t *pdf, unsigned number) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileGetPage(pdfio_file_t *pdf, unsigned number) PDFIO_PUBLIC;
 extern pdfio_file_t	*pdfioFileOpen(const char *filename, const char *mode, pdfio_error_cb_t error_cb, void *error_data) PDFIO_PUBLIC;
 
-extern bool		pdfioObjClose(pdfio_object_t *obj) PDFIO_PUBLIC;
+extern bool		pdfioObjClose(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern pdfio_stream_t	*pdfioObjCreateStream(pdfio_obj_t *obj, pdfio_compress_t compression) PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioObjGetDict(pdfio_obj_t *obj) PDFIO_PUBLIC;
-extern int		pdfioObjGetGeneration(pdfio_obj_t *obj) PDFIO_PUBLIC;
-extern int		pdfioObjGetNumber(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern unsigned		pdfioObjGetGeneration(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern unsigned		pdfioObjGetNumber(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern pdfio_stream_t	*pdfioObjGetStream(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern const char	*pdfioObjGetType(pdfio_obj_t *obj) PDFIO_PUBLIC;
 
-extern pdfio_obj_t	*pdfioPageCopy(pdfio_t *pdf, pdfio_obj_t *src) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioPageCopy(pdfio_file_t *pdf, pdfio_obj_t *src) PDFIO_PUBLIC;
 
 extern bool		pdfioStreamClose(pdfio_stream_t *st) PDFIO_PUBLIC;
 extern bool		pdfioStreamPrintf(pdfio_stream_t *st, const char *format, ...) PDFIO_PUBLIC PDFIO_FORMAT(2,3);
 extern bool		pdfioStreamPuts(pdfio_stream_t *st, const char *s) PDFIO_PUBLIC;
 extern ssize_t		pdfioStreamRead(pdfio_stream_t *st, void *buffer, size_t bytes) PDFIO_PUBLIC;
 extern bool		pdfioStreamWrite(pdfio_stream_t *st, const void *buffer, size_t bytes) PDFIO_PUBLIC;
+
+extern char		*pdfioStringCreate(pdfio_file_t *pdf, const char *s)  PDFIO_PUBLIC;
+extern char		*pdfioStringCreatef(pdfio_file_t *pdf, const char *format, ...) PDFIO_FORMAT(2,3) PDFIO_PUBLIC;
 
 
 //

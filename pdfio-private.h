@@ -15,6 +15,11 @@
 //
 
 #  include "pdfio.h"
+#  include <stdarg.h>
+#  include <fcntl.h>
+#  include <unistd.h>
+#  include <string.h>
+#  include <ctype.h>
 
 
 //
@@ -49,6 +54,34 @@
 // Types and constants...
 //
 
+struct _pdfio_file_s			// PDF file structure
+{
+  int		fd;			// File descriptor
+
+  // Allocated data elements
+  size_t	num_arrays,		// Number of arrays
+		alloc_arrays;		// Allocated arrays
+  pdfio_array_t	**arrays;		// Arrays
+  size_t	num_dicts,		// Number of dictionaries
+		alloc_dicts;		// Allocated dictionaries
+  pdfio_dict_t	**dicts;		// Dictionaries
+  size_t	num_objs,		// Number of objects
+		alloc_objs;		// Allocated objects
+  pdfio_obj_t	**objs;			// Objects
+  size_t	num_strings,		// Number of strings
+		alloc_strings;		// Allocated strings
+  char		**strings;		// Nul-terminated strings
+};
+
+struct _pdfio_obj_s			// Object
+{
+  int		number,			// Number
+		generation;		// Generation
+  off_t		offset;			// Offset in file
+  size_t	length;			// Length
+  pdfio_dict_t	*dict;			// Dictionary
+};
+
 typedef struct _pdfio_value_s		// Value structure
 {
   pdfio_valtype_t type;			// Type of value
@@ -70,12 +103,14 @@ typedef struct _pdfio_value_s		// Value structure
 // Functions...
 //
 
-extern void	_pdfioArrayDelete(pdfio_array_t *a) PDFIO_INTERNAL;
-extern void	_pdfioDictDelete(pdfio_dict_t *dict) PDFIO_INTERNAL;
-extern void	_pdfioFileDelete(pdfio_file_t *file) PDFIO_INTERNAL;
-extern void	_pdfioObjDelete(pdfio_object_t *obj) PDFIO_INTERNAL;
-extern void	_pdfioStreamDelete(pdfio_stream_t *obj) PDFIO_INTERNAL;
-extern void	_pdfioValueDelete(pdfio_value_t *v) PDFIO_INTERNAL;
+extern void		_pdfioArrayDelete(pdfio_array_t *a) PDFIO_INTERNAL;
+extern _pdfio_value_t	*_pdfioArrayGetValue(pdfio_array_t *a, size_t n) PDFIO_INTERNAL;
+extern void		_pdfioDictDelete(pdfio_dict_t *dict) PDFIO_INTERNAL;
+extern void		_pdfioFileDelete(pdfio_file_t *file) PDFIO_INTERNAL;
+extern void		_pdfioObjDelete(pdfio_obj_t *obj) PDFIO_INTERNAL;
+extern void		_pdfioStreamDelete(pdfio_stream_t *obj) PDFIO_INTERNAL;
+extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) PDFIO_INTERNAL;
+extern void		_pdfioValueDelete(_pdfio_value_t *v) PDFIO_INTERNAL;
 
 
 #endif // !PDFIO_PRIVATE_H
