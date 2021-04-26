@@ -108,7 +108,7 @@ pdfioStringCreatef(
 
 
 //
-// '()' - Check whether a string has been allocated.
+// '_pdfioStringIsAllocated()' - Check whether a string has been allocated.
 //
 
 bool					// O - `true` if allocated, `false` otherwise

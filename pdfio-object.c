@@ -14,39 +14,57 @@
 #include "pdfio-private.h"
 
 
+
+
 //
-// '()' - .
+// 'pdfioObjClose()' - Close an object, writing any data as needed to the PDF
+//                     file.
 //
 
-bool		pdfioObjClose(pdfio_object_t *obj)
+bool					// O - `true` on success, `false` on failure
+pdfioObjClose(pdfio_obj_t *obj)		// I - Object
+{
+  return (false);
+}
+
+
+//
+// 'pdfioObjCreateStream()' - Create an object (data) stream for writing.
+//
+
+pdfio_stream_t *			// O - Stream or `NULL` on error
+pdfioObjCreateStream(
+    pdfio_obj_t    *obj,		// I - Object
+    pdfio_filter_t filter)		// I - Type of compression to apply
 {
 }
 
 
 //
-// '()' - .
+// '_pdfioObjDelete()' - Free memory used by an object.
 //
 
-pdfio_stream_t	*pdfioObjCreateStream(pdfio_obj_t *obj, pdfio_compress_t compression)
+void
+_pdfioObjDelete(pdfio_object_t *obj)	// I - Object
 {
+  if (obj)
+    pdfioStreamClose(obj->stream);
+
+  free(obj);
 }
 
 
 //
-// '()' - .
+// 'pdfioObjGetDict()' - Get the dictionary associated with an object.
 //
 
-void	_pdfioObjDelete(pdfio_object_t *obj)
+pdfio_dict_t *				// O - Dictionary or `NULL` on error
+pdfioObjGetDict(pdfio_obj_t *obj)	// I - Object
 {
-}
+  // TODO: Implement me
+  (void)obj;
 
-
-//
-// '()' - .
-//
-
-pdfio_dict_t	*pdfioObjGetDict(pdfio_obj_t *obj)
-{
+  return (NULL);
 }
 
 
@@ -72,17 +90,16 @@ int		pdfioObjGetNumber(pdfio_obj_t *obj)
 // '()' - .
 //
 
-pdfio_stream_t	*pdfioObjGetStream(pdfio_obj_t *obj)
-{
-}
-
-
-//
-// '()' - .
-//
-
 const char	*pdfioObjGetType(pdfio_obj_t *obj)
 {
 }
 
 
+//
+// 'pdfioObjOpenStream()' - Open an object's (data) stream for reading.
+//
+
+pdfio_stream_t *			// O - Stream or `NULL` on error
+pdfioObjOpenStream(pdfio_obj_t *obj)	// I - Object
+{
+}

@@ -36,6 +36,16 @@ void	_pdfioStreamDelete(pdfio_stream_t *obj)
 // '()' - .
 //
 
+bool
+pdfioStreamGetToken(pdfio_stream_t *st, char *buffer, size_t bufsize)
+{
+}
+
+
+//
+// '()' - .
+//
+
 bool		pdfioStreamPrintf(pdfio_stream_t *st, const char *format, ...)
 {
 }
