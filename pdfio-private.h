@@ -56,7 +56,10 @@
 
 struct _pdfio_file_s			// PDF file structure
 {
+  char		*filename;		// Filename
   int		fd;			// File descriptor
+  pdfio_error_cb_t error_cb;		// Error callback
+  void		*error_data;		// Data for error callback
 
   // Allocated data elements
   size_t	num_arrays,		// Number of arrays
@@ -75,6 +78,7 @@ struct _pdfio_file_s			// PDF file structure
 
 struct _pdfio_obj_s			// Object
 {
+  pdfio_file_t	*pdf;			// PDF file
   int		number,			// Number
 		generation;		// Generation
   off_t		offset;			// Offset in file
@@ -106,7 +110,11 @@ typedef struct _pdfio_value_s		// Value structure
 extern void		_pdfioArrayDelete(pdfio_array_t *a) PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioArrayGetValue(pdfio_array_t *a, size_t n) PDFIO_INTERNAL;
 extern void		_pdfioDictDelete(pdfio_dict_t *dict) PDFIO_INTERNAL;
+extern _pdfio_value_t	*_pdfioDictGetValue(pdfio_dict_t *dict, const char *key) PDFIO_INTERNAL;
+extern bool		_pdfioDictSetValue(pdfio_dict_t *dict, const char *key, _pdfio_value_t *value) PDFIO_INTERNAL;
+extern bool		_pdfioFileDefaultError(pdfio_file_t *pdf, const char *message, void *data) PDFIO_INTERNAL;
 extern void		_pdfioFileDelete(pdfio_file_t *file) PDFIO_INTERNAL;
+extern bool		_pdfioFileError(pdfio_file_t *pdf, const char *format, ...) PDFIO_FORMAT(2,3) PDFIO_INTERNAL;
 extern void		_pdfioObjDelete(pdfio_obj_t *obj) PDFIO_INTERNAL;
 extern void		_pdfioStreamDelete(pdfio_stream_t *obj) PDFIO_INTERNAL;
 extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) PDFIO_INTERNAL;

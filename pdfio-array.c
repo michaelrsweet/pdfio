@@ -20,6 +20,7 @@
 
 struct _pdfio_array_s
 {
+  pdfio_file_t	*pdf;			// PDF file
   size_t	num_values,		// Number of values in use
 		alloc_values;		// Number of allocated values
   _pdfio_value_t *values;		// Array of values
@@ -181,6 +182,8 @@ pdfioArrayCreate(pdfio_file_t *pdf)	// I - PDF file
 
   if ((a = (pdfio_array_t *)calloc(1, sizeof(pdfio_array_t))) == NULL)
     return (NULL);
+
+  a->pdf = pdf;
 
   if (pdf->num_arrays >= pdf->alloc_arrays)
   {

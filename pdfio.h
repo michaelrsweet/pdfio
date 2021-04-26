@@ -58,7 +58,7 @@ typedef struct _pdfio_dict_s pdfio_dict_t;
 					// Key/value dictionary
 typedef struct _pdfio_file_s pdfio_file_t;
 					// PDF file
-typedef bool (pdfio_error_cb_t)(pdfio_file_t *pdf, const char *message, void *data);
+typedef bool (*pdfio_error_cb_t)(pdfio_file_t *pdf, const char *message, void *data);
 					// Error callback
 typedef struct _pdfio_obj_s pdfio_obj_t;// Numbered object in PDF file
 typedef struct pdfio_rect_s		// PDF rectangle
