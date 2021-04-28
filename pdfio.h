@@ -60,11 +60,6 @@ typedef enum pdfio_filter_e		// Compression/decompression filters for streams
   PDFIO_FILTER_NONE,			// No filter
   PDFIO_FILTER_FLATE			// Flate filter
 } pdfio_filter_t;
-typedef enum pdfio_mode_e		// Read/write mode
-{
-  PDFIO_MODE_READ,			// Read a PDF file
-  PDFIO_MODE_WRITE			// Write a PDF file
-} pdfio_mode_t;
 typedef struct _pdfio_obj_s pdfio_obj_t;// Numbered object in PDF file
 typedef struct pdfio_rect_s		// PDF rectangle
 {
@@ -79,6 +74,7 @@ typedef enum pdfio_valtype_e		// PDF value types
 {
   PDFIO_VALTYPE_NONE,			// No value, not set
   PDFIO_VALTYPE_ARRAY,			// Array
+  PDFIO_VALTYPE_BINARY,			// Binary data
   PDFIO_VALTYPE_BOOLEAN,		// Boolean
   PDFIO_VALTYPE_DATE,			// Date/time
   PDFIO_VALTYPE_DICT,			// Dictionary
@@ -103,7 +99,8 @@ extern bool		pdfioArrayAppendName(pdfio_array_t *a, const char *value) PDFIO_PUB
 extern bool		pdfioArrayAppendNumber(pdfio_array_t *a, float value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendObject(pdfio_array_t *a, pdfio_obj_t *value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendString(pdfio_array_t *a, const char *value) PDFIO_PUBLIC;
-extern pdfio_array_t	*pdfioArrayCreate(pdfio_file_t *file) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayCopy(pdfio_file_t *pdf, pdfio_array_t *a) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayCreate(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioArrayGetArray(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
 extern bool		pdfioArrayGetBoolean(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioArrayGetDict(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
@@ -114,7 +111,8 @@ extern size_t		pdfioArrayGetSize(pdfio_array_t *a) PDFIO_PUBLIC;
 extern const char	*pdfioArrayGetString(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
 extern pdfio_valtype_t	pdfioArrayGetType(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
 
-extern pdfio_dict_t	*pdfioDictCreate(pdfio_file_t *file) PDFIO_PUBLIC;
+extern pdfio_dict_t	*pdfioDictCopy(pdfio_file_t *pdf, pdfio_dict_t *dict) PDFIO_PUBLIC;
+extern pdfio_dict_t	*pdfioDictCreate(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioDictGetArray(pdfio_dict_t *dict, const char *name) PDFIO_PUBLIC;
 extern bool		pdfioDictGetBoolean(pdfio_dict_t *dict, const char *name) PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioDictGetDict(pdfio_dict_t *dict, const char *name) PDFIO_PUBLIC;
@@ -136,20 +134,22 @@ extern bool		pdfioDictSetString(pdfio_dict_t *dict, const char *name, const char
 extern bool		pdfioDictSetStringf(pdfio_dict_t *dict, const char *name, const char *format, ...) PDFIO_PUBLIC PDFIO_FORMAT(3,4);
 
 extern bool		pdfioFileClose(pdfio_file_t *pdf) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreateObject(pdfio_file_t *file, pdfio_dict_t *dict) PDFIO_PUBLIC;
+extern pdfio_file_t	*pdfioFileCreate(const char *filename, const char *version, pdfio_error_cb_t error_cb, void *error_data) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateObject(pdfio_file_t *pdf, pdfio_dict_t *dict) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreatePage(pdfio_file_t *pdf, pdfio_dict_t *dict) PDFIO_PUBLIC;
 extern const char	*pdfioFileGetName(pdfio_file_t *pdf) PDFIO_PUBLIC;
-extern unsigned		pdfioFileGetNumObjects(pdfio_file_t *pdf) PDFIO_PUBLIC;
-extern unsigned		pdfioFileGetNumPages(pdfio_file_t *pdf) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileGetObject(pdfio_file_t *pdf, unsigned number) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileGetPage(pdfio_file_t *pdf, unsigned number) PDFIO_PUBLIC;
-extern pdfio_file_t	*pdfioFileOpen(const char *filename, pdfio_mode_t mode, pdfio_error_cb_t error_cb, void *error_data) PDFIO_PUBLIC;
+extern size_t		pdfioFileGetNumObjects(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern size_t		pdfioFileGetNumPages(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileGetObject(pdfio_file_t *pdf, size_t number) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileGetPage(pdfio_file_t *pdf, size_t number) PDFIO_PUBLIC;
+extern const char	*pdfioFileGetVersion(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern pdfio_file_t	*pdfioFileOpen(const char *filename, pdfio_error_cb_t error_cb, void *error_data) PDFIO_PUBLIC;
 
 extern bool		pdfioObjClose(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern pdfio_stream_t	*pdfioObjCreateStream(pdfio_obj_t *obj, pdfio_filter_t compression) PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioObjGetDict(pdfio_obj_t *obj) PDFIO_PUBLIC;
-extern unsigned		pdfioObjGetGeneration(pdfio_obj_t *obj) PDFIO_PUBLIC;
-extern unsigned		pdfioObjGetNumber(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern size_t		pdfioObjGetGeneration(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern size_t		pdfioObjGetNumber(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern const char	*pdfioObjGetType(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern pdfio_stream_t	*pdfioObjOpenStream(pdfio_obj_t *obj) PDFIO_PUBLIC;
 

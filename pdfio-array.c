@@ -15,19 +15,6 @@
 
 
 //
-// Array structure
-//
-
-struct _pdfio_array_s
-{
-  pdfio_file_t	*pdf;			// PDF file
-  size_t	num_values,		// Number of values in use
-		alloc_values;		// Number of allocated values
-  _pdfio_value_t *values;		// Array of values
-};
-
-
-//
 // Local functions...
 //
 
@@ -164,6 +151,21 @@ pdfioArrayAppendString(
   v.value.string = value;
 
   return (append_value(a, &v));
+}
+
+
+//
+// 'pdfioArrayCopy()' - Copy an array.
+//
+
+pdfio_array_t *				// O - New array or `NULL` on error
+pdfioArrayCopy(pdfio_file_t  *pdf,	// I - PDF file
+               pdfio_array_t *a)	// I - Original array
+{
+  // TODO: Implement me
+  (void)pdf;
+  (void)a;
+  return (NULL);
 }
 
 
@@ -362,6 +364,34 @@ _pdfioArrayGetValue(pdfio_array_t *a,	// I - Array
     return (NULL);
   else
     return (a->values + n);
+}
+
+
+//
+// '_pdfioArrayWrite()' - Write an array to a PDF file.
+//
+
+bool					// O - `true` on success, `false` otherwise
+_pdfioArrayWrite(pdfio_array_t *a)	// I - Array
+{
+  pdfio_file_t	*pdf = a->pdf;		// PDF file
+  size_t	i;			// Looping var
+  _pdfio_value_t *v;			// Current value
+
+
+  // Arrays are surrounded by square brackets ([ ... ])
+  if (!_pdfioFilePuts(pdf, "["))
+    return (false);
+
+  // Write each value...
+  for (i = a->num_values, v = a->values; i > 0; i --, v ++)
+  {
+    if (!_pdfioValueWrite(pdf, v))
+      return (false);
+  }
+
+  // Closing bracket...
+  return (_pdfioFilePuts(pdf, "]"));
 }
 
 

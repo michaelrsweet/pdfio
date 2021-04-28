@@ -56,10 +56,60 @@
 // Types and constants...
 //
 
+typedef enum _pdfio_mode_e		// Read/write mode
+{
+  _PDFIO_MODE_READ,			// Read a PDF file
+  _PDFIO_MODE_WRITE			// Write a PDF file
+} _pdfio_mode_t;
+
+typedef struct _pdfio_value_s		// Value structure
+{
+  pdfio_valtype_t type;			// Type of value
+  union
+  {
+    pdfio_array_t *array;		// Array value
+    struct
+    {
+      unsigned char	*data;		// Data
+      size_t		datalen;	// Length
+    }		binary;			// Binary ("Hex String") data
+    bool	boolean;		// Boolean value
+    time_t	date;			// Date/time value
+    pdfio_dict_t *dict;			// Dictionary value
+    pdfio_obj_t	*obj;			// Indirect object (N G obj) value
+    const char	*name;			// Name value
+    float	number;			// Number value
+    const char	*string;		// String value
+  }		value;			// Value union
+} _pdfio_value_t;
+
+struct _pdfio_array_s
+{
+  pdfio_file_t	*pdf;			// PDF file
+  size_t	num_values,		// Number of values in use
+		alloc_values;		// Number of allocated values
+  _pdfio_value_t *values;		// Array of values
+};
+
+typedef struct _pdfio_pair_s		// Key/value pair
+{
+  const char	*key;			// Key string
+  _pdfio_value_t value;			// Value
+} _pdfio_pair_t;
+
+struct _pdfio_dict_s
+{
+  pdfio_file_t	*pdf;			// PDF file
+  size_t	num_pairs,		// Number of pairs in use
+		alloc_pairs;		// Number of allocated pairs
+  _pdfio_pair_t *pairs;			// Array of pairs
+};
+
 struct _pdfio_file_s			// PDF file structure
 {
-  const char	*filename;		// Filename
-  pdfio_mode_t	mode;			// Read/write mode
+  char		*filename;		// Filename
+  char		*version;		// Version number
+  _pdfio_mode_t	mode;			// Read/write mode
   pdfio_error_cb_t error_cb;		// Error callback
   void		*error_data;		// Data for error callback
 
@@ -80,6 +130,9 @@ struct _pdfio_file_s			// PDF file structure
   size_t	num_objs,		// Number of objects
 		alloc_objs;		// Allocated objects
   pdfio_obj_t	**objs;			// Objects
+  size_t	num_pages,		// Number of pages
+		alloc_pages;		// Allocated pages
+  pdfio_obj_t	**pages;		// Pages
   size_t	num_strings,		// Number of strings
 		alloc_strings;		// Allocated strings
   char		**strings;		// Nul-terminated strings
@@ -88,10 +141,10 @@ struct _pdfio_file_s			// PDF file structure
 struct _pdfio_obj_s			// Object
 {
   pdfio_file_t	*pdf;			// PDF file
-  int		number,			// Number
+  size_t	number,			// Number
 		generation;		// Generation
-  off_t		dict_offset,		// Offset to dict in file
-		length_offset,		// Offset to /Length in dict
+  off_t		offset,			// Offset to object in file
+		length_offset,		// Offset to /Length in object dict
 		stream_offset;		// Offset to start of stream in file
   size_t	stream_length;		// Length of stream, if any
   pdfio_dict_t	*dict;			// Dictionary
@@ -108,22 +161,6 @@ struct _pdfio_stream_s			// Stream
   z_stream	flate;			// Flate filter state
 };
 
-typedef struct _pdfio_value_s		// Value structure
-{
-  pdfio_valtype_t type;			// Type of value
-  union
-  {
-    pdfio_array_t *array;		// Array value
-    bool	boolean;		// Boolean value
-    time_t	date;			// Date/time value
-    pdfio_dict_t *dict;			// Dictionary value
-    pdfio_obj_t	*obj;			// Indirect object (N G obj) value
-    const char	*name;			// Name value
-    float	number;			// Number value
-    const char	*string;		// String value
-  }		value;			// Value union
-} _pdfio_value_t;
-
 
 //
 // Functions...
@@ -131,15 +168,19 @@ typedef struct _pdfio_value_s		// Value structure
 
 extern void		_pdfioArrayDelete(pdfio_array_t *a) PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioArrayGetValue(pdfio_array_t *a, size_t n) PDFIO_INTERNAL;
+extern bool		_pdfioArrayWrite(pdfio_array_t *a) PDFIO_INTERNAL;
 
 extern void		_pdfioDictDelete(pdfio_dict_t *dict) PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioDictGetValue(pdfio_dict_t *dict, const char *key) PDFIO_INTERNAL;
 extern bool		_pdfioDictSetValue(pdfio_dict_t *dict, const char *key, _pdfio_value_t *value) PDFIO_INTERNAL;
+extern bool		_pdfioDictWrite(pdfio_dict_t *dict, off_t *length) PDFIO_INTERNAL;
 
 extern bool		_pdfioFileDefaultError(pdfio_file_t *pdf, const char *message, void *data) PDFIO_INTERNAL;
-extern void		_pdfioFileDelete(pdfio_file_t *pdf) PDFIO_INTERNAL;
 extern bool		_pdfioFileError(pdfio_file_t *pdf, const char *format, ...) PDFIO_FORMAT(2,3) PDFIO_INTERNAL;
+extern bool		_pdfioFileFlush(pdfio_file_t *pdf) PDFIO_INTERNAL;
 extern int		_pdfioFileGetChar(pdfio_file_t *pdf) PDFIO_INTERNAL;
+extern bool		_pdfioFilePrintf(pdfio_file_t *pdf, const char *format, ...) PDFIO_FORMAT(2,3) PDFIO_INTERNAL;
+extern bool		_pdfioFilePuts(pdfio_file_t *pdf, const char *s) PDFIO_INTERNAL;
 extern ssize_t		_pdfioFileRead(pdfio_file_t *pdf, char *buffer, size_t bytes) PDFIO_INTERNAL;
 extern off_t		_pdfioFileSeek(pdfio_file_t *pdf, off_t offset, int whence) PDFIO_INTERNAL;
 extern off_t		_pdfioFileTell(pdfio_file_t *pdf) PDFIO_INTERNAL;
@@ -151,7 +192,8 @@ extern void		_pdfioStreamDelete(pdfio_stream_t *obj) PDFIO_INTERNAL;
 
 extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) PDFIO_INTERNAL;
 
+extern _pdfio_value_t	*_pdfioValueCopy(pdfio_file_t *pdfdst, _pdfio_value_t *vdst, pdfio_file_t *pdfsrc, _pdfio_value_t *vsrc) PDFIO_INTERNAL;
 extern void		_pdfioValueDelete(_pdfio_value_t *v) PDFIO_INTERNAL;
-
+extern bool		_pdfioValueWrite(pdfio_file_t *pdf, _pdfio_value_t *v) PDFIO_INTERNAL;
 
 #endif // !PDFIO_PRIVATE_H

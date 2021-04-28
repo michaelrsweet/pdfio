@@ -66,6 +66,26 @@ _pdfioFileError(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
+// '_pdfioFileFlush()' - Flush any pending write data.
+//
+
+bool					// O - `true` on success, `false` on failure
+_pdfioFileFlush(pdfio_file_t *pdf)	// I - PDF file
+{
+  if (pdf->bufptr > pdf->buffer)
+  {
+    if (!write_buffer(pdf, pdf->buffer, (size_t)(pdf->bufptr - pdf->buffer)))
+      return (false);
+
+    pdf->bufpos += pdf->bufptr - pdf->buffer;
+    pdf->bufptr = pdf->buffer;
+  }
+
+  return (true);
+}
+
+
+//
 // '_pdfioFileGetChar()' - Get a character from a PDF file.
 //
 
@@ -82,6 +102,42 @@ _pdfioFileGetChar(pdfio_file_t *pdf)	// I - PDF file
 
   // Then return the next character in the buffer...
   return (*(pdf->bufptr ++));
+}
+
+
+//
+// '_pdfioFilePrintf()' - Write a formatted string to a PDF file.
+//
+
+bool					// O - `true` on success, `false` on failure
+_pdfioFilePrintf(pdfio_file_t *pdf,	// I - PDF file
+                 const char   *format,	// I - `printf`-style format string
+                 ...)			// I - Additional arguments as needed
+{
+  char		buffer[8102];		// String buffer
+  va_list	ap;			// Argument list
+
+
+  // Format the string...
+  va_start(ap, format);
+  vsnprintf(buffer, sizeof(buffer), format, ap);
+  va_end(ap);
+
+  // Write it...
+  return (_pdfioFileWrite(pdf, buffer, strlen(buffer)));
+}
+
+
+//
+// '_pdfioFilePuts()' - Write a literal string to a PDF file.
+//
+
+bool					// O - `true` on success, `false` on failure
+_pdfioFilePuts(pdfio_file_t *pdf,	// I - PDF file
+               const char   *s)		// I - Literal string
+{
+  // Write it...
+  return (_pdfioFileWrite(pdf, s, strlen(s)));
 }
 
 
@@ -152,7 +208,7 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
     whence = SEEK_SET;
   }
 
-  if (pdf->mode == PDFIO_MODE_READ)
+  if (pdf->mode == _PDFIO_MODE_READ)
   {
     // Reading, see if we already have the data we need...
     if (whence != SEEK_END && offset >= pdf->bufpos && offset < (pdf->bufpos + pdf->bufend - pdf->buffer))
@@ -217,15 +273,8 @@ _pdfioFileWrite(pdfio_file_t *pdf,	// I - PDF file
   if (bytes > (size_t)(pdf->bufend - pdf->bufptr))
   {
     // No room, flush any current data...
-    if (pdf->bufptr > pdf->buffer)
-    {
-      if (!write_buffer(pdf, pdf->buffer, (size_t)(pdf->bufptr - pdf->buffer)))
-	return (false);
-
-      pdf->bufpos += pdf->bufptr - pdf->buffer;
-    }
-
-    pdf->bufptr = pdf->buffer;
+    if (!_pdfioFileFlush(pdf))
+      return (false);
 
     if (bytes >= sizeof(pdf->buffer))
     {

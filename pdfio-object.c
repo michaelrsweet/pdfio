@@ -14,8 +14,6 @@
 #include "pdfio-private.h"
 
 
-
-
 //
 // 'pdfioObjClose()' - Close an object, writing any data as needed to the PDF
 //                     file.
@@ -24,6 +22,9 @@
 bool					// O - `true` on success, `false` on failure
 pdfioObjClose(pdfio_obj_t *obj)		// I - Object
 {
+  // TODO: Implement me
+  (void)obj;
+
   return (false);
 }
 
@@ -37,6 +38,11 @@ pdfioObjCreateStream(
     pdfio_obj_t    *obj,		// I - Object
     pdfio_filter_t filter)		// I - Type of compression to apply
 {
+  // TODO: Implement me
+  (void)obj;
+  (void)filter;
+
+  return (NULL);
 }
 
 
@@ -45,7 +51,7 @@ pdfioObjCreateStream(
 //
 
 void
-_pdfioObjDelete(pdfio_object_t *obj)	// I - Object
+_pdfioObjDelete(pdfio_obj_t *obj)	// I - Object
 {
   if (obj)
     pdfioStreamClose(obj->stream);
@@ -69,29 +75,38 @@ pdfioObjGetDict(pdfio_obj_t *obj)	// I - Object
 
 
 //
-// '()' - .
+// 'pdfioObjGetGeneration()' - Get the object's generation number.
 //
 
-int		pdfioObjGetGeneration(pdfio_obj_t *obj)
+size_t					// O - Generation number (0 to 65535)
+pdfioObjGetGeneration(pdfio_obj_t *obj)	// I - Object
 {
+  return (obj ? obj->generation : 0);
 }
 
 
 //
-// '()' - .
+// 'pdfioObjGetNumber()' - Get the object's number.
 //
 
-int		pdfioObjGetNumber(pdfio_obj_t *obj)
+size_t					// O - Object number (1 to 9999999999)
+pdfioObjGetNumber(pdfio_obj_t *obj)	// I - Object
 {
+  return (obj ? obj->number : 0);
 }
 
 
 //
-// '()' - .
+// 'pdfioObjGetType()' - Get an object's type.
 //
 
-const char	*pdfioObjGetType(pdfio_obj_t *obj)
+const char *				// O - Object type
+pdfioObjGetType(pdfio_obj_t *obj)	// I - Object
 {
+  // TODO: Implement me
+  (void)obj;
+
+  return (NULL);
 }
 
 
@@ -102,4 +117,8 @@ const char	*pdfioObjGetType(pdfio_obj_t *obj)
 pdfio_stream_t *			// O - Stream or `NULL` on error
 pdfioObjOpenStream(pdfio_obj_t *obj)	// I - Object
 {
+  // TODO: Implement me
+  (void)obj;
+
+  return (NULL);
 }

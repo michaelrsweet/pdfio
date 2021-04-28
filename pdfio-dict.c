@@ -15,29 +15,25 @@
 
 
 //
-// Dictionary structures
-//
-
-typedef struct _pdfio_pair_s		// Key/value pair
-{
-  const char	*key;			// Key string
-  _pdfio_value_t value;			// Value
-} _pdfio_pair_t;
-
-struct _pdfio_dict_s
-{
-  pdfio_file_t	*pdf;			// PDF file
-  size_t	num_pairs,		// Number of pairs in use
-		alloc_pairs;		// Number of allocated pairs
-  _pdfio_pair_t *pairs;			// Array of pairs
-};
-
-
-//
 // Local functions...
 //
 
 static int	compare_pairs(_pdfio_pair_t *a, _pdfio_pair_t *b);
+
+
+//
+// 'pdfioDictCopy()' - Copy a dictionary to a PDF file.
+//
+
+pdfio_dict_t *				// O - New dictionary
+pdfioDictCopy(pdfio_file_t *pdf,	// I - PDF file
+              pdfio_dict_t *dict)	// I - Original dictionary
+{
+  // TODO: Implement me
+  (void)pdf;
+  (void)dict;
+  return (NULL);
+}
 
 
 //
@@ -528,6 +524,48 @@ _pdfioDictSetValue(
     qsort(dict->pairs, dict->num_pairs, sizeof(_pdfio_pair_t), (int (*)(const void *, const void *))compare_pairs);
 
   return (true);
+}
+
+
+//
+// '_pdfioDictWrite()' - Write a dictionary to a PDF file.
+//
+
+bool					// O - `true` on success, `false` on failure
+_pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
+                off_t        *length)	// I - Offset to length value
+{
+  pdfio_file_t	*pdf = dict->pdf;	// PDF file
+  size_t	i;			// Looping var
+  _pdfio_pair_t	*pair;			// Current key/value pair
+
+
+  if (length)
+    *length = 0;
+
+  // Dictionaries are bounded by "<<" and ">>"...
+  if (!_pdfioFilePuts(pdf, "<<"))
+    return (false);
+
+  // Write all of the key/value pairs...
+  for (i = dict->num_pairs, pair = dict->pairs; i > 0; i --, pair ++)
+  {
+    if (!_pdfioFilePrintf(pdf, "/%s", pair->key))
+      return (false);
+
+    if (length && !strcmp(pair->key, "Length"))
+    {
+      // Writing an object dictionary with an undefined length
+      *length = _pdfioFileTell(pdf);
+      if (!_pdfioFilePuts(pdf, " 999999999"))
+        return (false);
+    }
+    else if (!_pdfioValueWrite(pdf, &pair->value))
+      return (false);
+  }
+
+  // Close it up...
+  return (_pdfioFilePuts(pdf, ">>"));
 }
 
 

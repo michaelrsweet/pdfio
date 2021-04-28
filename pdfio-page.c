@@ -15,9 +15,16 @@
 
 
 //
-// '()' - .
+// 'pdfioPageCopy()' - Copy a page to a PDF file.
 //
 
-pdfio_obj_t	*pdfioPageCopy(pdfio_t *pdf, pdfio_obj_t *src)
+pdfio_obj_t *				// O - Destination page
+pdfioPageCopy(pdfio_file_t *pdf,	// I - PDF file
+              pdfio_obj_t  *src)	// I - Source page
 {
+  // TODO: Implement me
+  (void)pdf;
+  (void)src;
+
+  return (NULL);
 }
