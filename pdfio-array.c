@@ -252,8 +252,8 @@ pdfioArrayCopy(pdfio_file_t  *pdf,	// I - PDF file
     if (!_pdfioValueCopy(pdf, &vdst, a->pdf, vsrc))
       return (NULL);			// Let pdfioFileClose do the cleanup...
 
-    if (!append_value(na, &vdst))
-      return (NULL);			// Let pdfioFileClose do the cleanup...
+    // Cannot fail since we already allocated memory...
+    append_value(na, &vdst);
   }
 
   // Successfully copied the array, so return it...
@@ -520,9 +520,6 @@ static bool				// O - `true` on success, `false` otherwise
 append_value(pdfio_array_t  *a,		// I - Array
              _pdfio_value_t *v)		// I - Value
 {
-  if (!a)
-    return (false);
-
   if (a->num_values >= a->alloc_values)
   {
     _pdfio_value_t *temp = (_pdfio_value_t *)realloc(a->values, (a->alloc_values + 16) * sizeof(_pdfio_value_t));

@@ -29,10 +29,43 @@ pdfio_dict_t *				// O - New dictionary
 pdfioDictCopy(pdfio_file_t *pdf,	// I - PDF file
               pdfio_dict_t *dict)	// I - Original dictionary
 {
-  // TODO: Implement me
-  (void)pdf;
-  (void)dict;
-  return (NULL);
+  pdfio_dict_t		*ndict;		// New dictionary
+  size_t		i;		// Looping var
+  _pdfio_pair_t		*p;		// Current source pair
+  const char		*key;		// Current destination key
+  _pdfio_value_t	v;		// Current destination value
+
+
+  // Create the new dictionary...
+  if ((ndict = pdfioDictCreate(pdf)) == NULL)
+    return (NULL);
+
+  // Pre-allocate the pairs array to make this a little faster...
+  if ((ndict->pairs = (_pdfio_pair_t *)malloc(dict->num_pairs * sizeof(_pdfio_pair_t))) == NULL)
+    return (NULL);			// Let pdfioFileClose do the cleanup...
+
+  ndict->alloc_pairs = dict->num_pairs;
+
+  // Copy and add each of the source dictionary's key/value pairs...
+  for (i = dict->num_pairs, p = dict->pairs; i > 0; i --, p ++)
+  {
+    if (!_pdfioValueCopy(pdf, &v, dict->pdf, &p->value))
+      return (NULL);			// Let pdfioFileClose do the cleanup...
+
+    if (_pdfioStringIsAllocated(dict->pdf, p->key))
+      key = pdfioStringCreate(pdf, p->key);
+    else
+      key = p->key;
+
+    if (!key)
+      return (NULL);			// Let pdfioFileClose do the cleanup...
+
+    // Cannot fail since we already allocated space for the pairs...
+    _pdfioDictSetValue(ndict, key, &v);
+  }
+
+  // Successfully copied the dictionary, so return it...
+  return (ndict);
 }
 
 
@@ -102,6 +135,33 @@ pdfioDictGetArray(pdfio_dict_t *dict,	// I - Dictionary
     return (value->value.array);
   else
     return (NULL);
+}
+
+
+//
+// 'pdfioDictGetBinary()' - Get a key binary string value from a dictionary.
+//
+
+unsigned char *				// O - Value
+pdfioDictGetBinary(pdfio_dict_t *dict,	// I - Dictionary
+                   const char   *key,	// I - Key
+                   size_t       *length)// O - Length of value
+{
+  _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
+
+  if (!length)
+    return (NULL);
+
+  if (value && value->type == PDFIO_VALTYPE_BINARY)
+  {
+    *length = value->value.binary.datalen;
+    return (value->value.binary.data);
+  }
+  else
+  {
+    *length = 0;
+    return (NULL);
+  }
 }
 
 
@@ -284,8 +344,45 @@ pdfioDictSetArray(pdfio_dict_t  *dict,	// I - Dictionary
   _pdfio_value_t temp;			// New value
 
 
+  // Range check input...
+  if (!dict || !key || !value)
+    return (false);
+
+  // Set the key/value pair...
   temp.type        = PDFIO_VALTYPE_ARRAY;
   temp.value.array = value;
+
+  return (_pdfioDictSetValue(dict, key, &temp));
+}
+
+
+//
+// 'pdfioDictSetBinary()' - Set a key binary string in a dictionary.
+//
+
+
+bool					// O - `true` on success, `false` on failure
+pdfioDictSetBinary(
+    pdfio_dict_t  *dict,		// I - Dictionary
+    const char    *key,			// I - Key
+    unsigned char *value,		// I - Value
+    size_t        valuelen)		// I - Length of value
+{
+  _pdfio_value_t temp;			// New value
+
+
+  // Range check input...
+  if (!dict || !key || !value || !valuelen)
+    return (false);
+
+  // Set the key/value pair...
+  temp.type                 = PDFIO_VALTYPE_BINARY;
+  temp.value.binary.datalen = valuelen;
+
+  if ((temp.value.binary.data = (unsigned char *)malloc(valuelen)) == NULL)
+    return (false);
+
+  memcpy(temp.value.binary.data, value, valuelen);
 
   return (_pdfioDictSetValue(dict, key, &temp));
 }
@@ -303,6 +400,11 @@ pdfioDictSetBoolean(pdfio_dict_t *dict,	// I - Dictionary
   _pdfio_value_t temp;			// New value
 
 
+  // Range check input...
+  if (!dict || !key)
+    return (false);
+
+  // Set the key/value pair...
   temp.type          = PDFIO_VALTYPE_BOOLEAN;
   temp.value.boolean = value;
 
@@ -322,6 +424,11 @@ pdfioDictSetDict(pdfio_dict_t *dict,	// I - Dictionary
   _pdfio_value_t temp;			// New value
 
 
+  // Range check input...
+  if (!dict || !key || !value)
+    return (false);
+
+  // Set the key/value pair...
   temp.type       = PDFIO_VALTYPE_DICT;
   temp.value.dict = value;
 
@@ -341,6 +448,11 @@ pdfioDictSetName(pdfio_dict_t  *dict,	// I - Dictionary
   _pdfio_value_t temp;			// New value
 
 
+  // Range check input...
+  if (!dict || !key || !value)
+    return (false);
+
+  // Set the key/value pair...
   temp.type       = PDFIO_VALTYPE_NAME;
   temp.value.name = value;
 
@@ -359,6 +471,11 @@ pdfioDictSetNull(pdfio_dict_t *dict,	// I - Dictionary
   _pdfio_value_t temp;			// New value
 
 
+  // Range check input...
+  if (!dict || !key)
+    return (false);
+
+  // Set the key/value pair...
   temp.type = PDFIO_VALTYPE_NULL;
 
   return (_pdfioDictSetValue(dict, key, &temp));
@@ -377,6 +494,11 @@ pdfioDictSetNumber(pdfio_dict_t  *dict,	// I - Dictionary
   _pdfio_value_t temp;			// New value
 
 
+  // Range check input...
+  if (!dict || !key)
+    return (false);
+
+  // Set the key/value pair...
   temp.type         = PDFIO_VALTYPE_NUMBER;
   temp.value.number = value;
 
@@ -396,6 +518,11 @@ pdfioDictSetObject(pdfio_dict_t *dict,	// I - Dictionary
   _pdfio_value_t temp;			// New value
 
 
+  // Range check input...
+  if (!dict || !key || !value)
+    return (false);
+
+  // Set the key/value pair...
   temp.type      = PDFIO_VALTYPE_INDIRECT;
   temp.value.obj = value;
 
@@ -415,6 +542,11 @@ pdfioDictSetRect(pdfio_dict_t *dict,	// I - Dictionary
   _pdfio_value_t temp;			// New value
 
 
+  // Range check input...
+  if (!dict || !key || !value)
+    return (false);
+
+  // Set the key/value pair...
   temp.type        = PDFIO_VALTYPE_ARRAY;
   temp.value.array = pdfioArrayCreate(dict->pdf);
 
@@ -439,6 +571,11 @@ pdfioDictSetString(pdfio_dict_t  *dict,	// I - Dictionary
   _pdfio_value_t temp;			// New value
 
 
+  // Range check input...
+  if (!dict || !key || !value)
+    return (false);
+
+  // Set the key/value pair...
   temp.type         = PDFIO_VALTYPE_STRING;
   temp.value.string = value;
 
@@ -461,6 +598,11 @@ pdfioDictSetStringf(
   va_list	ap;			// Argument list
 
 
+  // Range check input...
+  if (!dict || !key || !format)
+    return (false);
+
+  // Set the key/value pair...
   va_start(ap, format);
   vsnprintf(buffer, sizeof(buffer), format, ap);
   va_end(ap);
@@ -482,10 +624,6 @@ _pdfioDictSetValue(
   _pdfio_pair_t	temp,			// Search key
 		*pair;			// Current pair
 
-
-  // Range check input...
-  if (!dict || !key || !value)
-    return (false);
 
   // See if the key is already set...
   if (dict->num_pairs > 0)
