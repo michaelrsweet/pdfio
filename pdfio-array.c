@@ -33,12 +33,50 @@ pdfioArrayAppendArray(
   _pdfio_value_t	v;		// Value for array
 
 
+  // Range check input
+  if (!a || !value)
+    return (false);
+
+  // Add an array...
   v.type        = PDFIO_VALTYPE_ARRAY;
   v.value.array = value;
 
   return (append_value(a, &v));
 }
 
+
+//
+// 'pdfioArrayAppendBinary()' - Add a binary string value to an array.
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioArrayAppendBinary(
+    pdfio_array_t *a,			// I - Array
+    unsigned char *value,		// I - Value
+    size_t        valuelen)		// I - Length of value
+{
+  _pdfio_value_t	v;		// Value for array
+
+
+  // Range check input
+  if (!a || !value || !valuelen)
+    return (false);
+
+  // Add a binary string...
+  v.type                 = PDFIO_VALTYPE_BINARY;
+  v.value.binary.datalen = valuelen;
+
+  if ((v.value.binary.data = (unsigned char *)malloc(valuelen)) == NULL)
+  {
+    _pdfioFileError(a->pdf, "Unable to allocate memory for binary string - %s", strerror(errno));
+    return (false);
+  }
+
+  memcpy(v.value.binary.data, value, valuelen);
+
+  return (append_value(a, &v));
+
+}
 
 //
 // 'pdfioArrayAppendBoolean()' - Add a boolean value to an array.
@@ -52,6 +90,11 @@ pdfioArrayAppendBoolean(
   _pdfio_value_t	v;		// Value for array
 
 
+  // Range check input
+  if (!a)
+    return (false);
+
+  // Add a boolean...
   v.type          = PDFIO_VALTYPE_BOOLEAN;
   v.value.boolean = value;
 
@@ -71,6 +114,11 @@ pdfioArrayAppendDict(
   _pdfio_value_t	v;		// Value for array
 
 
+  // Range check input
+  if (!a || !value)
+    return (false);
+
+  // Add a dictionary...
   v.type       = PDFIO_VALTYPE_DICT;
   v.value.dict = value;
 
@@ -90,6 +138,11 @@ pdfioArrayAppendName(
   _pdfio_value_t	v;		// Value for array
 
 
+  // Range check input
+  if (!a || !value)
+    return (false);
+
+  // Add a name string...
   v.type       = PDFIO_VALTYPE_NAME;
   v.value.name = value;
 
@@ -109,6 +162,11 @@ pdfioArrayAppendNumber(
   _pdfio_value_t	v;		// Value for array
 
 
+  // Range check input
+  if (!a)
+    return (false);
+
+  // Add a number...
   v.type         = PDFIO_VALTYPE_NUMBER;
   v.value.number = value;
 
@@ -128,6 +186,11 @@ pdfioArrayAppendObject(
   _pdfio_value_t	v;		// Value for array
 
 
+  // Range check input
+  if (!a || !value || a->pdf != value->pdf)
+    return (false);
+
+  // Add an indirect reference...
   v.type      = PDFIO_VALTYPE_INDIRECT;
   v.value.obj = value;
 
@@ -147,6 +210,11 @@ pdfioArrayAppendString(
   _pdfio_value_t	v;		// Value for array
 
 
+  // Range check input
+  if (!a || !value)
+    return (false);
+
+  // Add a string...
   v.type         = PDFIO_VALTYPE_STRING;
   v.value.string = value;
 
@@ -162,10 +230,34 @@ pdfio_array_t *				// O - New array or `NULL` on error
 pdfioArrayCopy(pdfio_file_t  *pdf,	// I - PDF file
                pdfio_array_t *a)	// I - Original array
 {
-  // TODO: Implement me
-  (void)pdf;
-  (void)a;
-  return (NULL);
+  pdfio_array_t		*na;		// New array
+  size_t		i;		// Looping var
+  _pdfio_value_t	*vsrc,		// Current source value
+			vdst;		// Current destination value
+
+
+  // Create the new array...
+  if ((na = pdfioArrayCreate(pdf)) == NULL)
+    return (NULL);
+
+  // Pre-allocate the values array to make this a little faster...
+  if ((na->values = (_pdfio_value_t *)malloc(a->num_values * sizeof(_pdfio_value_t))) == NULL)
+    return (NULL);			// Let pdfioFileClose do the cleanup...
+
+  na->alloc_values = a->num_values;
+
+  // Copy and add each of the source array's values...
+  for (i = a->num_values, vsrc = a->values; i > 0; i --, vsrc ++)
+  {
+    if (!_pdfioValueCopy(pdf, &vdst, a->pdf, vsrc))
+      return (NULL);			// Let pdfioFileClose do the cleanup...
+
+    if (!append_value(na, &vdst))
+      return (NULL);			// Let pdfioFileClose do the cleanup...
+  }
+
+  // Successfully copied the array, so return it...
+  return (na);
 }
 
 
@@ -233,6 +325,31 @@ pdfioArrayGetArray(pdfio_array_t *a,	// I - Array
     return (NULL);
   else
     return (a->values[n].value.array);
+}
+
+
+//
+// 'pdfioArrayGetBinary()' - Get a binary string value from an array.
+//
+
+unsigned char *				// O - Value
+pdfioArrayGetBinary(
+    pdfio_array_t *a,			// I - Array
+    size_t        n,			// I - Index
+    size_t        *length)		// O - Length of string
+{
+  if (!a || n >= a->num_values || a->values[n].type != PDFIO_VALTYPE_BINARY || !length)
+  {
+    if (length)
+      *length = 0;
+
+    return (NULL);
+  }
+  else
+  {
+    *length = a->values[n].value.binary.datalen;
+    return (a->values[n].value.binary.data);
+  }
 }
 
 
