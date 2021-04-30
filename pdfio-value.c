@@ -24,13 +24,59 @@ _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
                 pdfio_file_t   *pdfsrc,	// I - Source PDF file
                 _pdfio_value_t *vsrc)	// I - Source value
 {
-  // TODO: Implement me
-  (void)pdfdst;
-  (void)vdst;
-  (void)pdfsrc;
-  (void)vsrc;
+  if (pdfdst == pdfsrc && vsrc->type != PDFIO_VALTYPE_BINARY)
+  {
+    // For the same document we can copy the values without any other effort
+    // unless there is a binary (hex string) value...
+    *vdst = *vsrc;
+    return (vdst);
+  }
 
-  return (NULL);
+  // Not the same document or a binary value, do a deep copy...
+  switch (vsrc->type)
+  {
+    case PDFIO_VALTYPE_INDIRECT :
+        // Object references don't copy to other documents
+        _pdfioFileError(pdfdst, "Unable to copy indirect object reference between PDF files.");
+        return (NULL);
+
+    default :
+        return (NULL);
+
+    case PDFIO_VALTYPE_ARRAY :
+        vdst->value.array = pdfioArrayCopy(pdfdst, vsrc->value.array);
+        break;
+
+    case PDFIO_VALTYPE_BINARY :
+        if ((vdst->value.binary.data = (unsigned char *)malloc(vsrc->value.binary.datalen)) == NULL)
+        {
+          _pdfioFileError(pdfdst, "Unable to allocate memory for a binary string - %s", strerror(errno));
+          return (NULL);
+        }
+
+        vdst->value.binary.datalen = vsrc->value.binary.datalen;
+        memcpy(vdst->value.binary.data, vsrc->value.binary.data, vdst->value.binary.datalen);
+        break;
+
+    case PDFIO_VALTYPE_BOOLEAN :
+    case PDFIO_VALTYPE_DATE :
+    case PDFIO_VALTYPE_NUMBER :
+	*vdst = *vsrc;
+        return (vdst);
+
+    case PDFIO_VALTYPE_DICT :
+        vdst->value.dict = pdfioDictCopy(pdfdst, vsrc->value.dict);
+        break;
+
+    case PDFIO_VALTYPE_NAME :
+    case PDFIO_VALTYPE_STRING :
+        vdst->value.name = pdfioStringCreate(pdfdst, vsrc->value.name);
+        break;
+  }
+
+  vdst->type = vsrc->type;
+
+  return (vdst);
 }
 
 
@@ -41,8 +87,8 @@ _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
 void
 _pdfioValueDelete(_pdfio_value_t *v)	// I - Value
 {
-  // TODO: Implement me
-  (void)v;
+  if (v->type == PDFIO_VALTYPE_BINARY)
+    free(v->value.binary.data);
 }
 
 
@@ -63,8 +109,25 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
         return (_pdfioArrayWrite(v->value.array));
 
     case PDFIO_VALTYPE_BINARY :
-        // TODO: Implement binary value support
-        return (false);
+        {
+          size_t	i;		// Looping var
+          unsigned char	*dataptr;	// Pointer into data
+
+          if (!_pdfioFilePuts(pdf, "<"))
+            return (false);
+
+          for (i = v->value.binary.datalen, dataptr = v->value.binary.data; i > 1; i -= 2, dataptr += 2)
+          {
+            if (!_pdfioFilePrintf(pdf, "%02X%02X", dataptr[0], dataptr[1]))
+              return (false);
+          }
+
+          if (i > 0)
+            return (_pdfioFilePrintf(pdf, "%02X>", dataptr[0]));
+          else
+            return (_pdfioFilePuts(pdf, ">"));
+        }
+
     case PDFIO_VALTYPE_BOOLEAN :
         if (v->value.boolean)
           return (_pdfioFilePuts(pdf, " true"));
@@ -72,8 +135,12 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
           return (_pdfioFilePuts(pdf, " false"));
 
     case PDFIO_VALTYPE_DATE :
-        // TODO: Implement date value support
-        break;
+        {
+          struct tm	date;		// Date values
+
+          gmtime_r(&v->value.date, &date);
+          return (_pdfioFilePrintf(pdf, "(D:%04d%02d%02d%02d%02d%02dZ)", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec));
+        }
 
     case PDFIO_VALTYPE_DICT :
         return (_pdfioDictWrite(v->value.dict, NULL));
