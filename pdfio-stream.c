@@ -15,66 +15,129 @@
 
 
 //
-// '()' - .
+// 'pdfioStreamClose()' - Close a (data) stream in a PDF file.
 //
 
-bool		pdfioStreamClose(pdfio_stream_t *st)
+bool					// O - `true` on success, `false` on failure
+pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 {
+  // TODO: Implement me
+  (void)st;
+  return (false);
 }
 
 
 //
-// '()' - .
+// '_pdfioStreamDelete()' - Free all memory used by a stream.
 //
 
-void	_pdfioStreamDelete(pdfio_stream_t *obj)
+void
+_pdfioStreamDelete(pdfio_stream_t *st)	// I - Stream
 {
+  if (st->filter == PDFIO_FILTER_FLATE)
+  {
+    // Free memory used for flate compression/decompression...
+    if (st->pdf->mode == _PDFIO_MODE_READ)
+      inflateEnd(&st->flate);
+    else // mode == _PDFIO_MODE_WRITE
+      deflateEnd(&st->flate);
+  }
+
+  free(st);
 }
 
 
 //
-// '()' - .
+// 'pdfioStreamGetToken()' - Read a single PDF token from a stream.
 //
 
-bool
-pdfioStreamGetToken(pdfio_stream_t *st, char *buffer, size_t bufsize)
+bool					// O - `true` on success, `false` on EOF
+pdfioStreamGetToken(
+    pdfio_stream_t *st,			// I - Stream
+    char           *buffer,		// I - String buffer
+    size_t         bufsize)		// I - Size of string buffer
 {
+  // TODO: Implement me
+  (void)st;
+  (void)buffer;
+  (void)bufsize;
+
+  return (false);
 }
 
 
 //
-// '()' - .
+// 'pdfioStreamPrintf()' - Write a formatted string to a stream.
 //
 
-bool		pdfioStreamPrintf(pdfio_stream_t *st, const char *format, ...)
+bool					// O - `true` on success, `false` on failure
+pdfioStreamPrintf(
+    pdfio_stream_t *st,			// I - Stream
+    const char     *format,		// I - `printf`-style format string
+    ...)				// I - Additional arguments as needed
 {
+  char		buffer[8192];		// String buffer
+  va_list	ap;			// Argument pointer
+
+
+  // Format the string...
+  va_start(ap, format);
+  vsnprintf(buffer, sizeof(buffer), format, ap);
+  va_end(ap);
+
+  // Write the string...
+  return (pdfioStreamWrite(st, buffer, strlen(buffer)));
 }
 
 
 //
-// '()' - .
+// 'pdfioStreamPuts()' - Write a literal string to a stream.
 //
 
-bool		pdfioStreamPuts(pdfio_stream_t *st, const char *s)
+bool					// O - `true` on success, `false` on failure
+pdfioStreamPuts(pdfio_stream_t *st,	// I - Stream
+                const char     *s)	// I - Literal string
 {
+  if (!st || !s)
+    return (false);
+  else
+    return (pdfioStreamWrite(st, s, strlen(s)));
 }
 
 
 //
-// '()' - .
+// 'pdfioStreamRead()' - Read data from a stream.
 //
 
-ssize_t		pdfioStreamRead(pdfio_stream_t *st, void *buffer, size_t bytes)
+ssize_t					// O - Number of bytes read or `-1` on error
+pdfioStreamRead(
+    pdfio_stream_t *st,			// I - Stream
+    void           *buffer,		// I - Buffer
+    size_t         bytes)		// I - Bytes to read
 {
+  // TODO: Implement me
+  (void)st;
+  (void)buffer;
+  (void)bytes;
+
+  return (-1);
 }
 
 
 //
-// '()' - .
+// 'pdfioStreamWrite()' - Write data to a stream.
 //
 
-bool		pdfioStreamWrite(pdfio_stream_t *st, const void *buffer, size_t bytes)
+bool					// O - `true` on success or `false` on failure
+pdfioStreamWrite(
+    pdfio_stream_t *st,			// I - Stream
+    const void     *buffer,		// I - Data to write
+    size_t         bytes)		// I - Number of bytes to write
 {
+  // TODO: Implement me
+  (void)st;
+  (void)buffer;
+  (void)bytes;
+
+  return (false);
 }
-
-

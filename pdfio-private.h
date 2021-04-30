@@ -188,7 +188,7 @@ extern bool		_pdfioFileWrite(pdfio_file_t *pdf, const char *buffer, size_t bytes
 
 extern void		_pdfioObjDelete(pdfio_obj_t *obj) PDFIO_INTERNAL;
 
-extern void		_pdfioStreamDelete(pdfio_stream_t *obj) PDFIO_INTERNAL;
+extern void		_pdfioStreamDelete(pdfio_stream_t *st) PDFIO_INTERNAL;
 
 extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) PDFIO_INTERNAL;
 
