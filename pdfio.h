@@ -141,6 +141,7 @@ extern bool		pdfioFileClose(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern pdfio_file_t	*pdfioFileCreate(const char *filename, const char *version, pdfio_error_cb_t error_cb, void *error_data) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateObject(pdfio_file_t *pdf, pdfio_dict_t *dict) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreatePage(pdfio_file_t *pdf, pdfio_dict_t *dict) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioFileGetID(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern const char	*pdfioFileGetName(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern size_t		pdfioFileGetNumObjects(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern size_t		pdfioFileGetNumPages(pdfio_file_t *pdf) PDFIO_PUBLIC;
@@ -161,6 +162,7 @@ extern pdfio_obj_t	*pdfioPageCopy(pdfio_file_t *pdf, pdfio_obj_t *src) PDFIO_PUB
 
 extern bool		pdfioStreamClose(pdfio_stream_t *st) PDFIO_PUBLIC;
 extern bool		pdfioStreamGetToken(pdfio_stream_t *st, char *buffer, size_t bufsize) PDFIO_PUBLIC;
+extern ssize_t		pdfioStreamPeek(pdfio_stream_t *st, void *buffer, size_t bytes) PDFIO_PUBLIC;
 extern bool		pdfioStreamPrintf(pdfio_stream_t *st, const char *format, ...) PDFIO_PUBLIC PDFIO_FORMAT(2,3);
 extern bool		pdfioStreamPuts(pdfio_stream_t *st, const char *s) PDFIO_PUBLIC;
 extern ssize_t		pdfioStreamRead(pdfio_stream_t *st, void *buffer, size_t bytes) PDFIO_PUBLIC;

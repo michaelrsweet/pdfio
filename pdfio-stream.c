@@ -57,12 +57,25 @@ pdfioStreamGetToken(
     char           *buffer,		// I - String buffer
     size_t         bufsize)		// I - Size of string buffer
 {
+  return (_pdfioTokenRead(buffer, bufsize, (_pdfio_token_cb_t)pdfioStreamPeek, (_pdfio_token_cb_t)pdfioStreamRead, st));
+}
+
+
+//
+// 'pdfioStreamPeek()' - Peek at data in a stream.
+//
+
+ssize_t					// O - Bytes returned or `-1` on error
+pdfioStreamPeek(pdfio_stream_t *st,	// I - Stream
+                void           *buffer,	// I - Buffer
+                size_t         bytes)	// I - Size of buffer
+{
   // TODO: Implement me
   (void)st;
   (void)buffer;
-  (void)bufsize;
+  (void)bytes;
 
-  return (false);
+  return (-1);
 }
 
 

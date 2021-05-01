@@ -45,6 +45,7 @@ LIBOBJS		=	\
 			pdfio-page.o \
 			pdfio-stream.o \
 			pdfio-string.o \
+			pdfio-token.o \
 			pdfio-value.o
 OBJS		=	\
 			$(LIBOBJS) \

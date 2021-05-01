@@ -20,7 +20,7 @@
 
 static bool	fill_buffer(pdfio_file_t *pdf);
 static ssize_t	read_buffer(pdfio_file_t *pdf, char *buffer, size_t bytes);
-static bool	write_buffer(pdfio_file_t *pdf, const char *buffer, size_t bytes);
+static bool	write_buffer(pdfio_file_t *pdf, const void *buffer, size_t bytes);
 
 
 //
@@ -106,6 +106,19 @@ _pdfioFileGetChar(pdfio_file_t *pdf)	// I - PDF file
 
 
 //
+// '_pdfioFileGetToken()' - Get a token from a PDF file.
+//
+
+bool					// O - `true` on success, `false` on failure
+_pdfioFileGetToken(pdfio_file_t *pdf,	// I - PDF file
+                   char         *buffer,// I - String buffer
+                   size_t       bufsize)// I - Size of string buffer
+{
+  return (_pdfioTokenRead(buffer, bufsize, (_pdfio_token_cb_t)_pdfioFilePeek, (_pdfio_token_cb_t)_pdfioFileRead, pdf));
+}
+
+
+//
 // '_pdfioFileGets()' - Read a line from a PDF file.
 //
 
@@ -160,6 +173,62 @@ _pdfioFileGets(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
+// '_pdfioFilePeek()' - Peek at upcoming data in a PDF file.
+//
+
+ssize_t					// O - Number of bytes returned
+_pdfioFilePeek(pdfio_file_t *pdf,	// I - PDF file
+               void         *buffer,	// I - Buffer
+               size_t       bytes)	// I - Size of bufffer
+{
+  ssize_t	total;			// Total bytes available
+
+
+  // See how much data is buffered up...
+  if (pdf->bufptr >= pdf->bufend)
+  {
+    // Fill the buffer...
+    if (!fill_buffer(pdf))
+      return (-1);
+  }
+
+  if ((total = pdf->bufend - pdf->bufptr) < (ssize_t)bytes && total < (ssize_t)(sizeof(pdf->buffer) / 2))
+  {
+    // Yes, try reading more...
+    ssize_t	rbytes;			// Bytes read
+
+    memmove(pdf->buffer, pdf->bufptr, total);
+    pdf->bufpos += pdf->bufptr - pdf->buffer;
+    pdf->bufptr = pdf->buffer;
+    pdf->bufend = pdf->buffer + total;
+
+    // Read until we have bytes or a non-recoverable error...
+    while ((rbytes = read(pdf->fd, pdf->bufend, sizeof(pdf->buffer) - (size_t)total)) < 0)
+    {
+      if (errno != EINTR && errno != EAGAIN)
+	break;
+    }
+
+    if (rbytes > 0)
+    {
+      // Expand the buffer...
+      pdf->bufend += rbytes;
+      total       += rbytes;
+    }
+  }
+
+  // Copy anything we have to the buffer...
+  if (total > (ssize_t)bytes)
+    total = (ssize_t)bytes;
+
+  if (total > 0)
+    memcpy(buffer, pdf->bufptr, total);
+
+  return (total);
+}
+
+
+//
 // '_pdfioFilePrintf()' - Write a formatted string to a PDF file.
 //
 
@@ -201,15 +270,17 @@ _pdfioFilePuts(pdfio_file_t *pdf,	// I - PDF file
 
 ssize_t					// O - Number of bytes read or `-1` on error
 _pdfioFileRead(pdfio_file_t *pdf,	// I - PDF file
-               char         *buffer,	// I - Read buffer
+               void         *buffer,	// I - Read buffer
                size_t       bytes)	// I - Number of bytes to read
 {
+  char		*bufptr = (char *)buffer;
+					// Pointer into buffer
   ssize_t	total,			// Total bytes read
 		rbytes;			// Bytes read this time
 
 
   // Loop until we have read all of the requested bytes or hit an error...
-  for (total = 0; bytes > 0; total += rbytes, bytes -= (size_t)rbytes, buffer += rbytes)
+  for (total = 0; bytes > 0; total += rbytes, bytes -= (size_t)rbytes, bufptr += rbytes)
   {
     // First read from the file buffer...
     if ((rbytes = pdf->bufend - pdf->bufptr) > 0)
@@ -217,7 +288,7 @@ _pdfioFileRead(pdfio_file_t *pdf,	// I - PDF file
       if ((size_t)rbytes > bytes)
         rbytes = (ssize_t)bytes;
 
-      memcpy(buffer, pdf->bufptr, rbytes);
+      memcpy(bufptr, pdf->bufptr, rbytes);
       pdf->bufptr += rbytes;
       continue;
     }
@@ -226,7 +297,7 @@ _pdfioFileRead(pdfio_file_t *pdf,	// I - PDF file
     if (bytes > 1024)
     {
       // Read directly from the file...
-      if ((rbytes = read_buffer(pdf, buffer, bytes)) > 0)
+      if ((rbytes = read_buffer(pdf, bufptr, bytes)) > 0)
       {
 	pdf->bufpos += rbytes;
 	continue;
@@ -320,7 +391,7 @@ _pdfioFileTell(pdfio_file_t *pdf)	// I - PDF file
 
 bool					// O - `true` on success and `false` on error
 _pdfioFileWrite(pdfio_file_t *pdf,	// I - PDF file
-                const char   *buffer,	// I - Write buffer
+                const void   *buffer,	// I - Write buffer
                 size_t       bytes)	// I - Bytes to write
 {
   // See if the data will fit in the write buffer...
@@ -417,16 +488,18 @@ read_buffer(pdfio_file_t *pdf,		// I - PDF file
 
 static bool				// O - `true` on success and `false` on error
 write_buffer(pdfio_file_t *pdf,		// I - PDF file
-	     const char   *buffer,	// I - Write buffer
+	     const void   *buffer,	// I - Write buffer
 	     size_t       bytes)	// I - Bytes to write
 {
+  const char	*bufptr = (const char *)buffer;
+					// Pointer into buffer
   ssize_t	wbytes;			// Bytes written...
 
 
   // Write to the file...
   while (bytes > 0)
   {
-    while ((wbytes = write(pdf->fd, buffer, bytes)) < 0)
+    while ((wbytes = write(pdf->fd, bufptr, bytes)) < 0)
     {
       // Stop if we have an error that shouldn't be retried...
       if (errno != EINTR && errno != EAGAIN)
@@ -440,7 +513,7 @@ write_buffer(pdfio_file_t *pdf,		// I - PDF file
       return (false);
     }
 
-    buffer += wbytes;
+    bufptr += wbytes;
     bytes  -= (size_t)wbytes;
   }
 

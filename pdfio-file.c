@@ -22,6 +22,7 @@
 //
 
 static pdfio_obj_t	*add_object(pdfio_file_t *pdf);
+static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset);
 static bool		write_trailer(pdfio_file_t *pdf);
 
 
@@ -221,6 +222,17 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
+// 'pdfioFileGetID()' - Get the PDF file's ID strings.
+//
+
+pdfio_array_t *				// O - Array with binary strings
+pdfioFileGetID(pdfio_file_t *pdf)	// I - PDF file
+{
+  return (pdf ? pdfioDictGetArray(pdf->trailer, "ID") : NULL);
+}
+
+
+//
 // 'pdfioFileGetName()' - Get a PDF's filename.
 //
 
@@ -285,7 +297,7 @@ pdfioFileGetPage(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
-// '()' - Get the PDF version number for a PDF file.
+// 'pdfioFileGetVersion()' - Get the PDF version number for a PDF file.
 //
 
 const char *				// O - Version number or `NULL`
@@ -379,104 +391,9 @@ pdfioFileOpen(
 
   xref_offset = (off_t)strtol(ptr + 9, NULL, 10);
 
-  if (_pdfioFileSeek(pdf, xref_offset, SEEK_SET) != xref_offset)
-  {
-    _pdfioFileError(pdf, "Unable to seek to start of xref table.");
+  if (!load_xref(pdf, xref_offset))
     goto error;
-  }
 
-  if (!_pdfioFileGets(pdf, line, sizeof(line)))
-  {
-    _pdfioFileError(pdf, "Unable to read start of xref table.");
-    goto error;
-  }
-
-  if (strcmp(line, "xref"))
-  {
-    _pdfioFileError(pdf, "Bad xref table header '%s'.", line);
-    goto error;
-  }
-
-  // Read the xref tables
-  while (_pdfioFileGets(pdf, line, sizeof(line)))
-  {
-    intmax_t	number,			// Object number
-		num_objects;		// Number of objects
-
-    if (!strcmp(line, "trailer"))
-      break;
-
-    if (sscanf(line, "%jd%jd", &number, &num_objects) != 2)
-    {
-      _pdfioFileError(pdf, "Malformed xref table section '%s'.", line);
-      goto error;
-    }
-
-    // Read this group of objects...
-    for (; num_objects > 0; num_objects --, number ++)
-    {
-      intmax_t		offset;		// Offset in file
-      int		generation;	// Generation number
-      pdfio_obj_t	*obj;		// Object
-
-      // Read a line from the file and validate it...
-      if (_pdfioFileRead(pdf, line, 20) != 20)
-	goto error;
-      line[20] = '\0';
-
-      if (strcmp(line + 18, "\r\n") && strcmp(line + 18, " \n") && strcmp(line + 18, " \r"))
-      {
-        _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-        goto error;
-      }
-      line[18] = '\0';
-
-      // Parse the line
-      if ((offset = strtoimax(line, &ptr, 10)) < 0)
-      {
-        _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-        goto error;
-      }
-
-      if ((generation = (int)strtol(ptr, &ptr, 10)) < 0 || generation > 65535)
-      {
-        _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-        goto error;
-      }
-
-      if (*ptr != ' ')
-      {
-        _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-        goto error;
-      }
-
-      ptr ++;
-      if (*ptr != 'f' && *ptr != 'n')
-      {
-        _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-        goto error;
-      }
-
-      if (*ptr == 'f')
-        continue;			// Don't care about free objects...
-
-      // Create a placeholder for the object in memory...
-      if ((obj = add_object(pdf)) == NULL)
-        goto error;
-
-      obj->number     = (size_t)number;
-      obj->generation = (unsigned short)generation;
-      obj->offset     = offset;
-    }
-  }
-
-  if (strcmp(line, "trailer"))
-  {
-    _pdfioFileError(pdf, "Missing trailer.");
-    goto error;
-  }
-
-  // TODO: Read trailer dict...
   return (pdf);
 
 
@@ -525,6 +442,127 @@ add_object(pdfio_file_t *pdf)		// I - PDF file
   pdf->objs[pdf->num_objs ++] = obj;
 
   return (obj);
+}
+
+
+//
+// 'load_xref()' - Load an XREF table...
+//
+
+static bool				// O - `true` on success, `false` on failure
+load_xref(pdfio_file_t *pdf,		// I - PDF file
+          off_t        xref_offset)	// I - Offset to xref
+{
+  bool	done = false;			// Are we done?
+  char	line[1024],			// Line from file
+	*ptr;				// Pointer into line
+
+
+  while (!done)
+  {
+    if (_pdfioFileSeek(pdf, xref_offset, SEEK_SET) != xref_offset)
+    {
+      _pdfioFileError(pdf, "Unable to seek to start of xref table.");
+      return (false);
+    }
+
+    if (!_pdfioFileGets(pdf, line, sizeof(line)))
+    {
+      _pdfioFileError(pdf, "Unable to read start of xref table.");
+      return (false);
+    }
+
+    if (strcmp(line, "xref"))
+    {
+      _pdfioFileError(pdf, "Bad xref table header '%s'.", line);
+      return (false);
+    }
+
+    // Read the xref tables
+    while (_pdfioFileGets(pdf, line, sizeof(line)))
+    {
+      intmax_t	number,			// Object number
+		num_objects;		// Number of objects
+
+      if (!strcmp(line, "trailer"))
+	break;
+
+      if (sscanf(line, "%jd%jd", &number, &num_objects) != 2)
+      {
+	_pdfioFileError(pdf, "Malformed xref table section '%s'.", line);
+	return (false);
+      }
+
+      // Read this group of objects...
+      for (; num_objects > 0; num_objects --, number ++)
+      {
+	intmax_t		offset;		// Offset in file
+	int		generation;	// Generation number
+	pdfio_obj_t	*obj;		// Object
+
+	// Read a line from the file and validate it...
+	if (_pdfioFileRead(pdf, line, 20) != 20)
+	  return (false);
+
+	line[20] = '\0';
+
+	if (strcmp(line + 18, "\r\n") && strcmp(line + 18, " \n") && strcmp(line + 18, " \r"))
+	{
+	  _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+	  return (false);
+	}
+	line[18] = '\0';
+
+	// Parse the line
+	if ((offset = strtoimax(line, &ptr, 10)) < 0)
+	{
+	  _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+	  return (false);
+	}
+
+	if ((generation = (int)strtol(ptr, &ptr, 10)) < 0 || generation > 65535)
+	{
+	  _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+	  return (false);
+	}
+
+	if (*ptr != ' ')
+	{
+	  _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+	  return (false);
+	}
+
+	ptr ++;
+	if (*ptr != 'f' && *ptr != 'n')
+	{
+	  _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+	  return (false);
+	}
+
+	if (*ptr == 'f')
+	  continue;			// Don't care about free objects...
+
+	// Create a placeholder for the object in memory...
+	if ((obj = add_object(pdf)) == NULL)
+	  return (false);
+
+	obj->number     = (size_t)number;
+	obj->generation = (unsigned short)generation;
+	obj->offset     = offset;
+      }
+    }
+
+    if (strcmp(line, "trailer"))
+    {
+      _pdfioFileError(pdf, "Missing trailer.");
+      return (false);
+    }
+
+    // TODO: Read trailer dict...
+    done = true;
+  }
+
+  return (true);
 }
 
 

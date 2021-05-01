@@ -333,6 +333,31 @@ _pdfioDictGetValue(pdfio_dict_t *dict,	// I - Dictionary
 
 
 //
+// '_pdfioDictRead()' - Read a dictionary from a PDF file.
+//
+// At this point we've seen the initial "<<"...
+//
+
+pdfio_dict_t *				// O - New dictionary
+_pdfioDictRead(pdfio_file_t *pdf)	// I - PDF file
+{
+  pdfio_dict_t	*dict;			// New dictionary
+  char		token[8192],		// Token buffer
+		key[256];		// Dictionary key
+  _pdfio_value_t value;			// Dictionary value
+
+
+  (void)pdf;
+  (void)dict;
+  (void)token;
+  (void)key;
+  (void)value;
+
+  return (NULL);
+}
+
+
+//
 // 'pdfioDictSetArray()' - Set a key array in a dictionary.
 //
 
