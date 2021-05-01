@@ -70,6 +70,19 @@ command or as environment variables:
 - `prefix`: specifies the installation directory (default "/usr/local")
 
 
+Xcode Project
+-------------
+
+There is also an Xcode project ("pdfio.xcodeproj") you can use on macOS which
+generates a static library that will be installed under "/usr/local" with:
+
+    sudo xcodebuild install
+
+You can reproduce this with the makefile using:
+
+    sudo make 'COMMONFLAGS="-Os -mmacosx-version-min=10.14 -arch x86_64 -arch arm64e"' install
+
+
 Legal Stuff
 -----------
 
