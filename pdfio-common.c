@@ -106,6 +106,60 @@ _pdfioFileGetChar(pdfio_file_t *pdf)	// I - PDF file
 
 
 //
+// '_pdfioFileGets()' - Read a line from a PDF file.
+//
+
+bool					// O - `true` on success, `false` on error
+_pdfioFileGets(pdfio_file_t *pdf,	// I - PDF file
+               char         *buffer,	// I - Line buffer
+	       size_t       bufsize)	// I - Size of line buffer
+{
+  bool	eol = false;			// End of line?
+  char	*bufptr = buffer,		// Pointer into buffer
+	*bufend = buffer + bufsize - 1;	// Pointer to end of buffer
+
+
+  while (!eol)
+  {
+    // If there are characters ready in the buffer, use them...
+    while (pdf->bufptr < pdf->bufend && bufptr < bufend)
+    {
+      char ch = *(pdf->bufptr++);	// Next character in buffer
+
+      if (ch == '\n' || ch == '\r')
+      {
+        // CR, LF, or CR + LF end a line...
+        eol = true;
+
+        if (ch == '\r')
+        {
+          // Check for a LF after CR
+          if (pdf->bufptr >= pdf->bufend)
+            fill_buffer(pdf);
+
+	  if (pdf->bufptr < pdf->bufend && *(pdf->bufptr) == '\n')
+	    pdf->bufptr ++;
+	}
+      }
+      else
+        *bufptr++ = ch;
+    }
+
+    // Fill the read buffer as needed...
+    if (!eol)
+    {
+      if (!fill_buffer(pdf))
+        break;
+    }
+  }
+
+  *bufptr = '\0';
+
+  return (eol);
+}
+
+
+//
 // '_pdfioFilePrintf()' - Write a formatted string to a PDF file.
 //
 

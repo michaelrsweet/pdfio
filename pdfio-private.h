@@ -17,6 +17,7 @@
 #  include "pdfio.h"
 #  include <stdarg.h>
 #  include <errno.h>
+#  include <inttypes.h>
 #  include <fcntl.h>
 #  include <unistd.h>
 #  include <string.h>
@@ -141,8 +142,8 @@ struct _pdfio_file_s			// PDF file structure
 struct _pdfio_obj_s			// Object
 {
   pdfio_file_t	*pdf;			// PDF file
-  size_t	number,			// Number
-		generation;		// Generation
+  size_t	number;			// Number
+  unsigned short generation;		// Generation
   off_t		offset,			// Offset to object in file
 		length_offset,		// Offset to /Length in object dict
 		stream_offset;		// Offset to start of stream in file
@@ -179,6 +180,7 @@ extern bool		_pdfioFileDefaultError(pdfio_file_t *pdf, const char *message, void
 extern bool		_pdfioFileError(pdfio_file_t *pdf, const char *format, ...) PDFIO_FORMAT(2,3) PDFIO_INTERNAL;
 extern bool		_pdfioFileFlush(pdfio_file_t *pdf) PDFIO_INTERNAL;
 extern int		_pdfioFileGetChar(pdfio_file_t *pdf) PDFIO_INTERNAL;
+extern bool		_pdfioFileGets(pdfio_file_t *pdf, char *buffer, size_t bufsize) PDFIO_INTERNAL;
 extern bool		_pdfioFilePrintf(pdfio_file_t *pdf, const char *format, ...) PDFIO_FORMAT(2,3) PDFIO_INTERNAL;
 extern bool		_pdfioFilePuts(pdfio_file_t *pdf, const char *s) PDFIO_INTERNAL;
 extern ssize_t		_pdfioFileRead(pdfio_file_t *pdf, char *buffer, size_t bytes) PDFIO_INTERNAL;

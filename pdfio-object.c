@@ -78,7 +78,7 @@ pdfioObjGetDict(pdfio_obj_t *obj)	// I - Object
 // 'pdfioObjGetGeneration()' - Get the object's generation number.
 //
 
-size_t					// O - Generation number (0 to 65535)
+unsigned short				// O - Generation number (0 to 65535)
 pdfioObjGetGeneration(pdfio_obj_t *obj)	// I - Object
 {
   return (obj ? obj->generation : 0);

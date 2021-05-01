@@ -21,7 +21,8 @@
 // Local functions...
 //
 
-static bool	write_trailer(pdfio_file_t *pdf);
+static pdfio_obj_t	*add_object(pdfio_file_t *pdf);
+static bool		write_trailer(pdfio_file_t *pdf);
 
 
 //
@@ -161,6 +162,9 @@ pdfioFileCreateObject(
 
     return (NULL);
   }
+
+  if (pdf->mode != _PDFIO_MODE_WRITE)
+    return (NULL);
 
   if (dict->pdf != pdf)
     dict = pdfioDictCopy(pdf, dict);	// Copy dictionary to new PDF
@@ -303,6 +307,9 @@ pdfioFileOpen(
     void             *error_data)	// I - Error callback data, if any
 {
   pdfio_file_t	*pdf;			// PDF file
+  char		line[1024],		// Line from file
+		*ptr;			// Pointer into line
+  off_t		xref_offset;		// Offset to xref table
 
 
   // Range check input...
@@ -341,8 +348,180 @@ pdfioFileOpen(
     return (NULL);
   }
 
-  // TODO: read header, trailer, and xref table...
+  // Read the header from the first line...
+  if (!_pdfioFileGets(pdf, line, sizeof(line)))
+    goto error;
+
+  if ((strncmp(line, "%PDF-1.", 6) && strncmp(line, "%PDF-2.", 6)) || !isdigit(line[6] & 255))
+  {
+    // Bad header
+    _pdfioFileError(pdf, "Bad header '%s'.", line);
+    goto error;
+  }
+
+  // Copy the version number...
+  pdf->version = strdup(line + 4);
+
+  // Grab the last 32 characters of the file to find the start of the xref table...
+  _pdfioFileSeek(pdf, 32, SEEK_END);
+  if (_pdfioFileRead(pdf, line, 32) < 32)
+    goto error;
+  line[32] = '\0';
+
+  if ((ptr = strstr(line, "startxref")) == NULL)
+  {
+    _pdfioFileError(pdf, "Unable to find start of xref table.");
+    goto error;
+  }
+
+  xref_offset = (off_t)strtol(ptr + 9, NULL, 10);
+
+  if (_pdfioFileSeek(pdf, xref_offset, SEEK_SET) != xref_offset)
+  {
+    _pdfioFileError(pdf, "Unable to seek to start of xref table.");
+    goto error;
+  }
+
+  if (!_pdfioFileGets(pdf, line, sizeof(line)))
+  {
+    _pdfioFileError(pdf, "Unable to read start of xref table.");
+    goto error;
+  }
+
+  if (strcmp(line, "xref"))
+  {
+    _pdfioFileError(pdf, "Bad xref table header '%s'.", line);
+    goto error;
+  }
+
+  // Read the xref tables
+  while (_pdfioFileGets(pdf, line, sizeof(line)))
+  {
+    intmax_t	number,			// Object number
+		num_objects;		// Number of objects
+
+    if (!strcmp(line, "trailer"))
+      break;
+
+    if (sscanf(line, "%jd%jd", &number, &num_objects) != 2)
+    {
+      _pdfioFileError(pdf, "Malformed xref table section '%s'.", line);
+      goto error;
+    }
+
+    // Read this group of objects...
+    for (; num_objects > 0; num_objects --, number ++)
+    {
+      intmax_t		offset;		// Offset in file
+      int		generation;	// Generation number
+      pdfio_obj_t	*obj;		// Object
+
+      // Read a line from the file and validate it...
+      if (_pdfioFileRead(pdf, line, 20) != 20)
+	goto error;
+      line[20] = '\0';
+
+      if (strcmp(line + 18, "\r\n") && strcmp(line + 18, " \n") && strcmp(line + 18, " \r"))
+      {
+        _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+        goto error;
+      }
+      line[18] = '\0';
+
+      // Parse the line
+      if ((offset = strtoimax(line, &ptr, 10)) < 0)
+      {
+        _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+        goto error;
+      }
+
+      if ((generation = (int)strtol(ptr, &ptr, 10)) < 0 || generation > 65535)
+      {
+        _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+        goto error;
+      }
+
+      if (*ptr != ' ')
+      {
+        _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+        goto error;
+      }
+
+      ptr ++;
+      if (*ptr != 'f' && *ptr != 'n')
+      {
+        _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+        goto error;
+      }
+
+      if (*ptr == 'f')
+        continue;			// Don't care about free objects...
+
+      // Create a placeholder for the object in memory...
+      if ((obj = add_object(pdf)) == NULL)
+        goto error;
+
+      obj->number     = (size_t)number;
+      obj->generation = (unsigned short)generation;
+      obj->offset     = offset;
+    }
+  }
+
+  if (strcmp(line, "trailer"))
+  {
+    _pdfioFileError(pdf, "Missing trailer.");
+    goto error;
+  }
+
+  // TODO: Read trailer dict...
   return (pdf);
+
+
+  // If we get here we had a fatal read error...
+  error:
+
+  pdfioFileClose(pdf);
+
+  return (NULL);
+}
+
+
+//
+// 'add_object()' - Add an object to a PDF file.
+//
+
+static pdfio_obj_t *			// O - New object
+add_object(pdfio_file_t *pdf)		// I - PDF file
+{
+  pdfio_obj_t	*obj;			// New object
+
+
+  // Allocate memory for the object...
+  if ((obj = (pdfio_obj_t *)calloc(1, sizeof(pdfio_obj_t))) == NULL)
+  {
+    _pdfioFileError(pdf, "Unable to allocate memory for object - %s", strerror(errno));
+    return (NULL);
+  }
+
+  // Expand the objects array as needed
+  if (pdf->num_objs >= pdf->alloc_objs)
+  {
+    pdfio_obj_t **temp = (pdfio_obj_t **)realloc(pdf->objs, (pdf->alloc_objs + 32) * sizeof(pdfio_obj_t *));
+
+    if (!temp)
+    {
+      _pdfioFileError(pdf, "Unable to allocate memory for object - %s", strerror(errno));
+      free(obj);
+      return (NULL);
+    }
+
+    pdf->objs       = temp;
+    pdf->alloc_objs += 32;
+  }
+
+  pdf->objs[pdf->num_objs ++] = obj;
+
+  return (obj);
 }
 
 
