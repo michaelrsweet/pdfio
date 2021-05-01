@@ -1,0 +1,466 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		273440C3263D727800FBFD63 /* pdfio-private.h in Headers */ = {isa = PBXBuildFile; fileRef = 273440B8263D727800FBFD63 /* pdfio-private.h */; };
+		273440C4263D727800FBFD63 /* pdfio-string.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440B9263D727800FBFD63 /* pdfio-string.c */; };
+		273440C5263D727800FBFD63 /* pdfio-array.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440BA263D727800FBFD63 /* pdfio-array.c */; };
+		273440C6263D727800FBFD63 /* pdfio-common.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440BB263D727800FBFD63 /* pdfio-common.c */; };
+		273440C7263D727800FBFD63 /* pdfio-object.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440BC263D727800FBFD63 /* pdfio-object.c */; };
+		273440C8263D727800FBFD63 /* pdfio-file.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440BD263D727800FBFD63 /* pdfio-file.c */; };
+		273440C9263D727800FBFD63 /* pdfio-dict.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440BE263D727800FBFD63 /* pdfio-dict.c */; };
+		273440CA263D727800FBFD63 /* pdfio-stream.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440BF263D727800FBFD63 /* pdfio-stream.c */; };
+		273440CB263D727800FBFD63 /* pdfio-value.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440C0263D727800FBFD63 /* pdfio-value.c */; };
+		273440CC263D727800FBFD63 /* pdfio.h in Headers */ = {isa = PBXBuildFile; fileRef = 273440C1263D727800FBFD63 /* pdfio.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		273440CD263D727800FBFD63 /* pdfio-page.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440C2263D727800FBFD63 /* pdfio-page.c */; };
+		273440D8263D72E100FBFD63 /* testpdfio.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440D7263D72E100FBFD63 /* testpdfio.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		273440D0263D72AE00FBFD63 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		273440B0263D6FE200FBFD63 /* libpdfio.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libpdfio.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		273440B8263D727800FBFD63 /* pdfio-private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "pdfio-private.h"; sourceTree = "<group>"; };
+		273440B9263D727800FBFD63 /* pdfio-string.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-string.c"; sourceTree = "<group>"; };
+		273440BA263D727800FBFD63 /* pdfio-array.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-array.c"; sourceTree = "<group>"; };
+		273440BB263D727800FBFD63 /* pdfio-common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-common.c"; sourceTree = "<group>"; };
+		273440BC263D727800FBFD63 /* pdfio-object.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-object.c"; sourceTree = "<group>"; };
+		273440BD263D727800FBFD63 /* pdfio-file.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-file.c"; sourceTree = "<group>"; };
+		273440BE263D727800FBFD63 /* pdfio-dict.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-dict.c"; sourceTree = "<group>"; };
+		273440BF263D727800FBFD63 /* pdfio-stream.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-stream.c"; sourceTree = "<group>"; };
+		273440C0263D727800FBFD63 /* pdfio-value.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-value.c"; sourceTree = "<group>"; };
+		273440C1263D727800FBFD63 /* pdfio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pdfio.h; sourceTree = "<group>"; };
+		273440C2263D727800FBFD63 /* pdfio-page.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-page.c"; sourceTree = "<group>"; };
+		273440D2263D72AE00FBFD63 /* testpdfio */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = testpdfio; sourceTree = BUILT_PRODUCTS_DIR; };
+		273440D7263D72E100FBFD63 /* testpdfio.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = testpdfio.c; sourceTree = "<group>"; };
+		273440DA263D732000FBFD63 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		273440DB263D732000FBFD63 /* NOTICE */ = {isa = PBXFileReference; lastKnownFileType = text; path = NOTICE; sourceTree = "<group>"; };
+		273440DC263D732000FBFD63 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		273440DD263D732000FBFD63 /* pdfio.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = pdfio.md; sourceTree = "<group>"; };
+		273440DE263D732000FBFD63 /* pdfio.pc.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = pdfio.pc.in; sourceTree = "<group>"; };
+		273440DF263D732000FBFD63 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		273440E0263D732000FBFD63 /* TODO.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.md; sourceTree = "<group>"; };
+		273440E1263D73A300FBFD63 /* pdfio.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = pdfio.html; sourceTree = "<group>"; };
+		273440E2263D73A300FBFD63 /* pdfio.3 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = pdfio.3; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		273440AE263D6FE200FBFD63 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		273440CF263D72AE00FBFD63 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		273440A7263D6FE200FBFD63 = {
+			isa = PBXGroup;
+			children = (
+				273440C1263D727800FBFD63 /* pdfio.h */,
+				273440B8263D727800FBFD63 /* pdfio-private.h */,
+				273440DE263D732000FBFD63 /* pdfio.pc.in */,
+				273440BA263D727800FBFD63 /* pdfio-array.c */,
+				273440BB263D727800FBFD63 /* pdfio-common.c */,
+				273440BE263D727800FBFD63 /* pdfio-dict.c */,
+				273440BD263D727800FBFD63 /* pdfio-file.c */,
+				273440BC263D727800FBFD63 /* pdfio-object.c */,
+				273440C2263D727800FBFD63 /* pdfio-page.c */,
+				273440BF263D727800FBFD63 /* pdfio-stream.c */,
+				273440B9263D727800FBFD63 /* pdfio-string.c */,
+				273440C0263D727800FBFD63 /* pdfio-value.c */,
+				273440D7263D72E100FBFD63 /* testpdfio.c */,
+				273440D9263D72EF00FBFD63 /* Documentation */,
+				273440B1263D6FE200FBFD63 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		273440B1263D6FE200FBFD63 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				273440B0263D6FE200FBFD63 /* libpdfio.a */,
+				273440D2263D72AE00FBFD63 /* testpdfio */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		273440D9263D72EF00FBFD63 /* Documentation */ = {
+			isa = PBXGroup;
+			children = (
+				273440DF263D732000FBFD63 /* LICENSE */,
+				273440DC263D732000FBFD63 /* Makefile */,
+				273440DB263D732000FBFD63 /* NOTICE */,
+				273440E2263D73A300FBFD63 /* pdfio.3 */,
+				273440E1263D73A300FBFD63 /* pdfio.html */,
+				273440DD263D732000FBFD63 /* pdfio.md */,
+				273440DA263D732000FBFD63 /* README.md */,
+				273440E0263D732000FBFD63 /* TODO.md */,
+			);
+			name = Documentation;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		273440AC263D6FE200FBFD63 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				273440CC263D727800FBFD63 /* pdfio.h in Headers */,
+				273440C3263D727800FBFD63 /* pdfio-private.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		273440AF263D6FE200FBFD63 /* pdfio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 273440B4263D6FE200FBFD63 /* Build configuration list for PBXNativeTarget "pdfio" */;
+			buildPhases = (
+				273440AC263D6FE200FBFD63 /* Headers */,
+				273440AD263D6FE200FBFD63 /* Sources */,
+				273440AE263D6FE200FBFD63 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = pdfio;
+			productName = pdfio;
+			productReference = 273440B0263D6FE200FBFD63 /* libpdfio.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		273440D1263D72AE00FBFD63 /* testpdfio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 273440D4263D72AE00FBFD63 /* Build configuration list for PBXNativeTarget "testpdfio" */;
+			buildPhases = (
+				273440CE263D72AE00FBFD63 /* Sources */,
+				273440CF263D72AE00FBFD63 /* Frameworks */,
+				273440D0263D72AE00FBFD63 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = testpdfio;
+			productName = testpdfio;
+			productReference = 273440D2263D72AE00FBFD63 /* testpdfio */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		273440A8263D6FE200FBFD63 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1250;
+				TargetAttributes = {
+					273440AF263D6FE200FBFD63 = {
+						CreatedOnToolsVersion = 12.5;
+					};
+					273440D1263D72AE00FBFD63 = {
+						CreatedOnToolsVersion = 12.5;
+					};
+				};
+			};
+			buildConfigurationList = 273440AB263D6FE200FBFD63 /* Build configuration list for PBXProject "pdfio" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 273440A7263D6FE200FBFD63;
+			productRefGroup = 273440B1263D6FE200FBFD63 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				273440AF263D6FE200FBFD63 /* pdfio */,
+				273440D1263D72AE00FBFD63 /* testpdfio */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		273440AD263D6FE200FBFD63 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				273440C9263D727800FBFD63 /* pdfio-dict.c in Sources */,
+				273440C8263D727800FBFD63 /* pdfio-file.c in Sources */,
+				273440CB263D727800FBFD63 /* pdfio-value.c in Sources */,
+				273440CA263D727800FBFD63 /* pdfio-stream.c in Sources */,
+				273440CD263D727800FBFD63 /* pdfio-page.c in Sources */,
+				273440C5263D727800FBFD63 /* pdfio-array.c in Sources */,
+				273440C7263D727800FBFD63 /* pdfio-object.c in Sources */,
+				273440C4263D727800FBFD63 /* pdfio-string.c in Sources */,
+				273440C6263D727800FBFD63 /* pdfio-common.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		273440CE263D72AE00FBFD63 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				273440D8263D72E100FBFD63 /* testpdfio.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		273440B2263D6FE200FBFD63 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_GCD_PERFORMANCE = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_UNDEFINED_BEHAVIOR_SANITIZER_INTEGER = YES;
+				CLANG_UNDEFINED_BEHAVIOR_SANITIZER_NULLABILITY = YES;
+				CLANG_WARN_ASSIGN_ENUM = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_IMPLICIT_SIGN_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_SEMICOLON_BEFORE_METHOD_BODY = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1.0;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_INITIALIZER_NOT_FULLY_BRACKETED = YES;
+				GCC_WARN_SHADOW = YES;
+				GCC_WARN_SIGN_COMPARE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_LABEL = YES;
+				GCC_WARN_UNUSED_PARAMETER = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SDKROOT = macosx;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Debug;
+		};
+		273440B3263D6FE200FBFD63 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_GCD_PERFORMANCE = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_ANALYZER_SECURITY_INSECUREAPI_STRCPY = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_UNDEFINED_BEHAVIOR_SANITIZER_INTEGER = YES;
+				CLANG_UNDEFINED_BEHAVIOR_SANITIZER_NULLABILITY = YES;
+				CLANG_WARN_ASSIGN_ENUM = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_IMPLICIT_SIGN_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_SEMICOLON_BEFORE_METHOD_BODY = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1.0;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_INITIALIZER_NOT_FULLY_BRACKETED = YES;
+				GCC_WARN_SHADOW = YES;
+				GCC_WARN_SIGN_COMPARE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_LABEL = YES;
+				GCC_WARN_UNUSED_PARAMETER = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				RUN_CLANG_STATIC_ANALYZER = YES;
+				SDKROOT = macosx;
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
+		273440B5263D6FE200FBFD63 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = RU58A2256H;
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		273440B6263D6FE200FBFD63 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = RU58A2256H;
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		273440D5263D72AE00FBFD63 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = RU58A2256H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MACOSX_DEPLOYMENT_TARGET = 11.3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		273440D6263D72AE00FBFD63 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = RU58A2256H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 11.3;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		273440AB263D6FE200FBFD63 /* Build configuration list for PBXProject "pdfio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				273440B2263D6FE200FBFD63 /* Debug */,
+				273440B3263D6FE200FBFD63 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		273440B4263D6FE200FBFD63 /* Build configuration list for PBXNativeTarget "pdfio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				273440B5263D6FE200FBFD63 /* Debug */,
+				273440B6263D6FE200FBFD63 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		273440D4263D72AE00FBFD63 /* Build configuration list for PBXNativeTarget "testpdfio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				273440D5263D72AE00FBFD63 /* Debug */,
+				273440D6263D72AE00FBFD63 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 273440A8263D6FE200FBFD63 /* Project object */;
+}

@@ -387,7 +387,7 @@ write_buffer(pdfio_file_t *pdf,		// I - PDF file
     }
 
     buffer += wbytes;
-    bytes  -= wbytes;
+    bytes  -= (size_t)wbytes;
   }
 
   return (true);

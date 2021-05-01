@@ -74,8 +74,13 @@ pdfioArrayAppendBinary(
 
   memcpy(v.value.binary.data, value, valuelen);
 
-  return (append_value(a, &v));
+  if (!append_value(a, &v))
+  {
+    free(v.value.binary.data);
+    return (false);
+  }
 
+  return (true);
 }
 
 //

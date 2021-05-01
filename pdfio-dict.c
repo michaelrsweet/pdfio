@@ -384,7 +384,13 @@ pdfioDictSetBinary(
 
   memcpy(temp.value.binary.data, value, valuelen);
 
-  return (_pdfioDictSetValue(dict, key, &temp));
+  if (!_pdfioDictSetValue(dict, key, &temp))
+  {
+    free(temp.value.binary.data);
+    return (false);
+  }
+
+  return (true);
 }
 
 
@@ -621,16 +627,17 @@ _pdfioDictSetValue(
     const char     *key,		// I - Key
     _pdfio_value_t *value)		// I - Value
 {
-  _pdfio_pair_t	temp,			// Search key
-		*pair;			// Current pair
+  _pdfio_pair_t	*pair;			// Current pair
 
 
   // See if the key is already set...
   if (dict->num_pairs > 0)
   {
-    temp.key = key;
+    _pdfio_pair_t	pkey;		// Search key
 
-    if ((pair = (_pdfio_pair_t *)bsearch(&temp, dict->pairs, dict->num_pairs, sizeof(_pdfio_pair_t), (int (*)(const void *, const void *))compare_pairs)) != NULL)
+    pkey.key = key;
+
+    if ((pair = (_pdfio_pair_t *)bsearch(&pkey, dict->pairs, dict->num_pairs, sizeof(_pdfio_pair_t), (int (*)(const void *, const void *))compare_pairs)) != NULL)
     {
       // Yes, replace the value...
       pair->value = *value;

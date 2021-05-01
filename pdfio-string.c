@@ -57,7 +57,10 @@ pdfioStringCreate(
     char **temp = realloc(pdf->strings, (pdf->alloc_strings + 32) * sizeof(char *));
 
     if (!temp)
+    {
+      free(news);
       return (NULL);
+    }
 
     pdf->strings       = temp;
     pdf->alloc_strings += 32;

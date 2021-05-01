@@ -180,6 +180,7 @@ pdfioFileCreateObject(
     if (!temp)
     {
       _pdfioFileError(pdf, "Unable to allocate memory for object - %s", strerror(errno));
+      free(obj);
       return (NULL);
     }
 
