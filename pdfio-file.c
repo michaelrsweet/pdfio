@@ -352,7 +352,7 @@ pdfioFileOpen(
   if (!_pdfioFileGets(pdf, line, sizeof(line)))
     goto error;
 
-  if ((strncmp(line, "%PDF-1.", 6) && strncmp(line, "%PDF-2.", 6)) || !isdigit(line[6] & 255))
+  if ((strncmp(line, "%PDF-1.", 7) && strncmp(line, "%PDF-2.", 7)) || !isdigit(line[7] & 255))
   {
     // Bad header
     _pdfioFileError(pdf, "Bad header '%s'.", line);
@@ -360,12 +360,15 @@ pdfioFileOpen(
   }
 
   // Copy the version number...
-  pdf->version = strdup(line + 4);
+  pdf->version = strdup(line + 5);
 
   // Grab the last 32 characters of the file to find the start of the xref table...
-  _pdfioFileSeek(pdf, 32, SEEK_END);
+  _pdfioFileSeek(pdf, -32, SEEK_END);
   if (_pdfioFileRead(pdf, line, 32) < 32)
+  {
+    _pdfioFileError(pdf, "Unable to read startxref data.");
     goto error;
+  }
   line[32] = '\0';
 
   if ((ptr = strstr(line, "startxref")) == NULL)

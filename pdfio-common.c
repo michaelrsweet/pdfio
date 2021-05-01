@@ -122,7 +122,7 @@ _pdfioFileGets(pdfio_file_t *pdf,	// I - PDF file
   while (!eol)
   {
     // If there are characters ready in the buffer, use them...
-    while (pdf->bufptr < pdf->bufend && bufptr < bufend)
+    while (!eol && pdf->bufptr < pdf->bufend && bufptr < bufend)
     {
       char ch = *(pdf->bufptr++);	// Next character in buffer
 
