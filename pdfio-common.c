@@ -24,6 +24,23 @@ static bool	write_buffer(pdfio_file_t *pdf, const void *buffer, size_t bytes);
 
 
 //
+// '_pdfioFileConsume()' - Consume bytes from the file.
+//
+
+bool					// O - `true` on sucess, `false` on EOF
+_pdfioFileConsume(pdfio_file_t *pdf,	// I - PDF file
+                  size_t       bytes)	// I - Bytes to consume
+{
+  if ((size_t)(pdf->bufend - pdf->bufptr) > bytes)
+    pdf->bufptr += bytes;
+  else if (_pdfioFileSeek(pdf, (off_t)bytes, SEEK_CUR) < 0)
+    return (false);
+
+  return (true);
+}
+
+
+//
 // '_pdfioFileDefaultError()' - Default error callback.
 //
 // The default error callback writes the error message to stderr and returns
@@ -114,7 +131,7 @@ _pdfioFileGetToken(pdfio_file_t *pdf,	// I - PDF file
                    char         *buffer,// I - String buffer
                    size_t       bufsize)// I - Size of string buffer
 {
-  return (_pdfioTokenRead(buffer, bufsize, (_pdfio_token_cb_t)_pdfioFilePeek, (_pdfio_token_cb_t)_pdfioFileRead, pdf));
+  return (_pdfioTokenRead(pdf, buffer, bufsize, (_pdfio_tpeek_cb_t)_pdfioFilePeek, (_pdfio_tconsume_cb_t)_pdfioFileConsume, pdf));
 }
 
 

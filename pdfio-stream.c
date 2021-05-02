@@ -28,6 +28,21 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 
 
 //
+// 'pdfioStreamConsume()' - Consume bytes from the stream.
+//
+
+bool					// O - `true` on success, `false` on EOF
+pdfioStreamConsume(pdfio_stream_t *st,	// I - Stream
+                   size_t         bytes)// I - Number of bytes to consume
+{
+  // TODO: Implement me
+  (void)st;
+  (void)bytes;
+  return (false);
+}
+
+
+//
 // '_pdfioStreamDelete()' - Free all memory used by a stream.
 //
 
@@ -57,7 +72,7 @@ pdfioStreamGetToken(
     char           *buffer,		// I - String buffer
     size_t         bufsize)		// I - Size of string buffer
 {
-  return (_pdfioTokenRead(buffer, bufsize, (_pdfio_token_cb_t)pdfioStreamPeek, (_pdfio_token_cb_t)pdfioStreamRead, st));
+  return (_pdfioTokenRead(st->pdf, buffer, bufsize, (_pdfio_tpeek_cb_t)pdfioStreamPeek, (_pdfio_tconsume_cb_t)pdfioStreamConsume, st));
 }
 
 

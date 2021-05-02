@@ -165,7 +165,8 @@ struct _pdfio_stream_s			// Stream
   z_stream	flate;			// Flate filter state
 };
 
-typedef ssize_t (*_pdfio_token_cb_t)(void *data, void *buffer, size_t bufsize);
+typedef ssize_t (*_pdfio_tconsume_cb_t)(void *data, size_t bytes);
+typedef ssize_t (*_pdfio_tpeek_cb_t)(void *data, void *buffer, size_t bytes);
 
 
 //
@@ -182,6 +183,7 @@ extern pdfio_dict_t	*_pdfioDictRead(pdfio_file_t *pdf) PDFIO_INTERNAL;
 extern bool		_pdfioDictSetValue(pdfio_dict_t *dict, const char *key, _pdfio_value_t *value) PDFIO_INTERNAL;
 extern bool		_pdfioDictWrite(pdfio_dict_t *dict, off_t *length) PDFIO_INTERNAL;
 
+extern bool		_pdfioFileConsume(pdfio_file_t *pdf, size_t bytes) PDFIO_INTERNAL;
 extern bool		_pdfioFileDefaultError(pdfio_file_t *pdf, const char *message, void *data) PDFIO_INTERNAL;
 extern bool		_pdfioFileError(pdfio_file_t *pdf, const char *format, ...) PDFIO_FORMAT(2,3) PDFIO_INTERNAL;
 extern bool		_pdfioFileFlush(pdfio_file_t *pdf) PDFIO_INTERNAL;
@@ -202,7 +204,7 @@ extern void		_pdfioStreamDelete(pdfio_stream_t *st) PDFIO_INTERNAL;
 
 extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) PDFIO_INTERNAL;
 
-extern bool		_pdfioTokenRead(char *buffer, size_t bufsize, _pdfio_token_cb_t peek_cb, _pdfio_token_cb_t read_cb, void *data);
+extern bool		_pdfioTokenRead(pdfio_file_t *pdf, char *buffer, size_t bufsize, _pdfio_tpeek_cb_t peek_cb, _pdfio_tconsume_cb_t consume_cb, void *data);
 
 extern _pdfio_value_t	*_pdfioValueCopy(pdfio_file_t *pdfdst, _pdfio_value_t *vdst, pdfio_file_t *pdfsrc, _pdfio_value_t *vsrc) PDFIO_INTERNAL;
 extern void		_pdfioValueDelete(_pdfio_value_t *v) PDFIO_INTERNAL;
