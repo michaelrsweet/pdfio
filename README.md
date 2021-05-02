@@ -4,8 +4,10 @@ pdfio - PDF Read/Write Library
 pdfio is a simple C library for reading and writing PDF files.  The primary
 goals of pdfio are:
 
-- Read any PDF file with or without encryption or linearization
-- Write PDF files without encryption or linearization
+- Read and write any version of PDF file.
+- Provide access to pages, objects, and streams within a PDF file.
+- Support reading encrypted PDF files.
+- Support writing PDF files with digital signatures.
 - Extract or embed useful metadata (author, creator, page information, etc.)
 - "Filter" PDF files, for example to extract a range of pages or to embed fonts
   that are missing from a PDF
@@ -15,11 +17,32 @@ pdfio is *not* concerned with rendering or viewing a PDF file, although a PDF
 RIP or viewer could be written using it.
 
 
+Requirements
+------------
+
+pdfio requires the following to build the software:
+
+- A C99 compiler such as Clang, GCC, or MS Visual C
+- A POSIX-compliant `make` program
+- ZLIB (<https://www.zlib.net>) 1.0 or higher
+
+IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
+
+
+Documentation
+-------------
+
+> Note: Documentation is under active development...
+
+See the man page (`pdfio.3`), frequently ask questions (`FAQ.md`), and full HTML
+documentation (`pdfio.html`) for information on using pdfio.
+
+
 Installing pdfio
 ----------------
 
 pdfio comes with a portable makefile that will work on any POSIX-compliant
-system with zlib installed.  To make it, run:
+system with ZLIB installed.  To make it, run:
 
     make all
 
@@ -68,6 +91,15 @@ command or as environment variables:
 - `RANLIB`: program that generates a table-of-contents in a library
   (default "ranlib")
 - `prefix`: specifies the installation directory (default "/usr/local")
+
+
+Visual Studio Project
+---------------------
+
+> Note: I haven't yet added this...
+
+The Visual Studio solution ("pdfio.sln") is provided for Windows developers
+generates both a static library and DLL.
 
 
 Xcode Project
