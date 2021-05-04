@@ -2,7 +2,6 @@ To-Do List
 ==========
 
 - Reference streams
-- Read trailer dict
 - All of the object read/write code
 - All of the stream read/write code
 - Page create method
