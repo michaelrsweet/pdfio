@@ -127,6 +127,8 @@ struct _pdfio_file_s			// PDF file structure
   pdfio_dict_t	*trailer;		// Trailer dictionary
   pdfio_obj_t	*root;			// Root object/dictionary
   pdfio_obj_t	*info;			// Information object/dictionary
+  pdfio_obj_t	*encrypt;		// Encryption object/dictionary
+  pdfio_array_t	*id_array;		// ID array
 
   // Allocated data elements
   size_t	num_arrays,		// Number of arrays

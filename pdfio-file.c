@@ -453,9 +453,10 @@ static bool				// O - `true` on success, `false` on failure
 load_xref(pdfio_file_t *pdf,		// I - PDF file
           off_t        xref_offset)	// I - Offset to xref
 {
-  bool	done = false;			// Are we done?
-  char	line[1024],			// Line from file
-	*ptr;				// Pointer into line
+  bool		done = false;		// Are we done?
+  char		line[1024],		// Line from file
+		*ptr;			// Pointer into line
+  _pdfio_value_t trailer;		// Trailer dictionary
 
 
   while (!done)
@@ -496,7 +497,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       // Read this group of objects...
       for (; num_objects > 0; num_objects --, number ++)
       {
-	intmax_t		offset;		// Offset in file
+	intmax_t	offset;		// Offset in file
 	int		generation;	// Generation number
 	pdfio_obj_t	*obj;		// Object
 
@@ -558,8 +559,36 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       return (false);
     }
 
-    // TODO: Read trailer dict...
-    done = true;
+    if (!_pdfioValueRead(pdf, &trailer))
+    {
+      _pdfioFileError(pdf, "Unable to read trailer dictionary.");
+      return (false);
+    }
+    else
+    {
+      _pdfioFileError(pdf, "Trailer is not a dictionary.");
+      return (false);
+    }
+
+    if (!pdf->trailer)
+    {
+      // Save the trailer dictionary and grab the root (catalog) and info
+      // objects...
+      pdf->trailer = trailer.value.dict;
+
+      if ((pdf->root = pdfioDictGetObject(pdf->trailer, "Root")) == NULL)
+      {
+        _pdfioFileError(pdf, "Missing Root object.");
+        return (false);
+      }
+
+      pdf->info     = pdfioDictGetObject(pdf->trailer, "Info");
+      pdf->encrypt  = pdfioDictGetObject(pdf->trailer, "Encrypt");
+      pdf->id_array = pdfioDictGetArray(pdf->trailer, "ID");
+    }
+
+    if ((xref_offset = (off_t)pdfioDictGetNumber(pdf->trailer, "Prev")) <= 0)
+      done = true;
   }
 
   return (true);

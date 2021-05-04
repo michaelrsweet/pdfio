@@ -20,7 +20,18 @@
 		273440CD263D727800FBFD63 /* pdfio-page.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440C2263D727800FBFD63 /* pdfio-page.c */; };
 		273440D8263D72E100FBFD63 /* testpdfio.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440D7263D72E100FBFD63 /* testpdfio.c */; };
 		273440E4263DD7EA00FBFD63 /* pdfio-token.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440E3263DD7EA00FBFD63 /* pdfio-token.c */; };
+		27ECBD8926419DAB0025312A /* libpdfio.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 273440B0263D6FE200FBFD63 /* libpdfio.a */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		27ECBD8626419DA40025312A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 273440A8263D6FE200FBFD63 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 273440AF263D6FE200FBFD63;
+			remoteInfo = pdfio;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		273440D0263D72AE00FBFD63 /* CopyFiles */ = {
@@ -73,6 +84,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27ECBD8926419DAB0025312A /* libpdfio.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,6 +110,7 @@
 				273440D7263D72E100FBFD63 /* testpdfio.c */,
 				273440D9263D72EF00FBFD63 /* Documentation */,
 				273440B1263D6FE200FBFD63 /* Products */,
+				27ECBD8826419DAB0025312A /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -123,6 +136,13 @@
 				273440E0263D732000FBFD63 /* TODO.md */,
 			);
 			name = Documentation;
+			sourceTree = "<group>";
+		};
+		27ECBD8826419DAB0025312A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -168,6 +188,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				27ECBD8726419DA40025312A /* PBXTargetDependency */,
 			);
 			name = testpdfio;
 			productName = testpdfio;
@@ -236,6 +257,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		27ECBD8726419DA40025312A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 273440AF263D6FE200FBFD63 /* pdfio */;
+			targetProxy = 27ECBD8626419DA40025312A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		273440B2263D6FE200FBFD63 /* Debug */ = {
