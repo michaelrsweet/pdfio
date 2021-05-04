@@ -21,7 +21,8 @@
 // Local functions...
 //
 
-static pdfio_obj_t	*add_object(pdfio_file_t *pdf);
+static pdfio_obj_t	*add_obj(pdfio_file_t *pdf, size_t number, unsigned short generation, off_t offset);
+static int		compare_objs(pdfio_obj_t **a, pdfio_obj_t **b);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset);
 static bool		write_trailer(pdfio_file_t *pdf);
 
@@ -222,6 +223,34 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
+// 'pdfioFileFindObject()' - Find an object using its object number.
+//
+// This differs from @link pdfioFileGetObject@ which takes an index into the
+// list of objects while this function takes the object number.
+//
+
+pdfio_obj_t *				// O - Object or `NULL` if not found
+pdfioFileFindObject(
+    pdfio_file_t *pdf,			// I - PDF file
+    size_t       number)		// I - Object number (1 to N)
+{
+  pdfio_obj_t	key,			// Search key
+		*keyptr;		// Pointer to key
+
+
+  if (pdf->num_objs > 0)
+  {
+    key.number = number;
+    keyptr     = &key;
+
+    return ((pdfio_obj_t *)bsearch(&keyptr, pdf->objs, pdf->num_objs, sizeof(pdfio_obj_t *), (int (*)(const void *, const void *))compare_objs));
+  }
+
+  return (NULL);
+}
+
+
+//
 // 'pdfioFileGetID()' - Get the PDF file's ID strings.
 //
 
@@ -407,13 +436,16 @@ pdfioFileOpen(
 
 
 //
-// 'add_object()' - Add an object to a PDF file.
+// '_pdfioObjAdd()' - Add an object to a file.
 //
 
-static pdfio_obj_t *			// O - New object
-add_object(pdfio_file_t *pdf)		// I - PDF file
+pdfio_obj_t *				// O - Object
+add_obj(pdfio_file_t   *pdf,		// I - PDF file
+	size_t         number,		// I - Object number
+	unsigned short generation,	// I - Object generation
+	off_t          offset)		// I - Offset in file
 {
-  pdfio_obj_t	*obj;			// New object
+  pdfio_obj_t	*obj;			// Object
 
 
   // Allocate memory for the object...
@@ -441,7 +473,33 @@ add_object(pdfio_file_t *pdf)		// I - PDF file
 
   pdf->objs[pdf->num_objs ++] = obj;
 
+  obj->number     = number;
+  obj->generation = generation;
+  obj->offset     = offset;
+
+  // Re-sort object array as needed...
+  if (pdf->num_objs > 1 && pdf->objs[pdf->num_objs - 2]->number > number)
+    qsort(pdf->objs, pdf->num_objs, sizeof(pdfio_obj_t *), (int (*)(const void *, const void *))compare_objs);
+
   return (obj);
+
+}
+
+
+//
+// 'compare_objs()' - Compare the object numbers of two objects.
+//
+
+static int
+compare_objs(pdfio_obj_t **a,		// I - First object
+             pdfio_obj_t **b)		// I - Second object
+{
+  if ((*a)->number < (*b)->number)
+    return (-1);
+  else if ((*a)->number == (*b)->number)
+    return (0);
+  else
+    return (1);
 }
 
 
@@ -499,7 +557,6 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       {
 	intmax_t	offset;		// Offset in file
 	int		generation;	// Generation number
-	pdfio_obj_t	*obj;		// Object
 
 	// Read a line from the file and validate it...
 	if (_pdfioFileRead(pdf, line, 20) != 20)
@@ -544,12 +601,11 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	  continue;			// Don't care about free objects...
 
 	// Create a placeholder for the object in memory...
-	if ((obj = add_object(pdf)) == NULL)
-	  return (false);
+	if (pdfioFileFindObject(pdf, (size_t)number))
+	  continue;			// Don't replace newer object...
 
-	obj->number     = (size_t)number;
-	obj->generation = (unsigned short)generation;
-	obj->offset     = offset;
+	if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
+	  return (false);
       }
     }
 
