@@ -107,6 +107,50 @@ pdfioDictCreate(pdfio_file_t *pdf)	// I - PDF file
 }
 
 
+#ifdef DEBUG
+//
+// '_pdfioDictDebug()' - Dump a dictionary to stderr.
+//
+
+void
+_pdfioDictDebug(pdfio_dict_t *dict,	// I - Dictionary
+                const char   *prefix)	// I - Prefix for each line
+{
+  size_t	i;			// Looping var
+  _pdfio_pair_t	*pair;			// Current pair
+
+
+  for (i = dict->num_pairs, pair = dict->pairs; i > 0; i --, pair ++)
+  {
+    switch (pair->value.type)
+    {
+      case PDFIO_VALTYPE_INDIRECT :
+	  PDFIO_DEBUG("%s: /%s %u %u R\n", prefix, pair->key, (unsigned)pair->value.value.indirect.number, pair->value.value.indirect.generation);
+	  break;
+      case PDFIO_VALTYPE_NUMBER :
+	  PDFIO_DEBUG("%s: /%s %g\n", prefix, pair->key, pair->value.value.number);
+	  break;
+      case PDFIO_VALTYPE_BOOLEAN :
+	  PDFIO_DEBUG("%s: /%s %s\n", prefix, pair->key, pair->value.value.boolean ? "true" : "false");
+	  break;
+      case PDFIO_VALTYPE_NULL :
+	  PDFIO_DEBUG("%s: /%s null\n", prefix, pair->key);
+	  break;
+      case PDFIO_VALTYPE_ARRAY :
+	  PDFIO_DEBUG("%s: /%s [...]\n", prefix, pair->key);
+	  break;
+      case PDFIO_VALTYPE_DICT :
+	  PDFIO_DEBUG("%s: /%s <<...>>\n", prefix, pair->key);
+	  break;
+      default :
+	  PDFIO_DEBUG("%s: /%s ...\n", prefix, pair->key);
+	  break;
+    }
+  }
+}
+#endif // DEBUG
+
+
 //
 // '_pdfioDictDelete()' - Free the memory used by a dictionary.
 //
@@ -346,6 +390,8 @@ _pdfioDictRead(pdfio_file_t *pdf)	// I - PDF file
   _pdfio_value_t	value;		// Dictionary value
 
 
+  PDFIO_DEBUG("_pdfioDictRead(pdf=%p)\n", pdf);
+
   // Create a dictionary and start reading...
   dict = pdfioDictCreate(pdf);
 
@@ -370,8 +416,10 @@ _pdfioDictRead(pdfio_file_t *pdf)	// I - PDF file
       break;
     }
 
-    if (!_pdfioDictSetValue(dict, key, &value))
+    if (!_pdfioDictSetValue(dict, pdfioStringCreate(pdf, key + 1), &value))
       break;
+
+    PDFIO_DEBUG("_pdfioDictRead: Set %s.\n", key);
   }
 
   // Dictionary is invalid - pdfioFileClose will free the memory, return NULL

@@ -30,6 +30,8 @@ static bool	write_buffer(pdfio_file_t *pdf, const void *buffer, size_t bytes);
 void
 _pdfioFileClearTokens(pdfio_file_t *pdf)// I - PDF file
 {
+  PDFIO_DEBUG("_pdfioFileClearTokens(pdf=%p)\n", pdf);
+
   while (pdf->num_tokens > 0)
   {
     pdf->num_tokens --;
@@ -47,6 +49,8 @@ bool					// O - `true` on sucess, `false` on EOF
 _pdfioFileConsume(pdfio_file_t *pdf,	// I - PDF file
                   size_t       bytes)	// I - Bytes to consume
 {
+  PDFIO_DEBUG("_pdfioFileConsume(pdf=%p, bytes=%u)\n", pdf, (unsigned)bytes);
+
   if ((size_t)(pdf->bufend - pdf->bufptr) > bytes)
     pdf->bufptr += bytes;
   else if (_pdfioFileSeek(pdf, (off_t)bytes, SEEK_CUR) < 0)
@@ -105,6 +109,8 @@ _pdfioFileError(pdfio_file_t *pdf,	// I - PDF file
 bool					// O - `true` on success, `false` on failure
 _pdfioFileFlush(pdfio_file_t *pdf)	// I - PDF file
 {
+  PDFIO_DEBUG("_pdfioFileFlush(pdf=%p)\n", pdf);
+
   if (pdf->bufptr > pdf->buffer)
   {
     if (!write_buffer(pdf, pdf->buffer, (size_t)(pdf->bufptr - pdf->buffer)))
@@ -154,6 +160,8 @@ _pdfioFileGetToken(pdfio_file_t *pdf,	// I - PDF file
     pdf->num_tokens --;
     strncpy(buffer, pdf->tokens[pdf->num_tokens], bufsize - 1);
     buffer[bufsize - 1] = '\0';
+
+    PDFIO_DEBUG("_pdfioFileGetToken(pdf=%p, buffer=%p, bufsize=%u): Popping '%s' from stack.\n", pdf, buffer, (unsigned)bufsize, buffer);
 
     free(pdf->tokens[pdf->num_tokens]);
     pdf->tokens[pdf->num_tokens] = NULL;

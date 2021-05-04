@@ -379,6 +379,8 @@ _pdfioTokenRead(
 
   *bufptr = '\0';
 
+  PDFIO_DEBUG("_pdfioTokenRead(pdf=%p, ...): Read '%s'.\n", pdf, buffer);
+
   return (bufptr > buffer);
 }
 

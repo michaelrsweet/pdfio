@@ -66,6 +66,9 @@ all-shared:
 		$(MAKE) DSONAME="libpdfio.so.1" -$(MAKEFLAGS) all; \
 	fi
 
+debug:
+	$(MAKE) -$(MAKEFLAGS) COMMONFLAGS="$(COMMONFLAGS) -DDEBUG=1" clean all
+
 
 # Clean everything
 clean:

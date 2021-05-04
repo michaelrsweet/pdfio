@@ -101,12 +101,44 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
                 _pdfio_value_t *v)	// I - Value
 {
   char		token[8192];		// Token buffer
+#ifdef DEBUG
+  static const char * const valtypes[] =
+  {
+    "<<none>>",				// No value, not set
+    "array",				// Array
+    "hex-string",			// Binary data
+    "boolean",				// Boolean
+    "date",				// Date/time
+    "dict",				// Dictionary
+    "indirect",				// Indirect object (N G obj)
+    "name",				// Name
+    "null",				// Null object
+    "number",				// Number (integer or real)
+    "string"				// String
+  };
+#endif // DEBUG
 
+
+  PDFIO_DEBUG("_pdfioValueRead(pdf=%p, v=%p)\n", pdf, v);
 
   if (!_pdfioFileGetToken(pdf, token, sizeof(token)))
     return (NULL);
 
-  if (token[0] == '(')
+  if (!strcmp(token, "["))
+  {
+    // Start of array
+    v->type = PDFIO_VALTYPE_ARRAY;
+    if ((v->value.array = _pdfioArrayRead(pdf)) == NULL)
+      return (NULL);
+  }
+  else if (!strcmp(token, "<<"))
+  {
+    // Start of dictionary
+    v->type = PDFIO_VALTYPE_DICT;
+    if ((v->value.dict = _pdfioDictRead(pdf)) == NULL)
+      return (NULL);
+  }
+  else if (token[0] == '(')
   {
     // TODO: Add date value support
     // String
@@ -221,25 +253,13 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
     // null value
     v->type = PDFIO_VALTYPE_NULL;
   }
-  else if (!strcmp(token, "["))
-  {
-    // Start of array
-    v->type = PDFIO_VALTYPE_ARRAY;
-    if ((v->value.array = _pdfioArrayRead(pdf)) == NULL)
-      return (NULL);
-  }
-  else if (!strcmp(token, "<<"))
-  {
-    // Start of dictionary
-    v->type = PDFIO_VALTYPE_DICT;
-    if ((v->value.dict = _pdfioDictRead(pdf)) == NULL)
-      return (NULL);
-  }
   else
   {
     _pdfioFileError(pdf, "Unexpected '%s' token seen.", token);
     return (NULL);
   }
+
+  PDFIO_DEBUG("_pdfioValueRead: Returning %s value.\n", valtypes[v->type]);
 
   return (v);
 }

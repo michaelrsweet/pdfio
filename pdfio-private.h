@@ -48,8 +48,10 @@
 
 #  ifdef DEBUG
 #    define PDFIO_DEBUG(...)	fprintf(stderr, __VA_ARGS__)
+#    define PDFIO_DEBUG_DICT(dict,prefix) _pdfioDictDebug(dict, prefix)
 #  else
 #    define PDFIO_DEBUG(...)
+#    define PDFIO_DEBUG_DICT(dict,prefix)
 #  endif // DEBUG
 
 
@@ -186,6 +188,9 @@ extern _pdfio_value_t	*_pdfioArrayGetValue(pdfio_array_t *a, size_t n) PDFIO_INT
 extern pdfio_array_t	*_pdfioArrayRead(pdfio_file_t *pdf) PDFIO_INTERNAL;
 extern bool		_pdfioArrayWrite(pdfio_array_t *a) PDFIO_INTERNAL;
 
+#  ifdef DEBUG
+extern void		_pdfioDictDebug(pdfio_dict_t *dict, const char *prefix) PDFIO_INTERNAL;
+#  endif // DEBUG
 extern void		_pdfioDictDelete(pdfio_dict_t *dict) PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioDictGetValue(pdfio_dict_t *dict, const char *key) PDFIO_INTERNAL;
 extern pdfio_dict_t	*_pdfioDictRead(pdfio_file_t *pdf) PDFIO_INTERNAL;

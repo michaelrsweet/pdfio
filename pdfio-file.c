@@ -564,11 +564,14 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       _pdfioFileError(pdf, "Unable to read trailer dictionary.");
       return (false);
     }
-    else
+    else if (trailer.type != PDFIO_VALTYPE_DICT)
     {
       _pdfioFileError(pdf, "Trailer is not a dictionary.");
       return (false);
     }
+
+    PDFIO_DEBUG("load_xref: Contents of trailer dictionary:\n");
+    PDFIO_DEBUG_DICT(trailer.value.dict, "load_xref");
 
     if (!pdf->trailer)
     {
