@@ -197,10 +197,11 @@ pdfioFileCreateObject(
   pdf->objs[pdf->num_objs ++] = obj;
 
   // Initialize the object...
-  obj->pdf    = pdf;
-  obj->number = pdf->num_objs;
-  obj->dict   = dict;
-  obj->offset = _pdfioFileTell(pdf);
+  obj->pdf              = pdf;
+  obj->number           = pdf->num_objs;
+  obj->offset           = _pdfioFileTell(pdf);
+  obj->value.type       = PDFIO_VALTYPE_DICT;
+  obj->value.value.dict = dict;
 
   // Don't write anything just yet...
   return (obj);

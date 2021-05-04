@@ -161,7 +161,7 @@ struct _pdfio_obj_s			// Object
 		length_offset,		// Offset to /Length in object dict
 		stream_offset;		// Offset to start of stream in file
   size_t	stream_length;		// Length of stream, if any
-  pdfio_dict_t	*dict;			// Dictionary
+  _pdfio_value_t value;			// Dictionary/number/etc. value
   pdfio_stream_t *stream;		// Open stream, if any
 };
 
@@ -214,8 +214,8 @@ extern off_t		_pdfioFileSeek(pdfio_file_t *pdf, off_t offset, int whence) PDFIO_
 extern off_t		_pdfioFileTell(pdfio_file_t *pdf) PDFIO_INTERNAL;
 extern bool		_pdfioFileWrite(pdfio_file_t *pdf, const void *buffer, size_t bytes) PDFIO_INTERNAL;
 
-extern pdfio_obj_t	*_pdfioObjAdd(pdfio_file_t *pdf, size_t number, unsigned short generation, off_t offset) PDFIO_INTERNAL;
 extern void		_pdfioObjDelete(pdfio_obj_t *obj) PDFIO_INTERNAL;
+extern bool		_pdfioObjLoad(pdfio_obj_t *obj) PDFIO_INTERNAL;
 
 extern void		_pdfioStreamDelete(pdfio_stream_t *st) PDFIO_INTERNAL;
 

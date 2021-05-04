@@ -122,3 +122,72 @@ pdfioObjOpenStream(pdfio_obj_t *obj)	// I - Object
 
   return (NULL);
 }
+
+
+//
+// '()' - Load an object dictionary/value.
+//
+
+bool					// O - `true` on success, `false` otherwise
+_pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
+{
+  char			line[1024],	// Line from file
+			*ptr;		// Pointer into line
+
+
+  // Seek to the start of the object and read its header...
+  if (_pdfioFileSeek(obj->pdf, obj->offset, SEEK_SET) != obj->offset)
+  {
+    _pdfioFileError(obj->pdf, "Unable to seek to object %lu.", (unsigned long)obj->number);
+    return (false);
+  }
+
+  if (!_pdfioFileGets(obj->pdf, line, sizeof(line)))
+  {
+    _pdfioFileError(obj->pdf, "Unable to read header for object %lu.", (unsigned long)obj->number);
+    return (false);
+  }
+
+  if (strtoimax(line, &ptr, 10) != (intmax_t)obj->number)
+  {
+    _pdfioFileError(obj->pdf, "Bad header for object %lu.", (unsigned long)obj->number);
+    return (false);
+  }
+
+  if (strtol(ptr, &ptr, 10) != (long)obj->generation)
+  {
+    _pdfioFileError(obj->pdf, "Bad header for object %lu.", (unsigned long)obj->number);
+    return (false);
+  }
+
+  while (isspace(*ptr & 255))
+    ptr ++;
+
+  if (strcmp(ptr, "obj"))
+  {
+    _pdfioFileError(obj->pdf, "Bad header for object %lu.", (unsigned long)obj->number);
+    return (false);
+  }
+
+  // Then grab the object value...
+  if (!_pdfioValueRead(obj->pdf, &obj->value))
+  {
+    _pdfioFileError(obj->pdf, "Unable to read value for object %lu.", (unsigned long)obj->number);
+    return (false);
+  }
+
+  // Now see if there is an associated stream...
+  if (!_pdfioFileGets(obj->pdf, line, sizeof(line)))
+  {
+    _pdfioFileError(obj->pdf, "Early end-of-file for object %lu.", (unsigned long)obj->number);
+    return (false);
+  }
+
+  if (!strcmp(line, "stream"))
+  {
+    // Yes, save its location...
+    obj->stream_offset = _pdfioFileTell(obj->pdf);
+  }
+
+  return (true);
+}
