@@ -93,6 +93,159 @@ _pdfioValueDelete(_pdfio_value_t *v)	// I - Value
 
 
 //
+// '_pdfioValueRead()' - Read a value from a file.
+//
+
+_pdfio_value_t *			// O - Value or `NULL` on error/EOF
+_pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
+                _pdfio_value_t *v)	// I - Value
+{
+  char		token[8192];		// Token buffer
+
+
+  if (!_pdfioFileGetToken(pdf, token, sizeof(token)))
+    return (NULL);
+
+  if (token[0] == '(')
+  {
+    // TODO: Add date value support
+    // String
+    v->type         = PDFIO_VALTYPE_STRING;
+    v->value.string = pdfioStringCreate(pdf, token + 1);
+  }
+  else if (token[0] == '<')
+  {
+    // Hex string
+    const char		*tokptr;	// Pointer into token
+    unsigned char	*dataptr;	// Pointer into data
+
+    v->type                 = PDFIO_VALTYPE_BINARY;
+    v->value.binary.datalen = strlen(token) / 2;
+    if ((v->value.binary.data = (unsigned char *)malloc(v->value.binary.datalen)) == NULL)
+    {
+      _pdfioFileError(pdf, "Out of memory for hex string.");
+      return (NULL);
+    }
+
+    // Convert hex to binary...
+    tokptr  = token + 1;
+    dataptr = v->value.binary.data;
+
+    while (*tokptr)
+    {
+      int	d;			// Data value
+
+      if (isdigit(*tokptr))
+	d = (*tokptr++ - '0') << 4;
+      else
+	d = (tolower(*tokptr++) - 'a' + 10) << 4;
+
+      if (*tokptr)
+      {
+	// PDF allows writers to drop a trailing 0...
+	if (isdigit(*tokptr))
+	  d |= *tokptr++ - '0';
+	else
+	  d |= tolower(*tokptr++) - 'a' + 10;
+      }
+
+      *dataptr++ = (unsigned char)d;
+    }
+  }
+  else if (strchr("0123456789-+.", token[0]) != NULL)
+  {
+    // Number or indirect object reference
+    if (isdigit(token[0]) && !strchr(token, '.'))
+    {
+      // Integer or object ref...
+      char	token2[8192],		// Second token (generation number)
+		token3[8192],		// Third token ("R")
+		*tokptr;		// Pointer into token
+
+      if (_pdfioFileGetToken(pdf, token2, sizeof(token2)))
+      {
+        // Got the second token, is it an integer?
+        for (tokptr = token2; *tokptr; tokptr ++)
+	{
+	  if (!isdigit(*tokptr))
+	    break;
+	}
+
+	if (*tokptr)
+	{
+	  // Not an object reference, push this token for later use...
+	  _pdfioFilePushToken(pdf, token2);
+	}
+	else
+	{
+	  // A possible reference, get one more...
+	  if (_pdfioFileGetToken(pdf, token3, sizeof(token3)))
+	  {
+	    if (!strcmp(token3, "R"))
+	    {
+	      // Reference!
+	      v->type                      = PDFIO_VALTYPE_INDIRECT;
+	      v->value.indirect.number     = (size_t)strtoimax(token, NULL, 10);
+	      v->value.indirect.generation = (unsigned short)strtol(token2, NULL, 10);
+
+              return (v);
+	    }
+	    else
+	    {
+	      // Not a reference, push the tokens back...
+	      _pdfioFilePushToken(pdf, token3);
+	      _pdfioFilePushToken(pdf, token2);
+	    }
+	  }
+	  else
+	  {
+	    // Not a reference...
+	    _pdfioFilePushToken(pdf, token2);
+	  }
+	}
+      }
+    }
+
+    // If we get here, we have a number...
+    v->type         = PDFIO_VALTYPE_NUMBER;
+    v->value.number = (float)strtod(token, NULL);
+  }
+  else if (!strcmp(token, "true") || !strcmp(token, "false"))
+  {
+    // Boolean value
+    v->type          = PDFIO_VALTYPE_BOOLEAN;
+    v->value.boolean = !strcmp(token, "true");
+  }
+  else if (!strcmp(token, "null"))
+  {
+    // null value
+    v->type = PDFIO_VALTYPE_NULL;
+  }
+  else if (!strcmp(token, "["))
+  {
+    // Start of array
+    v->type = PDFIO_VALTYPE_ARRAY;
+    if ((v->value.array = _pdfioArrayRead(pdf)) == NULL)
+      return (NULL);
+  }
+  else if (!strcmp(token, "<<"))
+  {
+    // Start of dictionary
+    v->type = PDFIO_VALTYPE_DICT;
+    if ((v->value.dict = _pdfioDictRead(pdf)) == NULL)
+      return (NULL);
+  }
+  else
+  {
+    _pdfioFileError(pdf, "Unexpected '%s' token seen.", token);
+    return (NULL);
+  }
+
+  return (v);
+}
+
+
+//
 // '_pdfioValueWrite()' - Write a value to a PDF file.
 //
 
@@ -146,7 +299,7 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
         return (_pdfioDictWrite(v->value.dict, NULL));
 
     case PDFIO_VALTYPE_INDIRECT :
-        return (_pdfioFilePrintf(pdf, " %lu %lu obj", (unsigned long)v->value.obj->number, (unsigned long)v->value.obj->generation));
+        return (_pdfioFilePrintf(pdf, " %lu %u R", (unsigned long)v->value.indirect.number, v->value.indirect.generation));
 
     case PDFIO_VALTYPE_NAME :
         return (_pdfioFilePrintf(pdf, "/%s", v->value.name));

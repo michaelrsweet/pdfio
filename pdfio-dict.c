@@ -244,7 +244,7 @@ pdfioDictGetObject(pdfio_dict_t *dict,	// I - Dictionary
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
 
   if (value && value->type == PDFIO_VALTYPE_INDIRECT)
-    return (value->value.obj);
+    return (pdfioFileGetObject(dict->pdf, value->value.indirect.number));
   else
     return (NULL);
 }
@@ -341,18 +341,41 @@ _pdfioDictGetValue(pdfio_dict_t *dict,	// I - Dictionary
 pdfio_dict_t *				// O - New dictionary
 _pdfioDictRead(pdfio_file_t *pdf)	// I - PDF file
 {
-  pdfio_dict_t	*dict;			// New dictionary
-  char		token[8192],		// Token buffer
-		key[256];		// Dictionary key
-  _pdfio_value_t value;			// Dictionary value
+  pdfio_dict_t		*dict;		// New dictionary
+  char			key[256];	// Dictionary key
+  _pdfio_value_t	value;		// Dictionary value
 
 
-  (void)pdf;
-  (void)dict;
-  (void)token;
-  (void)key;
-  (void)value;
+  // Create a dictionary and start reading...
+  dict = pdfioDictCreate(pdf);
 
+  while (_pdfioFileGetToken(pdf, key, sizeof(key)))
+  {
+    // Get the next key or end-of-dictionary...
+    if (!strcmp(key, ">>"))
+    {
+      // End of dictionary...
+      return (dict);
+    }
+    else if (key[0] != '/')
+    {
+      _pdfioFileError(pdf, "Invalid dictionary contents.");
+      break;
+    }
+
+    // Then get the next value...
+    if (!_pdfioValueRead(pdf, &value))
+    {
+      _pdfioFileError(pdf, "Missing value for dictionary key.");
+      break;
+    }
+
+    if (!_pdfioDictSetValue(dict, key, &value))
+      break;
+  }
+
+  // Dictionary is invalid - pdfioFileClose will free the memory, return NULL
+  // to indicate an error...
   return (NULL);
 }
 
@@ -543,8 +566,8 @@ pdfioDictSetNumber(pdfio_dict_t  *dict,	// I - Dictionary
 
 bool					// O - `true` on success, `false` on failure
 pdfioDictSetObject(pdfio_dict_t *dict,	// I - Dictionary
-                  const char    *key,	// I - Key
-                  pdfio_obj_t   *value)	// I - Value
+                   const char    *key,	// I - Key
+                   pdfio_obj_t   *value)// I - Value
 {
   _pdfio_value_t temp;			// New value
 
@@ -554,8 +577,9 @@ pdfioDictSetObject(pdfio_dict_t *dict,	// I - Dictionary
     return (false);
 
   // Set the key/value pair...
-  temp.type      = PDFIO_VALTYPE_INDIRECT;
-  temp.value.obj = value;
+  temp.type                      = PDFIO_VALTYPE_INDIRECT;
+  temp.value.indirect.number     = value->number;
+  temp.value.indirect.generation = value->generation;
 
   return (_pdfioDictSetValue(dict, key, &temp));
 }

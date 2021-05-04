@@ -196,8 +196,9 @@ pdfioArrayAppendObject(
     return (false);
 
   // Add an indirect reference...
-  v.type      = PDFIO_VALTYPE_INDIRECT;
-  v.value.obj = value;
+  v.type                      = PDFIO_VALTYPE_INDIRECT;
+  v.value.indirect.number     = value->number;
+  v.value.indirect.generation = value->generation;
 
   return (append_value(a, &v));
 }
@@ -429,7 +430,7 @@ pdfioArrayGetObject(pdfio_array_t *a,	// I - Array
   if (!a || n >= a->num_values || a->values[n].type != PDFIO_VALTYPE_INDIRECT)
     return (NULL);
   else
-    return (a->values[n].value.obj);
+    return (pdfioFileGetObject(a->pdf, a->values[n].value.indirect.number));
 }
 
 
@@ -486,6 +487,44 @@ _pdfioArrayGetValue(pdfio_array_t *a,	// I - Array
     return (NULL);
   else
     return (a->values + n);
+}
+
+
+//
+// '_pdfioArrayRead()' - Read an array from a file.
+//
+// At this point the initial "[" has been seen...
+//
+
+pdfio_array_t *				// O - New array
+_pdfioArrayRead(pdfio_file_t *pdf)	// I - PDF file
+{
+  pdfio_array_t		*array;		// New array
+  char			token[8192];	// Token from file
+  _pdfio_value_t	value;		// Value
+
+
+  // Create an array...
+  array = pdfioArrayCreate(pdf);
+
+  // Read until we get "]" to end the array...
+  while (_pdfioFileGetToken(pdf, token, sizeof(token)))
+  {
+    if (!strcmp(token, "]"))
+    {
+      // End of array...
+      return (array);
+    }
+
+    // Push the token and decode the value...
+    _pdfioFilePushToken(pdf, token);
+    if (!_pdfioValueRead(pdf, &value))
+      break;
+
+    append_value(array, &value);
+  }
+
+  return (NULL);
 }
 
 
