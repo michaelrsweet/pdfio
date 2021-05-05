@@ -302,12 +302,12 @@ pdfioFileGetNumPages(pdfio_file_t *pdf)	// I - PDF file
 
 pdfio_obj_t *				// O - Object
 pdfioFileGetObject(pdfio_file_t *pdf,	// I - PDF file
-                   size_t       number)	// I - Object number (starting at 1)
+                   size_t       n)	// I - Object index (starting at 0)
 {
-  if (!pdf || number < 1 || number > pdf->num_objs)
+  if (!pdf || n >= pdf->num_objs)
     return (NULL);
   else
-    return (pdf->objs[number - 1]);
+    return (pdf->objs[n]);
 }
 
 
@@ -317,12 +317,12 @@ pdfioFileGetObject(pdfio_file_t *pdf,	// I - PDF file
 
 pdfio_obj_t *				// O - Object
 pdfioFileGetPage(pdfio_file_t *pdf,	// I - PDF file
-                 size_t       number)	// I - Page number (starting at 1)
+                 size_t       n)	// I - Page index (starting at 0)
 {
-  if (!pdf || number < 1 || number > pdf->num_pages)
+  if (!pdf || n >= pdf->num_pages)
     return (NULL);
   else
-    return (pdf->pages[number - 1]);
+    return (pdf->pages[n]);
 }
 
 
@@ -474,6 +474,7 @@ add_obj(pdfio_file_t   *pdf,		// I - PDF file
 
   pdf->objs[pdf->num_objs ++] = obj;
 
+  obj->pdf        = pdf;
   obj->number     = number;
   obj->generation = generation;
   obj->offset     = offset;

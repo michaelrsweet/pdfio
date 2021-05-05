@@ -145,6 +145,12 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
     v->type         = PDFIO_VALTYPE_STRING;
     v->value.string = pdfioStringCreate(pdf, token + 1);
   }
+  else if (token[0] == '/')
+  {
+    // Name
+    v->type       = PDFIO_VALTYPE_NAME;
+    v->value.name = pdfioStringCreate(pdf, token + 1);
+  }
   else if (token[0] == '<')
   {
     // Hex string
@@ -219,6 +225,8 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 	      v->type                      = PDFIO_VALTYPE_INDIRECT;
 	      v->value.indirect.number     = (size_t)strtoimax(token, NULL, 10);
 	      v->value.indirect.generation = (unsigned short)strtol(token2, NULL, 10);
+
+              PDFIO_DEBUG("_pdfioValueRead: Returning indirect value %lu %u R.\n", (unsigned long)v->value.indirect.number, v->value.indirect.generation);
 
               return (v);
 	    }

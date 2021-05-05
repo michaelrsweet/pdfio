@@ -67,7 +67,7 @@ all-shared:
 	fi
 
 debug:
-	$(MAKE) -$(MAKEFLAGS) COMMONFLAGS="$(COMMONFLAGS) -DDEBUG=1" clean all
+	$(MAKE) -$(MAKEFLAGS) COMMONFLAGS="-g -fsanitize=address -DDEBUG=1" clean all
 
 
 # Clean everything

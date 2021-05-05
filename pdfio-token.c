@@ -90,14 +90,13 @@ _pdfioTokenRead(
   // "state" is:
   //
   // - '\0' for idle
-  // - ')' for literal string
+  // - '(' for literal string
   // - '/' for name
   // - '<' for possible hex string or dict
   // - '>' for possible dict
   // - '%' for comment
   // - 'K' for keyword
   // - 'N' for number
-  // - 'X' for hex string
 
   // Read the next token, skipping any leading whitespace...
   memset(&tb, 0, sizeof(tb));
@@ -147,7 +146,7 @@ _pdfioTokenRead(
 
   switch (state)
   {
-    case ')' : // Literal string
+    case '(' : // Literal string
 	while ((ch = get_char(&tb)) != EOF && ch != ')')
 	{
 	  if (ch == '\\')
@@ -259,6 +258,7 @@ _pdfioTokenRead(
 	  if (!isdigit(ch) && ch != '.')
 	  {
 	    // End of number...
+	    tb.bufptr --;
 	    break;
 	  }
 	  else if (bufptr < bufend)
@@ -278,7 +278,13 @@ _pdfioTokenRead(
     case '/' : // "/name"
 	while ((ch = get_char(&tb)) != EOF && !isspace(ch))
 	{
-	  if (ch == '#')
+	  if (strchr(PDFIO_DELIM_CHARS, ch) != NULL)
+	  {
+	    // End of keyword...
+	    tb.bufptr --;
+	    break;
+	  }
+	  else if (ch == '#')
 	  {
 	    // Quoted character (#xx) in name...
 	    int	i;			// Looping var
@@ -325,9 +331,6 @@ _pdfioTokenRead(
 	  return (false);
 	}
 
-	// Fall through to parse a hex string...
-
-    case 'X' : // Hex string
 	while ((ch = get_char(&tb)) != EOF && ch != '>')
 	{
 	  if (isxdigit(ch))

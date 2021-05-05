@@ -67,10 +67,16 @@ _pdfioObjDelete(pdfio_obj_t *obj)	// I - Object
 pdfio_dict_t *				// O - Dictionary or `NULL` on error
 pdfioObjGetDict(pdfio_obj_t *obj)	// I - Object
 {
-  // TODO: Implement me
-  (void)obj;
+  if (!obj)
+    return (NULL);
 
-  return (NULL);
+  if (obj->value.type == PDFIO_VALTYPE_NONE)
+    _pdfioObjLoad(obj);
+
+  if (obj->value.type == PDFIO_VALTYPE_DICT)
+    return (obj->value.value.dict);
+  else
+    return (NULL);
 }
 
 
@@ -103,29 +109,18 @@ pdfioObjGetNumber(pdfio_obj_t *obj)	// I - Object
 const char *				// O - Object type
 pdfioObjGetType(pdfio_obj_t *obj)	// I - Object
 {
-  // TODO: Implement me
-  (void)obj;
+  pdfio_dict_t	*dict;			// Object dictionary
 
-  return (NULL);
+
+  if ((dict = pdfioObjGetDict(obj)) == NULL)
+    return (NULL);
+  else
+    return (pdfioDictGetName(dict, "Type"));
 }
 
 
 //
-// 'pdfioObjOpenStream()' - Open an object's (data) stream for reading.
-//
-
-pdfio_stream_t *			// O - Stream or `NULL` on error
-pdfioObjOpenStream(pdfio_obj_t *obj)	// I - Object
-{
-  // TODO: Implement me
-  (void)obj;
-
-  return (NULL);
-}
-
-
-//
-// '()' - Load an object dictionary/value.
+// '_pdfioObjLoad()' - Load an object dictionary/value.
 //
 
 bool					// O - `true` on success, `false` otherwise
@@ -134,6 +129,8 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   char			line[1024],	// Line from file
 			*ptr;		// Pointer into line
 
+
+  PDFIO_DEBUG("_pdfioObjLoad(obj=%p(%lu)), offset=%lu\n", obj, (unsigned long)obj->number, (unsigned long)obj->offset);
 
   // Seek to the start of the object and read its header...
   if (_pdfioFileSeek(obj->pdf, obj->offset, SEEK_SET) != obj->offset)
@@ -170,6 +167,8 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   }
 
   // Then grab the object value...
+  _pdfioFileClearTokens(obj->pdf);
+
   if (!_pdfioValueRead(obj->pdf, &obj->value))
   {
     _pdfioFileError(obj->pdf, "Unable to read value for object %lu.", (unsigned long)obj->number);
@@ -190,4 +189,18 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   }
 
   return (true);
+}
+
+
+//
+// 'pdfioObjOpenStream()' - Open an object's (data) stream for reading.
+//
+
+pdfio_stream_t *			// O - Stream or `NULL` on error
+pdfioObjOpenStream(pdfio_obj_t *obj)	// I - Object
+{
+  // TODO: Implement me
+  (void)obj;
+
+  return (NULL);
 }

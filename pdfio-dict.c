@@ -727,6 +727,8 @@ _pdfioDictSetValue(
   _pdfio_pair_t	*pair;			// Current pair
 
 
+  PDFIO_DEBUG("_pdfioDictSetValue(dict=%p, key=\"%s\", value=%p)\n", dict, key, (void *)value);
+
   // See if the key is already set...
   if (dict->num_pairs > 0)
   {
@@ -764,6 +766,11 @@ _pdfioDictSetValue(
   // Re-sort the dictionary and return...
   if (dict->num_pairs > 1)
     qsort(dict->pairs, dict->num_pairs, sizeof(_pdfio_pair_t), (int (*)(const void *, const void *))compare_pairs);
+
+#ifdef DEBUG
+  PDFIO_DEBUG("_pdfioDictSetValue: %lu pairs\n", (unsigned long)dict->num_pairs);
+  PDFIO_DEBUG_DICT(dict, "_pdfioDictSetValue");
+#endif // DEBUG
 
   return (true);
 }

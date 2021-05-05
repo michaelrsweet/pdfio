@@ -39,6 +39,8 @@ pdfioStringCreate(
   char	*news;				// New string
 
 
+  PDFIO_DEBUG("pdfioStringCreate(pdf=%p, s=\"%s\")\n", pdf, s);
+
   // Range check input...
   if (!pdf || !s)
     return (NULL);
@@ -54,7 +56,7 @@ pdfioStringCreate(
   if (pdf->num_strings >= pdf->alloc_strings)
   {
     // Expand the string array...
-    char **temp = realloc(pdf->strings, (pdf->alloc_strings + 32) * sizeof(char *));
+    char **temp = (char **)realloc(pdf->strings, (pdf->alloc_strings + 32) * sizeof(char *));
 
     if (!temp)
     {
@@ -71,6 +73,16 @@ pdfioStringCreate(
 
   if (pdf->num_strings > 1)
     qsort(pdf->strings, pdf->num_strings, sizeof(char *), (int (*)(const void *, const void *))compare_strings);
+
+#ifdef DEBUG
+  {
+    size_t	i;			// Looping var
+
+    PDFIO_DEBUG("pdfioStringCreate: %lu strings\n", (unsigned long)pdf->num_strings);
+    for (i = 0; i < pdf->num_strings; i ++)
+      PDFIO_DEBUG("pdfioStringCreate: strings[%lu]=%p(\"%s\")\n", (unsigned long)i, pdf->strings[i], pdf->strings[i]);
+  }
+#endif // DEBUG
 
   return (news);
 }
