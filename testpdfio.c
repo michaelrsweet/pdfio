@@ -65,6 +65,23 @@ main(int  argc,				// I - Number of command-line arguments
 		  case PDFIO_VALTYPE_INDIRECT :
 		      printf("    /%s %u %u R\n", pair->key, (unsigned)pair->value.value.indirect.number, pair->value.value.indirect.generation);
 		      break;
+		  case PDFIO_VALTYPE_NAME :
+		      printf("    /%s /%s\n", pair->key, pair->value.value.name);
+		      break;
+		  case PDFIO_VALTYPE_STRING :
+		      printf("    /%s (%s)\n", pair->key, pair->value.value.string);
+		      break;
+		  case PDFIO_VALTYPE_BINARY :
+		      {
+		        size_t bn;
+		        unsigned char *bptr;
+
+		        printf("    /%s <", pair->key);
+		        for (bn = pair->value.value.binary.datalen, bptr = pair->value.value.binary.data; bn > 0; bn --, bptr ++)
+		          printf("%02X", *bptr);
+		        puts(">");
+		      }
+		      break;
 		  case PDFIO_VALTYPE_NUMBER :
 		      printf("    /%s %g\n", pair->key, pair->value.value.number);
 		      break;

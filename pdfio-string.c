@@ -22,7 +22,7 @@ static int	compare_strings(char **a, char **b);
 
 
 //
-// 'pdfioStringCreate()' - Create a literal string.
+// 'pdfioStringCreate()' - Create a durable literal string.
 //
 // This function creates a literal string associated with the PDF file
 // "pwg".  The "s" string points to a nul-terminated C string.
@@ -31,12 +31,13 @@ static int	compare_strings(char **a, char **b);
 // `pdfioFileClose` is called.
 //
 
-char *					// O - New string or `NULL` on error
+char *					// O - Durable string pointer or `NULL` on error
 pdfioStringCreate(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *s)			// I - Nul-terminated string
 {
   char	*news;				// New string
+  char	**match;			// Matching string
 
 
   PDFIO_DEBUG("pdfioStringCreate(pdf=%p, s=\"%s\")\n", pdf, s);
@@ -46,8 +47,8 @@ pdfioStringCreate(
     return (NULL);
 
   // See if the string has already been added...
-  if (pdf->num_strings > 0 && (news = (char *)bsearch(&s, pdf->strings, pdf->num_strings, sizeof(char *), (int (*)(const void *, const void *))compare_strings)) != NULL)
-    return (news);
+  if (pdf->num_strings > 0 && (match = (char **)bsearch(&s, pdf->strings, pdf->num_strings, sizeof(char *), (int (*)(const void *, const void *))compare_strings)) != NULL)
+    return (*match);
 
   // Not already added, so add it...
   if ((news = strdup(s)) == NULL)
@@ -56,7 +57,7 @@ pdfioStringCreate(
   if (pdf->num_strings >= pdf->alloc_strings)
   {
     // Expand the string array...
-    char **temp = (char **)realloc(pdf->strings, (pdf->alloc_strings + 32) * sizeof(char *));
+    char **temp = (char **)realloc(pdf->strings, (pdf->alloc_strings + 128) * sizeof(char *));
 
     if (!temp)
     {
@@ -65,7 +66,7 @@ pdfioStringCreate(
     }
 
     pdf->strings       = temp;
-    pdf->alloc_strings += 32;
+    pdf->alloc_strings += 128;
   }
 
   // TODO: Change to insertion sort as needed...
@@ -89,7 +90,7 @@ pdfioStringCreate(
 
 
 //
-// 'pdfioStringCreatef()' - Create a formatted string.
+// 'pdfioStringCreatef()' - Create a durable formatted string.
 //
 // This function creates a formatted string associated with the PDF file
 // "pwg".  The "format" string contains `printf`-style format characters.
@@ -98,7 +99,7 @@ pdfioStringCreate(
 // `pdfioFileClose` is called.
 //
 
-char *					// O - New string or `NULL` on error
+char *					// O - Durable string pointer or `NULL` on error
 pdfioStringCreatef(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *format,		// I - `printf`-style format string

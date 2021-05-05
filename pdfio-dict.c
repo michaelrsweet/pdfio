@@ -739,6 +739,7 @@ _pdfioDictSetValue(
     if ((pair = (_pdfio_pair_t *)bsearch(&pkey, dict->pairs, dict->num_pairs, sizeof(_pdfio_pair_t), (int (*)(const void *, const void *))compare_pairs)) != NULL)
     {
       // Yes, replace the value...
+      PDFIO_DEBUG("_pdfioDictSetValue: Replacing existing value.\n");
       pair->value = *value;
       return (true);
     }
@@ -748,13 +749,16 @@ _pdfioDictSetValue(
   if (dict->num_pairs >= dict->alloc_pairs)
   {
     // Expand the dictionary...
-    _pdfio_pair_t *temp = (_pdfio_pair_t *)realloc(dict->pairs, (dict->alloc_pairs + 16) * sizeof(_pdfio_pair_t));
+    _pdfio_pair_t *temp = (_pdfio_pair_t *)realloc(dict->pairs, (dict->alloc_pairs + 8) * sizeof(_pdfio_pair_t));
 
     if (!temp)
+    {
+      PDFIO_DEBUG("_pdfioDictSetValue: Out of memory.\n");
       return (false);
+    }
 
     dict->pairs       = temp;
-    dict->alloc_pairs += 16;
+    dict->alloc_pairs += 8;
   }
 
   pair = dict->pairs + dict->num_pairs;
@@ -764,7 +768,7 @@ _pdfioDictSetValue(
   pair->value = *value;
 
   // Re-sort the dictionary and return...
-  if (dict->num_pairs > 1)
+  if (dict->num_pairs > 1 && compare_pairs(pair - 1, pair) > 0)
     qsort(dict->pairs, dict->num_pairs, sizeof(_pdfio_pair_t), (int (*)(const void *, const void *))compare_pairs);
 
 #ifdef DEBUG
@@ -802,11 +806,11 @@ _pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
     if (!_pdfioFilePrintf(pdf, "/%s", pair->key))
       return (false);
 
-    if (length && !strcmp(pair->key, "Length"))
+    if (length && !strcmp(pair->key, "Length") && pair->value.type == PDFIO_VALTYPE_NUMBER && pair->value.value.number <= 0.0f)
     {
       // Writing an object dictionary with an undefined length
       *length = _pdfioFileTell(pdf);
-      if (!_pdfioFilePuts(pdf, " 999999999"))
+      if (!_pdfioFilePuts(pdf, " 9999999999"))
         return (false);
     }
     else if (!_pdfioValueWrite(pdf, &pair->value))
