@@ -28,6 +28,25 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 
 
 //
+// '_pdfioStreamCreate()' - Create a stream for writing.
+//
+// Note: pdfioObjCreateStream handles writing the object and its dictionary.
+//
+
+pdfio_stream_t *			// O - Stream or `NULL` on error
+_pdfioStreamCreate(
+    pdfio_obj_t    *obj,		// I - Object
+    pdfio_filter_t compression)		// I - Compression to apply
+{
+  // TODO: Implement me
+  (void)obj;
+  (void)compression;
+
+  return (NULL);
+}
+
+
+//
 // 'pdfioStreamConsume()' - Consume bytes from the stream.
 //
 
@@ -73,6 +92,91 @@ pdfioStreamGetToken(
     size_t         bufsize)		// I - Size of string buffer
 {
   return (_pdfioTokenRead(st->pdf, buffer, bufsize, (_pdfio_tpeek_cb_t)pdfioStreamPeek, (_pdfio_tconsume_cb_t)pdfioStreamConsume, st));
+}
+
+
+//
+// '_pdfioStreamOpen()' - Create a stream for reading.
+//
+// Note: pdfioObjOpenStream handles loading the object's dictionary and
+// getting the start of the stream data.
+//
+
+pdfio_stream_t *			// O - Stream or `NULL` on error
+_pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
+                 bool        decode)	// I - Decode/decompress the stream?
+{
+  pdfio_stream_t	*st;		// Stream
+
+
+  // Allocate a new stream object...
+  if ((st = (pdfio_stream_t *)calloc(1, sizeof(pdfio_stream_t))) == NULL)
+  {
+    _pdfioFileError(obj->pdf, "Unable to allocate memory for a stream.");
+    return (NULL);
+  }
+
+  st->pdf = obj->pdf;
+  st->obj = obj;
+
+  _pdfioFileSeek(st->pdf, obj->stream_offset, SEEK_SET);
+
+  if (decode)
+  {
+    // Try to decode/decompress the contents of this object...
+    pdfio_dict_t *dict = pdfioObjGetDict(obj);
+					// Object dictionary
+    const char	*filter = pdfioDictGetName(dict, "Filter");
+					// Filter value
+
+    if (!filter)
+    {
+      // No single filter name, do we have a compound filter?
+      if (pdfioDictGetArray(dict, "Filter"))
+      {
+	// TODO: Implement compound filters...
+	_pdfioFileError(st->pdf, "Unsupported compound stream filter.");
+	free(st);
+	return (NULL);
+      }
+
+      // No filter, read as-is...
+      st->filter = PDFIO_FILTER_NONE;
+    }
+    else if (!strcmp(filter, "FlateDecode"))
+    {
+      // Flate compression
+      int bpc = (int)pdfioDictGetNumber(dict, "BitsPerComponent");
+					// Bits per component
+      int colors = (int)pdfioDictGetNumber(dict, "Colors");
+					// Number of colors
+      int columns = (int)pdfioDictGetNumber(dict, "Columns");
+					// Number of columns
+      int predictor = (int)pdfioDictGetNumber(dict, "Predictor");
+					// Predictory value, if any
+
+      st->filter = PDFIO_FILTER_FLATE;
+    }
+    else if (!strcmp(filter, "LZWDecode"))
+    {
+      // LZW compression
+      st->filter = PDFIO_FILTER_LZW;
+    }
+    else
+    {
+      // Something else we don't support
+      _pdfioFileError(st->pdf, "Unsupported stream filter '/%s'.", filter);
+      free(st);
+      return (NULL);
+    }
+  }
+  else
+  {
+    // Just return the stream data as-is...
+    st->filter = PDFIO_FILTER_NONE;
+  }
+
+  return (st);
 }
 
 

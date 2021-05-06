@@ -197,10 +197,12 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
 //
 
 pdfio_stream_t *			// O - Stream or `NULL` on error
-pdfioObjOpenStream(pdfio_obj_t *obj)	// I - Object
+pdfioObjOpenStream(pdfio_obj_t *obj,	// I - Object
+                   bool        decode)	// I - Decode/decompress data?
 {
   // TODO: Implement me
   (void)obj;
+  (void)decode;
 
   return (NULL);
 }

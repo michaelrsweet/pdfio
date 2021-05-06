@@ -58,7 +58,16 @@ typedef bool (*pdfio_error_cb_t)(pdfio_file_t *pdf, const char *message, void *d
 typedef enum pdfio_filter_e		// Compression/decompression filters for streams
 {
   PDFIO_FILTER_NONE,			// No filter
-  PDFIO_FILTER_FLATE			// Flate filter
+  PDFIO_FILTER_ASCIIHEX,		// ASCIIHexDecode filter (reading only)
+  PDFIO_FILTER_ASCII85,			// ASCII85Decode filter (reading only)
+  PDFIO_FILTER_CCITTFAX,		// CCITTFaxDecode filter
+  PDFIO_FILTER_CRYPT,			// Encryption filter
+  PDFIO_FILTER_DCT,			// DCTDecode (JPEG) filter
+  PDFIO_FILTER_FLATE,			// FlateDecode filter
+  PDFIO_FILTER_JBIG2,			// JBIG2Decode filter
+  PDFIO_FILTER_JPX,			// JPXDecode filter (reading only)
+  PDFIO_FILTER_LZW,			// LZWDecode filter (reading only)
+  PDFIO_FILTER_RUNLENGTH,		// RunLengthDecode filter (reading only)
 } pdfio_filter_t;
 typedef struct _pdfio_obj_s pdfio_obj_t;// Numbered object in PDF file
 typedef struct pdfio_rect_s		// PDF rectangle
@@ -157,7 +166,7 @@ extern pdfio_dict_t	*pdfioObjGetDict(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern unsigned short	pdfioObjGetGeneration(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern size_t		pdfioObjGetNumber(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern const char	*pdfioObjGetType(pdfio_obj_t *obj) PDFIO_PUBLIC;
-extern pdfio_stream_t	*pdfioObjOpenStream(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern pdfio_stream_t	*pdfioObjOpenStream(pdfio_obj_t *obj, bool decode) PDFIO_PUBLIC;
 
 extern pdfio_obj_t	*pdfioPageCopy(pdfio_file_t *pdf, pdfio_obj_t *src) PDFIO_PUBLIC;
 

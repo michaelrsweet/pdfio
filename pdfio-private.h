@@ -224,7 +224,9 @@ extern bool		_pdfioFileWrite(pdfio_file_t *pdf, const void *buffer, size_t bytes
 extern void		_pdfioObjDelete(pdfio_obj_t *obj) PDFIO_INTERNAL;
 extern bool		_pdfioObjLoad(pdfio_obj_t *obj) PDFIO_INTERNAL;
 
+extern pdfio_stream_t	*_pdfioStreamCreate(pdfio_obj_t *obj, pdfio_filter_t compression) PDFIO_INTERNAL;
 extern void		_pdfioStreamDelete(pdfio_stream_t *st) PDFIO_INTERNAL;
+extern pdfio_stream_t	*_pdfioStreamOpen(pdfio_obj_t *obj, bool decode) PDFIO_INTERNAL;
 
 extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) PDFIO_INTERNAL;
 
