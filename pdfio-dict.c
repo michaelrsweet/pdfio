@@ -113,8 +113,7 @@ pdfioDictCreate(pdfio_file_t *pdf)	// I - PDF file
 //
 
 void
-_pdfioDictDebug(pdfio_dict_t *dict,	// I - Dictionary
-                const char   *prefix)	// I - Prefix for each line
+_pdfioDictDebug(pdfio_dict_t *dict)	// I - Dictionary
 {
   size_t	i;			// Looping var
   _pdfio_pair_t	*pair;			// Current pair
@@ -122,30 +121,8 @@ _pdfioDictDebug(pdfio_dict_t *dict,	// I - Dictionary
 
   for (i = dict->num_pairs, pair = dict->pairs; i > 0; i --, pair ++)
   {
-    switch (pair->value.type)
-    {
-      case PDFIO_VALTYPE_INDIRECT :
-	  PDFIO_DEBUG("%s: /%s %u %u R\n", prefix, pair->key, (unsigned)pair->value.value.indirect.number, pair->value.value.indirect.generation);
-	  break;
-      case PDFIO_VALTYPE_NUMBER :
-	  PDFIO_DEBUG("%s: /%s %g\n", prefix, pair->key, pair->value.value.number);
-	  break;
-      case PDFIO_VALTYPE_BOOLEAN :
-	  PDFIO_DEBUG("%s: /%s %s\n", prefix, pair->key, pair->value.value.boolean ? "true" : "false");
-	  break;
-      case PDFIO_VALTYPE_NULL :
-	  PDFIO_DEBUG("%s: /%s null\n", prefix, pair->key);
-	  break;
-      case PDFIO_VALTYPE_ARRAY :
-	  PDFIO_DEBUG("%s: /%s [...]\n", prefix, pair->key);
-	  break;
-      case PDFIO_VALTYPE_DICT :
-	  PDFIO_DEBUG("%s: /%s <<...>>\n", prefix, pair->key);
-	  break;
-      default :
-	  PDFIO_DEBUG("%s: /%s ...\n", prefix, pair->key);
-	  break;
-    }
+    PDFIO_DEBUG("/%s", pair->key);
+    _pdfioValueDebug(&pair->value);
   }
 }
 #endif // DEBUG
@@ -773,7 +750,9 @@ _pdfioDictSetValue(
 
 #ifdef DEBUG
   PDFIO_DEBUG("_pdfioDictSetValue: %lu pairs\n", (unsigned long)dict->num_pairs);
-  PDFIO_DEBUG_DICT(dict, "_pdfioDictSetValue");
+  PDFIO_DEBUG("_pdfioDictSetValue: ");
+  PDFIO_DEBUG_DICT(dict);
+  PDFIO_DEBUG("\n");
 #endif // DEBUG
 
   return (true);

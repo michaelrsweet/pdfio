@@ -305,6 +305,26 @@ pdfioArrayCreate(pdfio_file_t *pdf)	// I - PDF file
 }
 
 
+#ifdef DEBUG
+//
+// '_pdfioArrayDebug()' - Print the contents of an array.
+//
+
+void
+_pdfioArrayDebug(pdfio_array_t *a)	// I - Array
+{
+  size_t		i;		// Looping var
+  _pdfio_value_t	*v;		// Current value
+
+
+  PDFIO_DEBUG("[");
+  for (i = a->num_values, v = a->values; i > 0; i --, v ++)
+    _pdfioValueDebug(v);
+  PDFIO_DEBUG("]");
+}
+#endif // DEBUG
+
+
 //
 // '_pdfioArrayDelete()' - Free the memory used by an array.
 //

@@ -80,6 +80,65 @@ _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
 }
 
 
+#ifdef DEBUG
+//
+// '_pdfioValueDebug()' - Print the contents of a value.
+//
+
+void
+_pdfioValueDebug(_pdfio_value_t *v)	// I - Value
+{
+  switch (v->type)
+  {
+    case PDFIO_VALTYPE_ARRAY :
+        _pdfioArrayDebug(v->value.array);
+	break;
+    case PDFIO_VALTYPE_BINARY :
+	{
+	  size_t	i;		// Looping var
+	  unsigned char	*ptr;		// Pointer into data
+
+	  PDFIO_DEBUG("<");
+	  for (i = v->value.binary.datalen, ptr = v->value.binary.data; i > 0; i --, ptr ++)
+	    PDFIO_DEBUG("%02X", *ptr);
+	  PDFIO_DEBUG(">");
+	}
+	break;
+    case PDFIO_VALTYPE_BOOLEAN :
+	PDFIO_DEBUG(v->value.boolean ? "true" : "false");
+	break;
+    case PDFIO_VALTYPE_DATE :
+        // TODO: Implement date value support
+        PDFIO_DEBUG("(D:YYYYMMDDhhmmssZ)");
+        break;
+    case PDFIO_VALTYPE_DICT :
+	PDFIO_DEBUG("<<");
+	_pdfioDictDebug(v->value.dict);
+	PDFIO_DEBUG(">>");
+	break;
+    case PDFIO_VALTYPE_INDIRECT :
+	PDFIO_DEBUG(" %lu %u R", (unsigned long)v->value.indirect.number, v->value.indirect.generation);
+	break;
+    case PDFIO_VALTYPE_NAME :
+	PDFIO_DEBUG("/%s", v->value.name);
+	break;
+    case PDFIO_VALTYPE_NULL :
+	PDFIO_DEBUG(" null");
+	break;
+    case PDFIO_VALTYPE_NUMBER :
+	PDFIO_DEBUG(" %g", v->value.number);
+	break;
+    case PDFIO_VALTYPE_STRING :
+	PDFIO_DEBUG("(%s)", v->value.string);
+	break;
+
+    default :
+        break;
+  }
+}
+#endif // DEBUG
+
+
 //
 // '_pdfioValueDelete()' - Free the memory used by a value.
 //

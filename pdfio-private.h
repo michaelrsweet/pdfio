@@ -48,10 +48,14 @@
 
 #  ifdef DEBUG
 #    define PDFIO_DEBUG(...)	fprintf(stderr, __VA_ARGS__)
-#    define PDFIO_DEBUG_DICT(dict,prefix) _pdfioDictDebug(dict, prefix)
+#    define PDFIO_DEBUG_ARRAY(array) _pdfioArrayDebug(array)
+#    define PDFIO_DEBUG_DICT(dict) _pdfioDictDebug(dict)
+#    define PDFIO_DEBUG_VALUE(value) _pdfioValueDebug(value)
 #  else
 #    define PDFIO_DEBUG(...)
-#    define PDFIO_DEBUG_DICT(dict,prefix)
+#    define PDFIO_DEBUG_ARRAY(array)
+#    define PDFIO_DEBUG_DICT(dict)
+#    define PDFIO_DEBUG_VALUE(value)
 #  endif // DEBUG
 
 
@@ -183,13 +187,16 @@ typedef ssize_t (*_pdfio_tpeek_cb_t)(void *data, void *buffer, size_t bytes);
 // Functions...
 //
 
+#  ifdef DEBUG
+extern void		_pdfioArrayDebug(pdfio_array_t *a) PDFIO_INTERNAL;
+#  endif // DEBUG
 extern void		_pdfioArrayDelete(pdfio_array_t *a) PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioArrayGetValue(pdfio_array_t *a, size_t n) PDFIO_INTERNAL;
 extern pdfio_array_t	*_pdfioArrayRead(pdfio_file_t *pdf) PDFIO_INTERNAL;
 extern bool		_pdfioArrayWrite(pdfio_array_t *a) PDFIO_INTERNAL;
 
 #  ifdef DEBUG
-extern void		_pdfioDictDebug(pdfio_dict_t *dict, const char *prefix) PDFIO_INTERNAL;
+extern void		_pdfioDictDebug(pdfio_dict_t *dict) PDFIO_INTERNAL;
 #  endif // DEBUG
 extern void		_pdfioDictDelete(pdfio_dict_t *dict) PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioDictGetValue(pdfio_dict_t *dict, const char *key) PDFIO_INTERNAL;
@@ -224,6 +231,9 @@ extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) PDFIO_INT
 extern bool		_pdfioTokenRead(pdfio_file_t *pdf, char *buffer, size_t bufsize, _pdfio_tpeek_cb_t peek_cb, _pdfio_tconsume_cb_t consume_cb, void *data);
 
 extern _pdfio_value_t	*_pdfioValueCopy(pdfio_file_t *pdfdst, _pdfio_value_t *vdst, pdfio_file_t *pdfsrc, _pdfio_value_t *vsrc) PDFIO_INTERNAL;
+#  ifdef DEBUG
+extern void		_pdfioValueDebug(_pdfio_value_t *v) PDFIO_INTERNAL;
+#  endif // DEBUG
 extern void		_pdfioValueDelete(_pdfio_value_t *v) PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioValueRead(pdfio_file_t *pdf, _pdfio_value_t *v) PDFIO_INTERNAL;
 extern bool		_pdfioValueWrite(pdfio_file_t *pdf, _pdfio_value_t *v) PDFIO_INTERNAL;

@@ -517,6 +517,10 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
   char		line[1024],		// Line from file
 		*ptr;			// Pointer into line
   _pdfio_value_t trailer;		// Trailer dictionary
+  intmax_t	number,			// Object number
+		num_objects,		// Number of objects
+		offset;			// Offset in file
+  int		generation;		// Generation number
 
 
   while (!done)
@@ -533,103 +537,153 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       return (false);
     }
 
-    if (strcmp(line, "xref"))
+    if (isdigit(line[0] & 255) && strlen(line) > 4 && !strcmp(line + strlen(line) - 4, " obj"))
+    {
+      // Cross-reference stream
+      pdfio_obj_t	*obj;		// Object
+      pdfio_array_t	*w_array;	// W array
+      size_t		w[3];		// Size of each cross-reference field
+      size_t		w_total;	// Total length
+      pdfio_stream_t	*st;		// Stream with
+      unsigned char	buffer[32];	// Read buffer
+
+      if ((number = strtoimax(line, &ptr, 10)) < 1)
+      {
+	_pdfioFileError(pdf, "Bad xref table header '%s'.", line);
+	return (false);
+      }
+
+      if ((generation = (int)strtol(ptr, &ptr, 10)) < 0 || generation > 65535)
+      {
+	_pdfioFileError(pdf, "Bad xref table header '%s'.", line);
+	return (false);
+      }
+
+      while (isspace(*ptr & 255))
+	ptr ++;
+
+      if (strcmp(ptr, "obj"))
+      {
+	_pdfioFileError(pdf, "Bad xref table header '%s'.", line);
+	return (false);
+      }
+
+      if ((obj = add_obj(pdf, (size_t)number, (unsigned short)generation, xref_offset)) == NULL)
+      {
+        _pdfioFileError(pdf, "Unable to allocate memory for object.");
+        return (false);
+      }
+
+      if (!_pdfioValueRead(pdf, &trailer))
+      {
+        _pdfioFileError(pdf, "Unable to read cross-reference stream dictionary.");
+        return (false);
+      }
+      else if (trailer.type != PDFIO_VALTYPE_DICT)
+      {
+	_pdfioFileError(pdf, "Cross-reference stream does not have a dictionary.");
+	return (false);
+      }
+
+      obj->value = trailer;
+
+      // TODO: read stream
+    }
+    else if (!strcmp(line, "xref"))
+    {
+      // Read the xref tables
+      while (_pdfioFileGets(pdf, line, sizeof(line)))
+      {
+	if (!strcmp(line, "trailer"))
+	  break;
+
+	if (sscanf(line, "%jd%jd", &number, &num_objects) != 2)
+	{
+	  _pdfioFileError(pdf, "Malformed xref table section '%s'.", line);
+	  return (false);
+	}
+
+	// Read this group of objects...
+	for (; num_objects > 0; num_objects --, number ++)
+	{
+	  // Read a line from the file and validate it...
+	  if (_pdfioFileRead(pdf, line, 20) != 20)
+	    return (false);
+
+	  line[20] = '\0';
+
+	  if (strcmp(line + 18, "\r\n") && strcmp(line + 18, " \n") && strcmp(line + 18, " \r"))
+	  {
+	    _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+	    return (false);
+	  }
+	  line[18] = '\0';
+
+	  // Parse the line
+	  if ((offset = strtoimax(line, &ptr, 10)) < 0)
+	  {
+	    _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+	    return (false);
+	  }
+
+	  if ((generation = (int)strtol(ptr, &ptr, 10)) < 0 || generation > 65535)
+	  {
+	    _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+	    return (false);
+	  }
+
+	  if (*ptr != ' ')
+	  {
+	    _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+	    return (false);
+	  }
+
+	  ptr ++;
+	  if (*ptr != 'f' && *ptr != 'n')
+	  {
+	    _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
+	    return (false);
+	  }
+
+	  if (*ptr == 'f')
+	    continue;			// Don't care about free objects...
+
+	  // Create a placeholder for the object in memory...
+	  if (pdfioFileFindObject(pdf, (size_t)number))
+	    continue;			// Don't replace newer object...
+
+	  if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
+	    return (false);
+	}
+      }
+
+      if (strcmp(line, "trailer"))
+      {
+	_pdfioFileError(pdf, "Missing trailer.");
+	return (false);
+      }
+
+      if (!_pdfioValueRead(pdf, &trailer))
+      {
+	_pdfioFileError(pdf, "Unable to read trailer dictionary.");
+	return (false);
+      }
+      else if (trailer.type != PDFIO_VALTYPE_DICT)
+      {
+	_pdfioFileError(pdf, "Trailer is not a dictionary.");
+	return (false);
+      }
+    }
+    else
     {
       _pdfioFileError(pdf, "Bad xref table header '%s'.", line);
       return (false);
     }
 
-    // Read the xref tables
-    while (_pdfioFileGets(pdf, line, sizeof(line)))
-    {
-      intmax_t	number,			// Object number
-		num_objects;		// Number of objects
-
-      if (!strcmp(line, "trailer"))
-	break;
-
-      if (sscanf(line, "%jd%jd", &number, &num_objects) != 2)
-      {
-	_pdfioFileError(pdf, "Malformed xref table section '%s'.", line);
-	return (false);
-      }
-
-      // Read this group of objects...
-      for (; num_objects > 0; num_objects --, number ++)
-      {
-	intmax_t	offset;		// Offset in file
-	int		generation;	// Generation number
-
-	// Read a line from the file and validate it...
-	if (_pdfioFileRead(pdf, line, 20) != 20)
-	  return (false);
-
-	line[20] = '\0';
-
-	if (strcmp(line + 18, "\r\n") && strcmp(line + 18, " \n") && strcmp(line + 18, " \r"))
-	{
-	  _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-	  return (false);
-	}
-	line[18] = '\0';
-
-	// Parse the line
-	if ((offset = strtoimax(line, &ptr, 10)) < 0)
-	{
-	  _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-	  return (false);
-	}
-
-	if ((generation = (int)strtol(ptr, &ptr, 10)) < 0 || generation > 65535)
-	{
-	  _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-	  return (false);
-	}
-
-	if (*ptr != ' ')
-	{
-	  _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-	  return (false);
-	}
-
-	ptr ++;
-	if (*ptr != 'f' && *ptr != 'n')
-	{
-	  _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-	  return (false);
-	}
-
-	if (*ptr == 'f')
-	  continue;			// Don't care about free objects...
-
-	// Create a placeholder for the object in memory...
-	if (pdfioFileFindObject(pdf, (size_t)number))
-	  continue;			// Don't replace newer object...
-
-	if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
-	  return (false);
-      }
-    }
-
-    if (strcmp(line, "trailer"))
-    {
-      _pdfioFileError(pdf, "Missing trailer.");
-      return (false);
-    }
-
-    if (!_pdfioValueRead(pdf, &trailer))
-    {
-      _pdfioFileError(pdf, "Unable to read trailer dictionary.");
-      return (false);
-    }
-    else if (trailer.type != PDFIO_VALTYPE_DICT)
-    {
-      _pdfioFileError(pdf, "Trailer is not a dictionary.");
-      return (false);
-    }
-
     PDFIO_DEBUG("load_xref: Contents of trailer dictionary:\n");
-    PDFIO_DEBUG_DICT(trailer.value.dict, "load_xref");
+    PDFIO_DEBUG("load_xref: ");
+    PDFIO_DEBUG_VALUE(&trailer);
+    PDFIO_DEBUG("\n");
 
     if (!pdf->trailer)
     {
@@ -648,7 +702,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       pdf->id_array = pdfioDictGetArray(pdf->trailer, "ID");
     }
 
-    if ((xref_offset = (off_t)pdfioDictGetNumber(pdf->trailer, "Prev")) <= 0)
+    if ((xref_offset = (off_t)pdfioDictGetNumber(trailer.value.dict, "Prev")) <= 0)
       done = true;
   }
 
