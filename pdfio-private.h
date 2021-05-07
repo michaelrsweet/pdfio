@@ -190,7 +190,12 @@ struct _pdfio_stream_s			// Stream
 		*bufptr,		// Current position in buffer
 	        *bufend;		// End of buffer
   z_stream	flate;			// Flate filter state
-  char		cbuffer[4096];		// Compressed data buffer
+  _pdfio_predictor_t predictor;		// Predictor function, if any
+  int		pbcurrent;		// Current predictor line (0 or 1)
+  size_t	pbpixel,		// Size of a pixel in bytes
+		pbsize;			// Predictor buffer size, if any
+  unsigned char	cbuffer[4096],		// Compressed data buffer
+		*pbuffers[2];		// Predictor buffers, as needed
 };
 
 typedef ssize_t (*_pdfio_tconsume_cb_t)(void *data, size_t bytes);
@@ -239,7 +244,6 @@ extern void		_pdfioObjDelete(pdfio_obj_t *obj) PDFIO_INTERNAL;
 extern bool		_pdfioObjLoad(pdfio_obj_t *obj) PDFIO_INTERNAL;
 
 extern pdfio_stream_t	*_pdfioStreamCreate(pdfio_obj_t *obj, pdfio_filter_t compression) PDFIO_INTERNAL;
-extern void		_pdfioStreamDelete(pdfio_stream_t *st) PDFIO_INTERNAL;
 extern pdfio_stream_t	*_pdfioStreamOpen(pdfio_obj_t *obj, bool decode) PDFIO_INTERNAL;
 
 extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) PDFIO_INTERNAL;

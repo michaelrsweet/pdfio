@@ -341,15 +341,28 @@ _pdfioDictGetValue(pdfio_dict_t *dict,	// I - Dictionary
 		*match;			// Matching key pair
 
 
+  PDFIO_DEBUG("_pdfioDictGetValue(dict=%p, key=\"%s\")\n", dict, key);
+
   if (!dict || !dict->num_pairs || !key)
+  {
+    PDFIO_DEBUG("_pdfioDictGetValue: Returning NULL.\n");
     return (NULL);
+  }
 
   temp.key = key;
 
   if ((match = bsearch(&temp, dict->pairs, dict->num_pairs, sizeof(_pdfio_pair_t), (int (*)(const void *, const void *))compare_pairs)) != NULL)
-    return (&match->value);
+  {
+    PDFIO_DEBUG("_pdfioDictGetValue: Match, returning ");
+    PDFIO_DEBUG_VALUE(&(match->value));
+    PDFIO_DEBUG(".\n");
+    return (&(match->value));
+  }
   else
+  {
+    PDFIO_DEBUG("_pdfioDictGetValue: No match, returning NULL.\n");
     return (NULL);
+  }
 }
 
 
