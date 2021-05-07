@@ -15,6 +15,13 @@
 
 
 //
+// Local functions...
+//
+
+static ssize_t	stream_read(pdfio_stream_t *st, char *buffer, size_t bytes);
+
+
+//
 // 'pdfioStreamClose()' - Close a (data) stream in a PDF file.
 //
 
@@ -54,10 +61,35 @@ bool					// O - `true` on success, `false` on EOF
 pdfioStreamConsume(pdfio_stream_t *st,	// I - Stream
                    size_t         bytes)// I - Number of bytes to consume
 {
-  // TODO: Implement me
-  (void)st;
-  (void)bytes;
-  return (false);
+  size_t	remaining;		// Remaining bytes in buffer
+  ssize_t	rbytes;			// Bytes read
+
+
+  // Range check input...
+  if (!st || st->pdf->mode != _PDFIO_MODE_READ || !bytes)
+    return (false);
+
+  // Skip bytes in the stream buffer until we've consumed the requested number
+  // or get to the end of the stream...
+  while ((remaining = (size_t)(st->bufend - st->bufptr)) < bytes)
+  {
+    bytes -= remaining;
+
+    if ((rbytes = stream_read(st, st->buffer, sizeof(st->buffer))) > 0)
+    {
+      st->bufptr = st->buffer;
+      st->bufend = st->buffer + rbytes;
+    }
+    else
+    {
+      st->bufptr = st->bufend = st->buffer;
+      return (false);
+    }
+  }
+
+  st->bufptr += bytes;
+
+  return (true);
 }
 
 
@@ -107,6 +139,9 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
                  bool        decode)	// I - Decode/decompress the stream?
 {
   pdfio_stream_t	*st;		// Stream
+  pdfio_dict_t		*dict = pdfioObjGetDict(obj);
+					// Object dictionary
+  size_t		length;		// Length of stream
 
 
   // Allocate a new stream object...
@@ -121,11 +156,36 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
 
   _pdfioFileSeek(st->pdf, obj->stream_offset, SEEK_SET);
 
+  if ((length = (size_t)pdfioDictGetNumber(dict, "Length")) == 0)
+  {
+    // Length must be an indirect reference...
+    pdfio_obj_t	*lenobj;		// Length object
+
+    if ((lenobj = pdfioDictGetObject(dict, "Length")) == NULL)
+    {
+      _pdfioFileError(obj->pdf, "Unable to get length of stream.");
+      free(st);
+      return (NULL);
+    }
+
+    if (lenobj->value.type == PDFIO_VALTYPE_NONE)
+      _pdfioObjLoad(lenobj);
+
+    if (lenobj->value.type != PDFIO_VALTYPE_NUMBER || lenobj->value.value.number <= 0.0f)
+    {
+      _pdfioFileError(obj->pdf, "Unable to get length of stream.");
+      free(st);
+      return (NULL);
+    }
+
+    length = (size_t)lenobj->value.value.number;
+  }
+
+  st->remaining = length;
+
   if (decode)
   {
     // Try to decode/decompress the contents of this object...
-    pdfio_dict_t *dict = pdfioObjGetDict(obj);
-					// Object dictionary
     const char	*filter = pdfioDictGetName(dict, "Filter");
 					// Filter value
 
@@ -146,6 +206,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
     else if (!strcmp(filter, "FlateDecode"))
     {
       // Flate compression
+#if 0 // TODO: Determine whether we need to implement support for predictors
       int bpc = (int)pdfioDictGetNumber(dict, "BitsPerComponent");
 					// Bits per component
       int colors = (int)pdfioDictGetNumber(dict, "Colors");
@@ -154,8 +215,26 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
 					// Number of columns
       int predictor = (int)pdfioDictGetNumber(dict, "Predictor");
 					// Predictory value, if any
+#endif // 0
 
       st->filter = PDFIO_FILTER_FLATE;
+
+      st->flate.zalloc    = (alloc_func)0;
+      st->flate.zfree     = (free_func)0;
+      st->flate.opaque    = (voidpf)0;
+      st->flate.next_in   = (Bytef *)st->cbuffer;
+      st->flate.next_out  = NULL;
+      st->flate.avail_in  = (uInt)_pdfioFileRead(st->pdf, st->cbuffer, sizeof(st->cbuffer));
+      st->flate.avail_out = 0;
+
+      if (inflateInit(&(st->flate)) != Z_OK)
+      {
+	_pdfioFileError(st->pdf, "Unable to start Flate filter.");
+	free(st);
+	return (NULL);
+      }
+
+      st->remaining -= st->flate.avail_in;
     }
     else if (!strcmp(filter, "LZWDecode"))
     {
@@ -189,12 +268,40 @@ pdfioStreamPeek(pdfio_stream_t *st,	// I - Stream
                 void           *buffer,	// I - Buffer
                 size_t         bytes)	// I - Size of buffer
 {
-  // TODO: Implement me
-  (void)st;
-  (void)buffer;
-  (void)bytes;
+  size_t	remaining;		// Remaining bytes in buffer
 
-  return (-1);
+
+  // Range check input...
+  if (!st || st->pdf->mode != _PDFIO_MODE_READ || !buffer || !bytes)
+    return (-1);
+
+  // See if we have enough bytes in the buffer...
+  if ((remaining = (size_t)(st->bufend - st->bufptr)) < bytes)
+  {
+    // No, shift the buffer and read more
+    ssize_t	rbytes;			// Bytes read
+
+    if (remaining > 0)
+      memmove(st->buffer, st->bufptr, remaining);
+
+    st->bufptr = st->buffer;
+    st->bufend = st->buffer + remaining;
+
+    if ((rbytes = stream_read(st, st->bufptr, sizeof(st->buffer) - remaining)) > 0)
+    {
+      st->bufend += rbytes;
+      remaining  += (size_t)rbytes;
+    }
+  }
+
+  // Copy bytes from the buffer...
+  if (bytes > remaining)
+    bytes = remaining;
+
+  memcpy(buffer, st->bufptr, bytes);
+
+  // Return the number of bytes that were copied...
+  return ((ssize_t)bytes);
 }
 
 
@@ -247,12 +354,57 @@ pdfioStreamRead(
     void           *buffer,		// I - Buffer
     size_t         bytes)		// I - Bytes to read
 {
-  // TODO: Implement me
-  (void)st;
-  (void)buffer;
-  (void)bytes;
+  char		*bufptr = (char *)buffer;
+					// Pointer into buffer
+  size_t	remaining;		// Remaining bytes in buffer
+  ssize_t	rbytes;			// Bytes read
 
-  return (-1);
+
+  // Range check input...
+  if (!st || st->pdf->mode != _PDFIO_MODE_READ || !buffer || !bytes)
+    return (-1);
+
+  // Loop until we have the requested bytes or hit the end of the stream...
+  while ((remaining = (size_t)(st->bufend - st->bufptr)) < bytes)
+  {
+    memcpy(bufptr, st->bufptr, remaining);
+    bufptr += remaining;
+    bytes -= remaining;
+
+    if (bytes >= sizeof(st->buffer))
+    {
+      // Read large amounts directly to caller's buffer...
+      if ((rbytes = stream_read(st, bufptr, bytes)) > 0)
+      {
+        bufptr += rbytes;
+        bytes  = 0;
+      }
+
+      st->bufptr = st->bufend = st->buffer;
+      break;
+    }
+    else if ((rbytes = stream_read(st, st->buffer, sizeof(st->buffer))) > 0)
+    {
+      st->bufptr = st->buffer;
+      st->bufend = st->buffer + rbytes;
+    }
+    else
+    {
+      st->bufptr = st->bufend = st->buffer;
+      break;
+    }
+  }
+
+  // Copy any remaining bytes from the stream buffer...
+  if (bytes > 0)
+  {
+    memcpy(bufptr, st->bufptr, bytes);
+    bufptr     += bytes;
+    st->bufptr += bytes;
+  }
+
+  // Return the number of bytes that were read...
+  return (bufptr - (char *)buffer);
 }
 
 
@@ -273,3 +425,68 @@ pdfioStreamWrite(
 
   return (false);
 }
+
+
+//
+// 'stream_read()' - Read data from a stream, including filters.
+//
+
+static ssize_t				// O - Number of bytes read or `-1` on error
+stream_read(pdfio_stream_t *st,		// I - Stream
+            char           *buffer,	// I - Buffer
+            size_t         bytes)	// I - Number of bytes to read
+{
+  ssize_t	rbytes;			// Bytes read
+
+
+  if (st->filter == PDFIO_FILTER_NONE)
+  {
+    // No filtering, but limit reads to the length of the stream...
+    if (bytes > st->remaining)
+      rbytes = _pdfioFileRead(st->pdf, buffer, st->remaining);
+    else
+      rbytes = _pdfioFileRead(st->pdf, buffer, bytes);
+
+    if (rbytes > 0)
+      st->remaining -= (size_t)rbytes;
+
+    return (rbytes);
+  }
+  else if (st->filter == PDFIO_FILTER_FLATE)
+  {
+    // Deflate compression...
+    int	status;				// Status of decompression
+
+    if (st->flate.avail_in == 0)
+    {
+      // Read more from the file...
+      if (sizeof(st->cbuffer) > st->remaining)
+        rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->remaining);
+      else
+        rbytes = _pdfioFileRead(st->pdf, st->cbuffer, sizeof(st->cbuffer));
+
+      if (rbytes <= 0)
+        return (-1);			// End of file...
+
+      st->remaining      -= (size_t)rbytes;
+      st->flate.next_in  = (Bytef *)st->cbuffer;
+      st->flate.avail_in = (uInt)rbytes;
+    }
+
+    // Decompress into the buffer...
+    st->flate.next_out  = (Bytef *)buffer;
+    st->flate.avail_out = (uInt)bytes;
+
+    if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
+    {
+      _pdfioFileError(st->pdf, "Unable to decompress stream data: %d", status);
+      return (-1);
+    }
+
+    return (st->flate.next_out - (Bytef *)buffer);
+  }
+
+  // If we get here something bad happened...
+  return (-1);
+}
+

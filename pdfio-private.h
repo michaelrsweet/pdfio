@@ -69,6 +69,17 @@ typedef enum _pdfio_mode_e		// Read/write mode
   _PDFIO_MODE_WRITE			// Write a PDF file
 } _pdfio_mode_t;
 
+typedef enum _pdfio_predictor_e		// PNG predictor constants
+{
+  _PDFIO_PREDICTOR_NONE = 1,		// No predictor (default)
+  _PDFIO_PREDICTOR_TIFF2 = 2,		// TIFF2 predictor (???)
+  _PDFIO_PREDICTOR_PNG_NONE = 10,	// PNG None predictor (same as `_PDFIO_PREDICTOR_NONE`)
+  _PDFIO_PREDICTOR_PNG_SUB = 11,	// PNG Sub predictor
+  _PDFIO_PREDICTOR_PNG_UP = 12,		// PNG Up predictor
+  _PDFIO_PREDICTOR_PNG_AVERAGE = 13,	// PNG Average predictor
+  _PDFIO_PREDICTOR_PNG_PAETH = 14	// PNG Paeth predictor
+} _pdfio_predictor_t;
+
 typedef struct _pdfio_value_s		// Value structure
 {
   pdfio_valtype_t type;			// Type of value
@@ -174,9 +185,12 @@ struct _pdfio_stream_s			// Stream
   pdfio_file_t	*pdf;			// PDF file
   pdfio_obj_t	*obj;			// Object
   pdfio_filter_t filter;		// Compression/decompression filter
-  char		buffer[8192];		// Read/write buffer
-  size_t	bufused;		// Number of bytes in buffer
+  size_t	remaining;		// Remaining bytes in stream
+  char		buffer[8192],		// Read/write buffer
+		*bufptr,		// Current position in buffer
+	        *bufend;		// End of buffer
   z_stream	flate;			// Flate filter state
+  char		cbuffer[4096];		// Compressed data buffer
 };
 
 typedef ssize_t (*_pdfio_tconsume_cb_t)(void *data, size_t bytes);

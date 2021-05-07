@@ -200,9 +200,21 @@ pdfio_stream_t *			// O - Stream or `NULL` on error
 pdfioObjOpenStream(pdfio_obj_t *obj,	// I - Object
                    bool        decode)	// I - Decode/decompress data?
 {
-  // TODO: Implement me
-  (void)obj;
-  (void)decode;
+  // Range check input...
+  if (!obj)
+    return (NULL);
 
-  return (NULL);
+  // Make sure we've loaded the object dictionary...
+  if (!obj->value.type)
+  {
+    if (!_pdfioObjLoad(obj))
+      return (NULL);
+  }
+
+  // No stream if there is no dict or offset to a stream...
+  if (obj->value.type != PDFIO_VALTYPE_DICT || !obj->stream_offset)
+    return (NULL);
+
+  // Open the stream...
+  return (_pdfioStreamOpen(obj, decode));
 }

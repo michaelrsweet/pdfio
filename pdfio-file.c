@@ -537,14 +537,19 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       return (false);
     }
 
+    PDFIO_DEBUG("load_xref: xref_offset=%lu, line='%s'\n", (unsigned long)xref_offset, line);
+
     if (isdigit(line[0] & 255) && strlen(line) > 4 && !strcmp(line + strlen(line) - 4, " obj"))
     {
       // Cross-reference stream
       pdfio_obj_t	*obj;		// Object
+      size_t		i;		// Looping var
       pdfio_array_t	*w_array;	// W array
       size_t		w[3];		// Size of each cross-reference field
+      size_t		w_2,		// Offset to second field
+			w_3;		// Offset to third field
       size_t		w_total;	// Total length
-      pdfio_stream_t	*st;		// Stream with
+      pdfio_stream_t	*st;		// Stream
       unsigned char	buffer[32];	// Read buffer
 
       if ((number = strtoimax(line, &ptr, 10)) < 1)
@@ -568,6 +573,8 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	return (false);
       }
 
+      PDFIO_DEBUG("load_xref: Loading object %lu %u.\n", (unsigned long)number, (unsigned)generation);
+
       if ((obj = add_obj(pdf, (size_t)number, (unsigned short)generation, xref_offset)) == NULL)
       {
         _pdfioFileError(pdf, "Unable to allocate memory for object.");
@@ -587,7 +594,85 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
       obj->value = trailer;
 
-      // TODO: read stream
+      if (!_pdfioFileGetToken(pdf, line, sizeof(line)) || strcmp(line, "stream"))
+      {
+        _pdfioFileError(pdf, "Unable to get stream after xref dictionary.");
+        return (false);
+      }
+
+      obj->stream_offset = _pdfioFileTell(pdf);
+
+      if ((w_array = pdfioDictGetArray(trailer.value.dict, "W")) == NULL)
+      {
+	_pdfioFileError(pdf, "Cross-reference stream does not have required W key.");
+	return (false);
+      }
+
+      w[0]    = (size_t)pdfioArrayGetNumber(w_array, 0);
+      w[1]    = (size_t)pdfioArrayGetNumber(w_array, 1);
+      w[2]    = (size_t)pdfioArrayGetNumber(w_array, 2);
+      w_total = w[0] + w[1] + w[2];
+      w_2     = w[0];
+      w_3     = w[0] + w[1];
+
+      if (w[1] == 0 || w[2] > 2 || w_total > sizeof(buffer))
+      {
+	_pdfioFileError(pdf, "Cross-reference stream has invalid W key.");
+	return (false);
+      }
+
+      if ((st = pdfioObjOpenStream(obj, true)) == NULL)
+      {
+	_pdfioFileError(pdf, "Unable to open cross-reference stream.");
+	return (false);
+      }
+
+      while (pdfioStreamRead(st, buffer, w_total) > 0)
+      {
+        PDFIO_DEBUG("load_xref: %02X%02X%02X%02X%02X\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+
+        // Check whether this is an object definition...
+        if (w[0] > 0)
+        {
+          if (buffer[0] == 0)
+          {
+            // Ignore free objects...
+            continue;
+	  }
+	  else if (buffer[0] == 2)
+	  {
+	    // TODO: Add support for compressed object streams...
+	    // Compressed object...
+	    _pdfioFileError(pdf, "PDF file contains compressed object streams which are not currently supported.");
+	    continue;
+	  }
+	}
+
+        for (i = 1, offset = buffer[w_2]; i < w[1]; i ++)
+          offset = (offset << 8) | buffer[w_2 + i];
+
+        switch (w[2])
+        {
+          default :
+              generation = 0;
+              break;
+	  case 1 :
+	      generation = buffer[w_3];
+	      break;
+	  case 2 :
+	      generation = (buffer[w_3] << 8) | buffer[w_3 + 1];
+	      break;
+        }
+
+	// Create a placeholder for the object in memory...
+	if (pdfioFileFindObject(pdf, (size_t)number))
+	  continue;			// Don't replace newer object...
+
+	if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
+	  return (false);
+      }
+
+      pdfioStreamClose(st);
     }
     else if (!strcmp(line, "xref"))
     {
