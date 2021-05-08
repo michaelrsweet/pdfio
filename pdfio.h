@@ -164,6 +164,7 @@ extern bool		pdfioObjClose(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern pdfio_stream_t	*pdfioObjCreateStream(pdfio_obj_t *obj, pdfio_filter_t compression) PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioObjGetDict(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern unsigned short	pdfioObjGetGeneration(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern size_t		pdfioObjGetLength(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern size_t		pdfioObjGetNumber(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern const char	*pdfioObjGetType(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern pdfio_stream_t	*pdfioObjOpenStream(pdfio_obj_t *obj, bool decode) PDFIO_PUBLIC;

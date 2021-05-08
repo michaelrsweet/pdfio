@@ -150,7 +150,6 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
   pdfio_stream_t	*st;		// Stream
   pdfio_dict_t		*dict = pdfioObjGetDict(obj);
 					// Object dictionary
-  size_t		length;		// Length of stream
 
 
   // Allocate a new stream object...
@@ -165,32 +164,11 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
 
   _pdfioFileSeek(st->pdf, obj->stream_offset, SEEK_SET);
 
-  if ((length = (size_t)pdfioDictGetNumber(dict, "Length")) == 0)
+  if ((st->remaining = pdfioObjGetLength(obj)) == 0)
   {
-    // Length must be an indirect reference...
-    pdfio_obj_t	*lenobj;		// Length object
-
-    if ((lenobj = pdfioDictGetObject(dict, "Length")) == NULL)
-    {
-      _pdfioFileError(obj->pdf, "Unable to get length of stream.");
-      free(st);
-      return (NULL);
-    }
-
-    if (lenobj->value.type == PDFIO_VALTYPE_NONE)
-      _pdfioObjLoad(lenobj);
-
-    if (lenobj->value.type != PDFIO_VALTYPE_NUMBER || lenobj->value.value.number <= 0.0f)
-    {
-      _pdfioFileError(obj->pdf, "Unable to get length of stream.");
-      free(st);
-      return (NULL);
-    }
-
-    length = (size_t)lenobj->value.value.number;
+    free(st);
+    return (NULL);
   }
-
-  st->remaining = length;
 
   if (decode)
   {

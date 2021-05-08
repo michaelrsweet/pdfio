@@ -92,6 +92,44 @@ pdfioObjGetGeneration(pdfio_obj_t *obj)	// I - Object
 
 
 //
+// 'pdfioObjGetLength()' - Get the length of the object's (data) stream.
+//
+
+size_t					// O - Length in bytes or `0` for none
+pdfioObjGetLength(pdfio_obj_t *obj)	// I - Object
+{
+  size_t	length;			// Length of stream
+  pdfio_obj_t	*lenobj;		// Length object
+
+
+  // Range check input...
+  if (!obj || !obj->stream_offset || obj->value.type != PDFIO_VALTYPE_DICT)
+    return (0);
+
+  // Try getting the length, directly or indirectly
+  if ((length = (size_t)pdfioDictGetNumber(obj->value.value.dict, "Length")) > 0)
+    return (length);
+
+  if ((lenobj = pdfioDictGetObject(obj->value.value.dict, "Length")) == NULL)
+  {
+    _pdfioFileError(obj->pdf, "Unable to get length of stream.");
+    return (0);
+  }
+
+  if (lenobj->value.type == PDFIO_VALTYPE_NONE)
+    _pdfioObjLoad(lenobj);
+
+  if (lenobj->value.type != PDFIO_VALTYPE_NUMBER || lenobj->value.value.number <= 0.0f)
+  {
+    _pdfioFileError(obj->pdf, "Unable to get length of stream.");
+    return (0);
+  }
+
+  return ((size_t)lenobj->value.value.number);
+}
+
+
+//
 // 'pdfioObjGetNumber()' - Get the object's number.
 //
 
