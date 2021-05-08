@@ -18,7 +18,8 @@
 // Local functions...
 //
 
-static ssize_t	stream_read(pdfio_stream_t *st, char *buffer, size_t bytes);
+static unsigned char	stream_paeth(unsigned char a, unsigned char b, unsigned char c);
+static ssize_t		stream_read(pdfio_stream_t *st, char *buffer, size_t bytes);
 
 
 //
@@ -505,6 +506,24 @@ pdfioStreamWrite(
 
 
 //
+// 'stream_paeth()' - PaethPredictor function for PNG decompression filter.
+//
+
+static unsigned char			// O - Predictor value
+stream_paeth(unsigned char a,		// I - Left pixel
+             unsigned char b,		// I - Top pixel
+             unsigned char c)		// I - Top-left pixel
+{
+  int	p = a + b - c;			// Initial estimate
+  int	pa = abs(p - a);		// Distance to a
+  int	pb = abs(p - b);		// Distance to b
+  int	pc = abs(p - c);		// Distance to c
+
+  return ((pa <= pb && pa <= pc) ? a : (pb <= pc) ? b : c);
+}
+
+
+//
 // 'stream_read()' - Read data from a stream, including filters.
 //
 
@@ -653,8 +672,10 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	      *bufptr++ = *thisptr + (thisptr[-pbpixel] + *prevptr) / 2;
             break;
         case 4 : // Paeth
-            // TODO: Implement Paeth predictor
-            memcpy(buffer, thisptr, remaining);
+            for (; remaining > firstcol; remaining --, thisptr ++, prevptr ++)
+              *bufptr++ = *thisptr + stream_paeth(0, *prevptr, 0);
+            for (; remaining > 0; remaining --, thisptr ++, prevptr ++)
+              *bufptr++ = *thisptr + stream_paeth(thisptr[-pbpixel], *prevptr, prevptr[-pbpixel]);
             break;
 
         default :
