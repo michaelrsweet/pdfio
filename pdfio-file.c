@@ -23,6 +23,7 @@
 
 static pdfio_obj_t	*add_obj(pdfio_file_t *pdf, size_t number, unsigned short generation, off_t offset);
 static int		compare_objs(pdfio_obj_t **a, pdfio_obj_t **b);
+static bool		load_obj_stream(pdfio_obj_t *obj);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset);
 static bool		write_trailer(pdfio_file_t *pdf);
 
@@ -236,15 +237,17 @@ pdfioFileFindObject(
     size_t       number)		// I - Object number (1 to N)
 {
   pdfio_obj_t	key,			// Search key
-		*keyptr;		// Pointer to key
+		*keyptr,		// Pointer to key
+		**match;		// Pointer to match
 
 
   if (pdf->num_objs > 0)
   {
     key.number = number;
     keyptr     = &key;
+    match      = (pdfio_obj_t **)bsearch(&keyptr, pdf->objs, pdf->num_objs, sizeof(pdfio_obj_t *), (int (*)(const void *, const void *))compare_objs);
 
-    return ((pdfio_obj_t *)bsearch(&keyptr, pdf->objs, pdf->num_objs, sizeof(pdfio_obj_t *), (int (*)(const void *, const void *))compare_objs));
+    return (match ? *match : NULL);
   }
 
   return (NULL);
@@ -479,12 +482,13 @@ add_obj(pdfio_file_t   *pdf,		// I - PDF file
   obj->generation = generation;
   obj->offset     = offset;
 
+  PDFIO_DEBUG("add_obj: obj=%p, ->pdf=%p, ->number=%lu\n", obj, pdf, (unsigned long)obj->number);
+
   // Re-sort object array as needed...
   if (pdf->num_objs > 1 && pdf->objs[pdf->num_objs - 2]->number > number)
     qsort(pdf->objs, pdf->num_objs, sizeof(pdfio_obj_t *), (int (*)(const void *, const void *))compare_objs);
 
   return (obj);
-
 }
 
 
@@ -502,6 +506,87 @@ compare_objs(pdfio_obj_t **a,		// I - First object
     return (0);
   else
     return (1);
+}
+
+
+//
+// 'load_obj_stream()' - Load an object stream.
+//
+// Object streams are Adobe's complicated solution for saving a few
+// kilobytes in an average PDF file at the expense of massively more
+// complicated reader applications.
+//
+// Each object stream starts with pairs of object numbers and offsets,
+// followed by the object values (typically dictionaries).  For
+// simplicity pdfio loads all of these values into memory so that we
+// don't later have to randomly access compressed stream data to get
+// a dictionary.
+//
+
+static bool				// O - `true` on success, `false` on error
+load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
+{
+  pdfio_stream_t	*st;		// Stream
+  _pdfio_token_t	tb;		// Token buffer/stack
+  char			buffer[32];	// Token
+  size_t		cur_obj,	// Current object
+			num_objs = 0;	// Number of objects
+  pdfio_obj_t		*objs[1000];	// Objects
+
+
+  // Open the object stream...
+  if ((st = pdfioObjOpenStream(obj, true)) == NULL)
+  {
+    _pdfioFileError(obj->pdf, "Unable to open compressed object stream %lu.", (unsigned long)obj->number);
+    return (false);
+  }
+
+  _pdfioTokenInit(&tb, obj->pdf, (_pdfio_tconsume_cb_t)pdfioStreamConsume, (_pdfio_tpeek_cb_t)pdfioStreamPeek, st);
+
+  // Read the object numbers from the beginning of the stream...
+  while (_pdfioTokenGet(&tb, buffer, sizeof(buffer)))
+  {
+    // Stop if this isn't an object number...
+    if (!isdigit(buffer[0] & 255))
+      break;
+
+    // Stop if we have too many objects...
+    if (num_objs >= (sizeof(objs) / sizeof(objs[0])))
+    {
+      _pdfioFileError(obj->pdf, "Too many compressed objects in one stream.");
+      pdfioStreamClose(st);
+      return (false);
+    }
+
+    // Add the object in memory...
+    objs[num_objs ++] = add_obj(obj->pdf, (size_t)strtoimax(buffer, NULL, 10), 0, 0);
+
+    // Skip offset
+    _pdfioTokenGet(&tb, buffer, sizeof(buffer));
+  }
+
+  if (!buffer[0])
+  {
+    pdfioStreamClose(st);
+    return (false);
+  }
+
+  _pdfioTokenPush(&tb, buffer);
+
+  // Read the objects themselves...
+  for (cur_obj = 0; cur_obj < num_objs; cur_obj ++)
+  {
+    if (!_pdfioValueRead(obj->pdf, &tb, &(objs[cur_obj]->value)))
+    {
+      pdfioStreamClose(st);
+      return (false);
+    }
+  }
+
+  // Close the stream and return
+  pdfioStreamClose(st);
+
+  return (true);
 }
 
 
@@ -545,6 +630,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       // Cross-reference stream
       pdfio_obj_t	*obj;		// Object
       size_t		i;		// Looping var
+      pdfio_array_t	*index_array;	// Index array
       pdfio_array_t	*w_array;	// W array
       size_t		w[3];		// Size of each cross-reference field
       size_t		w_2,		// Offset to second field
@@ -552,6 +638,8 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       size_t		w_total;	// Total length
       pdfio_stream_t	*st;		// Stream
       unsigned char	buffer[32];	// Read buffer
+      size_t		num_sobjs = 0,	// Number of object streams
+			sobjs[1000];	// Object streams to load
 
       if ((number = strtoimax(line, &ptr, 10)) < 1)
       {
@@ -605,6 +693,20 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
       obj->stream_offset = _pdfioFileTell(pdf);
 
+      if ((index_array = pdfioDictGetArray(trailer.value.dict, "Index")) != NULL)
+      {
+        if (index_array->num_values > 2)
+        {
+          // TODO: Support Index array with multiple values in xref streams
+	  _pdfioFileError(pdf, "Multiple indices not supported in cross-reference stream.");
+	  return (false);
+        }
+
+        number = (intmax_t)pdfioArrayGetNumber(index_array, 0);
+      }
+      else
+        number = 0;
+
       if ((w_array = pdfioDictGetArray(trailer.value.dict, "W")) == NULL)
       {
 	_pdfioFileError(pdf, "Cross-reference stream does not have required W key.");
@@ -640,14 +742,8 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
           if (buffer[0] == 0)
           {
             // Ignore free objects...
+            number ++;
             continue;
-	  }
-	  else if (buffer[0] == 2)
-	  {
-	    // TODO: Add support for compressed object streams...
-	    // Compressed object...
-	    _pdfioFileError(pdf, "PDF file contains compressed object streams which are not currently supported.");
-	    continue;
 	  }
 	}
 
@@ -669,13 +765,59 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
 	// Create a placeholder for the object in memory...
 	if (pdfioFileFindObject(pdf, (size_t)number))
+	{
+	  number ++;
 	  continue;			// Don't replace newer object...
+	}
 
-	if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
+        if (w[0] > 0 && buffer[0] == 2)
+        {
+          // Object streams need to be loaded into memory...
+          if ((obj = pdfioFileFindObject(pdf, (size_t)offset)) != NULL)
+	  {
+	    // Load it now...
+	    if (!load_obj_stream(obj))
+	      return (false);
+	  }
+	  else
+	  {
+	    // Add it to the list of objects to load later...
+	    for (i = 0; i < num_sobjs; i ++)
+	    {
+	      if (sobjs[i] == (size_t)offset)
+	        break;
+	    }
+
+	    if (i >= num_sobjs && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
+	      sobjs[num_sobjs ++] = (size_t)offset;
+	  }
+        }
+	else if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
 	  return (false);
+
+        number ++;
       }
 
       pdfioStreamClose(st);
+
+      // Load any object streams that are left...
+      PDFIO_DEBUG("load_xref: %lu compressed object streams to load.\n", (unsigned long)num_sobjs);
+
+      for (i = 0; i < num_sobjs; i ++)
+      {
+        if ((obj = pdfioFileFindObject(pdf, sobjs[i])) != NULL)
+        {
+	  PDFIO_DEBUG("load_xref: Loading compressed object stream %lu (pdf=%p, obj->pdf=%p).\n", (unsigned long)sobjs[i], pdf, obj->pdf);
+
+          if (!load_obj_stream(obj))
+            return (false);
+	}
+	else
+	{
+	  _pdfioFileError(pdf, "Unable to find compressed object stream %lu.", (unsigned long)sobjs[i]);
+	  return (false);
+	}
+      }
     }
     else if (!strcmp(line, "xref"))
     {
