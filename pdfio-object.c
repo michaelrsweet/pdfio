@@ -128,6 +128,7 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
 {
   char			line[1024],	// Line from file
 			*ptr;		// Pointer into line
+  _pdfio_token_t	tb;		// Token buffer/stack
 
 
   PDFIO_DEBUG("_pdfioObjLoad(obj=%p(%lu)), offset=%lu\n", obj, (unsigned long)obj->number, (unsigned long)obj->offset);
@@ -167,9 +168,9 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   }
 
   // Then grab the object value...
-  _pdfioFileClearTokens(obj->pdf);
+  _pdfioTokenInit(&tb, obj->pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, obj->pdf);
 
-  if (!_pdfioValueRead(obj->pdf, &obj->value))
+  if (!_pdfioValueRead(obj->pdf, &tb, &obj->value))
   {
     _pdfioFileError(obj->pdf, "Unable to read value for object %lu.", (unsigned long)obj->number);
     return (false);

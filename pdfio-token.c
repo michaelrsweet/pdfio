@@ -45,25 +45,98 @@
 
 
 //
-// Types...
-//
-
-typedef struct _pdfio_tbuffer_s		// Token reading buffer
-{
-  unsigned char		buffer[32],	// Buffer
-			*bufptr,	// Pointer into buffer
-			*bufend;	// Last valid byte in buffer
-  _pdfio_tpeek_cb_t	peek_cb;	// Peek callback
-  _pdfio_tconsume_cb_t	consume_cb;	// Consume callback
-  void			*data;		// Callback data
-} _pdfio_tbuffer_t;
-
-
-//
 // Local functions...
 //
 
-static int	get_char(_pdfio_tbuffer_t *tb);
+static int	get_char(_pdfio_token_t *tb);
+
+
+//
+// '_pdfioTokenClear()' - Clear the token stack.
+//
+
+void
+_pdfioTokenClear(_pdfio_token_t *tb)	// I - Token buffer/stack
+{
+  PDFIO_DEBUG("_pdfioTokenClear(tb=%p)\n", tb);
+
+  while (tb->num_tokens > 0)
+  {
+    tb->num_tokens --;
+    free(tb->tokens[tb->num_tokens]);
+    tb->tokens[tb->num_tokens] = NULL;
+  }
+}
+
+
+//
+// '_pdfioTokenGet()' - Get a token.
+//
+
+bool					// O - `true` on success, `false` on failure
+_pdfioTokenGet(_pdfio_token_t *tb,	// I - Token buffer/stack
+	       char           *buffer,	// I - String buffer
+	       size_t         bufsize)	// I - Size of string buffer
+{
+  // See if we have a token waiting on the stack...
+  if (tb->num_tokens > 0)
+  {
+    // Yes, return it...
+    tb->num_tokens --;
+    strncpy(buffer, tb->tokens[tb->num_tokens], bufsize - 1);
+    buffer[bufsize - 1] = '\0';
+
+    PDFIO_DEBUG("_pdfioTokenGet(tb=%p, buffer=%p, bufsize=%u): Popping '%s' from stack.\n", tb, buffer, (unsigned)bufsize, buffer);
+
+    free(tb->tokens[tb->num_tokens]);
+    tb->tokens[tb->num_tokens] = NULL;
+
+    return (true);
+  }
+
+  // No, read a new one...
+  return (_pdfioTokenRead(tb, buffer, bufsize));
+}
+
+
+//
+// '_pdfioTokenInit()' - Initialize a token buffer/stack.
+//
+
+void
+_pdfioTokenInit(
+    _pdfio_token_t       *ts,		// I - Token buffer/stack
+    pdfio_file_t         *pdf,		// I - PDF file
+    _pdfio_tconsume_cb_t consume_cb,	// I - Consume callback
+    _pdfio_tpeek_cb_t    peek_cb,	// I - Peek callback
+    void                 *cb_data)	// I - Callback data
+{
+  // Zero everything out and then initialize key pointers...
+  memset(ts, 0, sizeof(_pdfio_token_t));
+
+  ts->pdf        = pdf;
+  ts->consume_cb = consume_cb;
+  ts->peek_cb    = peek_cb;
+  ts->cb_data    = cb_data;
+  ts->bufptr     = ts->buffer;
+  ts->bufend     = ts->buffer;
+}
+
+
+//
+// '_pdfioTokenPush()' - Push a token on the token stack.
+//
+
+void
+_pdfioTokenPush(_pdfio_token_t *tb,	// I - Token buffer/stack
+		const char     *token)	// I - Token to push
+{
+  if (tb->num_tokens < (sizeof(tb->tokens) / sizeof(tb->tokens[0])))
+  {
+    if ((tb->tokens[tb->num_tokens ++] = strdup(token)) == NULL)
+      tb->num_tokens --;
+  }
+}
 
 
 //
@@ -71,19 +144,14 @@ static int	get_char(_pdfio_tbuffer_t *tb);
 //
 
 bool					// O - `true` on success, `false` on failure
-_pdfioTokenRead(
-    pdfio_file_t         *pdf,		// I - PDF file
-    char                 *buffer,	// I - String buffer
-    size_t               bufsize,	// I - Size of string buffer
-    _pdfio_tpeek_cb_t    peek_cb,	// I - "peek" callback
-    _pdfio_tconsume_cb_t consume_cb,	// I - "consume" callback
-    void                 *data)		// I - Callback data
+_pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
+		char           *buffer,	// I - String buffer
+		size_t         bufsize)	// I - Size of string buffer
 {
-  _pdfio_tbuffer_t	tb;		// Token buffer
-  int			ch;		// Character
-  char			*bufptr,	// Pointer into buffer
-			*bufend,	// End of buffer
-			state = '\0';	// Current state
+  int	ch;				// Character
+  char	*bufptr,			// Pointer into buffer
+	*bufend,			// End of buffer
+	state = '\0';			// Current state
 
 
   //
@@ -99,21 +167,16 @@ _pdfioTokenRead(
   // - 'N' for number
 
   // Read the next token, skipping any leading whitespace...
-  memset(&tb, 0, sizeof(tb));
-  tb.peek_cb    = peek_cb;
-  tb.consume_cb = consume_cb;
-  tb.data       = data;
-
   bufptr = buffer;
   bufend = buffer + bufsize - 1;
 
   // Skip leading whitespace...
-  while ((ch = get_char(&tb)) != EOF)
+  while ((ch = get_char(tb)) != EOF)
   {
     if (ch == '%')
     {
       // Skip comment
-      while ((ch = get_char(&tb)) != EOF)
+      while ((ch = get_char(tb)) != EOF)
       {
 	if (ch == '\n' || ch == '\r')
 	  break;
@@ -147,14 +210,14 @@ _pdfioTokenRead(
   switch (state)
   {
     case '(' : // Literal string
-	while ((ch = get_char(&tb)) != EOF && ch != ')')
+	while ((ch = get_char(tb)) != EOF && ch != ')')
 	{
 	  if (ch == '\\')
 	  {
 	    // Quoted character...
 	    int	i;			// Looping var
 
-	    switch (ch = get_char(&tb))
+	    switch (ch = get_char(tb))
 	    {
 	      case '0' : // Octal character escape
 	      case '1' :
@@ -166,13 +229,13 @@ _pdfioTokenRead(
 	      case '7' :
 		  for (ch -= '0', i = 0; i < 2; i ++)
 		  {
-		    int tch = get_char(&tb);	// Next char
+		    int tch = get_char(tb);	// Next char
 
 		    if (tch >= '0' && tch <= '7')
 		      ch = (char)((ch << 3) | (tch - '0'));
 		    else
 		    {
-		      tb.bufptr --;
+		      tb->bufptr --;
 		      break;
 		    }
 		  }
@@ -204,7 +267,7 @@ _pdfioTokenRead(
 		  break;
 
 	      default :
-		  _pdfioFileError(pdf, "Unknown escape '\\%c' in literal string.", ch);
+		  _pdfioFileError(tb->pdf, "Unknown escape '\\%c' in literal string.", ch);
 		  return (false);
 	    }
 	  }
@@ -217,25 +280,25 @@ _pdfioTokenRead(
 	  else
 	  {
 	    // Out of space
-	    _pdfioFileError(pdf, "Token too large.");
+	    _pdfioFileError(tb->pdf, "Token too large.");
 	    return (false);
 	  }
 	}
 
 	if (ch != ')')
 	{
-	  _pdfioFileError(pdf, "Unterminated string literal.");
+	  _pdfioFileError(tb->pdf, "Unterminated string literal.");
 	  return (false);
 	}
 	break;
 
     case 'K' : // keyword
-	while ((ch = get_char(&tb)) != EOF && !isspace(ch))
+	while ((ch = get_char(tb)) != EOF && !isspace(ch))
 	{
 	  if (strchr(PDFIO_DELIM_CHARS, ch) != NULL)
 	  {
 	    // End of keyword...
-	    tb.bufptr --;
+	    tb->bufptr --;
 	    break;
 	  }
 	  else if (bufptr < bufend)
@@ -246,19 +309,19 @@ _pdfioTokenRead(
 	  else
 	  {
 	    // Out of space...
-	    _pdfioFileError(pdf, "Token too large.");
+	    _pdfioFileError(tb->pdf, "Token too large.");
 	    return (false);
 	  }
 	}
 	break;
 
     case 'N' : // number
-	while ((ch = get_char(&tb)) != EOF && !isspace(ch))
+	while ((ch = get_char(tb)) != EOF && !isspace(ch))
 	{
 	  if (!isdigit(ch) && ch != '.')
 	  {
 	    // End of number...
-	    tb.bufptr --;
+	    tb->bufptr --;
 	    break;
 	  }
 	  else if (bufptr < bufend)
@@ -269,19 +332,19 @@ _pdfioTokenRead(
 	  else
 	  {
 	    // Out of space...
-	    _pdfioFileError(pdf, "Token too large.");
+	    _pdfioFileError(tb->pdf, "Token too large.");
 	    return (false);
 	  }
 	}
 	break;
 
     case '/' : // "/name"
-	while ((ch = get_char(&tb)) != EOF && !isspace(ch))
+	while ((ch = get_char(tb)) != EOF && !isspace(ch))
 	{
 	  if (strchr(PDFIO_DELIM_CHARS, ch) != NULL)
 	  {
 	    // End of keyword...
-	    tb.bufptr --;
+	    tb->bufptr --;
 	    break;
 	  }
 	  else if (ch == '#')
@@ -291,11 +354,11 @@ _pdfioTokenRead(
 
 	    for (i = 0, ch = 0; i < 2; i ++)
 	    {
-	      int tch = get_char(&tb);
+	      int tch = get_char(tb);
 
 	      if (!isxdigit(tch & 255))
 	      {
-		_pdfioFileError(pdf, "Bad # escape in name.");
+		_pdfioFileError(tb->pdf, "Bad # escape in name.");
 		return (false);
 	      }
 	      else if (isdigit(tch))
@@ -312,14 +375,14 @@ _pdfioTokenRead(
 	  else
 	  {
 	    // Out of space
-	    _pdfioFileError(pdf, "Token too large.");
+	    _pdfioFileError(tb->pdf, "Token too large.");
 	    return (false);
 	  }
 	}
 	break;
 
     case '<' : // Potential hex string
-	if ((ch = get_char(&tb)) == '<')
+	if ((ch = get_char(tb)) == '<')
 	{
 	  // Dictionary delimiter
 	  *bufptr++ = (char)ch;
@@ -327,11 +390,11 @@ _pdfioTokenRead(
 	}
 	else if (!isspace(ch & 255) && !isxdigit(ch & 255))
 	{
-	  _pdfioFileError(pdf, "Syntax error: '<%c'", ch);
+	  _pdfioFileError(tb->pdf, "Syntax error: '<%c'", ch);
 	  return (false);
 	}
 
-	while ((ch = get_char(&tb)) != EOF && ch != '>')
+	while ((ch = get_char(tb)) != EOF && ch != '>')
 	{
 	  if (isxdigit(ch))
 	  {
@@ -343,46 +406,65 @@ _pdfioTokenRead(
 	    else
 	    {
 	      // Too large
-	      _pdfioFileError(pdf, "Token too large.");
+	      _pdfioFileError(tb->pdf, "Token too large.");
 	      return (false);
 	    }
 	  }
 	  else if (!isspace(ch))
 	  {
-	    _pdfioFileError(pdf, "Invalid hex string character '%c'.", ch);
+	    _pdfioFileError(tb->pdf, "Invalid hex string character '%c'.", ch);
 	    return (false);
 	  }
 	}
 
 	if (ch == EOF)
 	{
-	  _pdfioFileError(pdf, "Unterminated hex string.");
+	  _pdfioFileError(tb->pdf, "Unterminated hex string.");
 	  return (false);
 	}
 	break;
 
     case '>' : // Dictionary
-	if ((ch = get_char(&tb)) == '>')
+	if ((ch = get_char(tb)) == '>')
 	{
 	  *bufptr++ = '>';
 	}
 	else
 	{
-	  _pdfioFileError(pdf, "Syntax error: '>%c'.", ch);
+	  _pdfioFileError(tb->pdf, "Syntax error: '>%c'.", ch);
 	  return (false);
 	}
 	break;
   }
 
-  while (tb.bufptr < tb.bufend && isspace(*(tb.bufptr)))
-    tb.bufptr ++;
+  while (tb->bufptr < tb->bufend && isspace(*(tb->bufptr)))
+    tb->bufptr ++;
 
-  if (tb.bufptr > tb.buffer)
-    (consume_cb)(data, (size_t)(tb.bufptr - tb.buffer));
+  if (tb->bufptr > tb->buffer)
+  {
+    size_t remaining = (size_t)(tb->bufend - tb->bufptr);
+					// Remaining bytes in buffer
+
+    // Consume what we've used...
+    (tb->consume_cb)(tb->cb_data, (size_t)(tb->bufptr - tb->buffer));
+
+    if (remaining > 0)
+    {
+      // Shuffle remaining bytes for next call...
+      memmove(tb->buffer, tb->bufptr, remaining);
+      tb->bufptr = tb->buffer;
+      tb->bufend = tb->buffer + remaining;
+    }
+    else
+    {
+      // Nothing left, reset pointers...
+      tb->bufptr = tb->bufend = tb->buffer;
+    }
+  }
 
   *bufptr = '\0';
 
-  PDFIO_DEBUG("_pdfioTokenRead(pdf=%p, ...): Read '%s'.\n", pdf, buffer);
+  PDFIO_DEBUG("_pdfioTokenRead: Read '%s'.\n", buffer);
 
   return (bufptr > buffer);
 }
@@ -393,7 +475,7 @@ _pdfioTokenRead(
 //
 
 static int				// O - Character or `EOF` on end-of-file
-get_char(_pdfio_tbuffer_t *tb)		// I - Token buffer
+get_char(_pdfio_token_t *tb)		// I - Token buffer
 {
   ssize_t	bytes;			// Bytes peeked
 
@@ -403,10 +485,10 @@ get_char(_pdfio_tbuffer_t *tb)		// I - Token buffer
   {
     // Consume previous bytes...
     if (tb->bufend > tb->buffer)
-      (tb->consume_cb)(tb->data, (size_t)(tb->bufend - tb->buffer));
+      (tb->consume_cb)(tb->cb_data, (size_t)(tb->bufend - tb->buffer));
 
     // Peek new bytes...
-    if ((bytes = (tb->peek_cb)(tb->data, tb->buffer, sizeof(tb->buffer))) < 0)
+    if ((bytes = (tb->peek_cb)(tb->cb_data, tb->buffer, sizeof(tb->buffer))) <= 0)
     {
       tb->bufptr = tb->bufend = tb->buffer;
       return (EOF);

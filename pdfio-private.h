@@ -80,6 +80,22 @@ typedef enum _pdfio_predictor_e		// PNG predictor constants
   _PDFIO_PREDICTOR_PNG_PAETH = 14	// PNG Paeth predictor
 } _pdfio_predictor_t;
 
+typedef ssize_t (*_pdfio_tconsume_cb_t)(void *data, size_t bytes);
+typedef ssize_t (*_pdfio_tpeek_cb_t)(void *data, void *buffer, size_t bytes);
+
+typedef struct _pdfio_token_s		// Token buffer/stack
+{
+  pdfio_file_t		*pdf;		// PDF file
+  _pdfio_tconsume_cb_t	consume_cb;	// Consume callback
+  _pdfio_tpeek_cb_t	peek_cb;	// Peek callback
+  void			*cb_data;	// Callback data
+  unsigned char		buffer[32],	// Buffer
+			*bufptr,	// Pointer into buffer
+			*bufend;	// Last valid byte in buffer
+  size_t		num_tokens;	// Number of tokens in stack
+  char			*tokens[4];	// Token stack
+} _pdfio_token_t;
+
 typedef struct _pdfio_value_s		// Value structure
 {
   pdfio_valtype_t type;			// Type of value
@@ -163,8 +179,6 @@ struct _pdfio_file_s			// PDF file structure
   size_t	num_strings,		// Number of strings
 		alloc_strings;		// Allocated strings
   char		**strings;		// Nul-terminated strings
-  size_t	num_tokens;		// Number of tokens in stack
-  char		*tokens[4];		// Token stack
 };
 
 struct _pdfio_obj_s			// Object
@@ -198,9 +212,6 @@ struct _pdfio_stream_s			// Stream
 		*pbuffers[2];		// Predictor buffers, as needed
 };
 
-typedef ssize_t (*_pdfio_tconsume_cb_t)(void *data, size_t bytes);
-typedef ssize_t (*_pdfio_tpeek_cb_t)(void *data, void *buffer, size_t bytes);
-
 
 //
 // Functions...
@@ -211,7 +222,7 @@ extern void		_pdfioArrayDebug(pdfio_array_t *a) PDFIO_INTERNAL;
 #  endif // DEBUG
 extern void		_pdfioArrayDelete(pdfio_array_t *a) PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioArrayGetValue(pdfio_array_t *a, size_t n) PDFIO_INTERNAL;
-extern pdfio_array_t	*_pdfioArrayRead(pdfio_file_t *pdf) PDFIO_INTERNAL;
+extern pdfio_array_t	*_pdfioArrayRead(pdfio_file_t *pdf, _pdfio_token_t *ts) PDFIO_INTERNAL;
 extern bool		_pdfioArrayWrite(pdfio_array_t *a) PDFIO_INTERNAL;
 
 #  ifdef DEBUG
@@ -219,21 +230,18 @@ extern void		_pdfioDictDebug(pdfio_dict_t *dict) PDFIO_INTERNAL;
 #  endif // DEBUG
 extern void		_pdfioDictDelete(pdfio_dict_t *dict) PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioDictGetValue(pdfio_dict_t *dict, const char *key) PDFIO_INTERNAL;
-extern pdfio_dict_t	*_pdfioDictRead(pdfio_file_t *pdf) PDFIO_INTERNAL;
+extern pdfio_dict_t	*_pdfioDictRead(pdfio_file_t *pdf, _pdfio_token_t *ts) PDFIO_INTERNAL;
 extern bool		_pdfioDictSetValue(pdfio_dict_t *dict, const char *key, _pdfio_value_t *value) PDFIO_INTERNAL;
 extern bool		_pdfioDictWrite(pdfio_dict_t *dict, off_t *length) PDFIO_INTERNAL;
 
-extern void		_pdfioFileClearTokens(pdfio_file_t *pdf) PDFIO_INTERNAL;
 extern bool		_pdfioFileConsume(pdfio_file_t *pdf, size_t bytes) PDFIO_INTERNAL;
 extern bool		_pdfioFileDefaultError(pdfio_file_t *pdf, const char *message, void *data) PDFIO_INTERNAL;
 extern bool		_pdfioFileError(pdfio_file_t *pdf, const char *format, ...) PDFIO_FORMAT(2,3) PDFIO_INTERNAL;
 extern bool		_pdfioFileFlush(pdfio_file_t *pdf) PDFIO_INTERNAL;
 extern int		_pdfioFileGetChar(pdfio_file_t *pdf) PDFIO_INTERNAL;
-extern bool		_pdfioFileGetToken(pdfio_file_t *pdf, char *buffer, size_t bufsize) PDFIO_INTERNAL;
 extern bool		_pdfioFileGets(pdfio_file_t *pdf, char *buffer, size_t bufsize) PDFIO_INTERNAL;
 extern ssize_t		_pdfioFilePeek(pdfio_file_t *pdf, void *buffer, size_t bytes) PDFIO_INTERNAL;
 extern bool		_pdfioFilePrintf(pdfio_file_t *pdf, const char *format, ...) PDFIO_FORMAT(2,3) PDFIO_INTERNAL;
-extern void		_pdfioFilePushToken(pdfio_file_t *pdf, const char *token) PDFIO_INTERNAL;
 extern bool		_pdfioFilePuts(pdfio_file_t *pdf, const char *s) PDFIO_INTERNAL;
 extern ssize_t		_pdfioFileRead(pdfio_file_t *pdf, void *buffer, size_t bytes) PDFIO_INTERNAL;
 extern off_t		_pdfioFileSeek(pdfio_file_t *pdf, off_t offset, int whence) PDFIO_INTERNAL;
@@ -248,14 +256,18 @@ extern pdfio_stream_t	*_pdfioStreamOpen(pdfio_obj_t *obj, bool decode) PDFIO_INT
 
 extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) PDFIO_INTERNAL;
 
-extern bool		_pdfioTokenRead(pdfio_file_t *pdf, char *buffer, size_t bufsize, _pdfio_tpeek_cb_t peek_cb, _pdfio_tconsume_cb_t consume_cb, void *data);
+extern void		_pdfioTokenClear(_pdfio_token_t *ts) PDFIO_INTERNAL;
+extern bool		_pdfioTokenGet(_pdfio_token_t *ts, char *buffer, size_t bufsize) PDFIO_INTERNAL;
+extern void		_pdfioTokenInit(_pdfio_token_t *ts, pdfio_file_t *pdf, _pdfio_tconsume_cb_t consume_cb, _pdfio_tpeek_cb_t peek_cb, void *cb_data);
+extern void		_pdfioTokenPush(_pdfio_token_t *ts, const char *token) PDFIO_INTERNAL;
+extern bool		_pdfioTokenRead(_pdfio_token_t *ts, char *buffer, size_t bufsize);
 
 extern _pdfio_value_t	*_pdfioValueCopy(pdfio_file_t *pdfdst, _pdfio_value_t *vdst, pdfio_file_t *pdfsrc, _pdfio_value_t *vsrc) PDFIO_INTERNAL;
 #  ifdef DEBUG
 extern void		_pdfioValueDebug(_pdfio_value_t *v) PDFIO_INTERNAL;
 #  endif // DEBUG
 extern void		_pdfioValueDelete(_pdfio_value_t *v) PDFIO_INTERNAL;
-extern _pdfio_value_t	*_pdfioValueRead(pdfio_file_t *pdf, _pdfio_value_t *v) PDFIO_INTERNAL;
+extern _pdfio_value_t	*_pdfioValueRead(pdfio_file_t *pdf, _pdfio_token_t *ts, _pdfio_value_t *v) PDFIO_INTERNAL;
 extern bool		_pdfioValueWrite(pdfio_file_t *pdf, _pdfio_value_t *v) PDFIO_INTERNAL;
 
 #endif // !PDFIO_PRIVATE_H

@@ -517,7 +517,8 @@ _pdfioArrayGetValue(pdfio_array_t *a,	// I - Array
 //
 
 pdfio_array_t *				// O - New array
-_pdfioArrayRead(pdfio_file_t *pdf)	// I - PDF file
+_pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
+                _pdfio_token_t *tb)	// I - Token buffer/stack
 {
   pdfio_array_t		*array;		// New array
   char			token[8192];	// Token from file
@@ -528,7 +529,7 @@ _pdfioArrayRead(pdfio_file_t *pdf)	// I - PDF file
   array = pdfioArrayCreate(pdf);
 
   // Read until we get "]" to end the array...
-  while (_pdfioFileGetToken(pdf, token, sizeof(token)))
+  while (_pdfioTokenGet(tb, token, sizeof(token)))
   {
     if (!strcmp(token, "]"))
     {
@@ -537,8 +538,8 @@ _pdfioArrayRead(pdfio_file_t *pdf)	// I - PDF file
     }
 
     // Push the token and decode the value...
-    _pdfioFilePushToken(pdf, token);
-    if (!_pdfioValueRead(pdf, &value))
+    _pdfioTokenPush(tb, token);
+    if (!_pdfioValueRead(pdf, tb, &value))
       break;
 
     append_value(array, &value);

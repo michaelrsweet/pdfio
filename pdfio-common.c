@@ -24,24 +24,6 @@ static bool	write_buffer(pdfio_file_t *pdf, const void *buffer, size_t bytes);
 
 
 //
-// '_pdfioFileClearTokens()' - Clear the token stack.
-//
-
-void
-_pdfioFileClearTokens(pdfio_file_t *pdf)// I - PDF file
-{
-  PDFIO_DEBUG("_pdfioFileClearTokens(pdf=%p)\n", pdf);
-
-  while (pdf->num_tokens > 0)
-  {
-    pdf->num_tokens --;
-    free(pdf->tokens[pdf->num_tokens]);
-    pdf->tokens[pdf->num_tokens] = NULL;
-  }
-}
-
-
-//
 // '_pdfioFileConsume()' - Consume bytes from the file.
 //
 
@@ -141,35 +123,6 @@ _pdfioFileGetChar(pdfio_file_t *pdf)	// I - PDF file
 
   // Then return the next character in the buffer...
   return (*(pdf->bufptr ++));
-}
-
-
-//
-// '_pdfioFileGetToken()' - Get a token from a PDF file.
-//
-
-bool					// O - `true` on success, `false` on failure
-_pdfioFileGetToken(pdfio_file_t *pdf,	// I - PDF file
-                   char         *buffer,// I - String buffer
-                   size_t       bufsize)// I - Size of string buffer
-{
-  // See if we have a token waiting on the stack...
-  if (pdf->num_tokens > 0)
-  {
-    // Yes, return it...
-    pdf->num_tokens --;
-    strncpy(buffer, pdf->tokens[pdf->num_tokens], bufsize - 1);
-    buffer[bufsize - 1] = '\0';
-
-    PDFIO_DEBUG("_pdfioFileGetToken(pdf=%p, buffer=%p, bufsize=%u): Popping '%s' from stack.\n", pdf, buffer, (unsigned)bufsize, buffer);
-
-    free(pdf->tokens[pdf->num_tokens]);
-    pdf->tokens[pdf->num_tokens] = NULL;
-    return (true);
-  }
-
-  // No, read a new one...
-  return (_pdfioTokenRead(pdf, buffer, bufsize, (_pdfio_tpeek_cb_t)_pdfioFilePeek, (_pdfio_tconsume_cb_t)_pdfioFileConsume, pdf));
 }
 
 
@@ -303,22 +256,6 @@ _pdfioFilePrintf(pdfio_file_t *pdf,	// I - PDF file
 
   // Write it...
   return (_pdfioFileWrite(pdf, buffer, strlen(buffer)));
-}
-
-
-//
-// '()' - Push a token on the token stack.
-//
-
-void
-_pdfioFilePushToken(pdfio_file_t *pdf,	// I - PDF file
-                    const char   *token)// I - Token
-{
-  if (pdf->num_tokens < (sizeof(pdf->tokens) / sizeof(pdf->tokens[0])))
-  {
-    if ((pdf->tokens[pdf->num_tokens ++] = strdup(token)) == NULL)
-      pdf->num_tokens --;
-  }
 }
 
 

@@ -121,12 +121,17 @@ pdfioStreamGetToken(
     char           *buffer,		// I - String buffer
     size_t         bufsize)		// I - Size of string buffer
 {
+  _pdfio_token_t	tb;		// Token buffer/stack
+
+
   // Range check input...
   if (!st || st->pdf->mode != _PDFIO_MODE_READ || !buffer || !bufsize)
     return (false);
 
   // Read using the token engine...
-  return (_pdfioTokenRead(st->pdf, buffer, bufsize, (_pdfio_tpeek_cb_t)pdfioStreamPeek, (_pdfio_tconsume_cb_t)pdfioStreamConsume, st));
+  _pdfioTokenInit(&tb, st->pdf, (_pdfio_tconsume_cb_t)pdfioStreamConsume, (_pdfio_tpeek_cb_t)pdfioStreamPeek, st);
+
+  return (_pdfioTokenRead(&tb, buffer, bufsize));
 }
 
 

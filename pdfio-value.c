@@ -157,6 +157,7 @@ _pdfioValueDelete(_pdfio_value_t *v)	// I - Value
 
 _pdfio_value_t *			// O - Value or `NULL` on error/EOF
 _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
+                _pdfio_token_t *tb,	// I - Token buffer/stack
                 _pdfio_value_t *v)	// I - Value
 {
   char		token[8192];		// Token buffer
@@ -180,21 +181,21 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 
   PDFIO_DEBUG("_pdfioValueRead(pdf=%p, v=%p)\n", pdf, v);
 
-  if (!_pdfioFileGetToken(pdf, token, sizeof(token)))
+  if (!_pdfioTokenGet(tb, token, sizeof(token)))
     return (NULL);
 
   if (!strcmp(token, "["))
   {
     // Start of array
     v->type = PDFIO_VALTYPE_ARRAY;
-    if ((v->value.array = _pdfioArrayRead(pdf)) == NULL)
+    if ((v->value.array = _pdfioArrayRead(pdf, tb)) == NULL)
       return (NULL);
   }
   else if (!strcmp(token, "<<"))
   {
     // Start of dictionary
     v->type = PDFIO_VALTYPE_DICT;
-    if ((v->value.dict = _pdfioDictRead(pdf)) == NULL)
+    if ((v->value.dict = _pdfioDictRead(pdf, tb)) == NULL)
       return (NULL);
   }
   else if (token[0] == '(')
@@ -259,7 +260,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 		token3[8192],		// Third token ("R")
 		*tokptr;		// Pointer into token
 
-      if (_pdfioFileGetToken(pdf, token2, sizeof(token2)))
+      if (_pdfioTokenGet(tb, token2, sizeof(token2)))
       {
         // Got the second token, is it an integer?
         for (tokptr = token2; *tokptr; tokptr ++)
@@ -271,12 +272,12 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 	if (*tokptr)
 	{
 	  // Not an object reference, push this token for later use...
-	  _pdfioFilePushToken(pdf, token2);
+	  _pdfioTokenPush(tb, token2);
 	}
 	else
 	{
 	  // A possible reference, get one more...
-	  if (_pdfioFileGetToken(pdf, token3, sizeof(token3)))
+	  if (_pdfioTokenGet(tb, token3, sizeof(token3)))
 	  {
 	    if (!strcmp(token3, "R"))
 	    {
@@ -292,14 +293,14 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 	    else
 	    {
 	      // Not a reference, push the tokens back...
-	      _pdfioFilePushToken(pdf, token3);
-	      _pdfioFilePushToken(pdf, token2);
+	      _pdfioTokenPush(tb, token3);
+	      _pdfioTokenPush(tb, token2);
 	    }
 	  }
 	  else
 	  {
 	    // Not a reference...
-	    _pdfioFilePushToken(pdf, token2);
+	    _pdfioTokenPush(tb, token2);
 	  }
 	}
       }

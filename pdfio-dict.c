@@ -373,7 +373,8 @@ _pdfioDictGetValue(pdfio_dict_t *dict,	// I - Dictionary
 //
 
 pdfio_dict_t *				// O - New dictionary
-_pdfioDictRead(pdfio_file_t *pdf)	// I - PDF file
+_pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
+               _pdfio_token_t *tb)	// I - Token buffer/stack
 {
   pdfio_dict_t		*dict;		// New dictionary
   char			key[256];	// Dictionary key
@@ -385,7 +386,7 @@ _pdfioDictRead(pdfio_file_t *pdf)	// I - PDF file
   // Create a dictionary and start reading...
   dict = pdfioDictCreate(pdf);
 
-  while (_pdfioFileGetToken(pdf, key, sizeof(key)))
+  while (_pdfioTokenGet(tb, key, sizeof(key)))
   {
     // Get the next key or end-of-dictionary...
     if (!strcmp(key, ">>"))
@@ -400,7 +401,7 @@ _pdfioDictRead(pdfio_file_t *pdf)	// I - PDF file
     }
 
     // Then get the next value...
-    if (!_pdfioValueRead(pdf, &value))
+    if (!_pdfioValueRead(pdf, tb, &value))
     {
       _pdfioFileError(pdf, "Missing value for dictionary key.");
       break;

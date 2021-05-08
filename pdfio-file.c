@@ -521,6 +521,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 		num_objects,		// Number of objects
 		offset;			// Offset in file
   int		generation;		// Generation number
+  _pdfio_token_t tb;			// Token buffer/stack
 
 
   while (!done)
@@ -581,7 +582,9 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
         return (false);
       }
 
-      if (!_pdfioValueRead(pdf, &trailer))
+      _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
+
+      if (!_pdfioValueRead(pdf, &tb, &trailer))
       {
         _pdfioFileError(pdf, "Unable to read cross-reference stream dictionary.");
         return (false);
@@ -594,7 +597,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
       obj->value = trailer;
 
-      if (!_pdfioFileGetToken(pdf, line, sizeof(line)) || strcmp(line, "stream"))
+      if (!_pdfioTokenGet(&tb, line, sizeof(line)) || strcmp(line, "stream"))
       {
         _pdfioFileError(pdf, "Unable to get stream after xref dictionary.");
         return (false);
@@ -748,7 +751,9 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	return (false);
       }
 
-      if (!_pdfioValueRead(pdf, &trailer))
+      _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
+
+      if (!_pdfioValueRead(pdf, &tb, &trailer))
       {
 	_pdfioFileError(pdf, "Unable to read trailer dictionary.");
 	return (false);
