@@ -40,7 +40,33 @@ main(int  argc,				// I - Number of command-line arguments
         num_objs  = pdfioFileGetNumObjects(pdf);
         num_pages = pdfioFileGetNumPages(pdf);
 
-	printf("%s: PDF %s, %d objects, %d pages.\n", argv[i], pdfioFileGetVersion(pdf), (int)num_objs, (int)num_pages);
+	printf("%s: PDF %s, %d pages, %d objects.\n", argv[i], pdfioFileGetVersion(pdf), (int)num_pages, (int)num_objs);
+
+        for (n = 0; n < num_pages; n ++)
+        {
+          if ((obj = pdfioFileGetPage(pdf, n)) == NULL)
+          {
+            printf("%s: Unable to get page #%d.\n", argv[i], (int)n + 1);
+          }
+          else
+          {
+            pdfio_rect_t media_box;	// MediaBox value
+
+	    memset(&media_box, 0, sizeof(media_box));
+            dict = pdfioObjGetDict(obj);
+
+            if (!pdfioDictGetRect(dict, "MediaBox", &media_box))
+            {
+              if ((obj = pdfioDictGetObject(dict, "Parent")) != NULL)
+              {
+		dict = pdfioObjGetDict(obj);
+		pdfioDictGetRect(dict, "MediaBox", &media_box);
+              }
+            }
+
+            printf("%s: Page #%d is %gx%g.\n", argv[i], (int)n + 1, media_box.x2, media_box.y2);
+          }
+        }
 
         for (n = 0; n < num_objs; n ++)
         {

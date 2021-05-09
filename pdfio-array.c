@@ -450,7 +450,7 @@ pdfioArrayGetObject(pdfio_array_t *a,	// I - Array
   if (!a || n >= a->num_values || a->values[n].type != PDFIO_VALTYPE_INDIRECT)
     return (NULL);
   else
-    return (pdfioFileGetObject(a->pdf, a->values[n].value.indirect.number));
+    return (pdfioFileFindObject(a->pdf, a->values[n].value.indirect.number));
 }
 
 

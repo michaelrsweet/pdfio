@@ -265,7 +265,7 @@ pdfioDictGetObject(pdfio_dict_t *dict,	// I - Dictionary
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
 
   if (value && value->type == PDFIO_VALTYPE_INDIRECT)
-    return (pdfioFileGetObject(dict->pdf, value->value.indirect.number));
+    return (pdfioFileFindObject(dict->pdf, value->value.indirect.number));
   else
     return (NULL);
 }

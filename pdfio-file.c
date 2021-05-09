@@ -24,6 +24,7 @@
 static pdfio_obj_t	*add_obj(pdfio_file_t *pdf, size_t number, unsigned short generation, off_t offset);
 static int		compare_objs(pdfio_obj_t **a, pdfio_obj_t **b);
 static bool		load_obj_stream(pdfio_obj_t *obj);
+static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset);
 static bool		write_trailer(pdfio_file_t *pdf);
 
@@ -591,6 +592,74 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
 
 
 //
+// 'load_pages()' - Load pages in the document.
+//
+
+static bool				// O - `true` on success, `false` on error
+load_pages(pdfio_file_t *pdf,		// I - PDF file
+           pdfio_obj_t  *obj)		// I - Page object
+{
+  pdfio_dict_t	*dict;			// Page object dictionary
+  const char	*type;			// Node type
+  pdfio_array_t	*kids;			// Kids array
+
+
+  // Range check input...
+  if (!obj)
+  {
+    _pdfioFileError(pdf, "Unable to find pages object.");
+    return (false);
+  }
+
+  // Get the object dictionary and make sure this is a Pages or Page object...
+  if ((dict = pdfioObjGetDict(obj)) == NULL)
+  {
+    _pdfioFileError(pdf, "No dictionary for pages object.");
+    return (false);
+  }
+
+  if ((type = pdfioDictGetName(dict, "Type")) == NULL || (strcmp(type, "Pages") && strcmp(type, "Page")))
+    return (false);
+
+  // If there is a Kids array, then this is a parent node and we have to look
+  // at the child objects...
+  if ((kids = pdfioDictGetArray(dict, "Kids")) != NULL)
+  {
+    // Load the child objects...
+    size_t	i,			// Looping var
+		num_kids;		// Number of elements in array
+
+    for (i = 0, num_kids = pdfioArrayGetSize(kids); i < num_kids; i ++)
+    {
+      if (!load_pages(pdf, pdfioArrayGetObject(kids, i)))
+        return (false);
+    }
+  }
+  else
+  {
+    // Add this page...
+    if (pdf->num_pages >= pdf->alloc_pages)
+    {
+      pdfio_obj_t **temp = (pdfio_obj_t **)realloc(pdf->pages, (pdf->alloc_pages + 32) * sizeof(pdfio_obj_t *));
+
+      if (!temp)
+      {
+        _pdfioFileError(pdf, "Unable to allocate memory for pages.");
+        return (false);
+      }
+
+      pdf->alloc_pages += 32;
+      pdf->pages       = temp;
+    }
+
+    pdf->pages[pdf->num_pages ++] = obj;
+  }
+
+  return (true);
+}
+
+
+//
 // 'load_xref()' - Load an XREF table...
 //
 
@@ -936,12 +1005,13 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
     return (false);
   }
 
+  PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root, (unsigned long)pdf->root->number);
+
   pdf->info     = pdfioDictGetObject(pdf->trailer, "Info");
   pdf->encrypt  = pdfioDictGetObject(pdf->trailer, "Encrypt");
   pdf->id_array = pdfioDictGetArray(pdf->trailer, "ID");
 
-  // If we get this far, we successfully loaded everything...
-  return (true);
+  return (load_pages(pdf, pdfioDictGetObject(pdfioObjGetDict(pdf->root), "Pages")));
 }
 
 
