@@ -922,22 +922,25 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       // Save the trailer dictionary and grab the root (catalog) and info
       // objects...
       pdf->trailer = trailer.value.dict;
-
-      if ((pdf->root = pdfioDictGetObject(pdf->trailer, "Root")) == NULL)
-      {
-        _pdfioFileError(pdf, "Missing Root object.");
-        return (false);
-      }
-
-      pdf->info     = pdfioDictGetObject(pdf->trailer, "Info");
-      pdf->encrypt  = pdfioDictGetObject(pdf->trailer, "Encrypt");
-      pdf->id_array = pdfioDictGetArray(pdf->trailer, "ID");
     }
 
     if ((xref_offset = (off_t)pdfioDictGetNumber(trailer.value.dict, "Prev")) <= 0)
       done = true;
   }
 
+  // Once we have all of the xref tables loaded, get the important objects and
+  // build the pages array...
+  if ((pdf->root = pdfioDictGetObject(pdf->trailer, "Root")) == NULL)
+  {
+    _pdfioFileError(pdf, "Missing Root object.");
+    return (false);
+  }
+
+  pdf->info     = pdfioDictGetObject(pdf->trailer, "Info");
+  pdf->encrypt  = pdfioDictGetObject(pdf->trailer, "Encrypt");
+  pdf->id_array = pdfioDictGetArray(pdf->trailer, "ID");
+
+  // If we get this far, we successfully loaded everything...
   return (true);
 }
 
