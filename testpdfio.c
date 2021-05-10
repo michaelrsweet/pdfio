@@ -37,16 +37,23 @@ main(int  argc,				// I - Number of command-line arguments
     {
       if ((pdf = pdfioFileOpen(argv[i], NULL, NULL)) != NULL)
       {
+        const char *filename;		// Base filename for messages
+
+        if ((filename = strrchr(argv[i], '/')) != NULL)
+          filename ++;
+        else
+          filename = argv[i];
+
         num_objs  = pdfioFileGetNumObjects(pdf);
         num_pages = pdfioFileGetNumPages(pdf);
 
-	printf("%s: PDF %s, %d pages, %d objects.\n", argv[i], pdfioFileGetVersion(pdf), (int)num_pages, (int)num_objs);
+	printf("%s: PDF %s, %d pages, %d objects.\n", filename, pdfioFileGetVersion(pdf), (int)num_pages, (int)num_objs);
 
         for (n = 0; n < num_pages; n ++)
         {
           if ((obj = pdfioFileGetPage(pdf, n)) == NULL)
           {
-            printf("%s: Unable to get page #%d.\n", argv[i], (int)n + 1);
+            printf("%s: Unable to get page #%d.\n", filename, (int)n + 1);
           }
           else
           {
@@ -64,7 +71,7 @@ main(int  argc,				// I - Number of command-line arguments
               }
             }
 
-            printf("%s: Page #%d is %gx%g.\n", argv[i], (int)n + 1, media_box.x2, media_box.y2);
+            printf("%s: Page #%d is %gx%g.\n", filename, (int)n + 1, media_box.x2, media_box.y2);
           }
         }
 
@@ -72,7 +79,7 @@ main(int  argc,				// I - Number of command-line arguments
         {
           if ((obj = pdfioFileGetObject(pdf, n)) == NULL)
           {
-            printf("%s: Unable to get object #%d.\n", argv[i], (int)n);
+            printf("%s: Unable to get object #%d.\n", filename, (int)n);
           }
           else
           {
@@ -81,7 +88,7 @@ main(int  argc,				// I - Number of command-line arguments
 
             dict = pdfioObjGetDict(obj);
 
-            printf("%s: %u %u obj dict=%p(%lu)\n", argv[i], (unsigned)pdfioObjGetNumber(obj), (unsigned)pdfioObjGetGeneration(obj), dict, dict ? (unsigned long)dict->num_pairs : 0UL);
+            printf("%s: %u %u obj dict=%p(%lu)\n", filename, (unsigned)pdfioObjGetNumber(obj), (unsigned)pdfioObjGetGeneration(obj), dict, dict ? (unsigned long)dict->num_pairs : 0UL);
             if (dict)
             {
               for (np = dict->num_pairs, pair = dict->pairs; np > 0; np --, pair ++)

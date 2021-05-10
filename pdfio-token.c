@@ -148,7 +148,8 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 		char           *buffer,	// I - String buffer
 		size_t         bufsize)	// I - Size of string buffer
 {
-  int	ch;				// Character
+  int	ch,				// Character
+	parens = 0;			// Parenthesis level
   char	*bufptr,			// Pointer into buffer
 	*bufend,			// End of buffer
 	state = '\0';			// Current state
@@ -210,7 +211,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
   switch (state)
   {
     case '(' : // Literal string
-	while ((ch = get_char(tb)) != EOF && ch != ')')
+	while ((ch = get_char(tb)) != EOF)
 	{
 	  if (ch == '\\')
 	  {
@@ -267,9 +268,21 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 		  break;
 
 	      default :
-		  _pdfioFileError(tb->pdf, "Unknown escape '\\%c' in literal string.", ch);
-		  return (false);
+	          // Ignore blackslash per PDF spec...
+	          break;
 	    }
+	  }
+	  else if (ch == '(')
+	  {
+	    // Keep track of parenthesis
+	    parens ++;
+	  }
+	  else if (ch == ')')
+	  {
+	    if (parens == 0)
+	      break;
+
+	    parens --;
 	  }
 
 	  if (bufptr < bufend)
