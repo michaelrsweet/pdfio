@@ -453,6 +453,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
   while (tb->bufptr < tb->bufend && isspace(*(tb->bufptr)))
     tb->bufptr ++;
 
+#if 0
   if (tb->bufptr > tb->buffer)
   {
     size_t remaining = (size_t)(tb->bufend - tb->bufptr);
@@ -474,6 +475,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
       tb->bufptr = tb->bufend = tb->buffer;
     }
   }
+#endif // 0
 
   *bufptr = '\0';
 

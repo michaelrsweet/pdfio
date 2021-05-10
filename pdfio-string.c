@@ -75,15 +75,7 @@ pdfioStringCreate(
   if (pdf->num_strings > 1)
     qsort(pdf->strings, pdf->num_strings, sizeof(char *), (int (*)(const void *, const void *))compare_strings);
 
-#ifdef DEBUG
-  {
-    size_t	i;			// Looping var
-
-    PDFIO_DEBUG("pdfioStringCreate: %lu strings\n", (unsigned long)pdf->num_strings);
-    for (i = 0; i < pdf->num_strings; i ++)
-      PDFIO_DEBUG("pdfioStringCreate: strings[%lu]=%p(\"%s\")\n", (unsigned long)i, pdf->strings[i], pdf->strings[i]);
-  }
-#endif // DEBUG
+  PDFIO_DEBUG("pdfioStringCreate: %lu strings\n", (unsigned long)pdf->num_strings);
 
   return (news);
 }
