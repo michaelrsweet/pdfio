@@ -20,7 +20,7 @@
 
 static int	do_test_file(const char *filename);
 static int	do_unit_tests(void);
-static bool	error_cb(bool *error, const char *message);
+static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
 static ssize_t	token_consume_cb(const char **s, size_t bytes);
 static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
 
@@ -39,7 +39,7 @@ main(int  argc,				// I - Number of command-line arguments
 
     for (i = 1; i < argc; i ++)
     {
-      if (!do_test_file(argv[i]))
+      if (do_test_file(argv[i]))
         return (1);
     }
   }
@@ -59,6 +59,7 @@ main(int  argc,				// I - Number of command-line arguments
 static int				// O - Exit status
 do_test_file(const char *filename)	// I - PDF filename
 {
+  bool		error = false;		// Have we shown an error yet?
   pdfio_file_t	*pdf;			// PDF file
   size_t	n,			// Object/page index
 		num_objs,		// Number of objects
@@ -69,13 +70,16 @@ do_test_file(const char *filename)	// I - PDF filename
 
 
   // Try opening the file...
-  if ((pdf = pdfioFileOpen(filename, NULL, NULL)) != NULL)
+  printf("pdfioFileOpen(\"%s\", ...): ", filename);
+  if ((pdf = pdfioFileOpen(filename, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
+    puts("PASS");
+
     // Show basic stats...
     num_objs  = pdfioFileGetNumObjects(pdf);
     num_pages = pdfioFileGetNumPages(pdf);
 
-    printf("%s: PDF %s, %d pages, %d objects.\n", filename, pdfioFileGetVersion(pdf), (int)num_pages, (int)num_objs);
+    printf("    PDF %s, %d pages, %d objects.\n", pdfioFileGetVersion(pdf), (int)num_pages, (int)num_objs);
 
     // Show a summary of each page...
     for (n = 0; n < num_pages; n ++)
@@ -100,7 +104,7 @@ do_test_file(const char *filename)	// I - PDF filename
 	  }
 	}
 
-	printf("%s: Page #%d is %gx%g.\n", filename, (int)n + 1, media_box.x2, media_box.y2);
+	printf("    Page #%d is %gx%g.\n", (int)n + 1, media_box.x2, media_box.y2);
       }
     }
 
@@ -109,64 +113,16 @@ do_test_file(const char *filename)	// I - PDF filename
     {
       if ((obj = pdfioFileGetObject(pdf, n)) == NULL)
       {
-	printf("%s: Unable to get object #%d.\n", filename, (int)n);
+	printf("    Unable to get object #%d.\n", (int)n);
       }
       else
       {
-	size_t 		np;	// Number of pairs
-	_pdfio_pair_t	*pair;	// Current pair
-
 	dict = pdfioObjGetDict(obj);
 
-	printf("%s: %u %u obj dict=%p(%lu pairs)\n", filename, (unsigned)pdfioObjGetNumber(obj), (unsigned)pdfioObjGetGeneration(obj), dict, dict ? (unsigned long)dict->num_pairs : 0UL);
-	if (dict)
-	{
-	  // Show a summary of each pair in the dictionary...
-	  for (np = dict->num_pairs, pair = dict->pairs; np > 0; np --, pair ++)
-	  {
-	    switch (pair->value.type)
-	    {
-	      case PDFIO_VALTYPE_INDIRECT :
-		  printf("    /%s %u %u R\n", pair->key, (unsigned)pair->value.value.indirect.number, pair->value.value.indirect.generation);
-		  break;
-	      case PDFIO_VALTYPE_NAME :
-		  printf("    /%s /%s\n", pair->key, pair->value.value.name);
-		  break;
-	      case PDFIO_VALTYPE_STRING :
-		  printf("    /%s (%s)\n", pair->key, pair->value.value.string);
-		  break;
-	      case PDFIO_VALTYPE_BINARY :
-		  {
-		    size_t bn;
-		    unsigned char *bptr;
-
-		    printf("    /%s <", pair->key);
-		    for (bn = pair->value.value.binary.datalen, bptr = pair->value.value.binary.data; bn > 0; bn --, bptr ++)
-		      printf("%02X", *bptr);
-		    puts(">");
-		  }
-		  break;
-	      case PDFIO_VALTYPE_NUMBER :
-		  printf("    /%s %g\n", pair->key, pair->value.value.number);
-		  break;
-	      case PDFIO_VALTYPE_BOOLEAN :
-		  printf("    /%s %s\n", pair->key, pair->value.value.boolean ? "true" : "false");
-		  break;
-	      case PDFIO_VALTYPE_NULL :
-		  printf("    /%s null\n", pair->key);
-		  break;
-	      case PDFIO_VALTYPE_ARRAY :
-		  printf("    /%s [...]\n", pair->key);
-		  break;
-	      case PDFIO_VALTYPE_DICT :
-		  printf("    /%s <<...>>\n", pair->key);
-		  break;
-	      default :
-		  printf("    /%s ...\n", pair->key);
-		  break;
-	    }
-	  }
-	}
+	printf("    %u %u obj dict=%p(%lu pairs)\n", (unsigned)pdfioObjGetNumber(obj), (unsigned)pdfioObjGetGeneration(obj), dict, dict ? (unsigned long)dict->num_pairs : 0UL);
+	fputs("        ", stdout);
+	_pdfioValueDebug(&obj->value, stdout);
+	putchar('\n');
       }
     }
 
@@ -208,7 +164,7 @@ do_unit_tests(void)
 
 
   // First open the test PDF file...
-  fputs("pdfioFileOpen(testpdfio.pdf): ", stdout);
+  fputs("pdfioFileOpen(\"testpdfio.pdf\"): ", stdout);
   if ((pdf = pdfioFileOpen("testpdfio.pdf", (pdfio_error_cb_t)error_cb, &error)) != NULL)
     puts("PASS");
   else
@@ -244,21 +200,22 @@ do_unit_tests(void)
 //
 
 static bool				// O  - `true` to stop, `false` to continue
-error_cb(bool       *error,		// IO - Have we displayed an error?
-         const char *message)		// I  - Error message
+error_cb(pdfio_file_t *pdf,		// I  - PDF file
+         const char   *message,		// I  - Error message
+	 bool         *error)		// IO - Have we displayed an error? 
 {
+  (void)pdf;
+
   if (!*error)
   {
     // First error, so show a "FAIL" indicator
     *error = true;
 
-    printf("FAIL (%s)\n", message);
+    puts("FAIL");
   }
-  else
-  {
-    // Subsequent errors are just indented...
-    printf("    %s\n", message);
-  }
+
+  // Indent error messages...
+  printf("    %s\n", message);
 
   // Continue to catch more errors...
   return (false);

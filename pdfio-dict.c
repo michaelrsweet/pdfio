@@ -107,13 +107,13 @@ pdfioDictCreate(pdfio_file_t *pdf)	// I - PDF file
 }
 
 
-#ifdef DEBUG
 //
 // '_pdfioDictDebug()' - Dump a dictionary to stderr.
 //
 
 void
-_pdfioDictDebug(pdfio_dict_t *dict)	// I - Dictionary
+_pdfioDictDebug(pdfio_dict_t *dict,	// I - Dictionary
+                FILE         *fp)	// I - Output file
 {
   size_t	i;			// Looping var
   _pdfio_pair_t	*pair;			// Current pair
@@ -121,11 +121,10 @@ _pdfioDictDebug(pdfio_dict_t *dict)	// I - Dictionary
 
   for (i = dict->num_pairs, pair = dict->pairs; i > 0; i --, pair ++)
   {
-    PDFIO_DEBUG("/%s", pair->key);
-    _pdfioValueDebug(&pair->value);
+    fprintf(fp, "/%s", pair->key);
+    _pdfioValueDebug(&pair->value, fp);
   }
 }
-#endif // DEBUG
 
 
 //

@@ -305,24 +305,23 @@ pdfioArrayCreate(pdfio_file_t *pdf)	// I - PDF file
 }
 
 
-#ifdef DEBUG
 //
 // '_pdfioArrayDebug()' - Print the contents of an array.
 //
 
 void
-_pdfioArrayDebug(pdfio_array_t *a)	// I - Array
+_pdfioArrayDebug(pdfio_array_t *a,	// I - Array
+                 FILE          *fp)	// I - Output file
 {
   size_t		i;		// Looping var
   _pdfio_value_t	*v;		// Current value
 
 
-  PDFIO_DEBUG("[");
+  putc('[', fp);
   for (i = a->num_values, v = a->values; i > 0; i --, v ++)
-    _pdfioValueDebug(v);
-  PDFIO_DEBUG("]");
+    _pdfioValueDebug(v, fp);
+  putc(']', fp);
 }
-#endif // DEBUG
 
 
 //
