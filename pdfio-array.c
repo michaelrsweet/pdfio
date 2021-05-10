@@ -524,6 +524,8 @@ _pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
   _pdfio_value_t	value;		// Value
 
 
+  PDFIO_DEBUG("_pdfioArrayRead(pdf=%p, tb=%p)\n", pdf, tb);
+
   // Create an array...
   array = pdfioArrayCreate(pdf);
 
@@ -540,6 +542,10 @@ _pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
     _pdfioTokenPush(tb, token);
     if (!_pdfioValueRead(pdf, tb, &value))
       break;
+
+    PDFIO_DEBUG("_pdfioArrayRead(%p): Appending ", (void *)array);
+    PDFIO_DEBUG_VALUE(&value);
+    PDFIO_DEBUG("\n");
 
     append_value(array, &value);
   }

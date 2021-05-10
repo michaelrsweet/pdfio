@@ -760,6 +760,8 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
         return (false);
       }
 
+      _pdfioTokenFlush(&tb);
+
       obj->stream_offset = _pdfioFileTell(pdf);
 
       if ((index_array = pdfioDictGetArray(trailer.value.dict, "Index")) != NULL)
@@ -974,6 +976,8 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	_pdfioFileError(pdf, "Trailer is not a dictionary.");
 	return (false);
       }
+
+      _pdfioTokenFlush(&tb);
     }
     else
     {

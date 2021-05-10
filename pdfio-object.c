@@ -215,11 +215,13 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   }
 
   // Now see if there is an associated stream...
-  if (!_pdfioFileGets(obj->pdf, line, sizeof(line)))
+  if (!_pdfioTokenGet(&tb, line, sizeof(line)))
   {
     _pdfioFileError(obj->pdf, "Early end-of-file for object %lu.", (unsigned long)obj->number);
     return (false);
   }
+
+  _pdfioTokenFlush(&tb);
 
   if (!strcmp(line, "stream"))
   {

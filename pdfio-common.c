@@ -205,6 +205,8 @@ _pdfioFilePeek(pdfio_file_t *pdf,	// I - PDF file
     // Yes, try reading more...
     ssize_t	rbytes;			// Bytes read
 
+    PDFIO_DEBUG("_pdfioFilePeek: Sliding buffer, total=%ld\n", (long)total);
+
     memmove(pdf->buffer, pdf->bufptr, total);
     pdf->bufpos += pdf->bufptr - pdf->buffer;
     pdf->bufptr = pdf->buffer;
@@ -334,6 +336,8 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
                off_t        offset,	// I - Offset
                int          whence)	// I - Offset base
 {
+  PDFIO_DEBUG("_pdfioFileSeek(pdf=%p, offset=%ld, whence=%d)\n", pdf, (long)offset, whence);
+
   // Adjust offset for relative seeks...
   if (whence == SEEK_CUR)
   {

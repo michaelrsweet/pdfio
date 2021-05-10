@@ -762,8 +762,8 @@ _pdfioDictSetValue(
     qsort(dict->pairs, dict->num_pairs, sizeof(_pdfio_pair_t), (int (*)(const void *, const void *))compare_pairs);
 
 #ifdef DEBUG
-  PDFIO_DEBUG("_pdfioDictSetValue: %lu pairs\n", (unsigned long)dict->num_pairs);
-  PDFIO_DEBUG("_pdfioDictSetValue: ");
+  PDFIO_DEBUG("_pdfioDictSetValue(%p): %lu pairs\n", (void *)dict, (unsigned long)dict->num_pairs);
+  PDFIO_DEBUG("_pdfioDictSetValue(%p): ", (void *)dict);
   PDFIO_DEBUG_DICT(dict);
   PDFIO_DEBUG("\n");
 #endif // DEBUG

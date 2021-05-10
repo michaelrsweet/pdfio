@@ -47,10 +47,10 @@
 //
 
 #  ifdef DEBUG
-#    define PDFIO_DEBUG(...)	fprintf(stderr, __VA_ARGS__)
-#    define PDFIO_DEBUG_ARRAY(array) _pdfioArrayDebug(array, stderr)
-#    define PDFIO_DEBUG_DICT(dict) _pdfioDictDebug(dict, stderr)
-#    define PDFIO_DEBUG_VALUE(value) _pdfioValueDebug(value, stderr)
+#    define PDFIO_DEBUG(...)		fprintf(stderr, __VA_ARGS__)
+#    define PDFIO_DEBUG_ARRAY(array)	_pdfioArrayDebug(array, stderr)
+#    define PDFIO_DEBUG_DICT(dict)	_pdfioDictDebug(dict, stderr)
+#    define PDFIO_DEBUG_VALUE(value)	_pdfioValueDebug(value, stderr)
 #  else
 #    define PDFIO_DEBUG(...)
 #    define PDFIO_DEBUG_ARRAY(array)
@@ -89,7 +89,7 @@ typedef struct _pdfio_token_s		// Token buffer/stack
   _pdfio_tconsume_cb_t	consume_cb;	// Consume callback
   _pdfio_tpeek_cb_t	peek_cb;	// Peek callback
   void			*cb_data;	// Callback data
-  unsigned char		buffer[32],	// Buffer
+  unsigned char		buffer[256],	// Buffer
 			*bufptr,	// Pointer into buffer
 			*bufend;	// Last valid byte in buffer
   size_t		num_tokens;	// Number of tokens in stack
@@ -252,11 +252,12 @@ extern pdfio_stream_t	*_pdfioStreamOpen(pdfio_obj_t *obj, bool decode) PDFIO_INT
 
 extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) PDFIO_INTERNAL;
 
-extern void		_pdfioTokenClear(_pdfio_token_t *ts) PDFIO_INTERNAL;
-extern bool		_pdfioTokenGet(_pdfio_token_t *ts, char *buffer, size_t bufsize) PDFIO_INTERNAL;
-extern void		_pdfioTokenInit(_pdfio_token_t *ts, pdfio_file_t *pdf, _pdfio_tconsume_cb_t consume_cb, _pdfio_tpeek_cb_t peek_cb, void *cb_data);
-extern void		_pdfioTokenPush(_pdfio_token_t *ts, const char *token) PDFIO_INTERNAL;
-extern bool		_pdfioTokenRead(_pdfio_token_t *ts, char *buffer, size_t bufsize);
+extern void		_pdfioTokenClear(_pdfio_token_t *tb) PDFIO_INTERNAL;
+extern void		_pdfioTokenFlush(_pdfio_token_t *tb) PDFIO_INTERNAL;
+extern bool		_pdfioTokenGet(_pdfio_token_t *tb, char *buffer, size_t bufsize) PDFIO_INTERNAL;
+extern void		_pdfioTokenInit(_pdfio_token_t *tb, pdfio_file_t *pdf, _pdfio_tconsume_cb_t consume_cb, _pdfio_tpeek_cb_t peek_cb, void *cb_data);
+extern void		_pdfioTokenPush(_pdfio_token_t *tb, const char *token) PDFIO_INTERNAL;
+extern bool		_pdfioTokenRead(_pdfio_token_t *tb, char *buffer, size_t bufsize);
 
 extern _pdfio_value_t	*_pdfioValueCopy(pdfio_file_t *pdfdst, _pdfio_value_t *vdst, pdfio_file_t *pdfsrc, _pdfio_value_t *vsrc) PDFIO_INTERNAL;
 extern void		_pdfioValueDebug(_pdfio_value_t *v, FILE *fp) PDFIO_INTERNAL;

@@ -70,6 +70,52 @@ _pdfioTokenClear(_pdfio_token_t *tb)	// I - Token buffer/stack
 
 
 //
+// '_pdfioTokenFlush()' - Flush (consume) any bytes that have been used.
+//
+
+void
+_pdfioTokenFlush(_pdfio_token_t *tb)	// I - Token buffer/stack
+{
+  if (tb->bufptr > tb->buffer)
+  {
+    size_t remaining = (size_t)(tb->bufend - tb->bufptr);
+					// Remaining bytes in buffer
+
+    // Consume what we've used...
+    PDFIO_DEBUG("_pdfioTokenFlush: Consuming %d bytes.\n", (int)(tb->bufptr - tb->buffer));
+    (tb->consume_cb)(tb->cb_data, (size_t)(tb->bufptr - tb->buffer));
+
+    if (remaining > 0)
+    {
+      // Shuffle remaining bytes for next call...
+      memmove(tb->buffer, tb->bufptr, remaining);
+      tb->bufptr = tb->buffer;
+      tb->bufend = tb->buffer + remaining;
+
+#ifdef DEBUG
+      unsigned char *ptr;		// Pointer into buffer
+
+      PDFIO_DEBUG("_pdfioTokenFlush: Remainder '");
+      for (ptr = tb->buffer; ptr < tb->bufend; ptr ++)
+      {
+	if (*ptr < ' ' || *ptr == 0x7f)
+	  PDFIO_DEBUG("\\%03o", *ptr);
+	else
+	  PDFIO_DEBUG("%c", *ptr);
+      }
+      PDFIO_DEBUG("'\n");
+#endif // DEBUG
+    }
+    else
+    {
+      // Nothing left, reset pointers...
+      tb->bufptr = tb->bufend = tb->buffer;
+    }
+  }
+}
+
+
+//
 // '_pdfioTokenGet()' - Get a token.
 //
 
@@ -453,30 +499,6 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
   while (tb->bufptr < tb->bufend && isspace(*(tb->bufptr)))
     tb->bufptr ++;
 
-#if 0
-  if (tb->bufptr > tb->buffer)
-  {
-    size_t remaining = (size_t)(tb->bufend - tb->bufptr);
-					// Remaining bytes in buffer
-
-    // Consume what we've used...
-    (tb->consume_cb)(tb->cb_data, (size_t)(tb->bufptr - tb->buffer));
-
-    if (remaining > 0)
-    {
-      // Shuffle remaining bytes for next call...
-      memmove(tb->buffer, tb->bufptr, remaining);
-      tb->bufptr = tb->buffer;
-      tb->bufend = tb->buffer + remaining;
-    }
-    else
-    {
-      // Nothing left, reset pointers...
-      tb->bufptr = tb->bufend = tb->buffer;
-    }
-  }
-#endif // 0
-
   *bufptr = '\0';
 
   PDFIO_DEBUG("_pdfioTokenRead: Read '%s'.\n", buffer);
@@ -500,7 +522,10 @@ get_char(_pdfio_token_t *tb)		// I - Token buffer
   {
     // Consume previous bytes...
     if (tb->bufend > tb->buffer)
+    {
+      PDFIO_DEBUG("get_char: Consuming %d bytes.\n", (int)(tb->bufend - tb->buffer));
       (tb->consume_cb)(tb->cb_data, (size_t)(tb->bufend - tb->buffer));
+    }
 
     // Peek new bytes...
     if ((bytes = (tb->peek_cb)(tb->cb_data, tb->buffer, sizeof(tb->buffer))) <= 0)
@@ -512,6 +537,20 @@ get_char(_pdfio_token_t *tb)		// I - Token buffer
     // Update pointers...
     tb->bufptr = tb->buffer;
     tb->bufend = tb->buffer + bytes;
+
+#ifdef DEBUG
+    unsigned char *ptr;			// Pointer into buffer
+
+    PDFIO_DEBUG("get_char: Read '");
+    for (ptr = tb->buffer; ptr < tb->bufend; ptr ++)
+    {
+      if (*ptr < ' ' || *ptr == 0x7f)
+        PDFIO_DEBUG("\\%03o", *ptr);
+      else
+        PDFIO_DEBUG("%c", *ptr);
+    }
+    PDFIO_DEBUG("'\n");
+#endif // DEBUG
   }
 
   // Return the next character...
