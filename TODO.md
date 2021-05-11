@@ -1,9 +1,8 @@
 To-Do List
 ==========
 
-- Reference streams
-- All of the object read/write code
-- All of the stream read/write code
+- All of the object write code
+- All of the stream write code
 - Page create method
 - Write out trailer
 - How to handle object references between documents, i.e., if I copy a page from

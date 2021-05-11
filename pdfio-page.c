@@ -22,7 +22,7 @@ pdfio_obj_t *				// O - Destination page
 pdfioPageCopy(pdfio_file_t *pdf,	// I - PDF file
               pdfio_obj_t  *src)	// I - Source page
 {
-  // TODO: Implement me
+  // TODO: Implement pdfioPageCopy
   (void)pdf;
   (void)src;
 

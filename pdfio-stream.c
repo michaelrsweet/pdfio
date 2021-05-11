@@ -64,7 +64,7 @@ _pdfioStreamCreate(
     pdfio_obj_t    *obj,		// I - Object
     pdfio_filter_t compression)		// I - Compression to apply
 {
-  // TODO: Implement me
+  // TODO: Implement _pdfioStreamCreate
   (void)obj;
   (void)compression;
 
@@ -478,7 +478,7 @@ pdfioStreamWrite(
   if (!st || st->pdf->mode != _PDFIO_MODE_WRITE || !buffer || !bytes)
     return (false);
 
-  // TODO: Implement me
+  // TODO: Implement pdfioStreamWrite
   return (false);
 }
 

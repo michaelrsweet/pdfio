@@ -22,7 +22,7 @@
 bool					// O - `true` on success, `false` on failure
 pdfioObjClose(pdfio_obj_t *obj)		// I - Object
 {
-  // TODO: Implement me
+  // TODO: Implement pdfioObjClose
   (void)obj;
 
   return (false);
@@ -38,7 +38,7 @@ pdfioObjCreateStream(
     pdfio_obj_t    *obj,		// I - Object
     pdfio_filter_t filter)		// I - Type of compression to apply
 {
-  // TODO: Implement me
+  // TODO: Implement pdfioObjCreateStream
   (void)obj;
   (void)filter;
 

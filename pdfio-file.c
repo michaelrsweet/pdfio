@@ -218,7 +218,7 @@ pdfio_obj_t *				// O - New object
 pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
                     pdfio_dict_t *dict)	// I - Page dictionary
 {
-  // TODO: Implement me
+  // TODO: Implement pdfioFileCreatePage
   (void)pdf;
   (void)dict;
   return (NULL);
