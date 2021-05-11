@@ -61,6 +61,26 @@ _pdfioObjDelete(pdfio_obj_t *obj)	// I - Object
 
 
 //
+// 'pdfioObjGetArray()' - Get the array associated with an object.
+//
+
+pdfio_array_t *				// O - Array or `NULL` on error
+pdfioObjGetArray(pdfio_obj_t *obj)	// I - Object
+{
+  if (!obj)
+    return (NULL);
+
+  if (obj->value.type == PDFIO_VALTYPE_NONE)
+    _pdfioObjLoad(obj);
+
+  if (obj->value.type == PDFIO_VALTYPE_ARRAY)
+    return (obj->value.value.array);
+  else
+    return (NULL);
+}
+
+
+//
 // 'pdfioObjGetDict()' - Get the dictionary associated with an object.
 //
 
