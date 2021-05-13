@@ -22,11 +22,54 @@
 //
 
 static pdfio_obj_t	*add_obj(pdfio_file_t *pdf, size_t number, unsigned short generation, off_t offset);
+static int		compare_objmaps(_pdfio_objmap_t *a, _pdfio_objmap_t *b);
 static int		compare_objs(pdfio_obj_t **a, pdfio_obj_t **b);
 static bool		load_obj_stream(pdfio_obj_t *obj);
 static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset);
 static bool		write_trailer(pdfio_file_t *pdf);
+
+
+//
+// '_pdfioFileAddMappedObject()' - Add a mapped object.
+//
+
+bool					// O - `true` on success, `false` on failure
+_pdfioFileAddMappedObject(
+    pdfio_file_t *pdf,			// I - Destination PDF file
+    pdfio_obj_t  *dst_obj,		// I - Destination object
+    pdfio_obj_t  *src_obj)		// I - Source object
+{
+  _pdfio_objmap_t	*map;		// Object map
+
+
+  // Allocate memory as needed...
+  if (pdf->num_objmaps >= pdf->alloc_objmaps)
+  {
+    if ((map = realloc(pdf->objmaps, (pdf->alloc_objmaps + 16) * sizeof(_pdfio_objmap_t))) == NULL)
+    {
+      _pdfioFileError(pdf, "Unable to allocate memory for object map.");
+      return (false);
+    }
+
+    pdf->alloc_objmaps += 16;
+    pdf->objmaps       = map;
+  }
+
+  // Add an object to the end...
+  map = pdf->objmaps + pdf->num_objmaps;
+  pdf->num_objmaps ++;
+
+  map->obj        = dst_obj;
+  map->src_pdf    = src_obj->pdf;
+  map->src_number = src_obj->number;
+
+  // Sort as needed...
+  if (pdf->num_objmaps > 1 && compare_objmaps(map, pdf->objmaps + pdf->num_objmaps - 2) < 0)
+    qsort(pdf->objmaps, pdf->num_objmaps, sizeof(_pdfio_objmap_t), (int (*)(const void *, const void *))compare_objmaps);
+
+  return (true);
+}
 
 
 //
@@ -66,6 +109,8 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
   for (i = 0; i < pdf->num_objs; i ++)
     _pdfioObjDelete(pdf->objs[i]);
   free(pdf->objs);
+
+  free(pdf->objmaps);
 
   free(pdf->pages);
 
@@ -222,6 +267,35 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
   (void)pdf;
   (void)dict;
   return (NULL);
+}
+
+
+//
+// '_pdfioFileFindMappedObject()' - Find a mapped object.
+//
+
+pdfio_obj_t *				// O - Match object or `NULL` if none
+_pdfioFileFindMappedObject(
+    pdfio_file_t *pdf,			// I - Destination PDF file
+    pdfio_file_t *src_pdf,		// I - Source PDF file
+    size_t       src_number)		// I - Source object number
+{
+  _pdfio_objmap_t	key,		// Search key
+			*match;		// Matching object map
+
+
+  // If we have no mapped objects, return NULL immediately...
+  if (pdf->num_objmaps == 0)
+    return (NULL);
+
+  // Otherwise search for a match...
+  key.src_pdf    = src_pdf;
+  key.src_number = src_number;
+
+  if ((match = (_pdfio_objmap_t *)bsearch(&key, pdf->objmaps, pdf->num_objmaps, sizeof(_pdfio_objmap_t), (int (*)(const void *, const void *))compare_objmaps)) != NULL)
+    return (match->obj);
+  else
+    return (NULL);
 }
 
 
@@ -494,10 +568,31 @@ add_obj(pdfio_file_t   *pdf,		// I - PDF file
 
 
 //
+// 'compare_objmaps()' - Compare two object maps...
+//
+
+static int				// O - Result of comparison
+compare_objmaps(_pdfio_objmap_t *a,	// I - First object map
+                _pdfio_objmap_t *b)	// I - Second object map
+{
+  if (a->src_pdf < b->src_pdf)
+    return (-1);
+  else if (a->src_pdf > b->src_pdf)
+    return (1);
+  else if (a->src_number < b->src_number)
+    return (-1);
+  else if (a->src_number > b->src_number)
+    return (1);
+  else
+    return (0);
+}
+
+
+//
 // 'compare_objs()' - Compare the object numbers of two objects.
 //
 
-static int
+static int				// O - Result of comparison
 compare_objs(pdfio_obj_t **a,		// I - First object
              pdfio_obj_t **b)		// I - Second object
 {
