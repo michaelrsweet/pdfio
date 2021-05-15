@@ -161,6 +161,7 @@ extern const char	*pdfioFileGetVersion(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern pdfio_file_t	*pdfioFileOpen(const char *filename, pdfio_error_cb_t error_cb, void *error_data) PDFIO_PUBLIC;
 
 extern bool		pdfioObjClose(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioObjCopy(pdfio_file_t *pdf, pdfio_obj_t *srcobj) PDFIO_PUBLIC;
 extern pdfio_stream_t	*pdfioObjCreateStream(pdfio_obj_t *obj, pdfio_filter_t compression) PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioObjGetArray(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioObjGetDict(pdfio_obj_t *obj) PDFIO_PUBLIC;

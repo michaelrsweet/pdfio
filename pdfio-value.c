@@ -24,6 +24,9 @@ _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
                 pdfio_file_t   *pdfsrc,	// I - Source PDF file
                 _pdfio_value_t *vsrc)	// I - Source value
 {
+  pdfio_obj_t	*obj;			// Object reference
+
+
   if (pdfdst == pdfsrc && vsrc->type != PDFIO_VALTYPE_BINARY)
   {
     // For the same document we can copy the values without any other effort
@@ -36,9 +39,17 @@ _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
   switch (vsrc->type)
   {
     case PDFIO_VALTYPE_INDIRECT :
-        // Object references don't copy to other documents
-        _pdfioFileError(pdfdst, "Unable to copy indirect object reference between PDF files.");
-        return (NULL);
+        if ((obj = _pdfioFileFindMappedObject(pdfdst, pdfsrc, vsrc->value.indirect.number)) == NULL)
+        {
+          obj = pdfioObjCopy(pdfdst, pdfioFileFindObject(pdfsrc, vsrc->value.indirect.number));
+	}
+
+        if (!obj)
+          return (NULL);
+
+	vdst->value.indirect.number     = obj->number;
+	vdst->value.indirect.generation = obj->generation;
+	break;
 
     default :
         return (NULL);

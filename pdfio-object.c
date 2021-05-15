@@ -30,6 +30,22 @@ pdfioObjClose(pdfio_obj_t *obj)		// I - Object
 
 
 //
+// 'pdfioObjCopy()' - Copy an object to another PDF file.
+//
+
+pdfio_obj_t *				// O - New object or `NULL` on error
+pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
+             pdfio_obj_t  *srcobj)	// I - Object to copy
+{
+  // TODO: Implement pdfioObjCopy
+  (void)pdf;
+  (void)srcobj;
+
+  return (NULL);
+}
+
+
+//
 // 'pdfioObjCreateStream()' - Create an object (data) stream for writing.
 //
 
