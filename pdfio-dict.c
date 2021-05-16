@@ -805,7 +805,7 @@ _pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
       if (!_pdfioFilePuts(pdf, " 9999999999"))
         return (false);
     }
-    else if (!_pdfioValueWrite(pdf, &pair->value))
+    else if (!_pdfioValueWrite(pdf, &pair->value, NULL))
       return (false);
   }
 

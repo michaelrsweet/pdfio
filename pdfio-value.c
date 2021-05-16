@@ -349,7 +349,8 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 
 bool					// O - `true` on success, `false` on failure
 _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
-                 _pdfio_value_t *v)	// I - Value
+                 _pdfio_value_t *v,	// I - Value
+                 off_t          *length)// O - Offset to /Length value, if any
 {
   switch (v->type)
   {
@@ -394,7 +395,7 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
         }
 
     case PDFIO_VALTYPE_DICT :
-        return (_pdfioDictWrite(v->value.dict, NULL));
+        return (_pdfioDictWrite(v->value.dict, length));
 
     case PDFIO_VALTYPE_INDIRECT :
         return (_pdfioFilePrintf(pdf, " %lu %u R", (unsigned long)v->value.indirect.number, v->value.indirect.generation));

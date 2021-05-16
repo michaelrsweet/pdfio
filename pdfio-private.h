@@ -77,7 +77,8 @@ typedef enum _pdfio_predictor_e		// PNG predictor constants
   _PDFIO_PREDICTOR_PNG_SUB = 11,	// PNG Sub predictor
   _PDFIO_PREDICTOR_PNG_UP = 12,		// PNG Up predictor
   _PDFIO_PREDICTOR_PNG_AVERAGE = 13,	// PNG Average predictor
-  _PDFIO_PREDICTOR_PNG_PAETH = 14	// PNG Paeth predictor
+  _PDFIO_PREDICTOR_PNG_PAETH = 14,	// PNG Paeth predictor
+  _PDFIO_PREDICTOR_PNG_AUTO = 15	// PNG "auto" predictor (currently mapped to Paeth)
 } _pdfio_predictor_t;
 
 typedef ssize_t (*_pdfio_tconsume_cb_t)(void *data, size_t bytes);
@@ -154,6 +155,8 @@ struct _pdfio_file_s			// PDF file structure
 {
   char		*filename;		// Filename
   char		*version;		// Version number
+  pdfio_rect_t	media_box,		// Default MediaBox value
+		crop_box;		// Default CropBox value
   _pdfio_mode_t	mode;			// Read/write mode
   pdfio_error_cb_t error_cb;		// Error callback
   void		*error_data;		// Data for error callback
@@ -167,6 +170,7 @@ struct _pdfio_file_s			// PDF file structure
   pdfio_dict_t	*trailer;		// Trailer dictionary
   pdfio_obj_t	*root;			// Root object/dictionary
   pdfio_obj_t	*info;			// Information object/dictionary
+  pdfio_obj_t	*pages_root;		// Root pages object
   pdfio_obj_t	*encrypt;		// Encryption object/dictionary
   pdfio_array_t	*id_array;		// ID array
 
@@ -275,6 +279,6 @@ extern _pdfio_value_t	*_pdfioValueCopy(pdfio_file_t *pdfdst, _pdfio_value_t *vds
 extern void		_pdfioValueDebug(_pdfio_value_t *v, FILE *fp) PDFIO_INTERNAL;
 extern void		_pdfioValueDelete(_pdfio_value_t *v) PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioValueRead(pdfio_file_t *pdf, _pdfio_token_t *ts, _pdfio_value_t *v) PDFIO_INTERNAL;
-extern bool		_pdfioValueWrite(pdfio_file_t *pdf, _pdfio_value_t *v) PDFIO_INTERNAL;
+extern bool		_pdfioValueWrite(pdfio_file_t *pdf, _pdfio_value_t *v, off_t *length) PDFIO_INTERNAL;
 
 #endif // !PDFIO_PRIVATE_H

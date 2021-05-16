@@ -15,6 +15,13 @@
 
 
 //
+// Local functions...
+//
+
+static bool	write_obj_header(pdfio_obj_t *obj);
+
+
+//
 // 'pdfioObjClose()' - Close an object, writing any data as needed to the PDF
 //                     file.
 //
@@ -22,10 +29,20 @@
 bool					// O - `true` on success, `false` on failure
 pdfioObjClose(pdfio_obj_t *obj)		// I - Object
 {
-  // TODO: Implement pdfioObjClose
-  (void)obj;
+  // Range check input
+  if (!obj)
+    return (false);
 
-  return (false);
+  if (obj->pdf->mode != _PDFIO_MODE_WRITE)
+    return (true);			// Nothing to do when reading
+
+  // Write what remains for the object...
+  if (!obj->offset)
+    return (write_obj_header(obj));	// Just write the object value
+  else if (obj->stream)
+    return (pdfioStreamClose(obj->stream));
+  else
+    return (true);			// Already closed
 }
 
 
@@ -54,11 +71,40 @@ pdfioObjCreateStream(
     pdfio_obj_t    *obj,		// I - Object
     pdfio_filter_t filter)		// I - Type of compression to apply
 {
-  // TODO: Implement pdfioObjCreateStream
-  (void)obj;
-  (void)filter;
+  // Range check input
+  if (!obj || obj->pdf->mode != _PDFIO_MODE_WRITE || obj->value.type != PDFIO_VALTYPE_DICT)
+    return (NULL);
 
-  return (NULL);
+  if (obj->offset)
+  {
+    _pdfioFileError(obj->pdf, "Object has already been written.");
+    return (NULL);
+  }
+
+  if (filter != PDFIO_FILTER_NONE && filter != PDFIO_FILTER_FLATE)
+  {
+    _pdfioFileError(obj->pdf, "Unsupported filter value for pdfioObjCreateStream.");
+    return (NULL);
+  }
+
+  // Write the header...
+  if (!_pdfioDictGetValue(obj->value.value.dict, "Length"))
+  {
+    // Need a Length key for the stream, add a placeholder that we can fill in
+    // later...
+    pdfioDictSetNumber(obj->value.value.dict, "Length", 0.0f);
+  }
+
+  if (!write_obj_header(obj))
+    return (NULL);
+
+  if (!_pdfioFilePuts(obj->pdf, "stream\n"))
+    return (NULL);
+
+  obj->stream_offset = _pdfioFileTell(obj->pdf);
+
+  // Return the new stream...
+  return (_pdfioStreamCreate(obj, filter));
 }
 
 
@@ -294,4 +340,23 @@ pdfioObjOpenStream(pdfio_obj_t *obj,	// I - Object
 
   // Open the stream...
   return (_pdfioStreamOpen(obj, decode));
+}
+
+
+//
+// 'write_obj_header()' - Write the object header...
+//
+
+static bool				// O - `true` on success, `false` on failure
+write_obj_header(pdfio_obj_t *obj)	// I - Object
+{
+  obj->offset = _pdfioFileTell(obj->pdf);
+
+  if (!_pdfioFilePrintf(obj->pdf, "%lu %u obj\n", (unsigned long)obj->number, obj->generation))
+    return (false);
+
+  if (!_pdfioValueWrite(obj->pdf, &obj->value, &obj->length_offset))
+    return (false);
+
+  return (_pdfioFilePuts(obj->pdf, "\n"));
 }

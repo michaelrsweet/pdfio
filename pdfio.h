@@ -147,9 +147,10 @@ extern bool		pdfioDictSetString(pdfio_dict_t *dict, const char *key, const char 
 extern bool		pdfioDictSetStringf(pdfio_dict_t *dict, const char *key, const char *format, ...) PDFIO_PUBLIC PDFIO_FORMAT(3,4);
 
 extern bool		pdfioFileClose(pdfio_file_t *pdf) PDFIO_PUBLIC;
-extern pdfio_file_t	*pdfioFileCreate(const char *filename, const char *version, pdfio_error_cb_t error_cb, void *error_data) PDFIO_PUBLIC;
+extern pdfio_file_t	*pdfioFileCreate(const char *filename, const char *version, pdfio_rect_t *media_box, pdfio_rect_t *crop_box, pdfio_error_cb_t error_cb, void *error_data) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateObject(pdfio_file_t *pdf, pdfio_dict_t *dict) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreatePage(pdfio_file_t *pdf, pdfio_dict_t *dict) PDFIO_PUBLIC;
+// TODO: Add number, array, string, etc. versions of pdfioFileCreateObject?
+extern pdfio_stream_t	*pdfioFileCreatePage(pdfio_file_t *pdf, pdfio_dict_t *dict) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileFindObject(pdfio_file_t *pdf, size_t number) PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioFileGetID(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern const char	*pdfioFileGetName(pdfio_file_t *pdf) PDFIO_PUBLIC;

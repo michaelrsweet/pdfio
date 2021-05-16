@@ -27,6 +27,8 @@ static int		compare_objs(pdfio_obj_t **a, pdfio_obj_t **b);
 static bool		load_obj_stream(pdfio_obj_t *obj);
 static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset);
+static bool		write_catalog(pdfio_file_t *pdf);
+static bool		write_pages(pdfio_file_t *pdf);
 static bool		write_trailer(pdfio_file_t *pdf);
 
 
@@ -89,7 +91,14 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
 
   // Close the file itself...
   if (pdf->mode == _PDFIO_MODE_WRITE)
-    ret = write_trailer(pdf);
+  {
+    ret = false;
+
+    if (write_pages(pdf))
+      if (write_catalog(pdf))
+        if (write_trailer(pdf))
+          ret = _pdfioFileFlush(pdf);
+  }
 
   if (close(pdf->fd) < 0)
     ret = false;
@@ -132,10 +141,13 @@ pdfio_file_t *				// O - PDF file or `NULL` on error
 pdfioFileCreate(
     const char       *filename,		// I - Filename
     const char       *version,		// I - PDF version number or `NULL` for default (2.0)
+    pdfio_rect_t     *media_box,	// I - Default MediaBox for pages
+    pdfio_rect_t     *crop_box,		// I - Default CropBox for pages
     pdfio_error_cb_t error_cb,		// I - Error callback or `NULL` for default
     void             *error_data)	// I - Error callback data, if any
 {
   pdfio_file_t	*pdf;			// PDF file
+  pdfio_dict_t	*dict;			// Dictionary for pages object
 
 
   // Range check input...
@@ -169,6 +181,30 @@ pdfioFileCreate(
   pdf->error_cb   = error_cb;
   pdf->error_data = error_data;
 
+  if (media_box)
+  {
+    pdf->media_box = *media_box;
+  }
+  else
+  {
+    // Default to "universal" size (intersection of A4 and US Letter)
+    pdf->media_box.x2 = 210.0f * 72.0f / 25.4f;
+    pdf->media_box.y2 = 11.0f * 72.0f;
+  }
+
+  if (crop_box)
+  {
+    pdf->crop_box = *crop_box;
+  }
+  else
+  {
+    // Default to "universal" size (intersection of A4 and US Letter) with 1/4" margins
+    pdf->crop_box.x1 = 18.0f;
+    pdf->crop_box.y1 = 18.0f;
+    pdf->crop_box.x2 = 210.0f * 72.0f / 25.4f - 18.0f;
+    pdf->crop_box.y2 = 11.0f * 72.0f - 18.0f;
+  }
+
   // Create the file...
   if ((pdf->fd = open(filename, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC, 0666)) < 0)
   {
@@ -181,6 +217,23 @@ pdfioFileCreate(
 
   // Write a standard PDF header...
   if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
+  {
+    pdfioFileClose(pdf);
+    unlink(filename);
+    return (NULL);
+  }
+
+  // Create the pages object...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+  {
+    pdfioFileClose(pdf);
+    unlink(filename);
+    return (NULL);
+  }
+
+  pdfioDictSetName(dict, "Type", "Pages");
+
+  if ((pdf->pages_root = pdfioFileCreateObject(pdf, dict)) == NULL)
   {
     pdfioFileClose(pdf);
     unlink(filename);
@@ -246,7 +299,6 @@ pdfioFileCreateObject(
   // Initialize the object...
   obj->pdf              = pdf;
   obj->number           = pdf->num_objs;
-  obj->offset           = _pdfioFileTell(pdf);
   obj->value.type       = PDFIO_VALTYPE_DICT;
   obj->value.value.dict = dict;
 
@@ -259,14 +311,73 @@ pdfioFileCreateObject(
 // 'pdfioFileCreatePage()' - Create a page in a PDF file.
 //
 
-pdfio_obj_t *				// O - New object
+pdfio_stream_t *			// O - Contents stream
 pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
                     pdfio_dict_t *dict)	// I - Page dictionary
 {
-  // TODO: Implement pdfioFileCreatePage
-  (void)pdf;
-  (void)dict;
-  return (NULL);
+  pdfio_obj_t	*page,			// Page object
+		*contents;		// Contents object
+  pdfio_dict_t	*contents_dict;		// Dictionary for Contents object
+
+
+  // Range check input...
+  if (!pdf)
+    return (NULL);
+
+  // Copy the page dictionary...
+  if (dict)
+    dict = pdfioDictCopy(pdf, dict);
+  else
+    dict = pdfioDictCreate(pdf);
+
+  // Make sure the page dictionary has all of the required keys...
+  if (!_pdfioDictGetValue(dict, "CropBox"))
+    pdfioDictSetRect(dict, "CropBox", &pdf->crop_box);
+
+  if (!_pdfioDictGetValue(dict, "MediaBox"))
+    pdfioDictSetRect(dict, "MediaBox", &pdf->media_box);
+
+  pdfioDictSetObject(dict, "Parent", pdf->pages_root);
+
+  if (!_pdfioDictGetValue(dict, "Resources"))
+    pdfioDictSetDict(dict, "Resources", pdfioDictCreate(pdf));
+
+  if (!_pdfioDictGetValue(dict, "Type"))
+    pdfioDictSetName(dict, "Type", "Page");
+
+  // Create the page object...
+  page = pdfioFileCreateObject(pdf, dict);
+
+  // Create a contents object to hold the contents of the page...
+  contents_dict = pdfioDictCreate(pdf);
+  pdfioDictSetName(contents_dict, "Filter", "FlateDecode");
+
+  contents = pdfioFileCreateObject(pdf, contents_dict);
+
+  // Add the contents stream to the pages object and write it...
+  pdfioDictSetObject(dict, "Contents", contents);
+  if (!pdfioObjClose(page))
+    return (NULL);
+
+  // Add the page to the array of pages...
+  if (pdf->num_pages >= pdf->alloc_pages)
+  {
+    pdfio_obj_t **temp = (pdfio_obj_t **)realloc(pdf->pages, (pdf->alloc_pages + 16) * sizeof(pdfio_obj_t *));
+
+    if (!temp)
+    {
+      _pdfioFileError(pdf, "Unable to allocate memory for pages.");
+      return (NULL);
+    }
+
+    pdf->alloc_pages += 16;
+    pdf->pages       = temp;
+  }
+
+  pdf->pages[pdf->num_pages ++] = page;
+
+  // Create the contents stream...
+  return (pdfioObjCreateStream(contents, PDFIO_FILTER_FLATE));
 }
 
 
@@ -1115,14 +1226,136 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
 
 //
+// 'write_catalog()' - Write the PDF root object/catalog.
+//
+
+static bool				// O - `true` on success, `false` on failure
+write_catalog(pdfio_file_t *pdf)	// I - PDF file
+{
+  pdfio_dict_t	*dict;			// Dictionary for catalog...
+
+
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+    return (false);
+
+  pdfioDictSetName(dict, "Type", "Catalog");
+  pdfioDictSetObject(dict, "Pages", pdf->pages_root);
+  // TODO: Add support for all of the root object dictionary keys
+
+  if ((pdf->root = pdfioFileCreateObject(pdf, dict)) == NULL)
+    return (false);
+  else
+    return (pdfioObjClose(pdf->root));
+}
+
+
+//
+// 'write_pages()' - Write the PDF pages objects.
+//
+
+static bool				// O - `true` on success, `false` on failure
+write_pages(pdfio_file_t *pdf)		// I - PDF file
+{
+  pdfio_array_t	*kids;			// Pages array
+  size_t	i;			// Looping var
+
+
+  // Build the "Kids" array pointing to each page...
+  if ((kids = pdfioArrayCreate(pdf)) == NULL)
+    return (false);
+
+  for (i = 0; i < pdf->num_pages; i ++)
+    pdfioArrayAppendObject(kids, pdf->pages[i]);
+
+  pdfioDictSetNumber(pdf->pages_root->value.value.dict, "Count", pdf->num_pages);
+  pdfioDictSetArray(pdf->pages_root->value.value.dict, "Kids", kids);
+
+  // Write the Pages object...
+  return (pdfioObjClose(pdf->pages_root));
+}
+
+
+//
 // 'write_trailer()' - Write the PDF catalog object, xref table, and trailer.
 //
 
 static bool				// O - `true` on success, `false` on failure
 write_trailer(pdfio_file_t *pdf)	// I - PDF file
 {
-  // TODO: Write trailer
-  (void)pdf;
+  bool		ret = true;		// Return value
+  off_t		xref_offset;		// Offset to xref table
+  size_t	i;			// Looping var
+  int		fd;			// File for /dev/urandom
+  unsigned char	id_values[2][16];	// ID array values
 
-  return (false);
+
+  // Write the xref table...
+  // TODO: Look at adding support for xref streams...
+  xref_offset = _pdfioFileTell(pdf);
+
+  if (!_pdfioFilePrintf(pdf, "xref\n0 %lu \n0000000000 65535 f \n", (unsigned long)pdf->num_objs))
+  {
+    _pdfioFileError(pdf, "Unable to write cross-reference table.");
+    ret = false;
+    goto done;
+  }
+
+  for (i = 0; i < pdf->num_objs; i ++)
+  {
+    pdfio_obj_t	*obj = pdf->objs[i];	// Current object
+
+    if (!_pdfioFilePrintf(pdf, "%010lu %05u n \n", (unsigned long)obj->offset, obj->generation))
+    {
+      _pdfioFileError(pdf, "Unable to write cross-reference table.");
+      ret = false;
+      goto done;
+    }
+  }
+
+  // Write the trailer...
+  if (!_pdfioFilePuts(pdf, "trailer\n"))
+  {
+    _pdfioFileError(pdf, "Unable to write trailer.");
+    ret = false;
+    goto done;
+  }
+
+  if ((fd = open("/dev/urandom", O_RDONLY)) >= 0)
+  {
+    // Load ID array with random values from /dev/urandom...
+    memset(id_values, 0, sizeof(id_values));
+    read(fd, id_values[0], sizeof(id_values[0]));
+    read(fd, id_values[1], sizeof(id_values[1]));
+    close(fd);
+
+    pdf->id_array = pdfioArrayCreate(pdf);
+    pdfioArrayAppendBinary(pdf->id_array, id_values[0], sizeof(id_values[0]));
+    pdfioArrayAppendBinary(pdf->id_array, id_values[1], sizeof(id_values[1]));
+  }
+
+  pdf->trailer = pdfioDictCreate(pdf);
+  if (pdf->encrypt)
+    pdfioDictSetObject(pdf->trailer, "Encrypt", pdf->encrypt);
+  if (pdf->id_array)
+    pdfioDictSetArray(pdf->trailer, "ID", pdf->id_array);
+  pdfioDictSetObject(pdf->trailer, "Info", pdf->info);
+  pdfioDictSetObject(pdf->trailer, "Root", pdf->root);
+  pdfioDictSetNumber(pdf->trailer, "Size", pdf->num_objs + 1);
+
+  if (!_pdfioDictWrite(pdf->trailer, NULL))
+  {
+    _pdfioFileError(pdf, "Unable to write trailer.");
+    ret = false;
+    goto done;
+  }
+
+  if (!_pdfioFilePrintf(pdf, "\nstartxref\n%lu\n%%EOF\n", (unsigned long)xref_offset))
+  {
+    _pdfioFileError(pdf, "Unable to write xref offset.");
+    ret = false;
+  }
+
+  done:
+
+  return (ret);
 }

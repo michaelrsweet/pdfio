@@ -573,7 +573,7 @@ _pdfioArrayWrite(pdfio_array_t *a)	// I - Array
   // Write each value...
   for (i = a->num_values, v = a->values; i > 0; i --, v ++)
   {
-    if (!_pdfioValueWrite(pdf, v))
+    if (!_pdfioValueWrite(pdf, v, NULL))
       return (false);
   }
 
