@@ -198,11 +198,9 @@ pdfioFileCreate(
   }
   else
   {
-    // Default to "universal" size (intersection of A4 and US Letter) with 1/4" margins
-    pdf->crop_box.x1 = 18.0f;
-    pdf->crop_box.y1 = 18.0f;
-    pdf->crop_box.x2 = 210.0f * 72.0f / 25.4f - 18.0f;
-    pdf->crop_box.y2 = 11.0f * 72.0f - 18.0f;
+    // Default to "universal" size (intersection of A4 and US Letter)
+    pdf->crop_box.x2 = 210.0f * 72.0f / 25.4f;
+    pdf->crop_box.y2 = 11.0f * 72.0f;
   }
 
   // Create the file...

@@ -313,8 +313,8 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
 
   fputs("pdfioStreamPuts(...): ", stdout);
   if (pdfioStreamPuts(st,
-                      "0 g 18 18 559 760 re 72 72 451 648 re f*\n"
-                      "1 0 0 RG 18 18 559 760 re 72 72 451 648 re S\n"))
+                      "1 0 0 RG 0 g 5 w\n"
+                      "18 18 559 760 re 72 72 451 648 re B*\n"))
     puts("PASS");
   else
     return (1);
