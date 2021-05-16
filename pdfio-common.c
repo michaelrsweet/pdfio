@@ -99,8 +99,9 @@ _pdfioFileFlush(pdfio_file_t *pdf)	// I - PDF file
       return (false);
 
     pdf->bufpos += pdf->bufptr - pdf->buffer;
-    pdf->bufptr = pdf->buffer;
   }
+
+  pdf->bufptr = pdf->buffer;
 
   return (true);
 }

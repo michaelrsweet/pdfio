@@ -23,6 +23,7 @@ static int	do_unit_tests(void);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
 static ssize_t	token_consume_cb(const char **s, size_t bytes);
 static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
+static int	write_page(pdfio_file_t *pdf, int number);
 
 
 //
@@ -145,6 +146,8 @@ do_test_file(const char *filename)	// I - PDF filename
 static int				// O - Exit status
 do_unit_tests(void)
 {
+  int			i;		// Looping var
+  char			filename[256];	// PDF filename
   pdfio_file_t		*pdf;		// PDF file
   bool			error = false;	// Error callback data
   _pdfio_token_t	tb;		// Token buffer
@@ -185,6 +188,28 @@ do_unit_tests(void)
     return (1);
 
   // Close the test PDF file...
+  fputs("pdfioFileClose: ", stdout);
+  if (pdfioFileClose(pdf))
+    puts("PASS");
+  else
+    return (1);
+
+  // Create a new PDF file...
+  snprintf(filename, sizeof(filename), "testpdfio-%d.pdf", (int)getpid());
+  printf("pdfioFileCreate(\"%s\", ...): ", filename);
+  if ((pdf = pdfioFileCreate(filename, NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  // Write a few pages...
+  for (i = 1; i < 18; i ++)
+  {
+    if (write_page(pdf, i))
+      return (1);
+  }
+
+  // Close the new PDF file...
   fputs("pdfioFileClose: ", stdout);
   if (pdfioFileClose(pdf))
     puts("PASS");
@@ -264,4 +289,41 @@ token_peek_cb(const char **s,		// IO - Test string
     memcpy(buffer, *s, bytes);
 
   return ((ssize_t)bytes);
+}
+
+
+//
+// 'write_page()' - Write a page to a PDF file.
+//
+
+static int				// O - 1 on failure, 0 on success
+write_page(pdfio_file_t *pdf,		// I - PDF file
+           int          number)		// I - Page number
+{
+  // TODO: Add font object support...
+  pdfio_stream_t	*st;		// Page contents stream
+
+
+  printf("pdfioFileCreatePage(%d): ", number);
+
+  if ((st = pdfioFileCreatePage(pdf, NULL)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioStreamPuts(...): ", stdout);
+  if (pdfioStreamPuts(st,
+                      "0 g 18 18 559 760 re 72 72 451 648 re f*\n"
+                      "1 0 0 RG 18 18 559 760 re 72 72 451 648 re S\n"))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioStreamClose: ", stdout);
+  if (pdfioStreamClose(st))
+    puts("PASS");
+  else
+    return (1);
+
+  return (0);
 }
