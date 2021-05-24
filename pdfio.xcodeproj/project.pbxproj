@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		271EA705265B2B1000ACDD39 /* pdfio-content.c in Sources */ = {isa = PBXBuildFile; fileRef = 271EA703265B2B1000ACDD39 /* pdfio-content.c */; };
+		271EA706265B2B1000ACDD39 /* pdfio-content.h in Headers */ = {isa = PBXBuildFile; fileRef = 271EA704265B2B1000ACDD39 /* pdfio-content.h */; };
 		273440C3263D727800FBFD63 /* pdfio-private.h in Headers */ = {isa = PBXBuildFile; fileRef = 273440B8263D727800FBFD63 /* pdfio-private.h */; };
 		273440C4263D727800FBFD63 /* pdfio-string.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440B9263D727800FBFD63 /* pdfio-string.c */; };
 		273440C5263D727800FBFD63 /* pdfio-array.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440BA263D727800FBFD63 /* pdfio-array.c */; };
@@ -46,6 +48,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		271EA703265B2B1000ACDD39 /* pdfio-content.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-content.c"; sourceTree = "<group>"; };
+		271EA704265B2B1000ACDD39 /* pdfio-content.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "pdfio-content.h"; sourceTree = "<group>"; };
 		273440B0263D6FE200FBFD63 /* libpdfio.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libpdfio.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		273440B8263D727800FBFD63 /* pdfio-private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "pdfio-private.h"; sourceTree = "<group>"; };
 		273440B9263D727800FBFD63 /* pdfio-string.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-string.c"; sourceTree = "<group>"; };
@@ -99,6 +103,8 @@
 				273440DE263D732000FBFD63 /* pdfio.pc.in */,
 				273440BA263D727800FBFD63 /* pdfio-array.c */,
 				273440BB263D727800FBFD63 /* pdfio-common.c */,
+				271EA704265B2B1000ACDD39 /* pdfio-content.h */,
+				271EA703265B2B1000ACDD39 /* pdfio-content.c */,
 				273440BE263D727800FBFD63 /* pdfio-dict.c */,
 				273440BD263D727800FBFD63 /* pdfio-file.c */,
 				273440BC263D727800FBFD63 /* pdfio-object.c */,
@@ -154,6 +160,7 @@
 			files = (
 				273440CC263D727800FBFD63 /* pdfio.h in Headers */,
 				273440C3263D727800FBFD63 /* pdfio-private.h in Headers */,
+				271EA706265B2B1000ACDD39 /* pdfio-content.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -244,6 +251,7 @@
 				273440E4263DD7EA00FBFD63 /* pdfio-token.c in Sources */,
 				273440C7263D727800FBFD63 /* pdfio-object.c in Sources */,
 				273440C4263D727800FBFD63 /* pdfio-string.c in Sources */,
+				271EA705265B2B1000ACDD39 /* pdfio-content.c in Sources */,
 				273440C6263D727800FBFD63 /* pdfio-common.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -39,6 +39,7 @@ prefix		=	/usr/local
 LIBOBJS		=	\
 			pdfio-array.o \
 			pdfio-common.o \
+			pdfio-content.o \
 			pdfio-dict.o \
 			pdfio-file.o \
 			pdfio-object.o \
@@ -78,7 +79,7 @@ clean:
 # Install everything
 install:	$(TARGETS)
 	-mkdir -p $(DESTDIR)$(prefix)/include
-	cp pdfio.h $(DESTDIR)$(prefix)/include
+	cp pdfio.h pdfio-content.h $(DESTDIR)$(prefix)/include
 	-mkdir -p $(DESTDIR)$(prefix)/lib
 	cp libpdfio.a $(DESTDIR)$(prefix)/lib
 	$(RANLIB) $(DESTDIR)$(prefix)/lib/libpdfio.a
@@ -124,13 +125,14 @@ libpdfio.1.dylib:	$(LIBOBJS)
 
 
 # pdfio test program
-testpdfio:	testpdfio.o libpdfio.a
+testpdfio:		testpdfio.o libpdfio.a
 	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o $@ testpdfio.o libpdfio.a $(LIBS)
 
 
 # Dependencies
-$(OBJS):	pdfio.h Makefile
-$(LIBOBJS):	pdfio-private.h
+$(OBJS):		pdfio.h Makefile
+$(LIBOBJS):		pdfio-private.h
+pdfio-content.o:	pdfio-content.h
 
 
 # Make documentation using Codedoc <https://www.msweet.org/codedoc>
