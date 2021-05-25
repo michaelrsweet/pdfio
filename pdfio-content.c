@@ -12,14 +12,25 @@
 //
 
 #include "pdfio-content.h"
+#include "pdfio-private.h"
 #include <math.h>
+
+
+//
+// Local types...
+//
+
+typedef pdfio_obj_t *(*image_func_t)(pdfio_dict_t *dict, int fd);
 
 
 //
 // Local functions...
 //
 
-static bool	write_string(pdfio_stream_t *st, const char *s);
+static pdfio_obj_t	*copy_gif(pdfio_dict_t *dict, int fd);
+static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
+static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
+static bool		write_string(pdfio_stream_t *st, const char *s);
 
 
 //
@@ -859,6 +870,8 @@ pdfioFileCreateICCProfileObject(
 //
 // 'pdfioFileCreateImageObject()' - Add an image object to a PDF file.
 //
+// Currently only GIF, JPEG, and PNG files are supported.
+//
 
 pdfio_obj_t *				// O - Object
 pdfioFileCreateImageObject(
@@ -866,10 +879,230 @@ pdfioFileCreateImageObject(
     const char   *filename,		// I - Filename
     bool         interpolate)		// I - Interpolate image data?
 {
-  (void)pdf;
-  (void)filename;
-  (void)interpolate;
+  pdfio_dict_t	*dict;			// Image dictionary
+  pdfio_obj_t	*obj;			// Image object
+  int		fd;			// File
+  unsigned char	buffer[32];		// Read buffer
+  image_func_t	copy_func = NULL;	// Image copy function
 
+
+  // Range check input...
+  if (!pdf || !filename)
+    return (NULL);
+
+  // Try opening the file...
+  if ((fd = open(filename, O_RDONLY | O_BINARY)) < 0)
+  {
+    _pdfioFileError(pdf, "Unable to open image file '%s': %s", filename, strerror(errno));
+    return (NULL);
+  }
+
+  // Read the file header to determine the file format...
+  if (read(fd, buffer, sizeof(buffer)) < (ssize_t)sizeof(buffer))
+  {
+    _pdfioFileError(pdf, "Unable to read header from image file '%s'.", filename);
+    close(fd);
+    return (NULL);
+  }
+
+  lseek(fd, 0, SEEK_SET);
+
+  if (!memcmp(buffer, "\211PNG\015\012\032\012\000\000\000\015IHDR", 16))
+  {
+    // PNG image...
+    copy_func = copy_png;
+  }
+  else if (!memcmp(buffer, "GIF87a", 6) || !memcmp(buffer, "GIF89a", 6))
+  {
+    // GIF image...
+    copy_func = copy_gif;
+  }
+  else if (!memcmp(buffer, "\377\330\377", 3))
+  {
+   // JPEG image...
+    copy_func = copy_jpeg;
+  }
+  else
+  {
+    // Something else that isn't supported...
+    _pdfioFileError(pdf, "Unsupported image file '%s'.", filename);
+    close(fd);
+    return (NULL);
+  }
+
+  // Create the base image dictionary the copy the file into an object...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+  {
+    close(fd);
+    return (NULL);
+  }
+
+  pdfioDictSetName(dict, "Type", "XObject");
+  pdfioDictSetName(dict, "SubType", "Image");
+  pdfioDictSetBoolean(dict, "Interpolate", interpolate);
+
+  obj = (copy_func)(dict, fd);
+
+  // Close the file and return the object...
+  close(fd);
+
+  return (obj);
+}
+
+
+//
+// 'copy_gif()' - Copy a GIF image.
+//
+
+static pdfio_obj_t *			// O - Object or `NULL` on error
+copy_gif(pdfio_dict_t *dict,		// I - Dictionary
+         int          fd)		// I - File descriptor
+{
+  // TODO: Implement copy_gif
+  (void)dict;
+  (void)fd;
+  return (NULL);
+}
+
+
+//
+// 'copy_jpeg()' - Copy a JPEG image.
+//
+
+static pdfio_obj_t *			// O - Object or `NULL` on error
+copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
+          int          fd)		// I - File descriptor
+{
+  pdfio_obj_t	*obj;			// Object
+  pdfio_stream_t *st;			// Stream for JPEG data
+  ssize_t	bytes;			// Bytes read
+  unsigned char	buffer[16384],		// Read buffer
+		*bufptr,		// Pointer into buffer
+		*bufend;		// End of buffer
+  size_t	length;			// Length of chunk
+  unsigned	width = 0,		// Width in columns
+		height = 0,		// Height in lines
+		num_colors = 0;		// Number of colors
+
+
+  // Scan the file for a SOFn marker, then we can get the dimensions...
+  bytes = read(fd, buffer, sizeof(buffer));
+
+  for (bufptr = buffer + 2, bufend = buffer + bytes; bufptr < bufend;)
+  {
+    if (*bufptr == 0xff)
+    {
+      bufptr ++;
+
+      if (bufptr >= bufend)
+      {
+       /*
+	* If we are at the end of the current buffer, re-fill and continue...
+	*/
+
+	if ((bytes = read(fd, buffer, sizeof(buffer))) <= 0)
+	  break;
+
+	bufptr = buffer;
+	bufend = buffer + bytes;
+      }
+
+      if (*bufptr == 0xff)
+	continue;
+
+      if ((bufptr + 16) >= bufend)
+      {
+       /*
+	* Read more of the marker...
+	*/
+
+	bytes = bufend - bufptr;
+
+	memmove(buffer, bufptr, (size_t)bytes);
+	bufptr = buffer;
+	bufend = buffer + bytes;
+
+	if ((bytes = read(fd, bufend, sizeof(buffer) - (size_t)bytes)) <= 0)
+	  break;
+
+	bufend += bytes;
+      }
+
+      length = (size_t)((bufptr[1] << 8) | bufptr[2]);
+
+      PDFIO_DEBUG("copy_jpeg: JPEG X'FF%02X' (length %u)\n", *bufptr, (unsigned)length);
+
+      if ((*bufptr >= 0xc0 && *bufptr <= 0xc3) || (*bufptr >= 0xc5 && *bufptr <= 0xc7) || (*bufptr >= 0xc9 && *bufptr <= 0xcb) || (*bufptr >= 0xcd && *bufptr <= 0xcf))
+      {
+        // SOFn marker, look for dimensions...
+	width      = (unsigned)((bufptr[6] << 8) | bufptr[7]);
+	height     = (unsigned)((bufptr[4] << 8) | bufptr[5]);
+	num_colors = bufptr[8];
+	break;
+      }
+
+      // Skip past this marker...
+      bufptr ++;
+      bytes = bufend - bufptr;
+
+      while (length >= (size_t)bytes)
+      {
+	length -= (size_t)bytes;
+
+	if ((bytes = read(fd, buffer, sizeof(buffer))) <= 0)
+	  break;
+
+	bufptr = buffer;
+	bufend = buffer + bytes;
+      }
+
+      if (length > (size_t)bytes)
+	break;
+
+      bufptr += length;
+    }
+  }
+
+  if (width == 0 || height == 0 || (num_colors != 1 && num_colors != 3))
+    return (NULL);
+
+  // Create the image object...
+  pdfioDictSetNumber(dict, "Width", width);
+  pdfioDictSetNumber(dict, "Height", height);
+  pdfioDictSetNumber(dict, "BitsPerComponent", 8);
+  pdfioDictSetName(dict, "ColorSpace", num_colors == 3 ? "CalRGB" : "CalGray");
+  pdfioDictSetName(dict, "Filter", "DCTDecode");
+
+  obj = pdfioFileCreateObject(dict->pdf, dict);
+  st  = pdfioObjCreateStream(obj, PDFIO_FILTER_NONE);
+
+  // Copy the file to a stream...
+  lseek(fd, 0, SEEK_SET);
+
+  while ((bytes = read(fd, buffer, sizeof(buffer))) > 0)
+  {
+    if (!pdfioStreamWrite(st, buffer, (size_t)bytes))
+      return (NULL);
+  }
+
+  if (!pdfioStreamClose(st))
+    return (NULL);
+
+  return (obj);
+}
+
+
+//
+// 'copy_png()' - Copy a PNG image.
+//
+
+static pdfio_obj_t *			// O - Object or `NULL` on error
+copy_png(pdfio_dict_t *dict,		// I - Dictionary
+         int          fd)		// I - File descriptor
+{
+  // TODO: Implement copy_png
+  (void)dict;
+  (void)fd;
   return (NULL);
 }
 
