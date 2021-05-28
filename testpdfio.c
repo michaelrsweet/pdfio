@@ -167,8 +167,8 @@ do_unit_tests(void)
 
 
   // First open the test PDF file...
-  fputs("pdfioFileOpen(\"testpdfio.pdf\"): ", stdout);
-  if ((pdf = pdfioFileOpen("testpdfio.pdf", (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  fputs("pdfioFileOpen(\"testfiles/testpdfio.pdf\"): ", stdout);
+  if ((pdf = pdfioFileOpen("testfiles/testpdfio.pdf", (pdfio_error_cb_t)error_cb, &error)) != NULL)
     puts("PASS");
   else
     return (1);
