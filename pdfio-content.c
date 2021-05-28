@@ -827,11 +827,35 @@ pdfioPageDictAddImage(
     const char   *name,			// I - Image name
     pdfio_obj_t  *obj)			// I - Image object
 {
-  (void)dict;
-  (void)name;
-  (void)obj;
+  pdfio_dict_t	*resources;		// Resource dictionary
+  pdfio_dict_t	*xobject;		// XObject dictionary
 
-  return (false);
+
+  // Range check input...
+  if (!dict || !name || !obj)
+    return (false);
+
+  // Get the images dictionary...
+  if ((resources = pdfioDictGetDict(dict, "Resources")) == NULL)
+  {
+    if ((resources = pdfioDictCreate(dict->pdf)) == NULL)
+      return (false);
+
+    if (!pdfioDictSetDict(dict, "Resources", resources))
+      return (false);
+  }
+
+  if ((xobject = pdfioDictGetDict(resources, "XObject")) == NULL)
+  {
+    if ((xobject = pdfioDictCreate(dict->pdf)) == NULL)
+      return (false);
+
+    if (!pdfioDictSetDict(resources, "XObject", xobject))
+      return (false);
+  }
+
+  // Now set the image reference in the images resource dictionary and return...
+  return (pdfioDictSetObject(xobject, name, obj));
 }
 
 

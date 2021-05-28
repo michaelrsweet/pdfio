@@ -12,6 +12,7 @@
 //
 
 #include "pdfio-private.h"
+#include "pdfio-content.h"
 
 
 //
@@ -23,7 +24,7 @@ static int	do_unit_tests(void);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
 static ssize_t	token_consume_cb(const char **s, size_t bytes);
 static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
-static int	write_page(pdfio_file_t *pdf, int number);
+static int	write_page(pdfio_file_t *pdf, int number, pdfio_obj_t *image);
 
 
 //
@@ -153,6 +154,8 @@ do_unit_tests(void)
   _pdfio_token_t	tb;		// Token buffer
   const char		*s;		// String buffer
   _pdfio_value_t	value;		// Value
+  pdfio_obj_t		*color_jpg,	// color.jpg image
+			*gray_jpg;	// gray.jpg image
   static const char	*complex_dict =	// Complex dictionary value
     "<</Annots 5457 0 R/Contents 5469 0 R/CropBox[0 0 595.4 842]/Group 725 0 R"
     "/MediaBox[0 0 595.4 842]/Parent 23513 0 R/Resources<</ColorSpace<<"
@@ -165,6 +168,8 @@ do_unit_tests(void)
     "/EpDA0kG03o9rZX21 23696 0 R/Im0 5475 0 R>>>>/Rotate 0/StructParents 2105"
     "/Tabs/S/Type/Page>>";
 
+
+  setbuf(stdout, NULL);
 
   // First open the test PDF file...
   fputs("pdfioFileOpen(\"testfiles/testpdfio.pdf\"): ", stdout);
@@ -195,9 +200,21 @@ do_unit_tests(void)
     return (1);
 
   // Create a new PDF file...
-  snprintf(filename, sizeof(filename), "testpdfio-%d.pdf", (int)getpid());
-  printf("pdfioFileCreate(\"%s\", ...): ", filename);
-  if ((pdf = pdfioFileCreate(filename, NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  fputs("pdfioFileCreate(\"testpdfio-out.pdf\", ...): ", stdout);
+  if ((pdf = pdfioFileCreate("testpdfio-out.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  // Create some image objects...
+  fputs("pdfioFileCreateImageObject(\"testfiles/color.jpg\"): ", stdout);
+  if ((color_jpg = pdfioFileCreateImageObject(pdf, "testfiles/color.jpg", true)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioFileCreateImageObject(\"testfiles/gray.jpg\"): ", stdout);
+  if ((gray_jpg = pdfioFileCreateImageObject(pdf, "testfiles/gray.jpg", true)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -205,7 +222,7 @@ do_unit_tests(void)
   // Write a few pages...
   for (i = 1; i < 18; i ++)
   {
-    if (write_page(pdf, i))
+    if (write_page(pdf, i, (i & 1) ? color_jpg : gray_jpg))
       return (1);
   }
 
@@ -298,15 +315,29 @@ token_peek_cb(const char **s,		// IO - Test string
 
 static int				// O - 1 on failure, 0 on success
 write_page(pdfio_file_t *pdf,		// I - PDF file
-           int          number)		// I - Page number
+           int          number,		// I - Page number
+           pdfio_obj_t  *image)		// I - Image to draw
 {
   // TODO: Add font object support...
+  pdfio_dict_t		*dict;		// Page dictionary
   pdfio_stream_t	*st;		// Page contents stream
 
 
+  fputs("pdfioDictCreate: ", stdout);
+  if ((dict = pdfioDictCreate(pdf)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddImage: ", stdout);
+  if (pdfioPageDictAddImage(dict, "IM1", image))
+    puts("PASS");
+  else
+    return (1);
+
   printf("pdfioFileCreatePage(%d): ", number);
 
-  if ((st = pdfioFileCreatePage(pdf, NULL)) != NULL)
+  if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -315,6 +346,36 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
   if (pdfioStreamPuts(st,
                       "1 0 0 RG 0 g 5 w\n"
                       "18 18 559 760 re 72 72 451 648 re B*\n"))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSave(): ", stdout);
+  if (pdfioContentSave(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentMatrixScale(72.0, 72.0): ", stdout);
+  if (pdfioContentMatrixScale(st, 72.0f, 72.0f))
+    puts("PASS");
+  else
+    return (1);
+
+//  fputs("pdfioContentTranslate(144.0, 144.0): ", stdout);
+//  if (pdfioContentMatrixTranslate(st, 144.0f, 144.0f))
+//    puts("PASS");
+//  else
+//    return (1);
+
+  fputs("pdfioContentDrawImage(\"IM1\"): ", stdout);
+  if (pdfioContentDrawImage(st, "IM1"))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentRestore(): ", stdout);
+  if (pdfioContentRestore(st))
     puts("PASS");
   else
     return (1);

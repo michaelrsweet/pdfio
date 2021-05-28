@@ -801,7 +801,7 @@ _pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
     if (length && !strcmp(pair->key, "Length") && pair->value.type == PDFIO_VALTYPE_NUMBER && pair->value.value.number <= 0.0f)
     {
       // Writing an object dictionary with an undefined length
-      *length = _pdfioFileTell(pdf);
+      *length = _pdfioFileTell(pdf) + 1;
       if (!_pdfioFilePuts(pdf, " 9999999999"))
         return (false);
     }

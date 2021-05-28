@@ -180,6 +180,8 @@ pdfioFileCreate(
   pdf->mode       = _PDFIO_MODE_WRITE;
   pdf->error_cb   = error_cb;
   pdf->error_data = error_data;
+  pdf->bufptr     = pdf->buffer;
+  pdf->bufend     = pdf->buffer + sizeof(pdf->buffer);
 
   if (media_box)
   {
@@ -348,7 +350,7 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
 
   // Create a contents object to hold the contents of the page...
   contents_dict = pdfioDictCreate(pdf);
-  pdfioDictSetName(contents_dict, "Filter", "FlateDecode");
+//  pdfioDictSetName(contents_dict, "Filter", "FlateDecode");
 
   contents = pdfioFileCreateObject(pdf, contents_dict);
 
@@ -375,7 +377,8 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
   pdf->pages[pdf->num_pages ++] = page;
 
   // Create the contents stream...
-  return (pdfioObjCreateStream(contents, PDFIO_FILTER_FLATE));
+//  return (pdfioObjCreateStream(contents, PDFIO_FILTER_FLATE));
+  return (pdfioObjCreateStream(contents, PDFIO_FILTER_NONE));
 }
 
 
