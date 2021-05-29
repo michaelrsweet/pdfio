@@ -68,9 +68,13 @@ pdfioContentClip(
 bool					// O - `true` on success, `false` on failure
 pdfioContentDrawImage(
     pdfio_stream_t *st,			// I - Stream
-    const char     *name)		// I - Image name
+    const char     *name,		// I - Image name
+    float          x,			// I - X offset of image
+    float          y,			// I - Y offset of image
+    float          w,			// I - Width of image
+    float          h)			// I - Height of image
 {
-  return (pdfioStreamPrintf(st, "/%s Do\n", name));
+  return (pdfioStreamPrintf(st, "q %g 0 0 %g %g %g cm/%s Do Q\n", w, h, x, y, name));
 }
 
 
@@ -962,7 +966,7 @@ pdfioFileCreateImageObject(
   }
 
   pdfioDictSetName(dict, "Type", "XObject");
-  pdfioDictSetName(dict, "SubType", "Image");
+  pdfioDictSetName(dict, "Subtype", "Image");
   pdfioDictSetBoolean(dict, "Interpolate", interpolate);
 
   obj = (copy_func)(dict, fd);
@@ -971,6 +975,28 @@ pdfioFileCreateImageObject(
   close(fd);
 
   return (obj);
+}
+
+
+//
+// 'pdfioImageGetHeight()' - Get the height of an image object.
+//
+
+float					// O - Height in lines
+pdfioImageGetHeight(pdfio_obj_t *obj)	// I - Image object
+{
+  return (pdfioDictGetNumber(obj->value.value.dict, "Height"));
+}
+
+
+//
+// 'pdfioImageGetWidth()' - Get the width of an image object.
+//
+
+float					// O - Width in columns
+pdfioImageGetWidth(pdfio_obj_t *obj)	// I - Image object
+{
+  return (pdfioDictGetNumber(obj->value.value.dict, "Width"));
 }
 
 
@@ -1094,7 +1120,8 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
   pdfioDictSetNumber(dict, "Width", width);
   pdfioDictSetNumber(dict, "Height", height);
   pdfioDictSetNumber(dict, "BitsPerComponent", 8);
-  pdfioDictSetName(dict, "ColorSpace", num_colors == 3 ? "CalRGB" : "CalGray");
+  // TODO: Add proper JPEG CalRGB/Gray color spaces
+  pdfioDictSetName(dict, "ColorSpace", num_colors == 3 ? "DeviceRGB" : "DeviceGray");
   pdfioDictSetName(dict, "Filter", "DCTDecode");
 
   obj = pdfioFileCreateObject(dict->pdf, dict);

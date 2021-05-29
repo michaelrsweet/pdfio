@@ -1294,7 +1294,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
   // TODO: Look at adding support for xref streams...
   xref_offset = _pdfioFileTell(pdf);
 
-  if (!_pdfioFilePrintf(pdf, "xref\n0 %lu \n0000000000 65535 f \n", (unsigned long)pdf->num_objs))
+  if (!_pdfioFilePrintf(pdf, "xref\n0 %lu \n0000000000 65535 f \n", (unsigned long)pdf->num_objs + 1))
   {
     _pdfioFileError(pdf, "Unable to write cross-reference table.");
     ret = false;

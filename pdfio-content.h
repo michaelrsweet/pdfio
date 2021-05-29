@@ -79,7 +79,7 @@ extern const float	pdfioSRGBWhitePoint[];
 // PDF content drawing functions...
 extern bool		pdfioContentBeginText(pdfio_stream_t *st) PDFIO_PUBLIC;
 extern bool		pdfioContentClip(pdfio_stream_t *st, bool even_odd) PDFIO_PUBLIC;
-extern bool		pdfioContentDrawImage(pdfio_stream_t *st, const char *name) PDFIO_PUBLIC;
+extern bool		pdfioContentDrawImage(pdfio_stream_t *st, const char *name, float x, float y, float w, float h) PDFIO_PUBLIC;
 extern bool		pdfioContentEndText(pdfio_stream_t *st) PDFIO_PUBLIC;
 extern bool		pdfioContentFill(pdfio_stream_t *st, bool even_odd) PDFIO_PUBLIC;
 extern bool		pdfioContentFillAndStroke(pdfio_stream_t *st, bool even_odd) PDFIO_PUBLIC;
@@ -129,16 +129,20 @@ extern bool		pdfioContentTextNextLine(pdfio_stream_t *st) PDFIO_PUBLIC;
 extern bool		pdfioContentTextShow(pdfio_stream_t *st, const char *s, bool new_line) PDFIO_PUBLIC;
 extern bool		pdfioContentTextShowJustified(pdfio_stream_t *st, size_t num_fragments, const float *offsets, const char * const *fragments) PDFIO_PUBLIC;
 
+// Resource helpers...
+extern pdfio_obj_t	*pdfioFileCreateFontObject(pdfio_file_t *pdf, const char *filename) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateICCProfileObject(pdfio_file_t *pdf, const char *filename) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateImageObject(pdfio_file_t *pdf, const char *filename, bool interpolate) PDFIO_PUBLIC;
+
+// Image object helpers...
+extern float		pdfioImageGetHeight(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern float		pdfioImageGetWidth(pdfio_obj_t *obj) PDFIO_PUBLIC;
+
 // Page dictionary helpers...
 extern bool		pdfioPageDictAddICCColorSpace(pdfio_dict_t *dict, const char *name, pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern bool		pdfioPageDictAddCalibratedColorSpace(pdfio_dict_t *dict, const char *name, size_t num_colors, const float *white_point, float gamma) PDFIO_PUBLIC;
 extern bool		pdfioPageDictAddFont(pdfio_dict_t *dict, const char *name, pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern bool		pdfioPageDictAddImage(pdfio_dict_t *dict, const char *name, pdfio_obj_t *obj) PDFIO_PUBLIC;
-
-// Resource helpers...
-extern pdfio_obj_t	*pdfioFileCreateFontObject(pdfio_file_t *pdf, const char *filename) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreateICCProfileObject(pdfio_file_t *pdf, const char *filename) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreateImageObject(pdfio_file_t *pdf, const char *filename, bool interpolate) PDFIO_PUBLIC;
 
 
 //

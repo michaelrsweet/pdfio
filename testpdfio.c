@@ -321,6 +321,12 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
   // TODO: Add font object support...
   pdfio_dict_t		*dict;		// Page dictionary
   pdfio_stream_t	*st;		// Page contents stream
+  float			width,		// Width of image
+			height;		// Height of image
+  float			swidth,		// Scaled width
+			sheight,	// Scaled height
+			tx,		// X offset
+			ty;		// Y offset
 
 
   fputs("pdfioDictCreate: ", stdout);
@@ -356,20 +362,31 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
   else
     return (1);
 
-  fputs("pdfioContentMatrixScale(72.0, 72.0): ", stdout);
-  if (pdfioContentMatrixScale(st, 72.0f, 72.0f))
+  fputs("pdfioImageGetWidth(): ", stdout);
+  if ((width = pdfioImageGetWidth(image)) > 0.0f)
     puts("PASS");
   else
     return (1);
 
-//  fputs("pdfioContentTranslate(144.0, 144.0): ", stdout);
-//  if (pdfioContentMatrixTranslate(st, 144.0f, 144.0f))
-//    puts("PASS");
-//  else
-//    return (1);
+  fputs("pdfioImageGetHeight(): ", stdout);
+  if ((height = pdfioImageGetHeight(image)) > 0.0f)
+    puts("PASS");
+  else
+    return (1);
 
-  fputs("pdfioContentDrawImage(\"IM1\"): ", stdout);
-  if (pdfioContentDrawImage(st, "IM1"))
+  swidth  = 400.0f;
+  sheight = swidth * height / width;
+  if (sheight > 600.0f)
+  {
+    sheight = 600.0f;
+    swidth  = sheight * width / height;
+  }
+
+  tx = 0.5 * (595.28 - swidth);
+  ty = 0.5 * (792 - sheight);
+
+  printf("pdfioContentDrawImage(\"IM1\", x=%g, y=%g, w=%g, h=%g): ", tx, ty, swidth, sheight);
+  if (pdfioContentDrawImage(st, "IM1", tx, ty, swidth, sheight))
     puts("PASS");
   else
     return (1);

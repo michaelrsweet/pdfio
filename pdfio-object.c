@@ -38,11 +38,26 @@ pdfioObjClose(pdfio_obj_t *obj)		// I - Object
 
   // Write what remains for the object...
   if (!obj->offset)
-    return (write_obj_header(obj));	// Just write the object value
+  {
+    // Write the object value
+    if (!write_obj_header(obj))
+      return (false);
+  }
   else if (obj->stream)
-    return (pdfioStreamClose(obj->stream));
+  {
+    // Close the stream...
+    if (!pdfioStreamClose(obj->stream))
+      return (false);
+  }
   else
-    return (true);			// Already closed
+  {
+    // Already closed
+    return (true);
+  }
+
+  // If we get here we wrote the object header or closed the stream and still
+  // need to write the "endobj" line...
+  return (_pdfioFilePuts(obj->pdf, "endobj\n"));
 }
 
 
