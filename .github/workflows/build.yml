@@ -34,13 +34,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: install prerequisites
-      run: brew install cppcheck
     - name: make
       run: make "COMMONFLAGS=-g -fsanitize=address"
     - name: test
       run: make test
     - name: clang static analyzer
       run: make CC=clang "GHA_ERROR=::error::" clang
-    - name: cppcheck
-      run: make "GHA_ERROR=::error::" cppcheck
