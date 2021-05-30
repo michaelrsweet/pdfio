@@ -25,7 +25,7 @@ DSONAME		=
 LDFLAGS		=
 LIBS		=	-lz
 RANLIB		=	ranlib
-VERSION		=	1.0
+VERSION		=	0.1
 prefix		=	/usr/local
 
 
@@ -142,6 +142,6 @@ DOCFLAGS	=	\
 			--docversion $(VERSION)
 
 doc:
-	codedoc $(DOCFLAGS) --title "pdfio Programming Manual" pdfio.h $(LIBOBJS:.o=.c) --body pdfio.md pdfio.xml >pdfio.html
+	codedoc $(DOCFLAGS) --title "pdfio Programming Manual v$(VERSION)" pdfio.h $(LIBOBJS:.o=.c) --body pdfio.md pdfio.xml >pdfio.html
 	codedoc $(DOCFLAGS) --title "pdf read/write library" --man pdfio --section 3 --body pdfio.md pdfio.xml >pdfio.3
 	rm -f pdfio.xml

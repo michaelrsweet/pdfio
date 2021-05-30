@@ -657,7 +657,7 @@ pdfioFileOpen(
 // '_pdfioObjAdd()' - Add an object to a file.
 //
 
-pdfio_obj_t *				// O - Object
+static pdfio_obj_t *			// O - Object
 add_obj(pdfio_file_t   *pdf,		// I - PDF file
 	size_t         number,		// I - Object number
 	unsigned short generation,	// I - Object generation

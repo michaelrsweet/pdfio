@@ -1,0 +1,1512 @@
+.TH pdfio 3 "pdf read/write library" "2021-05-29" "pdf read/write library"
+.SH NAME
+pdfio \- pdf read/write library
+.SH Introduction
+.PP
+pdfio is a simple C library for reading and writing PDF files. The primary goals of pdfio are:
+.IP \(bu 5
+.PP
+Read any PDF file with or without encryption or linearization
+
+.IP \(bu 5
+.PP
+Write PDF files without encryption or linearization
+
+.IP \(bu 5
+.PP
+Extract or embed useful metadata (author, creator, page information, etc.)
+
+.IP \(bu 5
+.PP
+"Filter" PDF files, for example to extract a range of pages or to embed fonts that are missing from a PDF
+
+.IP \(bu 5
+.PP
+Provide access to objects used for each page
+
+
+.PP
+pdfio is
+.I not
+ concerned with rendering or viewing a PDF file, although a PDF RIP or viewer could be written using it.
+
+.SH ENUMERATIONS
+.SS pdfio_filter_e
+Compression/decompression filters for streams
+.TP 5
+PDFIO_FILTER_ASCII85
+.br
+ASCII85Decode filter (reading only)
+.TP 5
+PDFIO_FILTER_ASCIIHEX
+.br
+ASCIIHexDecode filter (reading only)
+.TP 5
+PDFIO_FILTER_CCITTFAX
+.br
+CCITTFaxDecode filter
+.TP 5
+PDFIO_FILTER_CRYPT
+.br
+Encryption filter
+.TP 5
+PDFIO_FILTER_DCT
+.br
+DCTDecode (JPEG) filter
+.TP 5
+PDFIO_FILTER_FLATE
+.br
+FlateDecode filter
+.TP 5
+PDFIO_FILTER_JBIG2
+.br
+JBIG2Decode filter
+.TP 5
+PDFIO_FILTER_JPX
+.br
+JPXDecode filter (reading only)
+.TP 5
+PDFIO_FILTER_LZW
+.br
+LZWDecode filter (reading only)
+.TP 5
+PDFIO_FILTER_NONE
+.br
+No filter
+.TP 5
+PDFIO_FILTER_RUNLENGTH
+.br
+RunLengthDecode filter (reading only)
+.SS pdfio_valtype_e
+PDF value types
+.TP 5
+PDFIO_VALTYPE_ARRAY
+.br
+Array
+.TP 5
+PDFIO_VALTYPE_BINARY
+.br
+Binary data
+.TP 5
+PDFIO_VALTYPE_BOOLEAN
+.br
+Boolean
+.TP 5
+PDFIO_VALTYPE_DATE
+.br
+Date/time
+.TP 5
+PDFIO_VALTYPE_DICT
+.br
+Dictionary
+.TP 5
+PDFIO_VALTYPE_INDIRECT
+.br
+Indirect object (N G obj)
+.TP 5
+PDFIO_VALTYPE_NAME
+.br
+Name
+.TP 5
+PDFIO_VALTYPE_NONE
+.br
+No value, not set
+.TP 5
+PDFIO_VALTYPE_NULL
+.br
+Null object
+.TP 5
+PDFIO_VALTYPE_NUMBER
+.br
+Number (integer or real)
+.TP 5
+PDFIO_VALTYPE_STRING
+.br
+String
+.SH FUNCTIONS
+.SS pdfioArrayAppendArray
+Add an array value to an array.
+.PP
+.nf
+bool  pdfioArrayAppendArray (
+    pdfio_array_t *a,
+    pdfio_array_t *value
+);
+.fi
+.SS pdfioArrayAppendBinary
+Add a binary string value to an array.
+.PP
+.nf
+bool  pdfioArrayAppendBinary (
+    pdfio_array_t *a,
+    unsigned char *value,
+    size_t valuelen
+);
+.fi
+.SS pdfioArrayAppendBoolean
+Add a boolean value to an array.
+.PP
+.nf
+bool  pdfioArrayAppendBoolean (
+    pdfio_array_t *a,
+    bool value
+);
+.fi
+.SS pdfioArrayAppendDict
+Add a dictionary to an array.
+.PP
+.nf
+bool  pdfioArrayAppendDict (
+    pdfio_array_t *a,
+    pdfio_dict_t *value
+);
+.fi
+.SS pdfioArrayAppendName
+Add a name to an array.
+.PP
+.nf
+bool  pdfioArrayAppendName (
+    pdfio_array_t *a,
+    const char *value
+);
+.fi
+.SS pdfioArrayAppendNumber
+Add a number to an array.
+.PP
+.nf
+bool  pdfioArrayAppendNumber (
+    pdfio_array_t *a,
+    double value
+);
+.fi
+.SS pdfioArrayAppendObject
+Add an indirect object reference to an array.
+.PP
+.nf
+bool  pdfioArrayAppendObject (
+    pdfio_array_t *a,
+    pdfio_obj_t *value
+);
+.fi
+.SS pdfioArrayAppendString
+Add a string to an array.
+.PP
+.nf
+bool  pdfioArrayAppendString (
+    pdfio_array_t *a,
+    const char *value
+);
+.fi
+.SS pdfioArrayCopy
+Copy an array.
+.PP
+.nf
+pdfio_array_t * pdfioArrayCopy (
+    pdfio_file_t *pdf,
+    pdfio_array_t *a
+);
+.fi
+.SS pdfioArrayCreate
+Create an empty array.
+.PP
+.nf
+pdfio_array_t * pdfioArrayCreate (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioArrayGetArray
+Get an array value from an array.
+.PP
+.nf
+pdfio_array_t * pdfioArrayGetArray (
+    pdfio_array_t *a,
+    size_t n
+);
+.fi
+.SS pdfioArrayGetBinary
+Get a binary string value from an array.
+.PP
+.nf
+unsigned char * pdfioArrayGetBinary (
+    pdfio_array_t *a,
+    size_t n,
+    size_t *length
+);
+.fi
+.SS pdfioArrayGetBoolean
+Get a boolean value from an array.
+.PP
+.nf
+bool  pdfioArrayGetBoolean (
+    pdfio_array_t *a,
+    size_t n
+);
+.fi
+.SS pdfioArrayGetDict
+Get a dictionary value from an array.
+.PP
+.nf
+pdfio_dict_t * pdfioArrayGetDict (
+    pdfio_array_t *a,
+    size_t n
+);
+.fi
+.SS pdfioArrayGetName
+Get a name value from an array.
+.PP
+.nf
+const char * pdfioArrayGetName (
+    pdfio_array_t *a,
+    size_t n
+);
+.fi
+.SS pdfioArrayGetNumber
+Get a number from an array.
+.PP
+.nf
+double  pdfioArrayGetNumber (
+    pdfio_array_t *a,
+    size_t n
+);
+.fi
+.SS pdfioArrayGetObject
+Get an indirect object reference from an array.
+.PP
+.nf
+pdfio_obj_t * pdfioArrayGetObject (
+    pdfio_array_t *a,
+    size_t n
+);
+.fi
+.SS pdfioArrayGetSize
+Get the length of an array.
+.PP
+.nf
+size_t  pdfioArrayGetSize (
+    pdfio_array_t *a
+);
+.fi
+.SS pdfioArrayGetString
+Get a string value from an array.
+.PP
+.nf
+const char * pdfioArrayGetString (
+    pdfio_array_t *a,
+    size_t n
+);
+.fi
+.SS pdfioArrayGetType
+Get a value type from an array.
+.PP
+.nf
+pdfio_valtype_t  pdfioArrayGetType (
+    pdfio_array_t *a,
+    size_t n
+);
+.fi
+.SS pdfioContentBeginText
+Begin a text block.
+.PP
+.nf
+bool  pdfioContentBeginText (
+    pdfio_stream_t *st
+);
+.fi
+.SS pdfioContentClip
+Clip output to the current path.
+.PP
+.nf
+bool  pdfioContentClip (
+    pdfio_stream_t *st,
+    bool even_odd
+);
+.fi
+.SS pdfioContentDrawImage
+Draw an image object.
+.PP
+.nf
+bool  pdfioContentDrawImage (
+    pdfio_stream_t *st,
+    const char *name,
+    double x,
+    double y,
+    double w,
+    double h
+);
+.fi
+.PP
+The object name must be part of the page dictionary resources, typically
+using the \fIpdfioPageDictAddImage\fR function.
+.SS pdfioContentEndText
+End a text block.
+.PP
+.nf
+bool  pdfioContentEndText (
+    pdfio_stream_t *st
+);
+.fi
+.SS pdfioContentFill
+Fill the current path.
+.PP
+.nf
+bool  pdfioContentFill (
+    pdfio_stream_t *st,
+    bool even_odd
+);
+.fi
+.SS pdfioContentFillAndStroke
+Fill and stroke the current path.
+.PP
+.nf
+bool  pdfioContentFillAndStroke (
+    pdfio_stream_t *st,
+    bool even_odd
+);
+.fi
+.SS pdfioContentMatrixConcat
+Concatenate a matrix to the current graphics
+state.
+.PP
+.nf
+bool  pdfioContentMatrixConcat (
+    pdfio_stream_t *st,
+    pdfio_matrix_t m
+);
+.fi
+.SS pdfioContentMatrixRotate
+Rotate the current transform matrix.
+.PP
+.nf
+bool  pdfioContentMatrixRotate (
+    pdfio_stream_t *st,
+    double degrees
+);
+.fi
+.SS pdfioContentMatrixScale
+Scale the current transform matrix.
+.PP
+.nf
+bool  pdfioContentMatrixScale (
+    pdfio_stream_t *st,
+    double sx,
+    double sy
+);
+.fi
+.SS pdfioContentMatrixTranslate
+Translate the current transform matrix.
+.PP
+.nf
+bool  pdfioContentMatrixTranslate (
+    pdfio_stream_t *st,
+    double tx,
+    double ty
+);
+.fi
+.SS pdfioContentPathClose
+Close the current path.
+.PP
+.nf
+bool  pdfioContentPathClose (
+    pdfio_stream_t *st
+);
+.fi
+.SS pdfioContentPathCurve
+Add a Bezier curve with two control points.
+.PP
+.nf
+bool  pdfioContentPathCurve (
+    pdfio_stream_t *st,
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double x3,
+    double y3
+);
+.fi
+.SS pdfioContentPathCurve13
+Add a Bezier curve with an initial control point.
+.PP
+.nf
+bool  pdfioContentPathCurve13 (
+    pdfio_stream_t *st,
+    double x1,
+    double y1,
+    double x3,
+    double y3
+);
+.fi
+.SS pdfioContentPathCurve23
+Add a Bezier curve with a trailing control point.
+.PP
+.nf
+bool  pdfioContentPathCurve23 (
+    pdfio_stream_t *st,
+    double x2,
+    double y2,
+    double x3,
+    double y3
+);
+.fi
+.SS pdfioContentPathLineTo
+Add a straight line to the current path.
+.PP
+.nf
+bool  pdfioContentPathLineTo (
+    pdfio_stream_t *st,
+    double x,
+    double y
+);
+.fi
+.SS pdfioContentPathMoveTo
+Start a new subpath.
+.PP
+.nf
+bool  pdfioContentPathMoveTo (
+    pdfio_stream_t *st,
+    double x,
+    double y
+);
+.fi
+.SS pdfioContentPathRect
+Add a rectangle to the current path.
+.PP
+.nf
+bool  pdfioContentPathRect (
+    pdfio_stream_t *st,
+    pdfio_rect_t *rect
+);
+.fi
+.SS pdfioContentRestore
+Restore a previous graphics state.
+.PP
+.nf
+bool  pdfioContentRestore (
+    pdfio_stream_t *st
+);
+.fi
+.SS pdfioContentSave
+Save the current graphics state.
+.PP
+.nf
+bool  pdfioContentSave (
+    pdfio_stream_t *st
+);
+.fi
+.SS pdfioContentSetDashPattern
+Set the stroke pattern.
+.PP
+.nf
+bool  pdfioContentSetDashPattern (
+    pdfio_stream_t *st,
+    int phase,
+    int on,
+    int off
+);
+.fi
+.SS pdfioContentSetFillColorDeviceCMYK
+Set device CMYK fill color.
+.PP
+.nf
+bool  pdfioContentSetFillColorDeviceCMYK (
+    pdfio_stream_t *st,
+    double c,
+    double m,
+    double y,
+    double k
+);
+.fi
+.SS pdfioContentSetFillColorDeviceGray
+Set the device gray fill color.
+.PP
+.nf
+bool  pdfioContentSetFillColorDeviceGray (
+    pdfio_stream_t *st,
+    double g
+);
+.fi
+.SS pdfioContentSetFillColorDeviceRGB
+Set the device RGB fill color.
+.PP
+.nf
+bool  pdfioContentSetFillColorDeviceRGB (
+    pdfio_stream_t *st,
+    double r,
+    double g,
+    double b
+);
+.fi
+.SS pdfioContentSetFillColorGray
+Set the calibrated gray fill color.
+.PP
+.nf
+bool  pdfioContentSetFillColorGray (
+    pdfio_stream_t *st,
+    double g
+);
+.fi
+.SS pdfioContentSetFillColorRGB
+Set the calibrated RGB fill color.
+.PP
+.nf
+bool  pdfioContentSetFillColorRGB (
+    pdfio_stream_t *st,
+    double r,
+    double g,
+    double b
+);
+.fi
+.SS pdfioContentSetFillColorSpace
+Set the fill colorspace.
+.PP
+.nf
+bool  pdfioContentSetFillColorSpace (
+    pdfio_stream_t *st,
+    const char *name
+);
+.fi
+.SS pdfioContentSetFlatness
+Set the flatness tolerance.
+.PP
+.nf
+bool  pdfioContentSetFlatness (
+    pdfio_stream_t *st,
+    double flatness
+);
+.fi
+.SS pdfioContentSetLineCap
+Set the line ends style.
+.PP
+.nf
+bool  pdfioContentSetLineCap (
+    pdfio_stream_t *st,
+    pdfio_linecap_t lc
+);
+.fi
+.SS pdfioContentSetLineJoin
+Set the line joining style.
+.PP
+.nf
+bool  pdfioContentSetLineJoin (
+    pdfio_stream_t *st,
+    pdfio_linejoin_t lj
+);
+.fi
+.SS pdfioContentSetLineWidth
+Set the line width.
+.PP
+.nf
+bool  pdfioContentSetLineWidth (
+    pdfio_stream_t *st,
+    double width
+);
+.fi
+.SS pdfioContentSetMiterLimit
+Set the miter limit.
+.PP
+.nf
+bool  pdfioContentSetMiterLimit (
+    pdfio_stream_t *st,
+    double limit
+);
+.fi
+.SS pdfioContentSetStrokeColorDeviceCMYK
+Set the device CMYK stroke color.
+.PP
+.nf
+bool  pdfioContentSetStrokeColorDeviceCMYK (
+    pdfio_stream_t *st,
+    double c,
+    double m,
+    double y,
+    double k
+);
+.fi
+.SS pdfioContentSetStrokeColorDeviceGray
+Set the device gray stroke color.
+.PP
+.nf
+bool  pdfioContentSetStrokeColorDeviceGray (
+    pdfio_stream_t *st,
+    double g
+);
+.fi
+.SS pdfioContentSetStrokeColorDeviceRGB
+Set the device RGB stroke color.
+.PP
+.nf
+bool  pdfioContentSetStrokeColorDeviceRGB (
+    pdfio_stream_t *st,
+    double r,
+    double g,
+    double b
+);
+.fi
+.SS pdfioContentSetStrokeColorGray
+Set the calibrated gray stroke color.
+.PP
+.nf
+bool  pdfioContentSetStrokeColorGray (
+    pdfio_stream_t *st,
+    double g
+);
+.fi
+.SS pdfioContentSetStrokeColorRGB
+Set the calibrated RGB stroke color.
+.PP
+.nf
+bool  pdfioContentSetStrokeColorRGB (
+    pdfio_stream_t *st,
+    double r,
+    double g,
+    double b
+);
+.fi
+.SS pdfioContentSetStrokeColorSpace
+Set the stroke color space.
+.PP
+.nf
+bool  pdfioContentSetStrokeColorSpace (
+    pdfio_stream_t *st,
+    const char *name
+);
+.fi
+.SS pdfioContentSetTextCharacterSpacing
+Set the spacing between characters.
+.PP
+.nf
+bool  pdfioContentSetTextCharacterSpacing (
+    pdfio_stream_t *st,
+    double spacing
+);
+.fi
+.SS pdfioContentSetTextFont
+Set the text font and size.
+.PP
+.nf
+bool  pdfioContentSetTextFont (
+    pdfio_stream_t *st,
+    const char *name,
+    double size
+);
+.fi
+.SS pdfioContentSetTextLeading
+Set text leading (line height) value.
+.PP
+.nf
+bool  pdfioContentSetTextLeading (
+    pdfio_stream_t *st,
+    double leading
+);
+.fi
+.SS pdfioContentSetTextMatrix
+Set the text transform matrix.
+.PP
+.nf
+bool  pdfioContentSetTextMatrix (
+    pdfio_stream_t *st,
+    pdfio_matrix_t m
+);
+.fi
+.SS pdfioContentSetTextRenderingMode
+Set the text rendering mode.
+.PP
+.nf
+bool  pdfioContentSetTextRenderingMode (
+    pdfio_stream_t *st,
+    pdfio_textrendering_t mode
+);
+.fi
+.SS pdfioContentSetTextRise
+Set the text baseline offset.
+.PP
+.nf
+bool  pdfioContentSetTextRise (
+    pdfio_stream_t *st,
+    double rise
+);
+.fi
+.SS pdfioContentSetTextWordSpacing
+Set the inter-word spacing.
+.PP
+.nf
+bool  pdfioContentSetTextWordSpacing (
+    pdfio_stream_t *st,
+    double spacing
+);
+.fi
+.SS pdfioContentSetTextXScaling
+Set the horizontal scaling value.
+.PP
+.nf
+bool  pdfioContentSetTextXScaling (
+    pdfio_stream_t *st,
+    double percent
+);
+.fi
+.SS pdfioContentStroke
+Stroke the current path.
+.PP
+.nf
+bool  pdfioContentStroke (
+    pdfio_stream_t *st
+);
+.fi
+.SS pdfioContentTextMoveLine
+Move to the next line and offset.
+.PP
+.nf
+bool  pdfioContentTextMoveLine (
+    pdfio_stream_t *st,
+    double tx,
+    double ty
+);
+.fi
+.SS pdfioContentTextMoveTo
+Offset within the current line.
+.PP
+.nf
+bool  pdfioContentTextMoveTo (
+    pdfio_stream_t *st,
+    double tx,
+    double ty
+);
+.fi
+.SS pdfioContentTextNextLine
+Move to the next line.
+.PP
+.nf
+bool  pdfioContentTextNextLine (
+    pdfio_stream_t *st
+);
+.fi
+.SS pdfioContentTextShow
+Show text.
+.PP
+.nf
+bool  pdfioContentTextShow (
+    pdfio_stream_t *st,
+    const char *s,
+    bool new_line
+);
+.fi
+.SS pdfioContentTextShowJustified
+Show justified text.
+.PP
+.nf
+bool  pdfioContentTextShowJustified (
+    pdfio_stream_t *st,
+    size_t num_fragments,
+    const double *offsets,
+    const char *const *fragments
+);
+.fi
+.SS pdfioDictCopy
+Copy a dictionary to a PDF file.
+.PP
+.nf
+pdfio_dict_t * pdfioDictCopy (
+    pdfio_file_t *pdf,
+    pdfio_dict_t *dict
+);
+.fi
+.SS pdfioDictCreate
+Create a dictionary to hold key/value pairs.
+.PP
+.nf
+pdfio_dict_t * pdfioDictCreate (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioDictGetArray
+Get a key array value from a dictionary.
+.PP
+.nf
+pdfio_array_t * pdfioDictGetArray (
+    pdfio_dict_t *dict,
+    const char *key
+);
+.fi
+.SS pdfioDictGetBinary
+Get a key binary string value from a dictionary.
+.PP
+.nf
+unsigned char * pdfioDictGetBinary (
+    pdfio_dict_t *dict,
+    const char *key,
+    size_t *length
+);
+.fi
+.SS pdfioDictGetBoolean
+Get a key boolean value from a dictionary.
+.PP
+.nf
+bool  pdfioDictGetBoolean (
+    pdfio_dict_t *dict,
+    const char *key
+);
+.fi
+.SS pdfioDictGetDict
+Get a key dictionary value from a dictionary.
+.PP
+.nf
+pdfio_dict_t * pdfioDictGetDict (
+    pdfio_dict_t *dict,
+    const char *key
+);
+.fi
+.SS pdfioDictGetName
+Get a key name value from a dictionary.
+.PP
+.nf
+const char * pdfioDictGetName (
+    pdfio_dict_t *dict,
+    const char *key
+);
+.fi
+.SS pdfioDictGetNumber
+Get a key number value from a dictionary.
+.PP
+.nf
+double  pdfioDictGetNumber (
+    pdfio_dict_t *dict,
+    const char *key
+);
+.fi
+.SS pdfioDictGetObject
+Get a key indirect object value from a dictionary.
+.PP
+.nf
+pdfio_obj_t * pdfioDictGetObject (
+    pdfio_dict_t *dict,
+    const char *key
+);
+.fi
+.SS pdfioDictGetRect
+Get a key rectangle value from a dictionary.
+.PP
+.nf
+pdfio_rect_t * pdfioDictGetRect (
+    pdfio_dict_t *dict,
+    const char *key,
+    pdfio_rect_t *rect
+);
+.fi
+.SS pdfioDictGetString
+Get a key string value from a dictionary.
+.PP
+.nf
+const char * pdfioDictGetString (
+    pdfio_dict_t *dict,
+    const char *key
+);
+.fi
+.SS pdfioDictGetType
+Get a key value type from a dictionary.
+.PP
+.nf
+pdfio_valtype_t  pdfioDictGetType (
+    pdfio_dict_t *dict,
+    const char *key
+);
+.fi
+.SS pdfioDictSetArray
+Set a key array in a dictionary.
+.PP
+.nf
+bool  pdfioDictSetArray (
+    pdfio_dict_t *dict,
+    const char *key,
+    pdfio_array_t *value
+);
+.fi
+.SS pdfioDictSetBinary
+Set a key binary string in a dictionary.
+.PP
+.nf
+bool  pdfioDictSetBinary (
+    pdfio_dict_t *dict,
+    const char *key,
+    unsigned char *value,
+    size_t valuelen
+);
+.fi
+.SS pdfioDictSetBoolean
+Set a key boolean in a dictionary.
+.PP
+.nf
+bool  pdfioDictSetBoolean (
+    pdfio_dict_t *dict,
+    const char *key,
+    bool value
+);
+.fi
+.SS pdfioDictSetDict
+Set a key dictionary in a dictionary.
+.PP
+.nf
+bool  pdfioDictSetDict (
+    pdfio_dict_t *dict,
+    const char *key,
+    pdfio_dict_t *value
+);
+.fi
+.SS pdfioDictSetName
+Set a key name in a dictionary.
+.PP
+.nf
+bool  pdfioDictSetName (
+    pdfio_dict_t *dict,
+    const char *key,
+    const char *value
+);
+.fi
+.SS pdfioDictSetNull
+Set a key null in a dictionary.
+.PP
+.nf
+bool  pdfioDictSetNull (
+    pdfio_dict_t *dict,
+    const char *key
+);
+.fi
+.SS pdfioDictSetNumber
+Set a key number in a dictionary.
+.PP
+.nf
+bool  pdfioDictSetNumber (
+    pdfio_dict_t *dict,
+    const char *key,
+    double value
+);
+.fi
+.SS pdfioDictSetObject
+Set a key indirect object reference in a dictionary.
+.PP
+.nf
+bool  pdfioDictSetObject (
+    pdfio_dict_t *dict,
+    const char *key,
+    pdfio_obj_t *value
+);
+.fi
+.SS pdfioDictSetRect
+Set a key rectangle in a dictionary.
+.PP
+.nf
+bool  pdfioDictSetRect (
+    pdfio_dict_t *dict,
+    const char *key,
+    pdfio_rect_t *value
+);
+.fi
+.SS pdfioDictSetString
+Set a key literal string in a dictionary.
+.PP
+.nf
+bool  pdfioDictSetString (
+    pdfio_dict_t *dict,
+    const char *key,
+    const char *value
+);
+.fi
+.SS pdfioDictSetStringf
+Set a key formatted string in a dictionary.
+.PP
+.nf
+bool  pdfioDictSetStringf (
+    pdfio_dict_t *dict,
+    const char *key,
+    const char *format,
+    ...
+);
+.fi
+.SS pdfioFileClose
+Close a PDF file and free all memory used for it.
+.PP
+.nf
+bool  pdfioFileClose (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioFileCreate
+Create a PDF file.
+.PP
+.nf
+pdfio_file_t * pdfioFileCreate (
+    const char *filename,
+    const char *version,
+    pdfio_rect_t *media_box,
+    pdfio_rect_t *crop_box,
+    pdfio_error_cb_t error_cb,
+    void *error_data
+);
+.fi
+.SS pdfioFileCreateFontObject
+Add a font object to a PDF file.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateFontObject (
+    pdfio_file_t *pdf,
+    const char *filename
+);
+.fi
+.SS pdfioFileCreateICCProfileObject
+Add an ICC profile object to a PDF file.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateICCProfileObject (
+    pdfio_file_t *pdf,
+    const char *filename
+);
+.fi
+.SS pdfioFileCreateImageObject
+Add an image object to a PDF file.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateImageObject (
+    pdfio_file_t *pdf,
+    const char *filename,
+    bool interpolate
+);
+.fi
+.PP
+Currently only GIF, JPEG, and PNG files are supported.
+.SS pdfioFileCreateObject
+Create a new object in a PDF file.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateObject (
+    pdfio_file_t *pdf,
+    pdfio_dict_t *dict
+);
+.fi
+.SS pdfioFileCreatePage
+Create a page in a PDF file.
+.PP
+.nf
+pdfio_stream_t * pdfioFileCreatePage (
+    pdfio_file_t *pdf,
+    pdfio_dict_t *dict
+);
+.fi
+.SS pdfioFileFindObject
+Find an object using its object number.
+.PP
+.nf
+pdfio_obj_t * pdfioFileFindObject (
+    pdfio_file_t *pdf,
+    size_t number
+);
+.fi
+.PP
+This differs from \fIpdfioFileGetObject\fR which takes an index into the
+list of objects while this function takes the object number.
+.SS pdfioFileGetID
+Get the PDF file's ID strings.
+.PP
+.nf
+pdfio_array_t * pdfioFileGetID (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioFileGetName
+Get a PDF's filename.
+.PP
+.nf
+const char * pdfioFileGetName (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioFileGetNumObjects
+Get the number of objects in a PDF file.
+.PP
+.nf
+size_t  pdfioFileGetNumObjects (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioFileGetNumPages
+Get the number of pages in a PDF file.
+.PP
+.nf
+size_t  pdfioFileGetNumPages (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioFileGetObject
+Get an object from a PDF file.
+.PP
+.nf
+pdfio_obj_t * pdfioFileGetObject (
+    pdfio_file_t *pdf,
+    size_t n
+);
+.fi
+.SS pdfioFileGetPage
+Get a page object from a PDF file.
+.PP
+.nf
+pdfio_obj_t * pdfioFileGetPage (
+    pdfio_file_t *pdf,
+    size_t n
+);
+.fi
+.SS pdfioFileGetVersion
+Get the PDF version number for a PDF file.
+.PP
+.nf
+const char * pdfioFileGetVersion (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioFileOpen
+Open a PDF file for reading.
+.PP
+.nf
+pdfio_file_t * pdfioFileOpen (
+    const char *filename,
+    pdfio_error_cb_t error_cb,
+    void *error_data
+);
+.fi
+.SS pdfioImageGetHeight
+Get the height of an image object.
+.PP
+.nf
+double  pdfioImageGetHeight (
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioImageGetWidth
+Get the width of an image object.
+.PP
+.nf
+double  pdfioImageGetWidth (
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioObjClose
+Close an object, writing any data as needed to the PDF
+file.
+.PP
+.nf
+bool  pdfioObjClose (
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioObjCopy
+Copy an object to another PDF file.
+.PP
+.nf
+pdfio_obj_t * pdfioObjCopy (
+    pdfio_file_t *pdf,
+    pdfio_obj_t *srcobj
+);
+.fi
+.SS pdfioObjCreateStream
+Create an object (data) stream for writing.
+.PP
+.nf
+pdfio_stream_t * pdfioObjCreateStream (
+    pdfio_obj_t *obj,
+    pdfio_filter_t filter
+);
+.fi
+.SS pdfioObjGetArray
+Get the array associated with an object.
+.PP
+.nf
+pdfio_array_t * pdfioObjGetArray (
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioObjGetDict
+Get the dictionary associated with an object.
+.PP
+.nf
+pdfio_dict_t * pdfioObjGetDict (
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioObjGetGeneration
+Get the object's generation number.
+.PP
+.nf
+unsigned short  pdfioObjGetGeneration (
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioObjGetLength
+Get the length of the object's (data) stream.
+.PP
+.nf
+size_t  pdfioObjGetLength (
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioObjGetNumber
+Get the object's number.
+.PP
+.nf
+size_t  pdfioObjGetNumber (
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioObjGetType
+Get an object's type.
+.PP
+.nf
+const char * pdfioObjGetType (
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioObjOpenStream
+Open an object's (data) stream for reading.
+.PP
+.nf
+pdfio_stream_t * pdfioObjOpenStream (
+    pdfio_obj_t *obj,
+    bool decode
+);
+.fi
+.SS pdfioPageCopy
+Copy a page to a PDF file.
+.PP
+.nf
+bool  pdfioPageCopy (
+    pdfio_file_t *pdf,
+    pdfio_obj_t *srcpage
+);
+.fi
+.SS pdfioPageDictAddCalibratedColorSpace
+Add a calibrated color space to
+the page dictionary.
+.PP
+.nf
+bool  pdfioPageDictAddCalibratedColorSpace (
+    pdfio_dict_t *dict,
+    const char *name,
+    size_t num_colors,
+    const double *white_point,
+    double gamma
+);
+.fi
+.SS pdfioPageDictAddFont
+Add a font object to the page dictionary.
+.PP
+.nf
+bool  pdfioPageDictAddFont (
+    pdfio_dict_t *dict,
+    const char *name,
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioPageDictAddICCColorSpace
+Add an ICC color space to the page
+dictionary.
+.PP
+.nf
+bool  pdfioPageDictAddICCColorSpace (
+    pdfio_dict_t *dict,
+    const char *name,
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioPageDictAddImage
+Add an image object to the page dictionary.
+.PP
+.nf
+bool  pdfioPageDictAddImage (
+    pdfio_dict_t *dict,
+    const char *name,
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioStreamClose
+Close a (data) stream in a PDF file.
+.PP
+.nf
+bool  pdfioStreamClose (
+    pdfio_stream_t *st
+);
+.fi
+.SS pdfioStreamConsume
+Consume bytes from the stream.
+.PP
+.nf
+bool  pdfioStreamConsume (
+    pdfio_stream_t *st,
+    size_t bytes
+);
+.fi
+.SS pdfioStreamGetToken
+Read a single PDF token from a stream.
+.PP
+.nf
+bool  pdfioStreamGetToken (
+    pdfio_stream_t *st,
+    char *buffer,
+    size_t bufsize
+);
+.fi
+.SS pdfioStreamPeek
+Peek at data in a stream.
+.PP
+.nf
+ssize_t  pdfioStreamPeek (
+    pdfio_stream_t *st,
+    void *buffer,
+    size_t bytes
+);
+.fi
+.SS pdfioStreamPrintf
+Write a formatted string to a stream.
+.PP
+.nf
+bool  pdfioStreamPrintf (
+    pdfio_stream_t *st,
+    const char *format,
+    ...
+);
+.fi
+.SS pdfioStreamPuts
+Write a literal string to a stream.
+.PP
+.nf
+bool  pdfioStreamPuts (
+    pdfio_stream_t *st,
+    const char *s
+);
+.fi
+.SS pdfioStreamRead
+Read data from a stream.
+.PP
+.nf
+ssize_t  pdfioStreamRead (
+    pdfio_stream_t *st,
+    void *buffer,
+    size_t bytes
+);
+.fi
+.SS pdfioStreamWrite
+Write data to a stream.
+.PP
+.nf
+bool  pdfioStreamWrite (
+    pdfio_stream_t *st,
+    const void *buffer,
+    size_t bytes
+);
+.fi
+.SS pdfioStringCreate
+Create a durable literal string.
+.PP
+.nf
+char * pdfioStringCreate (
+    pdfio_file_t *pdf,
+    const char *s
+);
+.fi
+.PP
+This function creates a literal string associated with the PDF file
+"pwg".  The "s" string points to a nul-terminated C string.
+.PP
+\fBNULL\fR is returned on error, otherwise a \fBchar *\fR that is valid until
+\fBpdfioFileClose\fR is called.
+.SS pdfioStringCreatef
+Create a durable formatted string.
+.PP
+.nf
+char * pdfioStringCreatef (
+    pdfio_file_t *pdf,
+    const char *format,
+    ...
+);
+.fi
+.PP
+This function creates a formatted string associated with the PDF file
+"pwg".  The "format" string contains \fBprintf\fR-style format characters.
+.PP
+\fBNULL\fR is returned on error, otherwise a \fBchar *\fR that is valid until
+\fBpdfioFileClose\fR is called.
+.SH STRUCTURES
+.SS pdfio_rect_s
+PDF rectangle
+.PP
+.nf
+struct pdfio_rect_s
+{
+  double x1;
+  double x2;
+  double y1;
+  double y2;
+};
+.fi
+.SH TYPES
+.SS pdf_value_t
+PDF value of any type
+.PP
+.nf
+typedef struct _pdfio_value_s pdf_value_t;
+.fi
+.SS pdfio_array_t
+Array of PDF values
+.PP
+.nf
+typedef struct _pdfio_array_s pdfio_array_t;
+.fi
+.SS pdfio_dict_t
+Key/value dictionary
+.PP
+.nf
+typedef struct _pdfio_dict_s pdfio_dict_t;
+.fi
+.SS pdfio_error_cb_t
+Error callback
+.PP
+.nf
+typedef bool(*)(pdfio_file_t *pdf, const char *message, void *data) pdfio_error_cb_t;
+.fi
+.SS pdfio_file_t
+PDF file
+.PP
+.nf
+typedef struct _pdfio_file_s pdfio_file_t;
+.fi
+.SS pdfio_filter_t
+Compression/decompression filters for streams
+.PP
+.nf
+typedef enum pdfio_filter_e pdfio_filter_t;
+.fi
+.SS pdfio_obj_t
+Numbered object in PDF file
+.PP
+.nf
+typedef struct _pdfio_obj_s pdfio_obj_t;
+.fi
+.SS pdfio_rect_t
+PDF rectangle
+.PP
+.nf
+typedef struct pdfio_rect_s pdfio_rect_t;
+.fi
+.SS pdfio_stream_t
+Object data stream in PDF file
+.PP
+.nf
+typedef struct _pdfio_stream_s pdfio_stream_t;
+.fi
+.SS pdfio_valtype_t
+PDF value types
+.PP
+.nf
+typedef enum pdfio_valtype_e pdfio_valtype_t;
+.fi
+.SH AUTHOR
+.PP
+Michael R Sweet
+.SH COPYRIGHT
+.PP
+Copyright (c) 2021 by Michael R Sweet

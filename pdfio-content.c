@@ -20,7 +20,7 @@
 // Local types...
 //
 
-typedef pdfio_obj_t *(*image_func_t)(pdfio_dict_t *dict, int fd);
+typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
 
 
 //
@@ -910,7 +910,7 @@ pdfioFileCreateImageObject(
   pdfio_obj_t	*obj;			// Image object
   int		fd;			// File
   unsigned char	buffer[32];		// Read buffer
-  image_func_t	copy_func = NULL;	// Image copy function
+  _pdfio_image_func_t copy_func = NULL;	// Image copy function
 
 
   // Range check input...
