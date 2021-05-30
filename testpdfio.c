@@ -149,13 +149,15 @@ do_unit_tests(void)
 {
   int			i;		// Looping var
   char			filename[256];	// PDF filename
-  pdfio_file_t		*pdf;		// PDF file
+  pdfio_file_t		*pdf,		// Test PDF file
+			*outpdf;	// Output PDF file
   bool			error = false;	// Error callback data
   _pdfio_token_t	tb;		// Token buffer
   const char		*s;		// String buffer
   _pdfio_value_t	value;		// Value
   pdfio_obj_t		*color_jpg,	// color.jpg image
-			*gray_jpg;	// gray.jpg image
+			*gray_jpg,	// gray.jpg image
+			*page;		// Page from test PDF file
   static const char	*complex_dict =	// Complex dictionary value
     "<</Annots 5457 0 R/Contents 5469 0 R/CropBox[0 0 595.4 842]/Group 725 0 R"
     "/MediaBox[0 0 595.4 842]/Parent 23513 0 R/Resources<</ColorSpace<<"
@@ -192,43 +194,69 @@ do_unit_tests(void)
   else
     return (1);
 
-  // Close the test PDF file...
-  fputs("pdfioFileClose: ", stdout);
-  if (pdfioFileClose(pdf))
-    puts("PASS");
-  else
-    return (1);
-
   // Create a new PDF file...
   fputs("pdfioFileCreate(\"testpdfio-out.pdf\", ...): ", stdout);
-  if ((pdf = pdfioFileCreate("testpdfio-out.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((outpdf = pdfioFileCreate("testpdfio-out.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
     puts("PASS");
   else
     return (1);
 
   // Create some image objects...
   fputs("pdfioFileCreateImageObject(\"testfiles/color.jpg\"): ", stdout);
-  if ((color_jpg = pdfioFileCreateImageObject(pdf, "testfiles/color.jpg", true)) != NULL)
+  if ((color_jpg = pdfioFileCreateImageObject(outpdf, "testfiles/color.jpg", true)) != NULL)
     puts("PASS");
   else
     return (1);
 
   fputs("pdfioFileCreateImageObject(\"testfiles/gray.jpg\"): ", stdout);
-  if ((gray_jpg = pdfioFileCreateImageObject(pdf, "testfiles/gray.jpg", true)) != NULL)
+  if ((gray_jpg = pdfioFileCreateImageObject(outpdf, "testfiles/gray.jpg", true)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  // Copy the first page from the test PDF file...
+  fputs("pdfioFileGetPage(0): ", stdout);
+  if ((page = pdfioFileGetPage(pdf, 0)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageCopy(first page): ", stdout);
+  if (pdfioPageCopy(outpdf, page))
     puts("PASS");
   else
     return (1);
 
   // Write a few pages...
-  for (i = 1; i < 18; i ++)
+  for (i = 1; i < 16; i ++)
   {
-    if (write_page(pdf, i, (i & 1) ? color_jpg : gray_jpg))
+    if (write_page(outpdf, i, (i & 1) ? color_jpg : gray_jpg))
       return (1);
   }
 
-  // Close the new PDF file...
-  fputs("pdfioFileClose: ", stdout);
+  // Copy the third page from the test PDF file...
+  fputs("pdfioFileGetPage(2): ", stdout);
+  if ((page = pdfioFileGetPage(pdf, 2)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageCopy(third page): ", stdout);
+  if (pdfioPageCopy(outpdf, page))
+    puts("PASS");
+  else
+    return (1);
+
+  // Close the test PDF file...
+  fputs("pdfioFileClose(\"testfiles/testpdfio.pdf\": ", stdout);
   if (pdfioFileClose(pdf))
+    puts("PASS");
+  else
+    return (1);
+
+  // Close the new PDF file...
+  fputs("pdfioFileClose(\"testpdfio-out.pdf\": ", stdout);
+  if (pdfioFileClose(outpdf))
     puts("PASS");
   else
     return (1);

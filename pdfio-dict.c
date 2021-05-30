@@ -36,6 +36,8 @@ pdfioDictCopy(pdfio_file_t *pdf,	// I - PDF file
   _pdfio_value_t	v;		// Current destination value
 
 
+  PDFIO_DEBUG("pdfioDictCopy(pdf=%p, dict=%p(%p))\n", pdf, dict, dict ? dict->pdf : NULL);
+
   // Create the new dictionary...
   if ((ndict = pdfioDictCreate(pdf)) == NULL)
     return (NULL);
@@ -49,7 +51,24 @@ pdfioDictCopy(pdfio_file_t *pdf,	// I - PDF file
   // Copy and add each of the source dictionary's key/value pairs...
   for (i = dict->num_pairs, p = dict->pairs; i > 0; i --, p ++)
   {
-    if (!_pdfioValueCopy(pdf, &v, dict->pdf, &p->value))
+    if (!strcmp(p->key, "Length") && p->value.type == PDFIO_VALTYPE_INDIRECT && dict->pdf != pdf)
+    {
+      // Don't use indirect stream lengths for copied objects...
+      pdfio_obj_t *lenobj = pdfioFileFindObject(dict->pdf, p->value.value.indirect.number);
+					// Length object
+
+      v.type = PDFIO_VALTYPE_NUMBER;
+      if (lenobj)
+      {
+        if (lenobj->value.type == PDFIO_VALTYPE_NONE)
+          _pdfioObjLoad(lenobj);
+
+	v.value.number = lenobj->value.value.number;
+      }
+      else
+        v.value.number = 0.0f;
+    }
+    else if (!_pdfioValueCopy(pdf, &v, dict->pdf, &p->value))
       return (NULL);			// Let pdfioFileClose do the cleanup...
 
     if (_pdfioStringIsAllocated(dict->pdf, p->key))

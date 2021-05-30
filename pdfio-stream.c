@@ -85,7 +85,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
     st->obj->stream_length = (size_t)(_pdfioFileTell(st->pdf) - st->obj->stream_offset);
 
     // End of stream marker...
-    if (!_pdfioFilePuts(st->pdf, "\nendstream\n"))
+    if (!_pdfioFilePuts(st->pdf, "\nendstream\nendobj\n"))
     {
       ret = false;
       goto done;
@@ -598,11 +598,9 @@ pdfioStreamRead(
     {
       // Read large amounts directly to caller's buffer...
       if ((rbytes = stream_read(st, bufptr, bytes)) > 0)
-      {
         bufptr += rbytes;
-        bytes  = 0;
-      }
 
+      bytes      = 0;
       st->bufptr = st->bufend = st->buffer;
       break;
     }

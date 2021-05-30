@@ -25,7 +25,25 @@ _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
                 _pdfio_value_t *vsrc)	// I - Source value
 {
   pdfio_obj_t	*obj;			// Object reference
+#ifdef DEBUG
+  static const char * const types[] =	// Type strings for debug
+  {
+    "PDFIO_VALTYPE_NONE",
+    "PDFIO_VALTYPE_ARRAY",
+    "PDFIO_VALTYPE_BINARY",
+    "PDFIO_VALTYPE_BOOLEAN",
+    "PDFIO_VALTYPE_DATE",
+    "PDFIO_VALTYPE_DICT",
+    "PDFIO_VALTYPE_INDIRECT",
+    "PDFIO_VALTYPE_NAME",
+    "PDFIO_VALTYPE_NULL",
+    "PDFIO_VALTYPE_NUMBER",
+    "PDFIO_VALTYPE_STRING"
+  };
+#endif // DEBUG
 
+
+  PDFIO_DEBUG("_pdfioValueCopy(pdfdst=%p, vdst=%p, pdfsrc=%p, vsrc=%p(%s))\n", pdfdst, vdst, pdfsrc, vsrc, types[vsrc->type]);
 
   if (pdfdst == pdfsrc && vsrc->type != PDFIO_VALTYPE_BINARY)
   {

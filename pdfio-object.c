@@ -42,22 +42,20 @@ pdfioObjClose(pdfio_obj_t *obj)		// I - Object
     // Write the object value
     if (!write_obj_header(obj))
       return (false);
+
+    // Write the "endobj" line...
+    return (_pdfioFilePuts(obj->pdf, "endobj\n"));
   }
   else if (obj->stream)
   {
     // Close the stream...
-    if (!pdfioStreamClose(obj->stream))
-      return (false);
+    return (pdfioStreamClose(obj->stream));
   }
   else
   {
     // Already closed
     return (true);
   }
-
-  // If we get here we wrote the object header or closed the stream and still
-  // need to write the "endobj" line...
-  return (_pdfioFilePuts(obj->pdf, "endobj\n"));
 }
 
 
@@ -69,11 +67,70 @@ pdfio_obj_t *				// O - New object or `NULL` on error
 pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
              pdfio_obj_t  *srcobj)	// I - Object to copy
 {
-  // TODO: Implement pdfioObjCopy
-  (void)pdf;
-  (void)srcobj;
+  pdfio_obj_t	*dstobj;		// Destination object
+  pdfio_stream_t *srcst,		// Source stream
+		*dstst;			// Destination stream
+  char		buffer[32768];		// Copy buffer
+  ssize_t	bytes;			// Bytes read
 
-  return (NULL);
+
+  PDFIO_DEBUG("pdfioObjCopy(pdf=%p, srcobj=%p(%p))\n", pdf, srcobj, srcobj ? srcobj->pdf : NULL);
+
+  // Range check input
+  if (!pdf || !srcobj)
+    return (NULL);
+
+  // Load the object value if needed...
+  if (srcobj->value.type == PDFIO_VALTYPE_NONE)
+    _pdfioObjLoad(srcobj);
+
+  // Create the new object...
+  if ((dstobj = _pdfioFileCreateObject(pdf, srcobj->pdf, NULL)) == NULL)
+    return (NULL);
+
+  // Add new object to the cache of copied objects...
+  if (!_pdfioFileAddMappedObject(pdf, dstobj, srcobj))
+    return (NULL);
+
+  // Copy the object's value...
+  if (!_pdfioValueCopy(pdf, &dstobj->value, srcobj->pdf, &srcobj->value))
+    return (NULL);
+
+  if (srcobj->stream_offset)
+  {
+    // Copy stream data...
+    if ((srcst = pdfioObjOpenStream(srcobj, false)) == NULL)
+    {
+      pdfioObjClose(dstobj);
+      return (NULL);
+    }
+
+    if ((dstst = pdfioObjCreateStream(dstobj, PDFIO_FILTER_NONE)) == NULL)
+    {
+      pdfioStreamClose(srcst);
+      pdfioObjClose(dstobj);
+      return (NULL);
+    }
+
+    while ((bytes = pdfioStreamRead(srcst, buffer, sizeof(buffer))) > 0)
+    {
+      if (!pdfioStreamWrite(dstst, buffer, (size_t)bytes))
+      {
+        bytes = -1;
+        break;
+      }
+    }
+
+    pdfioStreamClose(srcst);
+    pdfioStreamClose(dstst);
+
+    if (bytes < 0)
+      return (NULL);
+  }
+  else
+    pdfioObjClose(dstobj);
+
+  return (dstobj);
 }
 
 
@@ -205,7 +262,10 @@ pdfioObjGetLength(pdfio_obj_t *obj)	// I - Object
 
   // Try getting the length, directly or indirectly
   if ((length = (size_t)pdfioDictGetNumber(obj->value.value.dict, "Length")) > 0)
+  {
+    PDFIO_DEBUG("pdfioObjGetLength(obj=%p) returning %lu.\n", obj, (unsigned long)length);
     return (length);
+  }
 
   if ((lenobj = pdfioDictGetObject(obj->value.value.dict, "Length")) == NULL)
   {
@@ -221,6 +281,8 @@ pdfioObjGetLength(pdfio_obj_t *obj)	// I - Object
     _pdfioFileError(obj->pdf, "Unable to get length of stream.");
     return (0);
   }
+
+  PDFIO_DEBUG("pdfioObjGetLength(obj=%p) returning %lu.\n", obj, (unsigned long)lenobj->value.value.number);
 
   return ((size_t)lenobj->value.value.number);
 }

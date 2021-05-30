@@ -75,6 +75,35 @@ _pdfioFileAddMappedObject(
 
 
 //
+// '_pdfioFileAddPage()' - Add a page to a PDF file.
+//
+
+bool					// O - `true` on success and `false` on failure
+_pdfioFileAddPage(pdfio_file_t *pdf,	// I - PDF file
+                  pdfio_obj_t  *obj)	// I - Page object
+{
+  // Add the page to the array of pages...
+  if (pdf->num_pages >= pdf->alloc_pages)
+  {
+    pdfio_obj_t **temp = (pdfio_obj_t **)realloc(pdf->pages, (pdf->alloc_pages + 16) * sizeof(pdfio_obj_t *));
+
+    if (!temp)
+    {
+      _pdfioFileError(pdf, "Unable to allocate memory for pages.");
+      return (false);
+    }
+
+    pdf->alloc_pages += 16;
+    pdf->pages       = temp;
+  }
+
+  pdf->pages[pdf->num_pages ++] = obj;
+
+  return (true);
+}
+
+
+//
 // 'pdfioFileClose()' - Close a PDF file and free all memory used for it.
 //
 
@@ -253,23 +282,35 @@ pdfioFileCreateObject(
     pdfio_file_t *pdf,			// I - PDF file
     pdfio_dict_t *dict)			// I - Object dictionary
 {
+  _pdfio_value_t	value;		// Object value
+
+
+  value.type       = PDFIO_VALTYPE_DICT;
+  value.value.dict = dict;
+
+  return (_pdfioFileCreateObject(pdf, dict->pdf, &value));
+}
+
+
+//
+// '_pdfioFileCreateObject()' - Create a new object in a PDF file with a value.
+//
+
+pdfio_obj_t *				// O - New object
+_pdfioFileCreateObject(
+    pdfio_file_t   *pdf,		// I - PDF file
+    pdfio_file_t   *srcpdf,		// I - Source PDF file, if any
+    _pdfio_value_t *value)		// I - Object dictionary
+{
   pdfio_obj_t	*obj;			// New object
 
 
   // Range check input...
-  if (!pdf || !dict)
-  {
-    if (pdf)
-      _pdfioFileError(pdf, "Missing object dictionary.");
-
+  if (!pdf)
     return (NULL);
-  }
 
   if (pdf->mode != _PDFIO_MODE_WRITE)
     return (NULL);
-
-  if (dict->pdf != pdf)
-    dict = pdfioDictCopy(pdf, dict);	// Copy dictionary to new PDF
 
   // Allocate memory for the object...
   if ((obj = (pdfio_obj_t *)calloc(1, sizeof(pdfio_obj_t))) == NULL)
@@ -297,10 +338,11 @@ pdfioFileCreateObject(
   pdf->objs[pdf->num_objs ++] = obj;
 
   // Initialize the object...
-  obj->pdf              = pdf;
-  obj->number           = pdf->num_objs;
-  obj->value.type       = PDFIO_VALTYPE_DICT;
-  obj->value.value.dict = dict;
+  obj->pdf    = pdf;
+  obj->number = pdf->num_objs;
+
+  if (value)
+    _pdfioValueCopy(pdf, &obj->value, srcpdf, value);
 
   // Don't write anything just yet...
   return (obj);
@@ -359,22 +401,8 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
   if (!pdfioObjClose(page))
     return (NULL);
 
-  // Add the page to the array of pages...
-  if (pdf->num_pages >= pdf->alloc_pages)
-  {
-    pdfio_obj_t **temp = (pdfio_obj_t **)realloc(pdf->pages, (pdf->alloc_pages + 16) * sizeof(pdfio_obj_t *));
-
-    if (!temp)
-    {
-      _pdfioFileError(pdf, "Unable to allocate memory for pages.");
-      return (NULL);
-    }
-
-    pdf->alloc_pages += 16;
-    pdf->pages       = temp;
-  }
-
-  pdf->pages[pdf->num_pages ++] = page;
+  if (!_pdfioFileAddPage(pdf, page))
+    return (NULL);
 
   // Create the contents stream...
   return (pdfioObjCreateStream(contents, PDFIO_FILTER_FLATE));

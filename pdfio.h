@@ -172,7 +172,7 @@ extern size_t		pdfioObjGetNumber(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern const char	*pdfioObjGetType(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern pdfio_stream_t	*pdfioObjOpenStream(pdfio_obj_t *obj, bool decode) PDFIO_PUBLIC;
 
-extern pdfio_obj_t	*pdfioPageCopy(pdfio_file_t *pdf, pdfio_obj_t *srcpage) PDFIO_PUBLIC;
+extern bool		pdfioPageCopy(pdfio_file_t *pdf, pdfio_obj_t *srcpage) PDFIO_PUBLIC;
 extern size_t		pdfioPageGetNumStreams(pdfio_obj_t *page) PDFIO_PUBLIC;
 extern pdfio_stream_t	*pdfioPageOpenStream(pdfio_obj_t *page, size_t n, bool decode) PDFIO_PUBLIC;
 

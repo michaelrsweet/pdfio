@@ -242,6 +242,8 @@ pdfioArrayCopy(pdfio_file_t  *pdf,	// I - PDF file
 			vdst;		// Current destination value
 
 
+  PDFIO_DEBUG("pdfioArrayCopy(pdf=%p, a=%p(%p))\n", pdf, a, a ? a->pdf : NULL);
+
   // Create the new array...
   if ((na = pdfioArrayCreate(pdf)) == NULL)
     return (NULL);
