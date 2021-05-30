@@ -1,8 +1,8 @@
 pdfio - PDF Read/Write Library
 ==============================
 
-pdfio is a simple C library for reading and writing PDF files.  The primary
-goals of pdfio are:
+PDFio is a simple C library for reading and writing PDF files.  The primary
+goals of PDFio are:
 
 - Read and write any version of PDF file.
 - Provide access to pages, objects, and streams within a PDF file.
@@ -13,14 +13,14 @@ goals of pdfio are:
   that are missing from a PDF
 - Provide access to objects used for each page
 
-pdfio is *not* concerned with rendering or viewing a PDF file, although a PDF
+PDFio is *not* concerned with rendering or viewing a PDF file, although a PDF
 RIP or viewer could be written using it.
 
 
 Requirements
 ------------
 
-pdfio requires the following to build the software:
+PDFio requires the following to build the software:
 
 - A C99 compiler such as Clang, GCC, or MS Visual C
 - A POSIX-compliant `make` program
@@ -35,13 +35,13 @@ Documentation
 > Note: Documentation is under active development...
 
 See the man page (`pdfio.3`), frequently ask questions (`FAQ.md`), and full HTML
-documentation (`pdfio.html`) for information on using pdfio.
+documentation (`pdfio.html`) for information on using PDFio.
 
 
 Installing pdfio
 ----------------
 
-pdfio comes with a portable makefile that will work on any POSIX-compliant
+PDFio comes with a portable makefile that will work on any POSIX-compliant
 system with ZLIB installed.  To make it, run:
 
     make all
@@ -118,7 +118,7 @@ You can reproduce this with the makefile using:
 Legal Stuff
 -----------
 
-pdfio is Copyright © 2021 by Michael R Sweet.
+PDFio is Copyright © 2021 by Michael R Sweet.
 
 This software is licensed under the Apache License Version 2.0 with an
 (optional) exception to allow linking against GPL2/LGPL2 software.  See the
