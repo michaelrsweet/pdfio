@@ -1,0 +1,29 @@
+// Cppcheck bug: does not validate loop constraints properly...
+arrayIndexOutOfBounds:printer-driver.c
+
+// Bad CERT recommendation: C memory layout not determined by variable locations
+cert-API01-C
+
+// Don't report non-const casts.  Inline suppression comments are not working,
+// otherwise we'd be more selective...
+cert-EXP05-C:device.c
+cert-EXP05-C:device-network.c
+cert-EXP05-C:device-usb.c
+cert-EXP05-C:link.c
+cert-EXP05-C:mainloop-subcommands.c
+cert-EXP05-C:resource.c
+cert-EXP05-C:system-webif.c
+cert-EXP05-C:util.c
+
+// Not handling "(unsigned)~CONSTANT" properly...
+cert-INT31-c
+
+// fopen_s is NOT supported on POSIX platforms and DOES NOT APPLY for reading
+// of files!
+cert-MSC24-C:job-filter.c
+
+// char something[###] = "constant" should not result in an error!
+cert-STR05-C:system-webif.c
+
+// Not sure why this is a thing...
+preprocessorErrorDirective

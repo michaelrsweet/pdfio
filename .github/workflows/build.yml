@@ -18,11 +18,15 @@ jobs:
     - name: install prerequisites
       run: sudo apt-get install -y zlib1g-dev
     - name: make
-      run: make 'COMMONFLAGS=-g -fsanitize=address'
+      run: make "COMMONFLAGS=-g -fsanitize=address"
     - name: test
       env:
         ASAN_OPTIONS: leak_check_at_exit=false
       run: make test
+    - name: clang static analyzer
+      run: cd pappl && make CC=clang "GHA_ERROR=::error::" clang
+    - name: cppcheck
+      run: cd pappl && make "GHA_ERROR=::error::" cppcheck
 
   build-macos:
 
@@ -31,6 +35,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: make
-      run: make 'COMMONFLAGS=-g -fsanitize=address'
+      run: make "COMMONFLAGS=-g -fsanitize=address"
     - name: test
       run: make test
+    - name: clang static analyzer
+      run: cd pappl && make CC=clang "GHA_ERROR=::error::" clang
+    - name: cppcheck
+      run: cd pappl && make "GHA_ERROR=::error::" cppcheck

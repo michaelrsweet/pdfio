@@ -1,7 +1,8 @@
 *.1.dylib
 *.a
+*.log
 *.o
-*.so
+*.so.1
 /testpdfio
-/testpdfio-*.pdf
+/testpdfio-out.pdf
 

@@ -147,3 +147,16 @@ doc:
 	codedoc $(DOCFLAGS) --title "PDFio Programming Manual v$(VERSION)" pdfio.h $(LIBOBJS:.o=.c) --body doc/pdfio.md --coverimage doc/pdfio-512.png pdfio.xml >doc/pdfio.html
 	codedoc $(DOCFLAGS) --title "pdf read/write library" --man pdfio --section 3 --body doc/pdfio.md pdfio.xml >doc/pdfio.3
 	rm -f pdfio.xml
+
+
+# Analyze code with the Clang static analyzer <https://clang-analyzer.llvm.org>
+clang:
+	clang $(CPPFLAGS) --analyze $(OBJS:.o=.c) 2>clang.log
+	rm -rf $(OBJS:.o=.plist)
+	test -s clang.log && (echo "$(GHA_ERROR)Clang detected issues."; echo ""; cat clang.log; exit 1) || exit 0
+
+
+# Analyze code using Cppcheck <http://cppcheck.sourceforge.net>
+cppcheck:
+	cppcheck $(CPPFLAGS) --template=gcc --addon=cert.py --suppressions-list=.cppcheck $(OBJS:.o=.c) 2>cppcheck.log
+	test -s cppcheck.log && (echo "$(GHA_ERROR)Cppcheck detected issues."; echo ""; cat cppcheck.log; exit 1) || exit 0
