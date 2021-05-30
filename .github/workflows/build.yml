@@ -16,7 +16,7 @@ jobs:
     - name: update build environment
       run: sudo apt-get update --fix-missing -y
     - name: install prerequisites
-      run: sudo apt-get install -y zlib1g-dev
+      run: sudo apt-get install -y cppcheck zlib1g-dev
     - name: make
       run: make "COMMONFLAGS=-g -fsanitize=address"
     - name: test
@@ -34,6 +34,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: install prerequisites
+      run: brew install cppcheck
     - name: make
       run: make "COMMONFLAGS=-g -fsanitize=address"
     - name: test
