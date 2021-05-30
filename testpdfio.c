@@ -1,5 +1,5 @@
 //
-// Test program for pdfio.
+// Test program for PDFio.
 //
 // Copyright © 2021 by Michael R Sweet.
 //

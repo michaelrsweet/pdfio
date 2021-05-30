@@ -1,5 +1,5 @@
 //
-// PDF dictionary functions for pdfio.
+// PDF dictionary functions for PDFio.
 //
 // Copyright © 2021 by Michael R Sweet.
 //

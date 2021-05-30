@@ -1,5 +1,5 @@
 //
-// PDF object functions for pdfio.
+// PDF object functions for PDFio.
 //
 // Copyright © 2021 by Michael R Sweet.
 //
@@ -155,7 +155,7 @@ pdfioObjCreateStream(
 
   if (filter != PDFIO_FILTER_NONE && filter != PDFIO_FILTER_FLATE)
   {
-    _pdfioFileError(obj->pdf, "Unsupported filter value for pdfioObjCreateStream.");
+    _pdfioFileError(obj->pdf, "Unsupported filter value for PDFioObjCreateStream.");
     return (NULL);
   }
 

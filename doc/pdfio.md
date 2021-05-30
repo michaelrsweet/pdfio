@@ -1,7 +1,7 @@
 Introduction
 ============
 
-pdfio is a simple C library for reading and writing PDF files.  The primary
+PDFio is a simple C library for reading and writing PDF files.  The primary
 goals of pdfio are:
 
 - Read any PDF file with or without encryption or linearization
@@ -11,5 +11,5 @@ goals of pdfio are:
   that are missing from a PDF
 - Provide access to objects used for each page
 
-pdfio is *not* concerned with rendering or viewing a PDF file, although a PDF
+PDFio is *not* concerned with rendering or viewing a PDF file, although a PDF
 RIP or viewer could be written using it.

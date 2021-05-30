@@ -1,5 +1,5 @@
 //
-// PDF token parsing functions for pdfio.
+// PDF token parsing functions for PDFio.
 //
 // Copyright © 2021 by Michael R Sweet.
 //

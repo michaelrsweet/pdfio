@@ -1,5 +1,5 @@
 //
-// PDF page functions for pdfio.
+// PDF page functions for PDFio.
 //
 // Copyright © 2021 by Michael R Sweet.
 //

@@ -1,5 +1,5 @@
 //
-// PDF array functions for pdfio.
+// PDF array functions for PDFio.
 //
 // Copyright © 2021 by Michael R Sweet.
 //

@@ -1,5 +1,5 @@
 //
-// Public header file for pdfio.
+// Public header file for PDFio.
 //
 // Copyright © 2021 by Michael R Sweet.
 //

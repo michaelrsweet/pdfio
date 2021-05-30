@@ -1,5 +1,5 @@
 //
-// PDF stream functions for pdfio.
+// PDF stream functions for PDFio.
 //
 // Copyright © 2021 by Michael R Sweet.
 //

@@ -1,5 +1,5 @@
 //
-// PDF value functions for pdfio.
+// PDF value functions for PDFio.
 //
 // Copyright © 2021 by Michael R Sweet.
 //

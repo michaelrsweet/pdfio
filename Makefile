@@ -1,5 +1,5 @@
 #
-# Makefile for pdfio.
+# Makefile for PDFio.
 #
 # Copyright © 2021 by Michael R Sweet.
 #
@@ -92,12 +92,13 @@ install:	$(TARGETS)
 		ln -sf libpdfio.1.dylib $(DESTDIR)$(prefix)/lib/libpdfio.dylib; \
 	fi
 	-mkdir -p $(DESTDIR)$(prefix)/lib/pkgconfig
-	echo '"prefix="$(prefix)"' >>$(DESTDIR)$(prefix)/lib/pkgconfig/pdfio.pc
-	cat pdfio.pc.in >$(DESTDIR)$(prefix)/lib/pkgconfig/pdfio.pc
+	echo 'prefix="$(prefix)"' >$(DESTDIR)$(prefix)/lib/pkgconfig/pdfio.pc
+	echo 'Version: $(VERSION)' >>$(DESTDIR)$(prefix)/lib/pkgconfig/pdfio.pc
+	cat pdfio.pc.in >>$(DESTDIR)$(prefix)/lib/pkgconfig/pdfio.pc
 	-mkdir -p $(DESTDIR)$(prefix)/share/doc/pdfio
-	cp pdfio.html LICENSE NOTICE $(DESTDIR)$(prefix)/share/doc/pdfio
+	cp doc/pdfio.html doc/pdfio-512.png LICENSE NOTICE $(DESTDIR)$(prefix)/share/doc/pdfio
 	-mkdir -p $(DESTDIR)$(prefix)/share/man/man3
-	cp pdfio.3 LICENSE NOTICE $(DESTDIR)$(prefix)/share/man/man3
+	cp doc/pdfio.3 $(DESTDIR)$(prefix)/share/man/man3
 
 install-shared:
 	if test `uname` = Darwin; then \
@@ -141,7 +142,8 @@ DOCFLAGS	=	\
 			--copyright "Copyright (c) 2021 by Michael R Sweet" \
 			--docversion $(VERSION)
 
+.PHONY: doc
 doc:
-	codedoc $(DOCFLAGS) --title "pdfio Programming Manual v$(VERSION)" pdfio.h $(LIBOBJS:.o=.c) --body pdfio.md pdfio.xml >pdfio.html
-	codedoc $(DOCFLAGS) --title "pdf read/write library" --man pdfio --section 3 --body pdfio.md pdfio.xml >pdfio.3
+	codedoc $(DOCFLAGS) --title "PDFio Programming Manual v$(VERSION)" pdfio.h $(LIBOBJS:.o=.c) --body doc/pdfio.md --coverimage doc/pdfio-512.png pdfio.xml >doc/pdfio.html
+	codedoc $(DOCFLAGS) --title "pdf read/write library" --man pdfio --section 3 --body doc/pdfio.md pdfio.xml >doc/pdfio.3
 	rm -f pdfio.xml

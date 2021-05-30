@@ -1,6 +1,5 @@
 Name: pdfio
 Description: PDF read/write library
-Version: 1.0
 URL: https://www.msweet.org/pdfio
 Requires.private: zlib >= 1.0
 Libs: -L${prefix}/lib -lpdfio

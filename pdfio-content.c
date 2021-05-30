@@ -1,5 +1,5 @@
 //
-// Content helper functions for pdfio.
+// Content helper functions for PDFio.
 //
 // Copyright © 2021 by Michael R Sweet.
 //
