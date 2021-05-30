@@ -24,9 +24,9 @@ jobs:
         ASAN_OPTIONS: leak_check_at_exit=false
       run: make test
     - name: clang static analyzer
-      run: cd pappl && make CC=clang "GHA_ERROR=::error::" clang
+      run: make CC=clang "GHA_ERROR=::error::" clang
     - name: cppcheck
-      run: cd pappl && make "GHA_ERROR=::error::" cppcheck
+      run: make "GHA_ERROR=::error::" cppcheck
 
   build-macos:
 
@@ -41,6 +41,6 @@ jobs:
     - name: test
       run: make test
     - name: clang static analyzer
-      run: cd pappl && make CC=clang "GHA_ERROR=::error::" clang
+      run: make CC=clang "GHA_ERROR=::error::" clang
     - name: cppcheck
-      run: cd pappl && make "GHA_ERROR=::error::" cppcheck
+      run: make "GHA_ERROR=::error::" cppcheck
