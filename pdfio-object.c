@@ -164,7 +164,7 @@ pdfioObjCreateStream(
   {
     // Need a Length key for the stream, add a placeholder that we can fill in
     // later...
-    pdfioDictSetNumber(obj->value.value.dict, "Length", 0.0f);
+    pdfioDictSetNumber(obj->value.value.dict, "Length", 0.0);
   }
 
   if (!write_obj_header(obj))
@@ -276,7 +276,7 @@ pdfioObjGetLength(pdfio_obj_t *obj)	// I - Object
   if (lenobj->value.type == PDFIO_VALTYPE_NONE)
     _pdfioObjLoad(lenobj);
 
-  if (lenobj->value.type != PDFIO_VALTYPE_NUMBER || lenobj->value.value.number <= 0.0f)
+  if (lenobj->value.type != PDFIO_VALTYPE_NUMBER || lenobj->value.value.number <= 0.0)
   {
     _pdfioFileError(obj->pdf, "Unable to get length of stream.");
     return (0);

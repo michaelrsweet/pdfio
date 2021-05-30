@@ -160,7 +160,7 @@ typedef struct _pdfio_value_s		// Value structure
       unsigned short	generation;	// Generation number
     }		indirect;		// Indirect object reference
     const char	*name;			// Name value
-    float	number;			// Number value
+    double	number;			// Number value
     const char	*string;		// String value
   }		value;			// Value union
 } _pdfio_value_t;

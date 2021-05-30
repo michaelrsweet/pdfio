@@ -27,7 +27,6 @@ typedef pdfio_obj_t *(*image_func_t)(pdfio_dict_t *dict, int fd);
 // Local functions...
 //
 
-static pdfio_obj_t	*copy_gif(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
 static bool		write_string(pdfio_stream_t *st, const char *s);
@@ -69,10 +68,10 @@ bool					// O - `true` on success, `false` on failure
 pdfioContentDrawImage(
     pdfio_stream_t *st,			// I - Stream
     const char     *name,		// I - Image name
-    float          x,			// I - X offset of image
-    float          y,			// I - Y offset of image
-    float          w,			// I - Width of image
-    float          h)			// I - Height of image
+    double          x,			// I - X offset of image
+    double          y,			// I - Y offset of image
+    double          w,			// I - Width of image
+    double          h)			// I - Height of image
 {
   return (pdfioStreamPrintf(st, "q %g 0 0 %g %g %g cm/%s Do Q\n", w, h, x, y, name));
 }
@@ -136,7 +135,7 @@ pdfioContentMatrixConcat(
 bool					// O - `true` on success, `false` on failure
 pdfioContentMatrixRotate(
     pdfio_stream_t *st,			// I - Stream
-    float          degrees)		// I - Rotation angle in degrees counter-clockwise
+    double          degrees)		// I - Rotation angle in degrees counter-clockwise
 {
   double dcos = cos(degrees / M_PI);	// Cosine
   double dsin = sin(degrees / M_PI);	// Sine
@@ -152,8 +151,8 @@ pdfioContentMatrixRotate(
 bool					// O - `true` on success, `false` on failure
 pdfioContentMatrixScale(
     pdfio_stream_t *st,			// I - Stream
-    float          sx,			// I - X scale
-    float          sy)			// I - Y scale
+    double          sx,			// I - X scale
+    double          sy)			// I - Y scale
 {
   return (pdfioStreamPrintf(st, "%g 0 0 %g 0 0 cm\n", sx, sy));
 }
@@ -166,8 +165,8 @@ pdfioContentMatrixScale(
 bool					// O - `true` on success, `false` on failure
 pdfioContentMatrixTranslate(
     pdfio_stream_t *st,			// I - Stream
-    float          tx,			// I - X offset
-    float          ty)			// I - Y offset
+    double          tx,			// I - X offset
+    double          ty)			// I - Y offset
 {
   return (pdfioStreamPrintf(st, "1 0 0 1 %g %g cm\n", tx, ty));
 }
@@ -192,12 +191,12 @@ pdfioContentPathClose(
 bool					// O - `true` on success, `false` on failure
 pdfioContentPathCurve(
     pdfio_stream_t *st,			// I - Stream
-    float          x1,			// I - X position 1
-    float          y1,			// I - Y position 1
-    float          x2,			// I - X position 2
-    float          y2,			// I - Y position 2
-    float          x3,			// I - X position 3
-    float          y3)			// I - Y position 3
+    double          x1,			// I - X position 1
+    double          y1,			// I - Y position 1
+    double          x2,			// I - X position 2
+    double          y2,			// I - Y position 2
+    double          x3,			// I - X position 3
+    double          y3)			// I - Y position 3
 {
   return (pdfioStreamPrintf(st, "%g %g %g %g %g %g c\n", x1, y1, x2, y2, x3, y3));
 }
@@ -210,10 +209,10 @@ pdfioContentPathCurve(
 bool					// O - `true` on success, `false` on failure
 pdfioContentPathCurve13(
     pdfio_stream_t *st,			// I - Stream
-    float          x1,			// I - X position 1
-    float          y1,			// I - Y position 1
-    float          x3,			// I - X position 3
-    float          y3)			// I - Y position 3
+    double          x1,			// I - X position 1
+    double          y1,			// I - Y position 1
+    double          x3,			// I - X position 3
+    double          y3)			// I - Y position 3
 {
   return (pdfioStreamPrintf(st, "%g %g %g %g v\n", x1, y1, x3, y3));
 }
@@ -226,10 +225,10 @@ pdfioContentPathCurve13(
 bool					// O - `true` on success, `false` on failure
 pdfioContentPathCurve23(
     pdfio_stream_t *st,			// I - Stream
-    float          x2,			// I - X position 2
-    float          y2,			// I - Y position 2
-    float          x3,			// I - X position 3
-    float          y3)			// I - Y position 3
+    double          x2,			// I - X position 2
+    double          y2,			// I - Y position 2
+    double          x3,			// I - X position 3
+    double          y3)			// I - Y position 3
 {
   return (pdfioStreamPrintf(st, "%g %g %g %g y\n", x2, y2, x3, y3));
 }
@@ -242,8 +241,8 @@ pdfioContentPathCurve23(
 bool					// O - `true` on success, `false` on failure
 pdfioContentPathLineTo(
     pdfio_stream_t *st,			// I - Stream
-    float          x,			// I - X position
-    float          y)			// I - Y position
+    double          x,			// I - X position
+    double          y)			// I - Y position
 {
   return (pdfioStreamPrintf(st, "%g %g l\n", x, y));
 }
@@ -256,8 +255,8 @@ pdfioContentPathLineTo(
 bool					// O - `true` on success, `false` on failure
 pdfioContentPathMoveTo(
     pdfio_stream_t *st,			// I - Stream
-    float          x,			// I - X position
-    float          y)			// I - Y position
+    double          x,			// I - X position
+    double          y)			// I - Y position
 {
   return (pdfioStreamPrintf(st, "%g %g m\n", x, y));
 }
@@ -321,10 +320,10 @@ pdfioContentSetDashPattern(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetFillColorDeviceCMYK(
     pdfio_stream_t *st,			// I - Stream
-    float          c,			// I - Cyan value (0.0 to 1.0)
-    float          m,			// I - Magenta value (0.0 to 1.0)
-    float          y,			// I - Yellow value (0.0 to 1.0)
-    float          k)			// I - Black value (0.0 to 1.0)
+    double          c,			// I - Cyan value (0.0 to 1.0)
+    double          m,			// I - Magenta value (0.0 to 1.0)
+    double          y,			// I - Yellow value (0.0 to 1.0)
+    double          k)			// I - Black value (0.0 to 1.0)
 {
   return (pdfioStreamPrintf(st, "%g %g %g %g k\n", c, m, y, k));
 }
@@ -337,7 +336,7 @@ pdfioContentSetFillColorDeviceCMYK(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetFillColorDeviceGray(
     pdfio_stream_t *st,			// I - Stream
-    float          g)			// I - Gray value (0.0 to 1.0)
+    double          g)			// I - Gray value (0.0 to 1.0)
 {
   return (pdfioStreamPrintf(st, "%g g\n", g));
 }
@@ -350,9 +349,9 @@ pdfioContentSetFillColorDeviceGray(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetFillColorDeviceRGB(
     pdfio_stream_t *st,			// I - Stream
-    float          r,			// I - Red value (0.0 to 1.0)
-    float          g,			// I - Green value (0.0 to 1.0)
-    float          b)			// I - Blue value (0.0 to 1.0)
+    double          r,			// I - Red value (0.0 to 1.0)
+    double          g,			// I - Green value (0.0 to 1.0)
+    double          b)			// I - Blue value (0.0 to 1.0)
 {
   return (pdfioStreamPrintf(st, "%g %g %g rg\n", r, g, b));
 }
@@ -365,7 +364,7 @@ pdfioContentSetFillColorDeviceRGB(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetFillColorGray(
     pdfio_stream_t *st,			// I - Stream
-    float          g)			// I - Gray value (0.0 to 1.0)
+    double          g)			// I - Gray value (0.0 to 1.0)
 {
   return (pdfioStreamPrintf(st, "%g sc\n", g));
 }
@@ -378,9 +377,9 @@ pdfioContentSetFillColorGray(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetFillColorRGB(
     pdfio_stream_t *st,			// I - Stream
-    float          r,			// I - Red value (0.0 to 1.0)
-    float          g,			// I - Green value (0.0 to 1.0)
-    float          b)			// I - Blue value (0.0 to 1.0)
+    double          r,			// I - Red value (0.0 to 1.0)
+    double          g,			// I - Green value (0.0 to 1.0)
+    double          b)			// I - Blue value (0.0 to 1.0)
 {
   return (pdfioStreamPrintf(st, "%g %g %g sc\n", r, g, b));
 }
@@ -406,7 +405,7 @@ pdfioContentSetFillColorSpace(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetFlatness(
     pdfio_stream_t *st,			// I - Stream
-    float          flatness)		// I - Flatness value (0.0 to 100.0)
+    double          flatness)		// I - Flatness value (0.0 to 100.0)
 {
   return (pdfioStreamPrintf(st, "%g i\n", flatness));
 }
@@ -445,7 +444,7 @@ pdfioContentSetLineJoin(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetLineWidth(
     pdfio_stream_t *st,			// I - Stream
-    float          width)		// I - Line width value
+    double          width)		// I - Line width value
 {
   return (pdfioStreamPrintf(st, "%g w\n", width));
 }
@@ -458,7 +457,7 @@ pdfioContentSetLineWidth(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetMiterLimit(
     pdfio_stream_t *st,			// I - Stream
-    float          limit)		// I - Miter limit value
+    double          limit)		// I - Miter limit value
 {
   return (pdfioStreamPrintf(st, "%g M\n", limit));
 }
@@ -471,10 +470,10 @@ pdfioContentSetMiterLimit(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetStrokeColorDeviceCMYK(
     pdfio_stream_t *st,			// I - Stream
-    float          c,			// I - Cyan value (0.0 to 1.0)
-    float          m,			// I - Magenta value (0.0 to 1.0)
-    float          y,			// I - Yellow value (0.0 to 1.0)
-    float          k)			// I - Black value (0.0 to 1.0)
+    double          c,			// I - Cyan value (0.0 to 1.0)
+    double          m,			// I - Magenta value (0.0 to 1.0)
+    double          y,			// I - Yellow value (0.0 to 1.0)
+    double          k)			// I - Black value (0.0 to 1.0)
 {
   return (pdfioStreamPrintf(st, "%g %g %g %g K\n", c, m, y, k));
 }
@@ -487,7 +486,7 @@ pdfioContentSetStrokeColorDeviceCMYK(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetStrokeColorDeviceGray(
     pdfio_stream_t *st,			// I - Stream
-    float          g)			// I - Gray value (0.0 to 1.0)
+    double          g)			// I - Gray value (0.0 to 1.0)
 {
   return (pdfioStreamPrintf(st, "%g G\n", g));
 }
@@ -500,9 +499,9 @@ pdfioContentSetStrokeColorDeviceGray(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetStrokeColorDeviceRGB(
     pdfio_stream_t *st,			// I - Stream
-    float          r,			// I - Red value (0.0 to 1.0)
-    float          g,			// I - Green value (0.0 to 1.0)
-    float          b)			// I - Blue value (0.0 to 1.0)
+    double          r,			// I - Red value (0.0 to 1.0)
+    double          g,			// I - Green value (0.0 to 1.0)
+    double          b)			// I - Blue value (0.0 to 1.0)
 {
   return (pdfioStreamPrintf(st, "%g %g %g RG\n", r, g, b));
 }
@@ -515,7 +514,7 @@ pdfioContentSetStrokeColorDeviceRGB(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetStrokeColorGray(
     pdfio_stream_t *st,			// I - Stream
-    float          g)			// I - Gray value (0.0 to 1.0)
+    double          g)			// I - Gray value (0.0 to 1.0)
 {
   return (pdfioStreamPrintf(st, "%g SC\n", g));
 }
@@ -528,9 +527,9 @@ pdfioContentSetStrokeColorGray(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetStrokeColorRGB(
     pdfio_stream_t *st,			// I - Stream
-    float          r,			// I - Red value (0.0 to 1.0)
-    float          g,			// I - Green value (0.0 to 1.0)
-    float          b)			// I - Blue value (0.0 to 1.0)
+    double          r,			// I - Red value (0.0 to 1.0)
+    double          g,			// I - Green value (0.0 to 1.0)
+    double          b)			// I - Blue value (0.0 to 1.0)
 {
   return (pdfioStreamPrintf(st, "%g %g %g SC\n", r, g, b));
 }
@@ -556,7 +555,7 @@ pdfioContentSetStrokeColorSpace(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetTextCharacterSpacing(
     pdfio_stream_t *st,			// I - Stream
-    float          spacing)		// I - Character spacing
+    double          spacing)		// I - Character spacing
 {
   return (pdfioStreamPrintf(st, "%g Tc\n", spacing));
 }
@@ -570,7 +569,7 @@ bool					// O - `true` on success, `false` on failure
 pdfioContentSetTextFont(
     pdfio_stream_t *st,			// I - Stream
     const char     *name,		// I - Font name
-    float          size)		// I - Font size
+    double          size)		// I - Font size
 {
   return (pdfioStreamPrintf(st, "/%s %g Tf\n", name, size));
 }
@@ -583,7 +582,7 @@ pdfioContentSetTextFont(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetTextLeading(
     pdfio_stream_t *st,			// I - Stream
-    float          leading)		// I - Leading (line height) value
+    double          leading)		// I - Leading (line height) value
 {
   return (pdfioStreamPrintf(st, "%g TL\n", leading));
 }
@@ -622,7 +621,7 @@ pdfioContentSetTextRenderingMode(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetTextRise(
     pdfio_stream_t *st,			// I - Stream
-    float          rise)		// I - Y offset
+    double          rise)		// I - Y offset
 {
   return (pdfioStreamPrintf(st, "%g Ts\n", rise));
 }
@@ -635,7 +634,7 @@ pdfioContentSetTextRise(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetTextWordSpacing(
     pdfio_stream_t *st,			// I - Stream
-    float          spacing)		// I - Spacing between words
+    double          spacing)		// I - Spacing between words
 {
   return (pdfioStreamPrintf(st, "%g Tw\n", spacing));
 }
@@ -648,7 +647,7 @@ pdfioContentSetTextWordSpacing(
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetTextXScaling(
     pdfio_stream_t *st,			// I - Stream
-    float          percent)		// I - Horizontal scaling in percent
+    double          percent)		// I - Horizontal scaling in percent
 {
   return (pdfioStreamPrintf(st, "%g Tz\n", percent));
 }
@@ -672,8 +671,8 @@ pdfioContentStroke(pdfio_stream_t *st)	// I - Stream
 bool					// O - `true` on success, `false` on failure
 pdfioContentTextMoveLine(
     pdfio_stream_t *st,			// I - Stream
-    float          tx,			// I - X offset
-    float          ty)			// I - Y offset
+    double          tx,			// I - X offset
+    double          ty)			// I - Y offset
 {
   return (pdfioStreamPrintf(st, "%g %g TD\n", tx, ty));
 }
@@ -686,8 +685,8 @@ pdfioContentTextMoveLine(
 bool					// O - `true` on success, `false` on failure
 pdfioContentTextMoveTo(
     pdfio_stream_t *st,			// I - Stream
-    float          tx,			// I - X offset
-    float          ty)			// I - Y offset
+    double          tx,			// I - X offset
+    double          ty)			// I - Y offset
 {
   return (pdfioStreamPrintf(st, "%g %g Td\n", tx, ty));
 }
@@ -732,7 +731,7 @@ bool					// O - `true` on success, `false` on failure
 pdfioContentTextShowJustified(
     pdfio_stream_t     *st,		// I - Stream
     size_t             num_fragments,	// I - Number of text fragments
-    const float        *offsets,	// I - Text offsets before fragments
+    const double        *offsets,	// I - Text offsets before fragments
     const char * const *fragments)	// I - Text fragments
 {
   size_t	i;			// Looping var
@@ -790,8 +789,8 @@ pdfioPageDictAddCalibratedColorSpace(
     pdfio_dict_t *dict,			// I - Page dictionary
     const char   *name,			// I - Color space name
     size_t       num_colors,		// I - Number of color components
-    const float  *white_point,		// I - CIE XYZ white point
-    float        gamma)			// I - Gamma value
+    const double  *white_point,		// I - CIE XYZ white point
+    double        gamma)			// I - Gamma value
 {
   (void)dict;
   (void)name;
@@ -940,11 +939,6 @@ pdfioFileCreateImageObject(
     // PNG image...
     copy_func = copy_png;
   }
-  else if (!memcmp(buffer, "GIF87a", 6) || !memcmp(buffer, "GIF89a", 6))
-  {
-    // GIF image...
-    copy_func = copy_gif;
-  }
   else if (!memcmp(buffer, "\377\330\377", 3))
   {
    // JPEG image...
@@ -982,7 +976,7 @@ pdfioFileCreateImageObject(
 // 'pdfioImageGetHeight()' - Get the height of an image object.
 //
 
-float					// O - Height in lines
+double					// O - Height in lines
 pdfioImageGetHeight(pdfio_obj_t *obj)	// I - Image object
 {
   return (pdfioDictGetNumber(obj->value.value.dict, "Height"));
@@ -993,25 +987,10 @@ pdfioImageGetHeight(pdfio_obj_t *obj)	// I - Image object
 // 'pdfioImageGetWidth()' - Get the width of an image object.
 //
 
-float					// O - Width in columns
+double					// O - Width in columns
 pdfioImageGetWidth(pdfio_obj_t *obj)	// I - Image object
 {
   return (pdfioDictGetNumber(obj->value.value.dict, "Width"));
-}
-
-
-//
-// 'copy_gif()' - Copy a GIF image.
-//
-
-static pdfio_obj_t *			// O - Object or `NULL` on error
-copy_gif(pdfio_dict_t *dict,		// I - Dictionary
-         int          fd)		// I - File descriptor
-{
-  // TODO: Implement copy_gif
-  (void)dict;
-  (void)fd;
-  return (NULL);
 }
 
 

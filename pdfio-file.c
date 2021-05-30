@@ -219,7 +219,7 @@ pdfioFileCreate(
   else
   {
     // Default to "universal" size (intersection of A4 and US Letter)
-    pdf->media_box.x2 = 210.0f * 72.0f / 25.4f;
+    pdf->media_box.x2 = 210.0 * 72.0f / 25.4f;
     pdf->media_box.y2 = 11.0f * 72.0f;
   }
 
@@ -230,7 +230,7 @@ pdfioFileCreate(
   else
   {
     // Default to "universal" size (intersection of A4 and US Letter)
-    pdf->crop_box.x2 = 210.0f * 72.0f / 25.4f;
+    pdf->crop_box.x2 = 210.0 * 72.0f / 25.4f;
     pdf->crop_box.y2 = 11.0f * 72.0f;
   }
 

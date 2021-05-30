@@ -162,7 +162,7 @@ pdfioArrayAppendName(
 bool					// O - `true` on success, `false` on failure
 pdfioArrayAppendNumber(
     pdfio_array_t *a,			// I - Array
-    float         value)		// I - Value
+    double         value)		// I - Value
 {
   _pdfio_value_t	v;		// Value for array
 
@@ -429,12 +429,12 @@ pdfioArrayGetName(pdfio_array_t *a,	// I - Array
 // 'pdfioArrayGetNumber()' - Get a number from an array.
 //
 
-float					// O - Value
+double					// O - Value
 pdfioArrayGetNumber(pdfio_array_t *a,	// I - Array
                     size_t        n)	// I - Index
 {
   if (!a || n >= a->num_values || a->values[n].type != PDFIO_VALTYPE_NUMBER)
-    return (0.0f);
+    return (0.0);
   else
     return (a->values[n].value.number);
 }

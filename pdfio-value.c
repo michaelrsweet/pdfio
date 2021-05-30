@@ -336,7 +336,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 
     // If we get here, we have a number...
     v->type         = PDFIO_VALTYPE_NUMBER;
-    v->value.number = (float)strtod(token, NULL);
+    v->value.number = (double)strtod(token, NULL);
   }
   else if (!strcmp(token, "true") || !strcmp(token, "false"))
   {

@@ -72,10 +72,10 @@ typedef enum pdfio_filter_e		// Compression/decompression filters for streams
 typedef struct _pdfio_obj_s pdfio_obj_t;// Numbered object in PDF file
 typedef struct pdfio_rect_s		// PDF rectangle
 {
-  float	x1;				// Lower-left X coordinate
-  float	y1;				// Lower-left Y coordinate
-  float	x2;				// Upper-right X coordinate
-  float	y2;				// Upper-right Y coordinate
+  double	x1;			// Lower-left X coordinate
+  double	y1;			// Lower-left Y coordinate
+  double	x2;			// Upper-right X coordinate
+  double	y2;			// Upper-right Y coordinate
 } pdfio_rect_t;
 typedef struct _pdfio_stream_s pdfio_stream_t;
 					// Object data stream in PDF file
@@ -106,7 +106,7 @@ extern bool		pdfioArrayAppendBinary(pdfio_array_t *a, unsigned char *value, size
 extern bool		pdfioArrayAppendBoolean(pdfio_array_t *a, bool value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendDict(pdfio_array_t *a, pdfio_dict_t *value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendName(pdfio_array_t *a, const char *value) PDFIO_PUBLIC;
-extern bool		pdfioArrayAppendNumber(pdfio_array_t *a, float value) PDFIO_PUBLIC;
+extern bool		pdfioArrayAppendNumber(pdfio_array_t *a, double value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendObject(pdfio_array_t *a, pdfio_obj_t *value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendString(pdfio_array_t *a, const char *value) PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioArrayCopy(pdfio_file_t *pdf, pdfio_array_t *a) PDFIO_PUBLIC;
@@ -116,7 +116,7 @@ extern unsigned char	*pdfioArrayGetBinary(pdfio_array_t *a, size_t n, size_t *le
 extern bool		pdfioArrayGetBoolean(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioArrayGetDict(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
 extern const char	*pdfioArrayGetName(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
-extern float		pdfioArrayGetNumber(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
+extern double		pdfioArrayGetNumber(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioArrayGetObject(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
 extern size_t		pdfioArrayGetSize(pdfio_array_t *a) PDFIO_PUBLIC;
 extern const char	*pdfioArrayGetString(pdfio_array_t *a, size_t n) PDFIO_PUBLIC;
@@ -129,7 +129,7 @@ extern unsigned char	*pdfioDictGetBinary(pdfio_dict_t *dict, const char *key, si
 extern bool		pdfioDictGetBoolean(pdfio_dict_t *dict, const char *key) PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioDictGetDict(pdfio_dict_t *dict, const char *key) PDFIO_PUBLIC;
 extern const char	*pdfioDictGetName(pdfio_dict_t *dict, const char *key) PDFIO_PUBLIC;
-extern float		pdfioDictGetNumber(pdfio_dict_t *dict, const char *key) PDFIO_PUBLIC;
+extern double		pdfioDictGetNumber(pdfio_dict_t *dict, const char *key) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioDictGetObject(pdfio_dict_t *dict, const char *key) PDFIO_PUBLIC;
 extern pdfio_rect_t	*pdfioDictGetRect(pdfio_dict_t *dict, const char *key, pdfio_rect_t *rect) PDFIO_PUBLIC;
 extern const char	*pdfioDictGetString(pdfio_dict_t *dict, const char *key) PDFIO_PUBLIC;
@@ -140,7 +140,7 @@ extern bool		pdfioDictSetBoolean(pdfio_dict_t *dict, const char *key, bool value
 extern bool		pdfioDictSetDict(pdfio_dict_t *dict, const char *key, pdfio_dict_t *value) PDFIO_PUBLIC;
 extern bool		pdfioDictSetName(pdfio_dict_t *dict, const char *key, const char *value) PDFIO_PUBLIC;
 extern bool		pdfioDictSetNull(pdfio_dict_t *dict, const char *key) PDFIO_PUBLIC;
-extern bool		pdfioDictSetNumber(pdfio_dict_t *dict, const char *key, float value) PDFIO_PUBLIC;
+extern bool		pdfioDictSetNumber(pdfio_dict_t *dict, const char *key, double value) PDFIO_PUBLIC;
 extern bool		pdfioDictSetObject(pdfio_dict_t *dict, const char *key, pdfio_obj_t *value) PDFIO_PUBLIC;
 extern bool		pdfioDictSetRect(pdfio_dict_t *dict, const char *key, pdfio_rect_t *value) PDFIO_PUBLIC;
 extern bool		pdfioDictSetString(pdfio_dict_t *dict, const char *key, const char *value) PDFIO_PUBLIC;

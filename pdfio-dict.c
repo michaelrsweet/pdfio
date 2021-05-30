@@ -66,7 +66,7 @@ pdfioDictCopy(pdfio_file_t *pdf,	// I - PDF file
 	v.value.number = lenobj->value.value.number;
       }
       else
-        v.value.number = 0.0f;
+        v.value.number = 0.0;
     }
     else if (!_pdfioValueCopy(pdf, &v, dict->pdf, &p->value))
       return (NULL);			// Let pdfioFileClose do the cleanup...
@@ -259,7 +259,7 @@ pdfioDictGetName(pdfio_dict_t *dict,	// I - Dictionary
 // 'pdfioDictGetNumber()' - Get a key number value from a dictionary.
 //
 
-float					// O - Value
+double					// O - Value
 pdfioDictGetNumber(pdfio_dict_t *dict,	// I - Dictionary
                    const char   *key)	// I - Key
 {
@@ -268,7 +268,7 @@ pdfioDictGetNumber(pdfio_dict_t *dict,	// I - Dictionary
   if (value && value->type == PDFIO_VALTYPE_NUMBER)
     return (value->value.number);
   else
-    return (0.0f);
+    return (0.0);
 }
 
 
@@ -600,7 +600,7 @@ pdfioDictSetNull(pdfio_dict_t *dict,	// I - Dictionary
 bool					// O - `true` on success, `false` on failure
 pdfioDictSetNumber(pdfio_dict_t  *dict,	// I - Dictionary
                    const char    *key,	// I - Key
-                   float         value)	// I - Value
+                   double         value)	// I - Value
 {
   _pdfio_value_t temp;			// New value
 
@@ -817,7 +817,7 @@ _pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
     if (!_pdfioFilePrintf(pdf, "/%s", pair->key))
       return (false);
 
-    if (length && !strcmp(pair->key, "Length") && pair->value.type == PDFIO_VALTYPE_NUMBER && pair->value.value.number <= 0.0f)
+    if (length && !strcmp(pair->key, "Length") && pair->value.type == PDFIO_VALTYPE_NUMBER && pair->value.value.number <= 0.0)
     {
       // Writing an object dictionary with an undefined length
       *length = _pdfioFileTell(pdf) + 1;

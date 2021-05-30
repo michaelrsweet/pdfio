@@ -349,9 +349,9 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
   // TODO: Add font object support...
   pdfio_dict_t		*dict;		// Page dictionary
   pdfio_stream_t	*st;		// Page contents stream
-  float			width,		// Width of image
+  double		width,		// Width of image
 			height;		// Height of image
-  float			swidth,		// Scaled width
+  double		swidth,		// Scaled width
 			sheight,	// Scaled height
 			tx,		// X offset
 			ty;		// Y offset
@@ -391,22 +391,22 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
     return (1);
 
   fputs("pdfioImageGetWidth(): ", stdout);
-  if ((width = pdfioImageGetWidth(image)) > 0.0f)
+  if ((width = pdfioImageGetWidth(image)) > 0.0)
     puts("PASS");
   else
     return (1);
 
   fputs("pdfioImageGetHeight(): ", stdout);
-  if ((height = pdfioImageGetHeight(image)) > 0.0f)
+  if ((height = pdfioImageGetHeight(image)) > 0.0)
     puts("PASS");
   else
     return (1);
 
-  swidth  = 400.0f;
+  swidth  = 400.0;
   sheight = swidth * height / width;
-  if (sheight > 600.0f)
+  if (sheight > 600.0)
   {
-    sheight = 600.0f;
+    sheight = 600.0;
     swidth  = sheight * width / height;
   }
 
