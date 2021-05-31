@@ -26,8 +26,8 @@ static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
 static ssize_t	token_consume_cb(const char **s, size_t bytes);
 static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
 static int	write_color_patch(pdfio_stream_t *st, bool device);
-static int	write_color_test(pdfio_file_t *pdf, int number);
-static int	write_page(pdfio_file_t *pdf, int number, pdfio_obj_t *image);
+static int	write_color_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
+static int	write_page(pdfio_file_t *pdf, int number, pdfio_obj_t *font, pdfio_obj_t *image);
 
 
 //
@@ -160,6 +160,7 @@ do_unit_tests(void)
   _pdfio_value_t	value;		// Value
   pdfio_obj_t		*color_jpg,	// color.jpg image
 			*gray_jpg,	// gray.jpg image
+			*helvetica,	// Helvetica font
 			*page;		// Page from test PDF file
   static const char	*complex_dict =	// Complex dictionary value
     "<</Annots 5457 0 R/Contents 5469 0 R/CropBox[0 0 595.4 842]/Group 725 0 R"
@@ -217,6 +218,13 @@ do_unit_tests(void)
   else
     return (1);
 
+  // Create fonts...
+  fputs("pdfioFileCreateBaseFontObject(\"Helvetica\"): ", stdout);
+  if ((helvetica = pdfioFileCreateBaseFontObject(outpdf, "Helvetica")) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
   // Copy the first page from the test PDF file...
   fputs("pdfioFileGetPage(0): ", stdout);
   if ((page = pdfioFileGetPage(pdf, 0)) != NULL)
@@ -231,7 +239,7 @@ do_unit_tests(void)
     return (1);
 
   // Write a page with a color image...
-  if (write_page(outpdf, 2, color_jpg))
+  if (write_page(outpdf, 2, helvetica, color_jpg))
     return (1);
 
   // Copy the third page from the test PDF file...
@@ -248,11 +256,11 @@ do_unit_tests(void)
     return (1);
 
   // Write a page with a grayscale image...
-  if (write_page(outpdf, 4, gray_jpg))
+  if (write_page(outpdf, 4, helvetica, gray_jpg))
     return (1);
 
   // Write a page that tests multiple color spaces...
-  if (write_color_test(outpdf, 5))
+  if (write_color_test(outpdf, 5, helvetica))
     return (1);
 
   // Close the test PDF file...
@@ -489,7 +497,8 @@ write_color_patch(pdfio_stream_t *st,	// I - Content stream
 
 static int				// O - 1 on failure, 0 on success
 write_color_test(pdfio_file_t *pdf,	// I - PDF file
-                 int          number)	// I - Page number
+                 int          number,	// I - Page number
+                 pdfio_obj_t  *font)	// I - Text font
 {
   pdfio_dict_t		*dict;		// Page dictionary
   pdfio_stream_t	*st;		// Page contents stream
@@ -519,9 +528,117 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
+  fputs("pdfioPageDictAddFont(F1): ", stdout);
+  if (pdfioPageDictAddFont(dict, "F1", font))
+    puts("PASS");
+  else
+    return (1);
+
   printf("pdfioFileCreatePage(%d): ", number);
 
   if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSetStrokeColorDeviceGray(0.0): ", stdout);
+  if (pdfioContentSetStrokeColorDeviceGray(st, 0.0))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextBegin(): ", stdout);
+  if (pdfioContentTextBegin(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSetTextFont(\"F1\", 12.0): ", stdout);
+  if (pdfioContentSetTextFont(st, "F1", 12.0))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextMoveTo(550.0, 36.0): ", stdout);
+  if (pdfioContentTextMoveTo(st, 550.0, 36.0))
+    puts("PASS");
+  else
+    return (1);
+
+  printf("pdfioContentTextShowf(\"%d\"): ", number);
+  if (pdfioContentTextShowf(st, "%d", number))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextEnd(): ", stdout);
+  if (pdfioContentTextEnd(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextBegin(): ", stdout);
+  if (pdfioContentTextBegin(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSetTextFont(\"F1\", 18.0): ", stdout);
+  if (pdfioContentSetTextFont(st, "F1", 18.0))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextMoveTo(82, 360): ", stdout);
+  if (pdfioContentTextMoveTo(st, 82, 360))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextShow(\"AdobeRGB\"): ", stdout);
+  if (pdfioContentTextShow(st, "AdobeRGB"))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextMoveTo(234, 0): ", stdout);
+  if (pdfioContentTextMoveTo(st, 234, 0))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextShow(\"DisplayP3\"): ", stdout);
+  if (pdfioContentTextShow(st, "DisplayP3"))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextMoveTo(-234, 252): ", stdout);
+  if (pdfioContentTextMoveTo(st, -234, 252))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextShow(\"sRGB\"): ", stdout);
+  if (pdfioContentTextShow(st, "sRGB"))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextMoveTo(234, 0): ", stdout);
+  if (pdfioContentTextMoveTo(st, 234, 0))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextShow(\"DeviceCMYK\"): ", stdout);
+  if (pdfioContentTextShow(st, "DeviceCMYK"))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextEnd(): ", stdout);
+  if (pdfioContentTextEnd(st))
     puts("PASS");
   else
     return (1);
@@ -538,8 +655,8 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
-  fputs("pdfioContentMatrixTranslate(82, 180): ", stdout);
-  if (pdfioContentMatrixTranslate(st, 82, 180))
+  fputs("pdfioContentMatrixTranslate(82, 162): ", stdout);
+  if (pdfioContentMatrixTranslate(st, 82, 162))
     puts("PASS");
   else
     return (1);
@@ -565,8 +682,8 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
-  fputs("pdfioContentMatrixTranslate(316, 180): ", stdout);
-  if (pdfioContentMatrixTranslate(st, 316, 180))
+  fputs("pdfioContentMatrixTranslate(316, 162): ", stdout);
+  if (pdfioContentMatrixTranslate(st, 316, 162))
     puts("PASS");
   else
     return (1);
@@ -645,6 +762,7 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
 static int				// O - 1 on failure, 0 on success
 write_page(pdfio_file_t *pdf,		// I - PDF file
            int          number,		// I - Page number
+           pdfio_obj_t  *font,		// I - Text font
            pdfio_obj_t  *image)		// I - Image to draw
 {
   // TODO: Add font object support...
@@ -658,6 +776,8 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
 			ty;		// Y offset
 
 
+  (void)font;
+
   fputs("pdfioDictCreate: ", stdout);
   if ((dict = pdfioDictCreate(pdf)) != NULL)
     puts("PASS");
@@ -666,6 +786,12 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
 
   fputs("pdfioPageDictAddImage: ", stdout);
   if (pdfioPageDictAddImage(dict, "IM1", image))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddFont(F1): ", stdout);
+  if (pdfioPageDictAddFont(dict, "F1", font))
     puts("PASS");
   else
     return (1);
@@ -680,7 +806,43 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
   fputs("pdfioStreamPuts(...): ", stdout);
   if (pdfioStreamPuts(st,
                       "1 0 0 RG 0 g 5 w\n"
-                      "18 18 559 760 re 72 72 451 648 re B*\n"))
+                      "54 54 487 688 re 90 90 415 612 re B*\n"))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSetStrokeColorDeviceGray(0.0): ", stdout);
+  if (pdfioContentSetStrokeColorDeviceGray(st, 0.0))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextBegin(): ", stdout);
+  if (pdfioContentTextBegin(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSetTextFont(\"F1\", 12.0): ", stdout);
+  if (pdfioContentSetTextFont(st, "F1", 12.0))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextMoveTo(550.0, 36.0): ", stdout);
+  if (pdfioContentTextMoveTo(st, 550.0, 36.0))
+    puts("PASS");
+  else
+    return (1);
+
+  printf("pdfioContentTextShowf(\"%d\"): ", number);
+  if (pdfioContentTextShowf(st, "%d", number))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextEnd(): ", stdout);
+  if (pdfioContentTextEnd(st))
     puts("PASS");
   else
     return (1);

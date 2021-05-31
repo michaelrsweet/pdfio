@@ -45,19 +45,7 @@ typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
 static pdfio_array_t	*create_calcolor(pdfio_file_t *pdf, size_t num_colors, double gamma, const double matrix[3][3], const double white_point[3]);
-static bool		write_string(pdfio_stream_t *st, const char *s);
-
-
-//
-// 'pdfioContentBeginText()' - Begin a text block.
-//
-
-bool					// O - `true` on success, `false` on failure
-pdfioContentBeginText(
-    pdfio_stream_t *st)			// I - Stream
-{
-  return (pdfioStreamPuts(st, "BT\n"));
-}
+static bool		write_string(pdfio_stream_t *st, const char *s, bool *newline);
 
 
 //
@@ -90,17 +78,6 @@ pdfioContentDrawImage(
     double         height)		// I - Height of image
 {
   return (pdfioStreamPrintf(st, "q %g 0 0 %g %g %g cm/%s Do Q\n", width, height, x, y, name));
-}
-
-
-//
-// 'pdfioContentEndText()' - End a text block.
-//
-
-bool					// O - `true` on success, `false` on failure
-pdfioContentEndText(pdfio_stream_t *st)	// I - Stream
-{
-  return (pdfioStreamPuts(st, "ET\n"));
 }
 
 
@@ -684,6 +661,29 @@ pdfioContentStroke(pdfio_stream_t *st)	// I - Stream
 
 
 //
+// 'pdfioContentTextBegin()' - Begin a text block.
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioContentTextBegin(
+    pdfio_stream_t *st)			// I - Stream
+{
+  return (pdfioStreamPuts(st, "BT\n"));
+}
+
+
+//
+// 'pdfioContentTextEnd()' - End a text block.
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioContentTextEnd(pdfio_stream_t *st)	// I - Stream
+{
+  return (pdfioStreamPuts(st, "ET\n"));
+}
+
+
+//
 // 'pdfioContentTextMoveLine()' - Move to the next line and offset.
 //
 
@@ -730,12 +730,49 @@ pdfioContentTextNextLine(
 bool					// O - `true` on success, `false` on failure
 pdfioContentTextShow(
     pdfio_stream_t *st,			// I - Stream
-    const char     *s,			// I - String to show
-    bool           new_line)		// I - Advance to the next line afterwards
+    const char     *s)			// I - String to show
 {
-  write_string(st, s);
+  bool	newline = false;		// New line?
 
-  if (new_line)
+
+  // Write the string...
+  if (!write_string(st, s, &newline))
+    return (false);
+
+  // Draw it...
+  if (newline)
+    return (pdfioStreamPuts(st, "\'\n"));
+  else
+    return (pdfioStreamPuts(st, "Tj\n"));
+}
+
+
+//
+// 'pdfioContentTextShowf()' - Show formatted text.
+//
+
+bool
+pdfioContentTextShowf(
+    pdfio_stream_t *st,			// I - Stream
+    const char     *format,		// I - `printf`-style format string
+    ...)				// I - Additional arguments as needed
+{
+  bool		newline = false;	// New line?
+  char		buffer[8192];		// Text buffer
+  va_list	ap;			// Argument pointer
+
+
+  // Format the string...
+  va_start(ap, format);
+  vsnprintf(buffer, sizeof(buffer), format, ap);
+  va_end(ap);
+
+  // Write the string...
+  if (!write_string(st, buffer, &newline))
+    return (false);
+
+  // Draw it...
+  if (newline)
     return (pdfioStreamPuts(st, "\'\n"));
   else
     return (pdfioStreamPuts(st, "Tj\n"));
@@ -770,7 +807,7 @@ pdfioContentTextShowJustified(
 
     if (fragments[i])
     {
-      if (!write_string(st, fragments[i]))
+      if (!write_string(st, fragments[i], NULL))
         return (false);
     }
   }
@@ -854,11 +891,36 @@ pdfioPageDictAddFont(
     const char   *name,			// I - Font name
     pdfio_obj_t  *obj)			// I - Font object
 {
-  (void)dict;
-  (void)name;
-  (void)obj;
+  pdfio_dict_t	*resources;		// Resource dictionary
+  pdfio_dict_t	*font;			// Font dictionary
 
-  return (false);
+
+  // Range check input...
+  if (!dict || !name || !obj)
+    return (false);
+
+  // Get the Resources dictionary...
+  if ((resources = pdfioDictGetDict(dict, "Resources")) == NULL)
+  {
+    if ((resources = pdfioDictCreate(dict->pdf)) == NULL)
+      return (false);
+
+    if (!pdfioDictSetDict(dict, "Resources", resources))
+      return (false);
+  }
+
+  // Get the Font dictionary...
+  if ((font = pdfioDictGetDict(resources, "Font")) == NULL)
+  {
+    if ((font = pdfioDictCreate(dict->pdf)) == NULL)
+      return (false);
+
+    if (!pdfioDictSetDict(resources, "Font", font))
+      return (false);
+  }
+
+  // Now set the image reference in the Font resource dictionary and return...
+  return (pdfioDictSetObject(font, name, obj));
 }
 
 
@@ -906,16 +968,73 @@ pdfioPageDictAddImage(
 
 
 //
+// 'pdfioFileCreateBaseFontObject()' - Create one of the base 14 PDF fonts.
+//
+// This function creates one of the base 14 PDF fonts. The "name" parameter
+// specifies the font nane:
+//
+// - `Courier`
+// - `Courier-Bold`
+// - `Courier-BoldItalic`
+// - `Courier-Italic`
+// - `Helvetica`
+// - `Helvetica-Bold`
+// - `Helvetica-BoldOblique`
+// - `Helvetica-Oblique`
+// - `Symbol`
+// - `Times-Bold`
+// - `Times-BoldItalic`
+// - `Times-Italic`
+// - `Times-Roman`
+// - `ZapfDingbats`
+//
+
+pdfio_obj_t *				// O - Font object
+pdfioFileCreateBaseFontObject(
+    pdfio_file_t *pdf,			// I - PDF file
+    const char   *name)			// I - Font name
+{
+  pdfio_dict_t	*dict;			// Font dictionary
+  pdfio_obj_t	*obj;			// Font object
+
+
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+    return (NULL);
+
+  pdfioDictSetName(dict, "Type", "Font");
+  pdfioDictSetName(dict, "Subtype", "Type1");
+  pdfioDictSetName(dict, "BaseFont", pdfioStringCreate(pdf, name));
+  pdfioDictSetName(dict, "Encoding", "WinAnsiEncoding");
+
+  if ((obj = pdfioFileCreateObject(dict->pdf, dict)) != NULL)
+    pdfioObjClose(obj);
+
+  return (obj);
+}
+
+
+//
 // 'pdfioFileCreateFontObject()' - Add a font object to a PDF file.
 //
 
-pdfio_obj_t *				// O - Object
+pdfio_obj_t *				// O - Font object
 pdfioFileCreateFontObject(
     pdfio_file_t *pdf,			// I - PDF file
-    const char   *filename)		// I - Filename
+    const char   *filename,		// I - Filename
+    bool         unicode)		// I - Unicode font?
 {
+#if 0
+  pdfio_dict_t	*dict;			// Font dictionary
+  pdfio_obj_t	*obj;			// Font object
+  pdfio_st_t	*st;			// Content stream
+  int		fd;			// File
+  char		buffer[16384];		// Copy buffer
+  ssize_t	bytes;			// Bytes read
+#endif // 0
+
   (void)pdf;
   (void)filename;
+  (void)unicode;
 
   return (NULL);
 }
@@ -1274,7 +1393,8 @@ create_calcolor(
 
 static bool				// O - `true` on success, `false` otherwise
 write_string(pdfio_stream_t *st,	// I - Stream
-             const char     *s)		// I - String
+             const char     *s,		// I - String
+             bool           *newline)	// O - Ends with a newline?
 {
   const char	*ptr;			// Pointer into string
 
@@ -1291,7 +1411,7 @@ write_string(pdfio_stream_t *st,	// I - Stream
     // Unicode string...
     int		ch;			// Unicode character
 
-    if (!pdfioStreamPuts(st, "("))
+    if (!pdfioStreamPuts(st, "<"))
       return (false);
 
     for (ptr = s; *ptr; ptr ++)
@@ -1314,6 +1434,11 @@ write_string(pdfio_stream_t *st,	// I - Stream
         ch = ((ptr[0] & 0x07) << 18) | ((ptr[1] & 0x3f) << 12) | ((ptr[2] & 0x3f) << 6) | (ptr[3] & 0x3f);
         ptr += 3;
       }
+      else if (*ptr == '\n' && newline)
+      {
+        *newline = true;
+        break;
+      }
       else
         ch = *ptr & 255;
 
@@ -1321,7 +1446,7 @@ write_string(pdfio_stream_t *st,	// I - Stream
       if (!pdfioStreamPrintf(st, "%04X", ch))
         return (false);
     }
-    if (!pdfioStreamPuts(st, ")"))
+    if (!pdfioStreamPuts(st, ">"))
       return (false);
   }
   else
@@ -1357,6 +1482,19 @@ write_string(pdfio_stream_t *st,	// I - Stream
         level ++;
       else if (*ptr == ')')
         level --;
+      else if (*ptr == '\n' && newline)
+      {
+        if (ptr > start)
+        {
+          if (!pdfioStreamWrite(st, start, (size_t)(ptr - start)))
+            return (false);
+
+          start = ptr + 1;
+	}
+
+        *newline = true;
+        break;
+      }
     }
 
     if (ptr > start)

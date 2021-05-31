@@ -84,10 +84,8 @@ extern const double	pdfioSRGBWhitePoint[3] PDFIO_PUBLIC;
 //
 
 // PDF content drawing functions...
-extern bool		pdfioContentBeginText(pdfio_stream_t *st) PDFIO_PUBLIC;
 extern bool		pdfioContentClip(pdfio_stream_t *st, bool even_odd) PDFIO_PUBLIC;
 extern bool		pdfioContentDrawImage(pdfio_stream_t *st, const char *name, double x, double y, double w, double h) PDFIO_PUBLIC;
-extern bool		pdfioContentEndText(pdfio_stream_t *st) PDFIO_PUBLIC;
 extern bool		pdfioContentFill(pdfio_stream_t *st, bool even_odd) PDFIO_PUBLIC;
 extern bool		pdfioContentFillAndStroke(pdfio_stream_t *st, bool even_odd) PDFIO_PUBLIC;
 extern bool		pdfioContentMatrixConcat(pdfio_stream_t *st, pdfio_matrix_t m) PDFIO_PUBLIC;
@@ -130,14 +128,18 @@ extern bool		pdfioContentSetTextRise(pdfio_stream_t *st, double rise) PDFIO_PUBL
 extern bool		pdfioContentSetTextWordSpacing(pdfio_stream_t *st, double spacing) PDFIO_PUBLIC;
 extern bool		pdfioContentSetTextXScaling(pdfio_stream_t *st, double percent) PDFIO_PUBLIC;
 extern bool		pdfioContentStroke(pdfio_stream_t *st) PDFIO_PUBLIC;
+extern bool		pdfioContentTextBegin(pdfio_stream_t *st) PDFIO_PUBLIC;
+extern bool		pdfioContentTextEnd(pdfio_stream_t *st) PDFIO_PUBLIC;
 extern bool		pdfioContentTextMoveLine(pdfio_stream_t *st, double tx, double ty) PDFIO_PUBLIC;
 extern bool		pdfioContentTextMoveTo(pdfio_stream_t *st, double tx, double ty) PDFIO_PUBLIC;
 extern bool		pdfioContentTextNextLine(pdfio_stream_t *st) PDFIO_PUBLIC;
-extern bool		pdfioContentTextShow(pdfio_stream_t *st, const char *s, bool new_line) PDFIO_PUBLIC;
+extern bool		pdfioContentTextShow(pdfio_stream_t *st, const char *s) PDFIO_PUBLIC;
+extern bool		pdfioContentTextShowf(pdfio_stream_t *st, const char *format, ...) PDFIO_PUBLIC PDFIO_FORMAT(2,3);
 extern bool		pdfioContentTextShowJustified(pdfio_stream_t *st, size_t num_fragments, const double *offsets, const char * const *fragments) PDFIO_PUBLIC;
 
 // Resource helpers...
-extern pdfio_obj_t	*pdfioFileCreateFontObject(pdfio_file_t *pdf, const char *filename) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateBaseFontObject(pdfio_file_t *pdf, const char *name) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateFontObject(pdfio_file_t *pdf, const char *filename, bool unicode) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateICCProfileObject(pdfio_file_t *pdf, const char *filename) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateImageObject(pdfio_file_t *pdf, const char *filename, bool interpolate) PDFIO_PUBLIC;
 
