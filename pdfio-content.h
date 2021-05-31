@@ -59,16 +59,23 @@ typedef enum pdfio_textrendering_e	// Text rendering modes
   PDFIO_TEXTRENDERING_TEXT_PATH		// Add text to path (invisible)
 } pdfio_textrendering_t;
 
-extern const double	pdfioAdobeRGBGamma;
+extern const double	pdfioAdobeRGBGamma PDFIO_PUBLIC;
 					// AdobeRGB gamma
-extern const double	pdfioAdobeRGBWhitePoint[];
+extern const double	pdfioAdobeRGBMatrix[3][3] PDFIO_PUBLIC;
+					// AdobeRGB matrix
+extern const double	pdfioAdobeRGBWhitePoint[3] PDFIO_PUBLIC;
 					// AdobeRGB white point
-extern const double	pdfioDisplayP3Gamma;
+extern const double	pdfioDisplayP3Gamma PDFIO_PUBLIC;
 					// Display P3 gamma
-extern const double	pdfioDisplayP3WhitePoint[];
+extern const double	pdfioDisplayP3Matrix[3][3] PDFIO_PUBLIC;
+					// Display P3 matrix
+extern const double	pdfioDisplayP3WhitePoint[3] PDFIO_PUBLIC;
 					// Display P3 white point
-extern const double	pdfioSRGBGamma;	// sRGB gamma
-extern const double	pdfioSRGBWhitePoint[];
+extern const double	pdfioSRGBGamma PDFIO_PUBLIC;
+					// sRGB gamma
+extern const double	pdfioSRGBMatrix[3][3] PDFIO_PUBLIC;
+					// sRGB matrix
+extern const double	pdfioSRGBWhitePoint[3] PDFIO_PUBLIC;
 					// sRGB white point
 
 
@@ -93,7 +100,7 @@ extern bool		pdfioContentPathCurve13(pdfio_stream_t *st, double x1, double y1, d
 extern bool		pdfioContentPathCurve23(pdfio_stream_t *st, double x2, double y2, double x3, double y3) PDFIO_PUBLIC;
 extern bool		pdfioContentPathLineTo(pdfio_stream_t *st, double x, double y) PDFIO_PUBLIC;
 extern bool		pdfioContentPathMoveTo(pdfio_stream_t *st, double x, double y) PDFIO_PUBLIC;
-extern bool		pdfioContentPathRect(pdfio_stream_t *st, pdfio_rect_t *rect) PDFIO_PUBLIC;
+extern bool		pdfioContentPathRect(pdfio_stream_t *st, double x, double y, double width, double height) PDFIO_PUBLIC;
 extern bool		pdfioContentRestore(pdfio_stream_t *st) PDFIO_PUBLIC;
 extern bool		pdfioContentSave(pdfio_stream_t *st) PDFIO_PUBLIC;
 extern bool		pdfioContentSetDashPattern(pdfio_stream_t *st, int phase, int on, int off) PDFIO_PUBLIC;
@@ -140,7 +147,7 @@ extern double		pdfioImageGetWidth(pdfio_obj_t *obj) PDFIO_PUBLIC;
 
 // Page dictionary helpers...
 extern bool		pdfioPageDictAddICCColorSpace(pdfio_dict_t *dict, const char *name, pdfio_obj_t *obj) PDFIO_PUBLIC;
-extern bool		pdfioPageDictAddCalibratedColorSpace(pdfio_dict_t *dict, const char *name, size_t num_colors, const double *white_point, double gamma) PDFIO_PUBLIC;
+extern bool		pdfioPageDictAddCalibratedColorSpace(pdfio_dict_t *dict, const char *name, size_t num_colors, double gamma, const double matrix[3][3], const double white_point[3]) PDFIO_PUBLIC;
 extern bool		pdfioPageDictAddFont(pdfio_dict_t *dict, const char *name, pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern bool		pdfioPageDictAddImage(pdfio_dict_t *dict, const char *name, pdfio_obj_t *obj) PDFIO_PUBLIC;
 

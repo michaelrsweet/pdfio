@@ -13,6 +13,7 @@
 
 #include "pdfio-private.h"
 #include "pdfio-content.h"
+#include <math.h>
 
 
 //
@@ -24,6 +25,8 @@ static int	do_unit_tests(void);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
 static ssize_t	token_consume_cb(const char **s, size_t bytes);
 static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
+static int	write_color_patch(pdfio_stream_t *st, bool device);
+static int	write_color_test(pdfio_file_t *pdf, int number);
 static int	write_page(pdfio_file_t *pdf, int number, pdfio_obj_t *image);
 
 
@@ -227,12 +230,9 @@ do_unit_tests(void)
   else
     return (1);
 
-  // Write a few pages...
-  for (i = 1; i < 16; i ++)
-  {
-    if (write_page(outpdf, i, (i & 1) ? color_jpg : gray_jpg))
-      return (1);
-  }
+  // Write a page with a color image...
+  if (write_page(outpdf, 2, color_jpg))
+    return (1);
 
   // Copy the third page from the test PDF file...
   fputs("pdfioFileGetPage(2): ", stdout);
@@ -245,6 +245,14 @@ do_unit_tests(void)
   if (pdfioPageCopy(outpdf, page))
     puts("PASS");
   else
+    return (1);
+
+  // Write a page with a grayscale image...
+  if (write_page(outpdf, 4, gray_jpg))
+    return (1);
+
+  // Write a page that tests multiple color spaces...
+  if (write_color_test(outpdf, 5))
     return (1);
 
   // Close the test PDF file...
@@ -334,6 +342,299 @@ token_peek_cb(const char **s,		// IO - Test string
     memcpy(buffer, *s, bytes);
 
   return ((ssize_t)bytes);
+}
+
+
+//
+// 'write_color_patch()' - Write a color patch...
+//
+
+static int				// O - 1 on failure, 0 on success
+write_color_patch(pdfio_stream_t *st,	// I - Content stream
+                  bool           device)// I - Use device color?
+{
+  int		col,			// Current column
+		row;			// Current row
+  double	x, y,			// Relative position
+		r,			// Radius
+		hue,			// Hue angle
+		sat,			// Saturation
+		cc,			// Computed color
+		red,			// Red value
+		green,			// Green value
+		blue;			// Blue value
+
+
+  // Draw an 11x11 patch...
+  for (col = 0; col < 21; col ++)
+  {
+    for (row = 0; row < 21; row ++)
+    {
+      // Compute color in patch...
+      x = 0.1 * (col - 10);
+      y = 0.1 * (row - 10);
+      r = sqrt(x * x + y * y);
+
+      if (r == 0.0)
+      {
+        red = green = blue = 1.0;
+      }
+      else
+      {
+	if ((sat = fabs(x)) < fabs(y))
+	  sat = fabs(y);
+        sat = pow(sat, 1.5);
+
+        x   /= r;
+        y   /= r;
+	hue = 3.0 * atan2(y, x) / M_PI;
+	if (hue < 0.0)
+	  hue += 6.0;
+
+	cc = sat * (1.0 - fabs(fmod(hue, 2.0) - 1.0)) + 1.0 - sat;
+
+	if (hue < 1.0)
+	{
+	  red   = 1.0;
+	  green = cc;
+	  blue  = 1.0 - sat;
+	}
+	else if (hue < 2.0)
+	{
+	  red   = cc;
+	  green = 1.0;
+	  blue  = 1.0 - sat;
+	}
+	else if (hue < 3.0)
+	{
+	  red   = 1.0 - sat;
+	  green = 1.0;
+	  blue  = cc;
+	}
+	else if (hue < 4.0)
+	{
+	  red   = 1.0 - sat;
+	  green = cc;
+	  blue  = 1.0;
+	}
+	else if (hue < 5.0)
+	{
+	  red   = cc;
+	  green = 1.0 - sat;
+	  blue  = 1.0;
+	}
+	else
+	{
+	  red   = 1.0;
+	  green = 1.0 - sat;
+	  blue  = cc;
+	}
+      }
+
+      // Draw it...
+      if (device)
+      {
+        // Use device CMYK color instead of a calibrated RGB space...
+        double cyan = 1.0 - red;	// Cyan color
+        double magenta = 1.0 - green;	// Magenta color
+        double yellow = 1.0 - blue;	// Yellow color
+        double black = cyan;		// Black color
+
+        if (black > magenta)
+          black = magenta;
+        if (black > yellow)
+          black = yellow;
+
+        cyan    -= black;
+        magenta -= black;
+        yellow  -= black;
+
+	printf("pdfioContentSetFillColorDeviceCMYK(c=%g, m=%g, y=%g, k=%g): ", cyan, magenta, yellow, black);
+	if (pdfioContentSetFillColorDeviceCMYK(st, cyan, magenta, yellow, black))
+	  puts("PASS");
+	else
+	  return (1);
+      }
+      else
+      {
+        // Use calibrate RGB space...
+	printf("pdfioContentSetFillColorRGB(r=%g, g=%g, b=%g): ", red, green, blue);
+	if (pdfioContentSetFillColorRGB(st, red, green, blue))
+	  puts("PASS");
+	else
+	  return (1);
+      }
+
+      printf("pdfioContentPathRect(x=%g, y=%g, w=%g, h=%g): ", col * 9.0, row * 9.0, 9.0, 9.0);
+      if (pdfioContentPathRect(st, col * 9.0, row * 9.0, 9.0, 9.0))
+	puts("PASS");
+      else
+	return (1);
+
+      fputs("pdfioContentFill(even_odd=false): ", stdout);
+      if (pdfioContentFill(st, false))
+	puts("PASS");
+      else
+	return (1);
+    }
+  }
+
+  return (0);
+}
+
+
+//
+// 'write_color_test()' - Write a color test page...
+//
+
+static int				// O - 1 on failure, 0 on success
+write_color_test(pdfio_file_t *pdf,	// I - PDF file
+                 int          number)	// I - Page number
+{
+  pdfio_dict_t		*dict;		// Page dictionary
+  pdfio_stream_t	*st;		// Page contents stream
+
+
+  fputs("pdfioDictCreate: ", stdout);
+  if ((dict = pdfioDictCreate(pdf)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddCalibratedColorSpace(AdobeRGB): ", stdout);
+  if (pdfioPageDictAddCalibratedColorSpace(dict, "AdobeRGB", 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddCalibratedColorSpace(DisplayP3): ", stdout);
+  if (pdfioPageDictAddCalibratedColorSpace(dict, "DisplayP3", 3, pdfioDisplayP3Gamma, pdfioDisplayP3Matrix, pdfioDisplayP3WhitePoint))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddCalibratedColorSpace(sRGB): ", stdout);
+  if (pdfioPageDictAddCalibratedColorSpace(dict, "sRGB", 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint))
+    puts("PASS");
+  else
+    return (1);
+
+  printf("pdfioFileCreatePage(%d): ", number);
+
+  if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSave(): ", stdout);
+  if (pdfioContentSave(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSetFillColorSpace(AdobeRGB): ", stdout);
+  if (pdfioContentSetFillColorSpace(st, "AdobeRGB"))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentMatrixTranslate(82, 180): ", stdout);
+  if (pdfioContentMatrixTranslate(st, 82, 180))
+    puts("PASS");
+  else
+    return (1);
+
+  if (write_color_patch(st, false))
+    return (1);
+
+  fputs("pdfioContentRestore(): ", stdout);
+  if (pdfioContentRestore(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSave(): ", stdout);
+  if (pdfioContentSave(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSetFillColorSpace(DisplayP3): ", stdout);
+  if (pdfioContentSetFillColorSpace(st, "DisplayP3"))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentMatrixTranslate(316, 180): ", stdout);
+  if (pdfioContentMatrixTranslate(st, 316, 180))
+    puts("PASS");
+  else
+    return (1);
+
+  if (write_color_patch(st, false))
+    return (1);
+
+  fputs("pdfioContentRestore(): ", stdout);
+  if (pdfioContentRestore(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSave(): ", stdout);
+  if (pdfioContentSave(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSetFillColorSpace(sRGB): ", stdout);
+  if (pdfioContentSetFillColorSpace(st, "sRGB"))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentMatrixTranslate(82, 414): ", stdout);
+  if (pdfioContentMatrixTranslate(st, 82, 414))
+    puts("PASS");
+  else
+    return (1);
+
+  if (write_color_patch(st, false))
+    return (1);
+
+  fputs("pdfioContentRestore(): ", stdout);
+  if (pdfioContentRestore(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSave(): ", stdout);
+  if (pdfioContentSave(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentMatrixTranslate(316, 414): ", stdout);
+  if (pdfioContentMatrixTranslate(st, 316, 414))
+    puts("PASS");
+  else
+    return (1);
+
+  if (write_color_patch(st, true))
+    return (1);
+
+  fputs("pdfioContentRestore(): ", stdout);
+  if (pdfioContentRestore(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioStreamClose: ", stdout);
+  if (pdfioStreamClose(st))
+    puts("PASS");
+  else
+    return (1);
+
+  return (0);
 }
 
 
