@@ -1462,7 +1462,6 @@ write_string(pdfio_stream_t *st,	// I - Stream
   {
     // ASCII string...
     const char	*start = s;		// Start of fragment
-    int		level = 0;		// Paren level
 
     if (!pdfioStreamPuts(st, "("))
       return (false);
@@ -1500,15 +1499,15 @@ write_string(pdfio_stream_t *st,	// I - Stream
         ptr ++;
 	start = ptr + 1;
       }
-      else if (*ptr == '\\' || (*ptr == ')' && level == 0) || *ptr < ' ')
+      else if (*ptr == '\\' || *ptr == '(' || *ptr == ')' || *ptr < ' ')
       {
         if (ptr > start)
         {
           if (!pdfioStreamWrite(st, start, (size_t)(ptr - start)))
             return (false);
-
-          start = ptr + 1;
 	}
+
+	start = ptr + 1;
 
         if (*ptr < ' ')
         {
@@ -1518,10 +1517,6 @@ write_string(pdfio_stream_t *st,	// I - Stream
         else if (!pdfioStreamPrintf(st, "\\%c", *ptr))
           return (false);
       }
-      else if (*ptr == '(')
-        level ++;
-      else if (*ptr == ')')
-        level --;
     }
 
     if (ptr > start)

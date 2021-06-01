@@ -987,8 +987,20 @@ write_text(pdfio_file_t *pdf,		// I - PDF file
       else
 	return (1);
 
-      fputs("pdfioContentTextMoveTo(550.0, 36.0): ", stdout);
-      if (pdfioContentTextMoveTo(st, 550.0, 36.0))
+      fputs("pdfioContentTextMoveTo(36.0, 36.0): ", stdout);
+      if (pdfioContentTextMoveTo(st, 36, 36.0))
+	puts("PASS");
+      else
+	return (1);
+
+      printf("pdfioContentTextShowf(\"\\\"%s\\\"\"): ", filename);
+      if (pdfioContentTextShowf(st, "\"%s\"", filename))
+	puts("PASS");
+      else
+	return (1);
+
+      fputs("pdfioContentTextMoveTo(514.0, 0.0): ", stdout);
+      if (pdfioContentTextMoveTo(st, 514.0, 0.0))
 	puts("PASS");
       else
 	return (1);
@@ -1026,8 +1038,8 @@ write_text(pdfio_file_t *pdf,		// I - PDF file
       else
 	return (1);
 
-      fputs("pdfioContentTextMoveTo(36.0, 746.0): ", stdout);
-      if (pdfioContentTextMoveTo(st, 36.0, 746.0))
+      fputs("pdfioContentTextMoveTo(36.0, 756.0): ", stdout);
+      if (pdfioContentTextMoveTo(st, 36.0, 756.0))
 	puts("PASS");
       else
 	return (1);
