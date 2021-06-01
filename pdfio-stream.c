@@ -216,6 +216,7 @@ _pdfioStreamCreate(
       if (predictor >= 10)
 	st->pbsize ++;		// Add PNG predictor byte
 
+      fprintf(stderr, "colors=%d, bpc=%d, pbpixel=%u\n", colors, bpc, (unsigned)st->pbpixel);
       if ((st->prbuffer = calloc(1, st->pbsize - 1)) == NULL || (st->psbuffer = calloc(1, st->pbsize)) == NULL)
       {
 	_pdfioFileError(st->pdf, "Unable to allocate %lu bytes for Predictor buffers.", (unsigned long)st->pbsize);
@@ -644,11 +645,11 @@ pdfioStreamWrite(
 					// Size of pixel in bytes
       			pbline = st->pbsize - 1,
 					// Bytes per line
-			remaining,	// Remaining bytes on this line
-			firstcol = pbline - pbpixel;
-					// First column bytes remaining
-  const unsigned char	*bufptr = (const unsigned char *)buffer;
+			remaining;	// Remaining bytes on this line
+  const unsigned char	*bufptr = (const unsigned char *)buffer,
 					// Pointer into buffer
+			*bufsecond = buffer + pbpixel;
+					// Pointer to second pixel in buffer
   unsigned char		*sptr,		// Pointer into sbuffer
 			*pptr;		// Previous raw buffer
 
@@ -704,7 +705,7 @@ pdfioStreamWrite(
 	  // Encode the difference from the previous column
 	  for (remaining = pbline; remaining > 0; remaining --, bufptr ++, sptr ++)
 	  {
-	    if (remaining < firstcol)
+	    if (bufptr >= bufsecond)
 	      *sptr = *bufptr - bufptr[-pbpixel];
 	    else
 	      *sptr = *bufptr;
@@ -723,7 +724,7 @@ pdfioStreamWrite(
           // Encode the difference with the average of the previous column and line
 	  for (remaining = pbline; remaining > 0; remaining --, bufptr ++, sptr ++, pptr ++)
 	  {
-	    if (remaining < firstcol)
+	    if (bufptr >= bufsecond)
 	      *sptr = *bufptr - (bufptr[-pbpixel] + *pptr) / 2;
 	    else
 	      *sptr = *bufptr - *pptr / 2;
@@ -735,7 +736,7 @@ pdfioStreamWrite(
           // Encode the difference with a linear transform function
 	  for (remaining = pbline; remaining > 0; remaining --, bufptr ++, sptr ++, pptr ++)
 	  {
-	    if (remaining < firstcol)
+	    if (bufptr >= bufsecond)
 	      *sptr = *bufptr - stream_paeth(bufptr[-pbpixel], *pptr, pptr[-pbpixel]);
 	    else
 	      *sptr = *bufptr - stream_paeth(0, *pptr, 0);
@@ -844,12 +845,12 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       // PNG predictor
       size_t		pbpixel = st->pbpixel,
 					// Size of pixel in bytes
-      			remaining = st->pbsize - 1,
+      			remaining = st->pbsize - 1;
 					// Remaining bytes
-			firstcol = remaining - pbpixel;
-					// First column bytes remaining
       unsigned char	*bufptr = (unsigned char *)buffer,
 					// Pointer into buffer
+			*bufsecond = (unsigned char *)buffer + pbpixel,
+					// Pointer to second pixel in buffer
 			*sptr = st->psbuffer + 1,
 					// Current (raw) line
 			*pptr = st->prbuffer;
@@ -906,7 +907,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
             memcpy(buffer, sptr, remaining);
             break;
         case 1 : // Sub
-            for (; remaining > firstcol; remaining --, sptr ++)
+            for (; bufptr < bufsecond; remaining --, sptr ++)
               *bufptr++ = *sptr;
             for (; remaining > 0; remaining --, sptr ++, bufptr ++)
               *bufptr = *sptr + bufptr[-pbpixel];
@@ -916,13 +917,13 @@ stream_read(pdfio_stream_t *st,		// I - Stream
               *bufptr++ = *sptr + *pptr;
             break;
         case 3 : // Average
-	    for (; remaining > firstcol; remaining --, sptr ++, pptr ++)
+	    for (; bufptr < bufsecond; remaining --, sptr ++, pptr ++)
 	      *bufptr++ = *sptr + *pptr / 2;
 	    for (; remaining > 0; remaining --, sptr ++, pptr ++, bufptr ++)
 	      *bufptr = *sptr + (bufptr[-pbpixel] + *pptr) / 2;
             break;
         case 4 : // Paeth
-            for (; remaining > firstcol; remaining --, sptr ++, pptr ++)
+            for (; bufptr < bufsecond; remaining --, sptr ++, pptr ++)
               *bufptr++ = *sptr + stream_paeth(0, *pptr, 0);
             for (; remaining > 0; remaining --, sptr ++, pptr ++, bufptr ++)
               *bufptr = *sptr + stream_paeth(bufptr[-pbpixel], *pptr, pptr[-pbpixel]);
