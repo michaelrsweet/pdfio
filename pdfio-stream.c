@@ -653,6 +653,8 @@ pdfioStreamWrite(
 			*prevptr;	// Previous raw buffer
 
 
+  PDFIO_DEBUG("pdfioStreamWrite(st=%p, buffer=%p, bytes=%lu)\n", st, buffer, (unsigned long)bytes);
+
   // Range check input...
   if (!st || st->pdf->mode != _PDFIO_MODE_WRITE || !buffer || !bytes)
     return (false);
@@ -679,7 +681,7 @@ pdfioStreamWrite(
   {
     // Store the PNG predictor in the first byte of the buffer...
     if (st->predictor == _PDFIO_PREDICTOR_PNG_AUTO)
-      st->pbuffers[st->pbcurrent][0] = 4;
+      st->pbuffers[st->pbcurrent][0] = 4; // Use Paeth predictor for auto...
     else
       st->pbuffers[st->pbcurrent][0] = (unsigned char)(st->predictor - 10);
 
@@ -692,6 +694,11 @@ pdfioStreamWrite(
       default :
           // Anti-compiler-warning code (NONE is handled above, TIFF is not supported for writing)
 	  return (false);
+
+      case _PDFIO_PREDICTOR_PNG_NONE :
+          // No PNG predictor...
+          memcpy(thisptr, buffer, pbline);
+          break;
 
       case _PDFIO_PREDICTOR_PNG_SUB :
 	  // Encode the difference from the previous column
@@ -741,6 +748,7 @@ pdfioStreamWrite(
       return (false);
 
     st->pbcurrent = !st->pbcurrent;
+    bytes         -= pbline;
   }
 
   return (true);

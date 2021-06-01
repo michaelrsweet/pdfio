@@ -22,11 +22,14 @@
 
 static int	do_test_file(const char *filename);
 static int	do_unit_tests(void);
+static int	draw_image(pdfio_stream_t *st, const char *name, double x, double y, double w, double h, const char *label);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
 static ssize_t	token_consume_cb(const char **s, size_t bytes);
 static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
 static int	write_color_patch(pdfio_stream_t *st, bool device);
 static int	write_color_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
+static pdfio_obj_t *write_image_object(pdfio_file_t *pdf, _pdfio_predictor_t predictor);
+static int	write_images(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_page(pdfio_file_t *pdf, int number, pdfio_obj_t *font, pdfio_obj_t *image);
 static int	write_text(pdfio_file_t *pdf, int first_page, pdfio_obj_t *font, const char *filename);
 
@@ -264,8 +267,12 @@ do_unit_tests(void)
   if (write_color_test(outpdf, 5, helvetica))
     return (1);
 
+  // Write a page with test images...
+  if (write_images(outpdf, 6, helvetica))
+    return (1);
+
   // Print this text file...
-  if (write_text(outpdf, 6, helvetica, "README.md"))
+  if (write_text(outpdf, 7, helvetica, "README.md"))
     return (1);
 
   // Close the test PDF file...
@@ -278,6 +285,59 @@ do_unit_tests(void)
   // Close the new PDF file...
   fputs("pdfioFileClose(\"testpdfio-out.pdf\": ", stdout);
   if (pdfioFileClose(outpdf))
+    puts("PASS");
+  else
+    return (1);
+
+  return (0);
+}
+
+
+//
+// 'draw_image()' - Draw an image with a label.
+//
+
+static int				// O - 1 on failure, 0 on success
+draw_image(pdfio_stream_t *st,
+           const char     *name,	// I - Name
+           double         x,		// I - X offset
+           double         y,		// I - Y offset
+           double         w,		// I - Image width
+           double         h,		// I - Image height
+           const char     *label)	// I - Label
+{
+  printf("pdfioContentDrawImage(name=\"%s\", x=%g, y=%g, w=%g, h=%g): ", name, x, y, w, h);
+  if (pdfioContentDrawImage(st, name, x, y, w, h))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextBegin(): ", stdout);
+  if (pdfioContentTextBegin(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSetTextFont(\"F1\", 18.0): ", stdout);
+  if (pdfioContentSetTextFont(st, "F1", 18.0))
+    puts("PASS");
+  else
+    return (1);
+
+  printf("pdfioContentTextMoveTo(%g, %g): ", x, y + h + 9);
+  if (pdfioContentTextMoveTo(st, x, y + h + 9))
+    puts("PASS");
+  else
+    return (1);
+
+  printf("pdfioContentTextShow(\"%s\"): ", label);
+  if (pdfioContentTextShow(st, label))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextEnd(): ", stdout);
+  if (pdfioContentTextEnd(st))
     puts("PASS");
   else
     return (1);
@@ -759,6 +819,204 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
+// 'write_image_object()' - Write an image object using the specified predictor.
+//
+
+static pdfio_obj_t *			// O - Image object
+write_image_object(
+    pdfio_file_t       *pdf,		// I - PDF file
+    _pdfio_predictor_t predictor)	// I - Predictor to use
+{
+  pdfio_dict_t	*dict,			// Image dictionary
+		*decode;		// Decode dictionary
+  pdfio_obj_t	*obj;			// Image object
+  pdfio_stream_t *st;			// Image stream
+  int		x, y;			// Coordinates in image
+  unsigned char	buffer[768],		// Buffer for image
+		*bufptr;		// Pointer into buffer
+
+
+  // Create the image dictionary...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+    return (NULL);
+
+  pdfioDictSetName(dict, "Type", "XObject");
+  pdfioDictSetName(dict, "Subtype", "Image");
+  pdfioDictSetNumber(dict, "Width", 256);
+  pdfioDictSetNumber(dict, "Height", 256);
+  pdfioDictSetNumber(dict, "BitsPerComponent", 8);
+  pdfioDictSetName(dict, "ColorSpace", "DeviceRGB");
+  pdfioDictSetName(dict, "Filter", "FlateDecode");
+
+  if ((decode = pdfioDictCreate(pdf)) == NULL)
+    return (NULL);
+
+  pdfioDictSetNumber(decode, "BitsPerComponent", 8);
+  pdfioDictSetNumber(decode, "Colors", 3);
+  pdfioDictSetNumber(decode, "Columns", 256);
+  pdfioDictSetNumber(decode, "Predictor", predictor);
+  pdfioDictSetDict(dict, "DecodeParms", decode);
+
+  // Create the image object...
+  if ((obj = pdfioFileCreateObject(pdf, dict)) == NULL)
+    return (NULL);
+
+  // Create the image stream and write the image...
+  if ((st = pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE)) == NULL)
+    return (NULL);
+
+  for (y = 0; y < 256; y ++)
+  {
+    for (x = 0, bufptr = buffer; x < 256; x ++, bufptr += 3)
+    {
+      bufptr[0] = y;
+      bufptr[1] = y + x;
+      bufptr[2] = y - x;
+    }
+
+    if (!pdfioStreamWrite(st, buffer, sizeof(buffer)))
+      return (NULL);
+  }
+
+  pdfioStreamClose(st);
+
+  return (obj);
+}
+
+
+//
+// 'write_images()' - Write a series of test images.
+//
+
+static int				// O - 1 on failure, 0 on success
+write_images(pdfio_file_t *pdf,		// I - PDF file
+             int          number,	// I - Page number
+             pdfio_obj_t  *font)	// I - Text font
+{
+  pdfio_dict_t	*dict;			// Page dictionary
+  pdfio_stream_t *st;			// Page stream
+  _pdfio_predictor_t p;			// Current predictor
+  pdfio_obj_t	*noimage,		// No predictor
+		*pimages[6];		// Images using PNG predictors
+  char		pname[32],		// Image name
+		plabel[32];		// Image label
+
+
+  // Create the images...
+  fputs("Create Image (Predictor 1): ", stdout);
+  if ((noimage = write_image_object(pdf, _PDFIO_PREDICTOR_NONE)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  for (p = _PDFIO_PREDICTOR_PNG_NONE; p <= _PDFIO_PREDICTOR_PNG_AUTO; p ++)
+  {
+    printf("Create Image (Predictor %d): ", p);
+    if ((pimages[p - _PDFIO_PREDICTOR_PNG_NONE] = write_image_object(pdf, p)) != NULL)
+      puts("PASS");
+    else
+      return (1);
+  }
+
+  // Create the page dictionary, object, and stream...
+  fputs("pdfioDictCreate: ", stdout);
+  if ((dict = pdfioDictCreate(pdf)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddImage(1): ", stdout);
+  if (pdfioPageDictAddImage(dict, "IM1", noimage))
+    puts("PASS");
+  else
+    return (1);
+
+  for (p = _PDFIO_PREDICTOR_PNG_NONE; p <= _PDFIO_PREDICTOR_PNG_AUTO; p ++)
+  {
+    printf("pdfioPageDictAddImage(%d): ", p);
+    snprintf(pname, sizeof(pname), "IM%d", p);
+    if (pdfioPageDictAddImage(dict, pdfioStringCreate(pdf, pname), pimages[p - _PDFIO_PREDICTOR_PNG_NONE]))
+      puts("PASS");
+    else
+      return (1);
+  }
+
+  fputs("pdfioPageDictAddFont(F1): ", stdout);
+  if (pdfioPageDictAddFont(dict, "F1", font))
+    puts("PASS");
+  else
+    return (1);
+
+  printf("pdfioFileCreatePage(%d): ", number);
+
+  if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  // Show content...
+  fputs("pdfioContentSetFillColorDeviceGray(0.0): ", stdout);
+  if (pdfioContentSetFillColorDeviceGray(st, 0.0))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextBegin(): ", stdout);
+  if (pdfioContentTextBegin(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSetTextFont(\"F1\", 12.0): ", stdout);
+  if (pdfioContentSetTextFont(st, "F1", 12.0))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextMoveTo(550.0, 36.0): ", stdout);
+  if (pdfioContentTextMoveTo(st, 550.0, 36.0))
+    puts("PASS");
+  else
+    return (1);
+
+  printf("pdfioContentTextShowf(\"%d\"): ", number);
+  if (pdfioContentTextShowf(st, "%d", number))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentTextEnd(): ", stdout);
+  if (pdfioContentTextEnd(st))
+    puts("PASS");
+  else
+    return (1);
+
+  // Draw images
+  if (draw_image(st, "IM1", 36, 558, 144, 144, "No Predictor"))
+    return (1);
+
+  for (p = _PDFIO_PREDICTOR_PNG_NONE; p <= _PDFIO_PREDICTOR_PNG_AUTO; p ++)
+  {
+    int i = p - _PDFIO_PREDICTOR_PNG_NONE;
+
+    snprintf(pname, sizeof(pname), "IM%d", p);
+    snprintf(plabel, sizeof(plabel), "PNG Predictor %d", p);
+
+    draw_image(st, pname, 36 + 180 * (i % 3), 342 - 216 * (i / 3), 144, 144, plabel);
+  }
+
+  // Wrap up...
+  fputs("pdfioStreamClose: ", stdout);
+  if (pdfioStreamClose(st))
+    puts("PASS");
+  else
+    return (1);
+
+  return (0);
+}
+
+
+//
 // 'write_page()' - Write a page to a PDF file.
 //
 
@@ -778,6 +1036,7 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
 			ty;		// Y offset
 
 
+  // Create the page dictionary, object, and stream...
   fputs("pdfioDictCreate: ", stdout);
   if ((dict = pdfioDictCreate(pdf)) != NULL)
     puts("PASS");
@@ -803,6 +1062,7 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
   else
     return (1);
 
+  // Show content...
   fputs("pdfioStreamPuts(...): ", stdout);
   if (pdfioStreamPuts(st,
                       "1 0 0 RG 0 g 5 w\n"
