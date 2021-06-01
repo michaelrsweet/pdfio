@@ -392,7 +392,9 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
 
   // Create a contents object to hold the contents of the page...
   contents_dict = pdfioDictCreate(pdf);
+#ifndef DEBUG
   pdfioDictSetName(contents_dict, "Filter", "FlateDecode");
+#endif // !DEBUG
 
   contents = pdfioFileCreateObject(pdf, contents_dict);
 
@@ -405,7 +407,11 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
     return (NULL);
 
   // Create the contents stream...
+#ifdef DEBUG
+  return (pdfioObjCreateStream(contents, PDFIO_FILTER_NONE));
+#else
   return (pdfioObjCreateStream(contents, PDFIO_FILTER_FLATE));
+#endif // DEBUG
 }
 
 

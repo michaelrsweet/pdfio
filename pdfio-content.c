@@ -741,7 +741,7 @@ pdfioContentTextShow(
 
   // Draw it...
   if (newline)
-    return (pdfioStreamPuts(st, "\'\n"));
+    return (pdfioStreamPuts(st, "Tj T*\n"));
   else
     return (pdfioStreamPuts(st, "Tj\n"));
 }
@@ -773,7 +773,7 @@ pdfioContentTextShowf(
 
   // Draw it...
   if (newline)
-    return (pdfioStreamPuts(st, "\'\n"));
+    return (pdfioStreamPuts(st, "Tj T*\n"));
   else
     return (pdfioStreamPuts(st, "Tj\n"));
 }
@@ -1403,7 +1403,16 @@ write_string(pdfio_stream_t *st,	// I - Stream
   for (ptr = s; *ptr; ptr ++)
   {
     if (*ptr & 0x80)
+    {
+      // UTF-8, allow Unicode up to 255...
+      if ((*ptr & 0xe0) == 0xc0 && (*ptr & 0x3f) <= 3 && (ptr[1] & 0xc0) == 0x80)
+      {
+        ptr ++;
+        continue;
+      }
+
       break;
+    }
   }
 
   if (*ptr)
@@ -1460,7 +1469,38 @@ write_string(pdfio_stream_t *st,	// I - Stream
 
     for (ptr = start; *ptr; ptr ++)
     {
-      if (*ptr == '\\' || (*ptr == ')' && level == 0) || *ptr < ' ')
+      if (*ptr == '\n' && newline)
+      {
+        if (ptr > start)
+        {
+          if (!pdfioStreamWrite(st, start, (size_t)(ptr - start)))
+            return (false);
+
+          start = ptr + 1;
+	}
+
+        *newline = true;
+        break;
+      }
+      else if ((*ptr & 0xe0) == 0xc0)
+      {
+        // Two-byte UTF-8
+        unsigned char ch = (unsigned char)(((ptr[0] & 0x1f) << 6) | (ptr[1] & 0x3f));
+					// Unicode character
+
+        if (ptr > start)
+        {
+          if (!pdfioStreamWrite(st, start, (size_t)(ptr - start)))
+            return (false);
+	}
+
+	if (!pdfioStreamWrite(st, &ch, 1))
+	  return (false);
+
+        ptr ++;
+	start = ptr + 1;
+      }
+      else if (*ptr == '\\' || (*ptr == ')' && level == 0) || *ptr < ' ')
       {
         if (ptr > start)
         {
@@ -1482,19 +1522,6 @@ write_string(pdfio_stream_t *st,	// I - Stream
         level ++;
       else if (*ptr == ')')
         level --;
-      else if (*ptr == '\n' && newline)
-      {
-        if (ptr > start)
-        {
-          if (!pdfioStreamWrite(st, start, (size_t)(ptr - start)))
-            return (false);
-
-          start = ptr + 1;
-	}
-
-        *newline = true;
-        break;
-      }
     }
 
     if (ptr > start)
