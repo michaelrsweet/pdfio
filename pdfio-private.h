@@ -262,11 +262,11 @@ struct _pdfio_stream_s			// Stream
 	        *bufend;		// End of buffer
   z_stream	flate;			// Flate filter state
   _pdfio_predictor_t predictor;		// Predictor function, if any
-  int		pbcurrent;		// Current predictor line (0 or 1)
   size_t	pbpixel,		// Size of a pixel in bytes
 		pbsize;			// Predictor buffer size, if any
   unsigned char	cbuffer[4096],		// Compressed data buffer
-		*pbuffers[2];		// Predictor buffers, as needed
+		*prbuffer,		// Raw buffer (previous line), as needed
+		*psbuffer;		// PNG filter buffer, as needed
 };
 
 
