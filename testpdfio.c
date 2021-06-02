@@ -26,6 +26,7 @@ static int	draw_image(pdfio_stream_t *st, const char *name, double x, double y, 
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
 static ssize_t	token_consume_cb(const char **s, size_t bytes);
 static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
+static int	verify_image(pdfio_file_t *pdf, size_t number);
 static int	write_color_patch(pdfio_stream_t *st, bool device);
 static int	write_color_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static pdfio_obj_t *write_image_object(pdfio_file_t *pdf, _pdfio_predictor_t predictor);
@@ -166,6 +167,8 @@ do_unit_tests(void)
 			*gray_jpg,	// gray.jpg image
 			*helvetica,	// Helvetica font
 			*page;		// Page from test PDF file
+  size_t		first_image,	// First image object
+			num_pages;	// Number of pages written
   static const char	*complex_dict =	// Complex dictionary value
     "<</Annots 5457 0 R/Contents 5469 0 R/CropBox[0 0 595.4 842]/Group 725 0 R"
     "/MediaBox[0 0 595.4 842]/Parent 23513 0 R/Resources<</ColorSpace<<"
@@ -268,6 +271,7 @@ do_unit_tests(void)
     return (1);
 
   // Write a page with test images...
+  first_image = pdfioFileGetNumObjects(outpdf);
   if (write_images(outpdf, 6, helvetica))
     return (1);
 
@@ -276,15 +280,56 @@ do_unit_tests(void)
     return (1);
 
   // Close the test PDF file...
-  fputs("pdfioFileClose(\"testfiles/testpdfio.pdf\": ", stdout);
+  fputs("pdfioFileClose(\"testfiles/testpdfio.pdf\"): ", stdout);
   if (pdfioFileClose(pdf))
     puts("PASS");
   else
     return (1);
 
+  fputs("pdfioFileGetNumPages: ", stdout);
+  if ((num_pages = pdfioFileGetNumPages(outpdf)) > 0)
+  {
+    printf("PASS (%lu)\n", (unsigned long)num_pages);
+  }
+  else
+  {
+    puts("FAIL");
+    return (1);
+  }
+
   // Close the new PDF file...
-  fputs("pdfioFileClose(\"testpdfio-out.pdf\": ", stdout);
+  fputs("pdfioFileClose(\"testpdfio-out.pdf\"): ", stdout);
   if (pdfioFileClose(outpdf))
+    puts("PASS");
+  else
+    return (1);
+
+  // Open the new PDF file to read it...
+  fputs("pdfioFileOpen(\"testpdfio-out.pdf\", ...): ", stdout);
+  if ((pdf = pdfioFileOpen("testpdfio-out.pdf", (pdfio_error_cb_t)error_cb, &error)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  // Verify the number of pages is the same...
+  fputs("pdfioFileGetNumPages: ", stdout);
+  if (num_pages == pdfioFileGetNumPages(pdf))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    printf("FAIL (%lu != %lu)\n", (unsigned long)num_pages, (unsigned long)pdfioFileGetNumPages(pdf));
+    return (1);
+  }
+
+  // Verify the images
+  for (i = 0; i < 7; i ++)
+    verify_image(pdf, (size_t)(first_image + i));
+
+  // Close the new PDF file...
+  fputs("pdfioFileClose(\"testpdfio-out.pdf\"): ", stdout);
+  if (pdfioFileClose(pdf))
     puts("PASS");
   else
     return (1);
@@ -415,6 +460,114 @@ token_peek_cb(const char **s,		// IO - Test string
     memcpy(buffer, *s, bytes);
 
   return ((ssize_t)bytes);
+}
+
+
+//
+// 'verify_image()' - Verify an image object.
+//
+
+static int				// O - 1 on failure, 0 on success
+verify_image(pdfio_file_t *pdf,		// I - PDF file
+             size_t       number)	// I - Object number
+{
+  pdfio_obj_t	*obj;			// Image object
+  const char	*type,			// Object type
+		*subtype;		// Object subtype
+  double	width,			// Width of object
+		height;			// Height of object
+  pdfio_stream_t *st;			// Stream
+  int		x, y;			// Coordinates in image
+  unsigned char	buffer[768],		// Expected data
+		*bufptr,		// Pointer into buffer
+		line[768];		// Line from file
+  ssize_t	bytes;			// Bytes read from stream
+
+
+  printf("pdfioFileFindObject(%lu): ", (unsigned long)number);
+  if ((obj = pdfioFileFindObject(pdf, number)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioObjGetType: ", stdout);
+  if ((type = pdfioObjGetType(obj)) != NULL && !strcmp(type, "XObject"))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    printf("FAIL (got %s, expected XObject)\n", type);
+    return (1);
+  }
+
+  fputs("pdfioObjGetSubtype: ", stdout);
+  if ((subtype = pdfioObjGetSubtype(obj)) != NULL && !strcmp(subtype, "Image"))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    printf("FAIL (got %s, expected Image)\n", subtype);
+    return (1);
+  }
+
+  fputs("pdfioImageGetWidth: ", stdout);
+  if ((width = pdfioImageGetWidth(obj)) == 256.0)
+  {
+    puts("PASS");
+  }
+  else
+  {
+    printf("FAIL (got %g, expected 256)\n", width);
+    return (1);
+  }
+
+  fputs("pdfioImageGetHeight: ", stdout);
+  if ((height = pdfioImageGetHeight(obj)) == 256.0)
+  {
+    puts("PASS");
+  }
+  else
+  {
+    printf("FAIL (got %g, expected 256)\n", height);
+    return (1);
+  }
+
+  // Open the image stream, read the image, and verify it matches expectations...
+  fputs("pdfioObjOpenStream: ", stdout);
+  if ((st = pdfioObjOpenStream(obj, PDFIO_FILTER_FLATE)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  for (y = 0; y < 256; y ++)
+  {
+    for (x = 0, bufptr = buffer; x < 256; x ++, bufptr += 3)
+    {
+      bufptr[0] = y;
+      bufptr[1] = y + x;
+      bufptr[2] = y - x;
+    }
+
+    if ((bytes = pdfioStreamRead(st, line, sizeof(line))) != (ssize_t)sizeof(line))
+    {
+      printf("pdfioStreamRead: FAIL (got %d for line %d, expected 768)\n", y, (int)bytes);
+      pdfioStreamClose(st);
+      return (1);
+    }
+
+    if (memcmp(buffer, line, sizeof(buffer)))
+    {
+      printf("pdfioStreamRead: FAIL (line %d doesn't match expectations)\n", y);
+      pdfioStreamClose(st);
+      return (1);
+    }
+  }
+
+  pdfioStreamClose(st);
+
+  return (0);
 }
 
 

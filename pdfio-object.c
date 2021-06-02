@@ -300,6 +300,23 @@ pdfioObjGetNumber(pdfio_obj_t *obj)	// I - Object
 
 
 //
+// 'pdfioObjGetSubtype()' - Get an object's subtype.
+//
+
+const char *				// O - Object subtype
+pdfioObjGetSubtype(pdfio_obj_t *obj)	// I - Object
+{
+  pdfio_dict_t	*dict;			// Object dictionary
+
+
+  if ((dict = pdfioObjGetDict(obj)) == NULL)
+    return (NULL);
+  else
+    return (pdfioDictGetName(dict, "Subtype"));
+}
+
+
+//
 // 'pdfioObjGetType()' - Get an object's type.
 //
 

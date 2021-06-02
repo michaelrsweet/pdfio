@@ -169,6 +169,7 @@ extern pdfio_dict_t	*pdfioObjGetDict(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern unsigned short	pdfioObjGetGeneration(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern size_t		pdfioObjGetLength(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern size_t		pdfioObjGetNumber(pdfio_obj_t *obj) PDFIO_PUBLIC;
+extern const char	*pdfioObjGetSubtype(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern const char	*pdfioObjGetType(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern pdfio_stream_t	*pdfioObjOpenStream(pdfio_obj_t *obj, bool decode) PDFIO_PUBLIC;
 
