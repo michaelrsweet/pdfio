@@ -1398,7 +1398,7 @@ write_text(pdfio_file_t *pdf,		// I - PDF file
       if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
 	puts("PASS");
       else
-	return (1);
+        goto error;
 
       // Show the page number
       fputs("pdfioContentSetFillColorDeviceGray(0.0): ", stdout);
