@@ -157,7 +157,10 @@ _pdfioFileGets(pdfio_file_t *pdf,	// I - PDF file
         {
           // Check for a LF after CR
           if (pdf->bufptr >= pdf->bufend)
-            fill_buffer(pdf);
+          {
+            if (!fill_buffer(pdf))
+              break;
+	  }
 
 	  if (pdf->bufptr < pdf->bufend && *(pdf->bufptr) == '\n')
 	    pdf->bufptr ++;

@@ -1144,7 +1144,6 @@ pdfioImageGetBytesPerLine(
 {
   pdfio_dict_t	*params;		// DecodeParms value
   int		width,			// Width of image
-		height,			// Height of image
 		bpc,			// BitsPerComponent of image
 		colors;			// Number of colors in image
 
@@ -1156,7 +1155,6 @@ pdfioImageGetBytesPerLine(
   bpc    = (int)pdfioDictGetNumber(params, "BitsPerComponent");
   colors = (int)pdfioDictGetNumber(params, "Colors");
   width  = (int)pdfioDictGetNumber(params, "Columns");
-  height = (int)pdfioDictGetNumber(obj->value.value.dict, "Height");
 
   if (width == 0)
     width = (int)pdfioDictGetNumber(obj->value.value.dict, "Width");

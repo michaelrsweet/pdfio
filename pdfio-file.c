@@ -628,7 +628,12 @@ pdfioFileOpen(
   pdf->version = strdup(line + 5);
 
   // Grab the last 32 characters of the file to find the start of the xref table...
-  _pdfioFileSeek(pdf, -32, SEEK_END);
+  if (_pdfioFileSeek(pdf, -32, SEEK_END) < 0)
+  {
+    _pdfioFileError(pdf, "Unable to read startxref data.");
+    goto error;
+  }
+
   if (_pdfioFileRead(pdf, line, 32) < 32)
   {
     _pdfioFileError(pdf, "Unable to read startxref data.");
@@ -1357,14 +1362,14 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
   if ((fd = open("/dev/urandom", O_RDONLY)) >= 0)
   {
     // Load ID array with random values from /dev/urandom...
-    memset(id_values, 0, sizeof(id_values));
-    read(fd, id_values[0], sizeof(id_values[0]));
-    read(fd, id_values[1], sizeof(id_values[1]));
-    close(fd);
+    if (read(fd, id_values[0], sizeof(id_values[0])) == (ssize_t)sizeof(id_values[0]) && read(fd, id_values[1], sizeof(id_values[1])) == (ssize_t)sizeof(id_values[1]))
+    {
+      pdf->id_array = pdfioArrayCreate(pdf);
+      pdfioArrayAppendBinary(pdf->id_array, id_values[0], sizeof(id_values[0]));
+      pdfioArrayAppendBinary(pdf->id_array, id_values[1], sizeof(id_values[1]));
+    }
 
-    pdf->id_array = pdfioArrayCreate(pdf);
-    pdfioArrayAppendBinary(pdf->id_array, id_values[0], sizeof(id_values[0]));
-    pdfioArrayAppendBinary(pdf->id_array, id_values[1], sizeof(id_values[1]));
+    close(fd);
   }
 
   pdf->trailer = pdfioDictCreate(pdf);

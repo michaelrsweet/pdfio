@@ -336,7 +336,11 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
   st->pdf = obj->pdf;
   st->obj = obj;
 
-  _pdfioFileSeek(st->pdf, obj->stream_offset, SEEK_SET);
+  if (_pdfioFileSeek(st->pdf, obj->stream_offset, SEEK_SET) != obj->stream_offset)
+  {
+    free(st);
+    return (NULL);
+  }
 
   if ((st->remaining = pdfioObjGetLength(obj)) == 0)
   {
@@ -646,15 +650,11 @@ pdfioStreamWrite(
     const void     *buffer,		// I - Data to write
     size_t         bytes)		// I - Number of bytes to write
 {
-  size_t		pbpixel = st->pbpixel,
-					// Size of pixel in bytes
-      			pbline = st->pbsize - 1,
-					// Bytes per line
+  size_t		pbpixel,	// Size of pixel in bytes
+      			pbline,		// Bytes per line
 			remaining;	// Remaining bytes on this line
-  const unsigned char	*bufptr = (const unsigned char *)buffer,
-					// Pointer into buffer
-			*bufsecond = buffer + pbpixel;
-					// Pointer to second pixel in buffer
+  const unsigned char	*bufptr,	// Pointer into buffer
+			*bufsecond;	// Pointer to second pixel in buffer
   unsigned char		*sptr,		// Pointer into sbuffer
 			*pptr;		// Previous raw buffer
 
@@ -672,6 +672,8 @@ pdfioStreamWrite(
     return (_pdfioFileWrite(st->pdf, buffer, bytes));
   }
 
+  pbline = st->pbsize - 1;
+
   if (st->predictor == _PDFIO_PREDICTOR_NONE)
   {
     // No predictor, just write it out straight...
@@ -682,6 +684,10 @@ pdfioStreamWrite(
     _pdfioFileError(st->pdf, "Write buffer size must be a multiple of a complete row.");
     return (false);
   }
+
+  pbpixel   = st->pbpixel;
+  bufptr    = (const unsigned char *)buffer;
+  bufsecond = buffer + pbpixel;
 
   while (bytes > 0)
   {

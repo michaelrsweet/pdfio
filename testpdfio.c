@@ -761,205 +761,205 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   if (pdfioContentSetFillColorDeviceGray(st, 0.0))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextBegin(): ", stdout);
   if (pdfioContentTextBegin(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSetTextFont(\"F1\", 12.0): ", stdout);
   if (pdfioContentSetTextFont(st, "F1", 12.0))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextMoveTo(550.0, 36.0): ", stdout);
   if (pdfioContentTextMoveTo(st, 550.0, 36.0))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   printf("pdfioContentTextShowf(\"%d\"): ", number);
   if (pdfioContentTextShowf(st, "%d", number))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextEnd(): ", stdout);
   if (pdfioContentTextEnd(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextBegin(): ", stdout);
   if (pdfioContentTextBegin(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSetTextFont(\"F1\", 18.0): ", stdout);
   if (pdfioContentSetTextFont(st, "F1", 18.0))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextMoveTo(82, 360): ", stdout);
   if (pdfioContentTextMoveTo(st, 82, 360))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextShow(\"AdobeRGB\"): ", stdout);
   if (pdfioContentTextShow(st, "AdobeRGB"))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextMoveTo(234, 0): ", stdout);
   if (pdfioContentTextMoveTo(st, 234, 0))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextShow(\"DisplayP3\"): ", stdout);
   if (pdfioContentTextShow(st, "DisplayP3"))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextMoveTo(-234, 252): ", stdout);
   if (pdfioContentTextMoveTo(st, -234, 252))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextShow(\"sRGB\"): ", stdout);
   if (pdfioContentTextShow(st, "sRGB"))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextMoveTo(234, 0): ", stdout);
   if (pdfioContentTextMoveTo(st, 234, 0))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextShow(\"DeviceCMYK\"): ", stdout);
   if (pdfioContentTextShow(st, "DeviceCMYK"))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextEnd(): ", stdout);
   if (pdfioContentTextEnd(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSave(): ", stdout);
   if (pdfioContentSave(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSetFillColorSpace(AdobeRGB): ", stdout);
   if (pdfioContentSetFillColorSpace(st, "AdobeRGB"))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentMatrixTranslate(82, 162): ", stdout);
   if (pdfioContentMatrixTranslate(st, 82, 162))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   if (write_color_patch(st, false))
-    return (1);
+    goto error;
 
   fputs("pdfioContentRestore(): ", stdout);
   if (pdfioContentRestore(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSave(): ", stdout);
   if (pdfioContentSave(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSetFillColorSpace(DisplayP3): ", stdout);
   if (pdfioContentSetFillColorSpace(st, "DisplayP3"))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentMatrixTranslate(316, 162): ", stdout);
   if (pdfioContentMatrixTranslate(st, 316, 162))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   if (write_color_patch(st, false))
-    return (1);
+    goto error;
 
   fputs("pdfioContentRestore(): ", stdout);
   if (pdfioContentRestore(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSave(): ", stdout);
   if (pdfioContentSave(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSetFillColorSpace(sRGB): ", stdout);
   if (pdfioContentSetFillColorSpace(st, "sRGB"))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentMatrixTranslate(82, 414): ", stdout);
   if (pdfioContentMatrixTranslate(st, 82, 414))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   if (write_color_patch(st, false))
-    return (1);
+    goto error;
 
   fputs("pdfioContentRestore(): ", stdout);
   if (pdfioContentRestore(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSave(): ", stdout);
   if (pdfioContentSave(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentMatrixTranslate(316, 414): ", stdout);
   if (pdfioContentMatrixTranslate(st, 316, 414))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   if (write_color_patch(st, true))
-    return (1);
+    goto error;
 
   fputs("pdfioContentRestore(): ", stdout);
   if (pdfioContentRestore(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioStreamClose: ", stdout);
   if (pdfioStreamClose(st))
@@ -968,6 +968,11 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
     return (1);
 
   return (0);
+
+  error:
+
+  pdfioStreamClose(st);
+  return (1);
 }
 
 
@@ -1028,7 +1033,10 @@ write_image_object(
     }
 
     if (!pdfioStreamWrite(st, buffer, sizeof(buffer)))
+    {
+      pdfioStreamClose(st);
       return (NULL);
+    }
   }
 
   pdfioStreamClose(st);
@@ -1112,41 +1120,41 @@ write_images(pdfio_file_t *pdf,		// I - PDF file
   if (pdfioContentSetFillColorDeviceGray(st, 0.0))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextBegin(): ", stdout);
   if (pdfioContentTextBegin(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSetTextFont(\"F1\", 12.0): ", stdout);
   if (pdfioContentSetTextFont(st, "F1", 12.0))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextMoveTo(550.0, 36.0): ", stdout);
   if (pdfioContentTextMoveTo(st, 550.0, 36.0))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   printf("pdfioContentTextShowf(\"%d\"): ", number);
   if (pdfioContentTextShowf(st, "%d", number))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextEnd(): ", stdout);
   if (pdfioContentTextEnd(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   // Draw images
   if (draw_image(st, "IM1", 36, 558, 144, 144, "No Predictor"))
-    return (1);
+    goto error;
 
   for (p = _PDFIO_PREDICTOR_PNG_NONE; p <= _PDFIO_PREDICTOR_PNG_AUTO; p ++)
   {
@@ -1155,7 +1163,8 @@ write_images(pdfio_file_t *pdf,		// I - PDF file
     snprintf(pname, sizeof(pname), "IM%d", p);
     snprintf(plabel, sizeof(plabel), "PNG Predictor %d", p);
 
-    draw_image(st, pname, 36 + 180 * (i % 3), 342 - 216 * (i / 3), 144, 144, plabel);
+    if (draw_image(st, pname, 36 + 180 * (i % 3), 342 - 216 * (i / 3), 144, 144, plabel))
+      goto error;
   }
 
   // Wrap up...
@@ -1166,6 +1175,11 @@ write_images(pdfio_file_t *pdf,		// I - PDF file
     return (1);
 
   return (0);
+
+  error:
+
+  pdfioStreamClose(st);
+  return (1);
 }
 
 
@@ -1222,61 +1236,61 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
                       "54 54 487 688 re 90 90 415 612 re B*\n"))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSetFillColorDeviceGray(0.0): ", stdout);
   if (pdfioContentSetFillColorDeviceGray(st, 0.0))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextBegin(): ", stdout);
   if (pdfioContentTextBegin(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSetTextFont(\"F1\", 12.0): ", stdout);
   if (pdfioContentSetTextFont(st, "F1", 12.0))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextMoveTo(550.0, 36.0): ", stdout);
   if (pdfioContentTextMoveTo(st, 550.0, 36.0))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   printf("pdfioContentTextShowf(\"%d\"): ", number);
   if (pdfioContentTextShowf(st, "%d", number))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentTextEnd(): ", stdout);
   if (pdfioContentTextEnd(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentSave(): ", stdout);
   if (pdfioContentSave(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioImageGetWidth(): ", stdout);
   if ((width = pdfioImageGetWidth(image)) > 0.0)
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioImageGetHeight(): ", stdout);
   if ((height = pdfioImageGetHeight(image)) > 0.0)
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   swidth  = 400.0;
   sheight = swidth * height / width;
@@ -1293,13 +1307,13 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
   if (pdfioContentDrawImage(st, "IM1", tx, ty, swidth, sheight))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioContentRestore(): ", stdout);
   if (pdfioContentRestore(st))
     puts("PASS");
   else
-    return (1);
+    goto error;
 
   fputs("pdfioStreamClose: ", stdout);
   if (pdfioStreamClose(st))
@@ -1308,6 +1322,11 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
     return (1);
 
   return (0);
+
+  error:
+
+  pdfioStreamClose(st);
+  return (1);
 }
 
 
@@ -1386,49 +1405,49 @@ write_text(pdfio_file_t *pdf,		// I - PDF file
       if (pdfioContentSetFillColorDeviceGray(st, 0.0))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       fputs("pdfioContentTextBegin(): ", stdout);
       if (pdfioContentTextBegin(st))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       fputs("pdfioContentSetTextFont(\"F1\", 12.0): ", stdout);
       if (pdfioContentSetTextFont(st, "F1", 12.0))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       fputs("pdfioContentTextMoveTo(36.0, 36.0): ", stdout);
       if (pdfioContentTextMoveTo(st, 36, 36.0))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       printf("pdfioContentTextShowf(\"\\\"%s\\\"\"): ", filename);
       if (pdfioContentTextShowf(st, "\"%s\"", filename))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       fputs("pdfioContentTextMoveTo(514.0, 0.0): ", stdout);
       if (pdfioContentTextMoveTo(st, 514.0, 0.0))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       printf("pdfioContentTextShowf(\"%d\"): ", page);
       if (pdfioContentTextShowf(st, "%d", page))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       fputs("pdfioContentTextEnd(): ", stdout);
       if (pdfioContentTextEnd(st))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       page ++;
       plinenum ++;
@@ -1437,31 +1456,35 @@ write_text(pdfio_file_t *pdf,		// I - PDF file
       if (pdfioContentTextBegin(st))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       fputs("pdfioContentSetTextFont(\"F2\", 10.0): ", stdout);
       if (pdfioContentSetTextFont(st, "F2", 10.0))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       fputs("pdfioContentSetTextLeading(12.0): ", stdout);
       if (pdfioContentSetTextLeading(st, 12.0))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       fputs("pdfioContentTextMoveTo(36.0, 756.0): ", stdout);
       if (pdfioContentTextMoveTo(st, 36.0, 756.0))
 	puts("PASS");
       else
-	return (1);
+	goto error;
     }
 
-    pdfioContentSetFillColorDeviceGray(st, 0.75);
-    pdfioContentTextShowf(st, "%4d  ", flinenum);
-    pdfioContentSetFillColorDeviceGray(st, 0.0);
-    pdfioContentTextShow(st, line);
+    if (!pdfioContentSetFillColorDeviceGray(st, 0.75))
+      goto error;
+    if (!pdfioContentTextShowf(st, "%4d  ", flinenum))
+      goto error;
+    if (!pdfioContentSetFillColorDeviceGray(st, 0.0))
+      goto error;
+    if (!pdfioContentTextShow(st, line))
+      goto error;
 
     plinenum ++;
     if (plinenum >= 60)
@@ -1470,13 +1493,13 @@ write_text(pdfio_file_t *pdf,		// I - PDF file
       if (pdfioContentTextEnd(st))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       fputs("pdfioStreamClose: ", stdout);
       if (pdfioStreamClose(st))
 	puts("PASS");
       else
-	return (1);
+	goto error;
 
       st       = NULL;
       plinenum = 0;
@@ -1489,7 +1512,7 @@ write_text(pdfio_file_t *pdf,		// I - PDF file
     if (pdfioContentTextEnd(st))
       puts("PASS");
     else
-      return (1);
+      goto error;
 
     fputs("pdfioStreamClose: ", stdout);
     if (pdfioStreamClose(st))
@@ -1499,4 +1522,10 @@ write_text(pdfio_file_t *pdf,		// I - PDF file
   }
 
   return (0);
+
+  error:
+
+  fclose(fp);
+  pdfioStreamClose(st);
+  return (1);
 }
