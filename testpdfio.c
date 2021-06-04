@@ -1521,6 +1521,8 @@ write_text(pdfio_file_t *pdf,		// I - PDF file
       return (1);
   }
 
+  fclose(fp);
+
   return (0);
 
   error:
