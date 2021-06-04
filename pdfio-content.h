@@ -144,6 +144,7 @@ extern pdfio_obj_t	*pdfioFileCreateICCProfileObject(pdfio_file_t *pdf, const cha
 extern pdfio_obj_t	*pdfioFileCreateImageObject(pdfio_file_t *pdf, const char *filename, bool interpolate) PDFIO_PUBLIC;
 
 // Image object helpers...
+extern size_t		pdfioImageGetBytesPerLine(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern double		pdfioImageGetHeight(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern double		pdfioImageGetWidth(pdfio_obj_t *obj) PDFIO_PUBLIC;
 

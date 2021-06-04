@@ -1135,13 +1135,72 @@ pdfioFileCreateImageObject(
 
 
 //
+// 'pdfioImageGetBytesPerLine()' - Get the number of bytes to read for each line.
+//
+
+size_t					// O - Number of bytes per line
+pdfioImageGetBytesPerLine(
+    pdfio_obj_t *obj)			// I - Image object
+{
+  pdfio_dict_t	*params;		// DecodeParms value
+  int		width,			// Width of image
+		height,			// Height of image
+		bpc,			// BitsPerComponent of image
+		colors;			// Number of colors in image
+
+
+  if (!obj || obj->value.type != PDFIO_VALTYPE_DICT)
+    return (0);
+
+  params = pdfioDictGetDict(obj->value.value.dict, "DecodeParms");
+  bpc    = (int)pdfioDictGetNumber(params, "BitsPerComponent");
+  colors = (int)pdfioDictGetNumber(params, "Colors");
+  width  = (int)pdfioDictGetNumber(params, "Columns");
+  height = (int)pdfioDictGetNumber(obj->value.value.dict, "Height");
+
+  if (width == 0)
+    width = (int)pdfioDictGetNumber(obj->value.value.dict, "Width");
+
+  if (bpc == 0)
+  {
+    if ((bpc = (int)pdfioDictGetNumber(obj->value.value.dict, "BitsPerComponent")) == 0)
+      bpc = 8;
+  }
+
+  if (colors == 0)
+  {
+    const char	*cs_name;		// ColorSpace name
+    pdfio_array_t *cs_array;		// ColorSpace array
+
+    if ((cs_name = pdfioDictGetName(obj->value.value.dict, "ColorSpace")) == NULL)
+    {
+      if ((cs_array = pdfioDictGetArray(obj->value.value.dict, "ColorSpace")) != NULL)
+        cs_name = pdfioArrayGetName(cs_array, 0);
+    }
+
+    if (!cs_name || strstr(cs_name, "RGB"))
+      colors = 3;
+    else if (strstr(cs_name, "CMYK"))
+      colors = 4;
+    else
+      colors = 1;
+  }
+
+  return ((size_t)((width * colors * bpc + 7) / 8));
+}
+
+
+//
 // 'pdfioImageGetHeight()' - Get the height of an image object.
 //
 
 double					// O - Height in lines
 pdfioImageGetHeight(pdfio_obj_t *obj)	// I - Image object
 {
-  return (pdfioDictGetNumber(obj->value.value.dict, "Height"));
+  if (obj)
+    return (pdfioDictGetNumber(obj->value.value.dict, "Height"));
+  else
+    return (0.0);
 }
 
 
@@ -1152,7 +1211,10 @@ pdfioImageGetHeight(pdfio_obj_t *obj)	// I - Image object
 double					// O - Width in columns
 pdfioImageGetWidth(pdfio_obj_t *obj)	// I - Image object
 {
-  return (pdfioDictGetNumber(obj->value.value.dict, "Width"));
+  if (obj)
+    return (pdfioDictGetNumber(obj->value.value.dict, "Width"));
+  else
+    return (0.0);
 }
 
 
@@ -1267,7 +1329,6 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
   pdfioDictSetNumber(dict, "Width", width);
   pdfioDictSetNumber(dict, "Height", height);
   pdfioDictSetNumber(dict, "BitsPerComponent", 8);
-  // TODO: Add proper JPEG CalRGB/Gray color spaces
   pdfioDictSetArray(dict, "ColorSpace", create_calcolor(dict->pdf, num_colors, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
   pdfioDictSetName(dict, "Filter", "DCTDecode");
 

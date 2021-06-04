@@ -571,6 +571,11 @@ pdfioStreamPuts(pdfio_stream_t *st,	// I - Stream
 //
 // 'pdfioStreamRead()' - Read data from a stream.
 //
+// This function reads data from a stream.  When reading decoded image data
+// from a stream, you *must* read whole scanlines.  The
+// @link pdfioImageGetBytesPerLine@ function can be used to determine the
+// proper read length.
+//
 
 ssize_t					// O - Number of bytes read or `-1` on error
 pdfioStreamRead(
@@ -860,7 +865,6 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 
       if (bytes < (st->pbsize - 1))
       {
-        // TODO: Support partial reads of PNG-encoded streams?
         _pdfioFileError(st->pdf, "Read buffer too small for stream.");
         return (-1);
       }
