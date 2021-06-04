@@ -421,9 +421,9 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 		return (false);
 	      }
 	      else if (isdigit(tch))
-		ch = (char)((ch << 4) | (tch - '0'));
+		ch = ((ch & 255) << 4) | (tch - '0');
 	      else
-		ch = (char)((ch << 4) | (tolower(tch) - 'a' + 10));
+		ch = ((ch & 255) << 4) | (tolower(tch) - 'a' + 10);
 	    }
 	  }
 
