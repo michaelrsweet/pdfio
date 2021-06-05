@@ -51,9 +51,9 @@ pdfioArrayAppendArray(
 
 bool					// O - `true` on success, `false` on failure
 pdfioArrayAppendBinary(
-    pdfio_array_t *a,			// I - Array
-    unsigned char *value,		// I - Value
-    size_t        valuelen)		// I - Length of value
+    pdfio_array_t       *a,		// I - Array
+    const unsigned char *value,		// I - Value
+    size_t              valuelen)	// I - Length of value
 {
   _pdfio_value_t	v;		// Value for array
 

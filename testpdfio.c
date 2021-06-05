@@ -718,6 +718,7 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
 {
   pdfio_dict_t		*dict;		// Page dictionary
   pdfio_stream_t	*st;		// Page contents stream
+  pdfio_array_t		*cs;		// Color space array
 
 
   fputs("pdfioDictCreate: ", stdout);
@@ -726,20 +727,38 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
-  fputs("pdfioPageDictAddCalibratedColorSpace(AdobeRGB): ", stdout);
-  if (pdfioPageDictAddCalibratedColorSpace(dict, "AdobeRGB", 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint))
+  fputs("pdfioArrayCreateCalibratedColorFromMatrix(AdobeRGB): ", stdout);
+  if ((cs = pdfioArrayCreateCalibratedColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint)) != NULL)
     puts("PASS");
   else
     return (1);
 
-  fputs("pdfioPageDictAddCalibratedColorSpace(DisplayP3): ", stdout);
-  if (pdfioPageDictAddCalibratedColorSpace(dict, "DisplayP3", 3, pdfioDisplayP3Gamma, pdfioDisplayP3Matrix, pdfioDisplayP3WhitePoint))
+  fputs("pdfioPageDictAddColorSpace(AdobeRGB): ", stdout);
+  if (pdfioPageDictAddColorSpace(dict, "AdobeRGB", cs))
     puts("PASS");
   else
     return (1);
 
-  fputs("pdfioPageDictAddCalibratedColorSpace(sRGB): ", stdout);
-  if (pdfioPageDictAddCalibratedColorSpace(dict, "sRGB", 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint))
+  fputs("pdfioArrayCreateCalibratedColorFromMatrix(DisplayP3): ", stdout);
+  if ((cs = pdfioArrayCreateCalibratedColorFromMatrix(pdf, 3, pdfioDisplayP3Gamma, pdfioDisplayP3Matrix, pdfioDisplayP3WhitePoint)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddColorSpace(DisplayP3): ", stdout);
+  if (pdfioPageDictAddColorSpace(dict, "DisplayP3", cs))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioArrayCreateCalibratedColorFromMatrix(sRGB): ", stdout);
+  if ((cs = pdfioArrayCreateCalibratedColorFromMatrix(pdf, 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddColorSpace(sRGB): ", stdout);
+  if (pdfioPageDictAddColorSpace(dict, "sRGB", cs))
     puts("PASS");
   else
     return (1);

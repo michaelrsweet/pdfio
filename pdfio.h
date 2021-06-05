@@ -102,7 +102,7 @@ typedef struct _pdfio_value_s pdf_value_t;
 //
 
 extern bool		pdfioArrayAppendArray(pdfio_array_t *a, pdfio_array_t *value) PDFIO_PUBLIC;
-extern bool		pdfioArrayAppendBinary(pdfio_array_t *a, unsigned char *value, size_t valuelen) PDFIO_PUBLIC;
+extern bool		pdfioArrayAppendBinary(pdfio_array_t *a, const unsigned char *value, size_t valuelen) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendBoolean(pdfio_array_t *a, bool value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendDict(pdfio_array_t *a, pdfio_dict_t *value) PDFIO_PUBLIC;
 extern bool		pdfioArrayAppendName(pdfio_array_t *a, const char *value) PDFIO_PUBLIC;
@@ -135,7 +135,7 @@ extern pdfio_rect_t	*pdfioDictGetRect(pdfio_dict_t *dict, const char *key, pdfio
 extern const char	*pdfioDictGetString(pdfio_dict_t *dict, const char *key) PDFIO_PUBLIC;
 extern pdfio_valtype_t	pdfioDictGetType(pdfio_dict_t *dict, const char *key) PDFIO_PUBLIC;
 extern bool		pdfioDictSetArray(pdfio_dict_t *dict, const char *key, pdfio_array_t *value) PDFIO_PUBLIC;
-extern bool		pdfioDictSetBinary(pdfio_dict_t *dict, const char *key, unsigned char *value, size_t valuelen) PDFIO_PUBLIC;
+extern bool		pdfioDictSetBinary(pdfio_dict_t *dict, const char *key, const unsigned char *value, size_t valuelen) PDFIO_PUBLIC;
 extern bool		pdfioDictSetBoolean(pdfio_dict_t *dict, const char *key, bool value) PDFIO_PUBLIC;
 extern bool		pdfioDictSetDict(pdfio_dict_t *dict, const char *key, pdfio_dict_t *value) PDFIO_PUBLIC;
 extern bool		pdfioDictSetName(pdfio_dict_t *dict, const char *key, const char *value) PDFIO_PUBLIC;

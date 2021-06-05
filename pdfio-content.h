@@ -83,6 +83,12 @@ extern const double	pdfioSRGBWhitePoint[3] PDFIO_PUBLIC;
 // Functions...
 //
 
+// Color array functions...
+extern pdfio_array_t	*pdfioArrayCreateCalibratedColorFromMatrix(pdfio_file_t *pdf, size_t num_colors, double gamma, const double matrix[3][3], const double white_point[3]) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayCreateCalibratedColorFromPrimaries(pdfio_file_t *pdf, size_t num_colors, double gamma, double wx, double wy, double rx, double ry, double gx, double gy, double bx, double by) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayCreateICCBasedColor(pdfio_file_t *pdf, pdfio_obj_t *icc_object) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayCreateIndexedColor(pdfio_file_t *pdf, size_t num_colors, const unsigned char colors[][3]) PDFIO_PUBLIC;
+
 // PDF content drawing functions...
 extern bool		pdfioContentClip(pdfio_stream_t *st, bool even_odd) PDFIO_PUBLIC;
 extern bool		pdfioContentDrawImage(pdfio_stream_t *st, const char *name, double x, double y, double w, double h) PDFIO_PUBLIC;
@@ -149,8 +155,7 @@ extern double		pdfioImageGetHeight(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern double		pdfioImageGetWidth(pdfio_obj_t *obj) PDFIO_PUBLIC;
 
 // Page dictionary helpers...
-extern bool		pdfioPageDictAddICCColorSpace(pdfio_dict_t *dict, const char *name, pdfio_obj_t *obj) PDFIO_PUBLIC;
-extern bool		pdfioPageDictAddCalibratedColorSpace(pdfio_dict_t *dict, const char *name, size_t num_colors, double gamma, const double matrix[3][3], const double white_point[3]) PDFIO_PUBLIC;
+extern bool		pdfioPageDictAddColorSpace(pdfio_dict_t *dict, const char *name, pdfio_array_t *data) PDFIO_PUBLIC;
 extern bool		pdfioPageDictAddFont(pdfio_dict_t *dict, const char *name, pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern bool		pdfioPageDictAddImage(pdfio_dict_t *dict, const char *name, pdfio_obj_t *obj) PDFIO_PUBLIC;
 

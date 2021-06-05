@@ -31,6 +31,26 @@ const double	pdfioSRGBGamma = 2.2;
 const double	pdfioSRGBMatrix[3][3] = { { 0.4124, 0.3576, 0.1805 }, { 0.2126, 0.7152, 0.0722 }, { 0.0193, 0.1192, 0.9505 } };
 const double	pdfioSRGBWhitePoint[3] = { 0.9505, 1.0, 1.0890 };
 
+
+//
+// Local constants...
+//
+
+#define _PDFIO_PNG_CHUNK_IDAT	0x49444154	// Image data
+#define _PDFIO_PNG_CHUNK_IEND	0x49454e44	// Image end
+#define _PDFIO_PNG_CHUNK_IHDR	0x49484452	// Image header
+#define _PDFIO_PNG_CHUNK_PLTE	0x504c5445	// Palette
+#define _PDFIO_PNG_CHUNK_cHRM	0x6348524d	// Cromacities and white point
+#define _PDFIO_PNG_CHUNK_gAMA	0x67414d41	// Gamma correction
+#define _PDFIO_PNG_CHUNK_tRNS	0x74524e53	// Transparency information
+
+#define _PDIFO_PNG_TYPE_GRAY	0	// Grayscale
+#define _PDFIO_PNG_TYPE_RGB	2	// RGB
+#define _PDFIO_PNG_TYPE_INDEXED	3	// Indexed
+#define _PDFIO_PNG_TYPE_GRAYA	4	// Grayscale + alpha
+#define _PDFIO_PNG_TYPE_RGBA	6	// RGB + alpha
+
+
 //
 // Local types...
 //
@@ -44,8 +64,222 @@ typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
 
 static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
-static pdfio_array_t	*create_calcolor(pdfio_file_t *pdf, size_t num_colors, double gamma, const double matrix[3][3], const double white_point[3]);
 static bool		write_string(pdfio_stream_t *st, const char *s, bool *newline);
+
+
+//
+// 'pdfioArrayCreateCalibratedColorFromMatrix()' - Create a calibrated color space array using a CIE XYZ transform matrix.
+//
+
+pdfio_array_t *				// O - Color space array
+pdfioArrayCreateCalibratedColorFromMatrix(
+    pdfio_file_t *pdf,			// I - PDF file
+    size_t       num_colors,		// I - Number of colors (1 or 3)
+    double       gamma,			// I - Gamma value
+    const double matrix[3][3],		// I - XYZ transform
+    const double white_point[3])	// I - White point
+{
+  size_t	i;			// Looping var
+  pdfio_array_t	*calcolor;		// Array to hold calibrated color space
+  pdfio_dict_t	*dict;			// Dictionary to hold color values
+  pdfio_array_t	*value;			// Value for white point, matrix, and gamma
+
+
+  // Range check input...
+  if (!pdf || (num_colors != 1 && num_colors != 3) || gamma <= 0.0)
+    return (NULL);
+
+  // Create the array with two values - a name and a dictionary...
+  if ((calcolor = pdfioArrayCreate(pdf)) == NULL)
+    return (NULL);
+
+  if (num_colors == 1)
+    pdfioArrayAppendName(calcolor, "CalGray");
+  else
+    pdfioArrayAppendName(calcolor, "CalRGB");
+
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+    return (NULL);
+
+  pdfioArrayAppendDict(calcolor, dict);
+
+  // Then add the values...
+  if (num_colors == 1)
+  {
+    pdfioDictSetNumber(dict, "Gamma", gamma);
+  }
+  else
+  {
+    if ((value = pdfioArrayCreate(pdf)) == NULL)
+      return (NULL);
+
+    for (i = 0; i < num_colors; i ++)
+      pdfioArrayAppendNumber(value, gamma);
+
+    pdfioDictSetArray(dict, "Gamma", value);
+  }
+
+  if (white_point)
+  {
+    if ((value = pdfioArrayCreate(pdf)) == NULL)
+      return (NULL);
+
+    pdfioArrayAppendNumber(value, white_point[0]);
+    pdfioArrayAppendNumber(value, white_point[1]);
+    pdfioArrayAppendNumber(value, white_point[2]);
+
+    pdfioDictSetArray(dict, "WhitePoint", value);
+  }
+
+  if (num_colors > 1 && matrix)
+  {
+    if ((value = pdfioArrayCreate(pdf)) == NULL)
+      return (NULL);
+
+    pdfioArrayAppendNumber(value, matrix[0][0]);
+    pdfioArrayAppendNumber(value, matrix[1][0]);
+    pdfioArrayAppendNumber(value, matrix[2][0]);
+    pdfioArrayAppendNumber(value, matrix[0][1]);
+    pdfioArrayAppendNumber(value, matrix[1][1]);
+    pdfioArrayAppendNumber(value, matrix[2][1]);
+    pdfioArrayAppendNumber(value, matrix[0][2]);
+    pdfioArrayAppendNumber(value, matrix[1][2]);
+    pdfioArrayAppendNumber(value, matrix[2][2]);
+
+    pdfioDictSetArray(dict, "Matrix", value);
+  }
+
+  return (calcolor);
+}
+
+
+//
+// 'pdfioArrayCreateCalibratedColorFromPrimaries()' - Create a calibrated color sapce array using CIE xy primary chromacities.
+//
+
+pdfio_array_t *				// O - Color space array
+pdfioArrayCreateCalibratedColorFromPrimaries(
+    pdfio_file_t *pdf,			// I - PDF file
+    size_t       num_colors,		// I - Number of colors (1 or 3)
+    double       gamma,			// I - Gama value
+    double       wx,			// I - White point X chromacity
+    double       wy,			// I - White point Y chromacity
+    double       rx,			// I - Red X chromacity
+    double       ry,			// I - Red Y chromacity
+    double       gx,			// I - Green X chromacity
+    double       gy,			// I - Green Y chromacity
+    double       bx,			// I - Blue X chromacity
+    double       by)			// I - Blue Y chromacity
+{
+  double	z;			// Intermediate value
+  double	Xa, Xb, Xc,		// Transform values
+		Ya, Yb, Yc,
+		Za, Zb, Zc;
+  double	white_point[3];		// White point CIE XYZ value
+  double	matrix[3][3];		// CIE XYZ transform matrix
+
+
+  PDFIO_DEBUG("pdfioFileCreateCalibratedColorFromPrimaries(pdf=%p, num_colors=%lu, gamma=%g, wx=%g, wy=%g, rx=%g, ry=%g, gx=%g, gy=%g, bx=%g, by=%g)\n", pdf, (unsigned long)num_colors, gamma, wx, wy, rx, ry, gx, gy, bx, by);
+
+  // Range check input...
+  if (!pdf || (num_colors != 1 && num_colors != 3) || gamma <= 0.0 || ry == 0.0 || gy == 0.0 || by == 0.0)
+    return (NULL);
+
+  // Calculate the white point and transform matrix per the PDF spec...
+  z = wy * ((gx - bx) * ry - (rx - bx) * gy + (rx - gx) * by);
+
+  if (z == 0.0)
+    return (NULL);			// Undefined
+
+  Ya = ry * ((gx - bx) * wy - (wx - bx) * gy + (wx - gx) * by) / z;
+  Xa = Ya * rx / ry;
+  Za = Ya * ((1.0 - rx) / ry - 1.0);
+
+  Yb = gy * ((rx - bx) * wy - (wx - bx) * ry + (wx - rx) * by) / z;
+  Xb = Yb * gx / gy;
+  Zb = Yb * ((1.0 - gx) / gy - 1.0);
+
+  Yc = gy * ((rx - gx) * wy - (wx - gx) * ry + (wx - rx) * gy) / z;
+  Xc = Yc * bx / by;
+  Zc = Yc * ((1.0 - bx) / by - 1.0);
+
+  white_point[0] = Xa + Xb + Xc;
+  white_point[1] = Ya + Yb + Yc;
+  white_point[2] = Za + Zb + Zc;
+
+  matrix[0][0] = Xa;
+  matrix[0][1] = Ya;
+  matrix[0][2] = Za;
+  matrix[1][0] = Xb;
+  matrix[1][1] = Yb;
+  matrix[1][2] = Zb;
+  matrix[2][0] = Xc;
+  matrix[2][1] = Yc;
+  matrix[2][2] = Zc;
+
+  PDFIO_DEBUG("pdfioFileCreateCalibratedColorFromPrimaries: white_point=[%g %g %g]\n", white_point[0], white_point[1], white_point[2]);
+  PDFIO_DEBUG("pdfioFileCreateCalibratedColorFromPrimaries: matrix=[%g %g %g %g %g %g %g %g %g]\n", matrix[0][0], matrix[1][0], matrix[2][0], matrix[0][1], matrix[1][1], matrix[2][2], matrix[0][2], matrix[1][2], matrix[2][1]);
+
+  // Now that we have the white point and matrix, use those to make the color array...
+  return (pdfioArrayCreateCalibratedColorFromMatrix(pdf, num_colors, gamma, matrix, white_point));
+}
+
+
+//
+// 'pdfioArrayCreateICCBasedColor()' - Create an ICC-based color space array.
+//
+
+pdfio_array_t *				// O - Color array
+pdfioArrayCreateICCBasedColor(
+    pdfio_file_t *pdf,			// I - PDF file
+    pdfio_obj_t  *icc_object)		// I - ICC profile object
+{
+  pdfio_array_t	*icc_color;		// Color array
+
+
+  // Range check input...
+  if (!pdf || !icc_object)
+    return (NULL);
+
+  // Create the array with two values - a name and an object reference...
+  if ((icc_color = pdfioArrayCreate(pdf)) == NULL)
+    return (NULL);
+
+  pdfioArrayAppendName(icc_color, "ICCBased");
+  pdfioArrayAppendObject(icc_color, icc_object);
+
+  return (icc_color);
+}
+
+
+//
+// 'pdfioArrayCreateIndexedColor()' - Create an indexed color space array.
+//
+
+pdfio_array_t *				// O - Color array
+pdfioArrayCreateIndexedColor(
+    pdfio_file_t        *pdf,		// I - PDF file
+    size_t              num_colors,	// I - Number of colors
+    const unsigned char colors[][3])	// I - RGB values for colors
+{
+  pdfio_array_t	*indexed_color;		// Color array
+
+
+  // Range check input...
+  if (!pdf || num_colors < 1 || !colors)
+    return (NULL);
+
+  // Create the array with four values...
+  if ((indexed_color = pdfioArrayCreate(pdf)) == NULL)
+    return (NULL);
+
+  pdfioArrayAppendName(indexed_color, "Indexed");
+  pdfioArrayAppendName(indexed_color, "DeviceRGB");
+  pdfioArrayAppendNumber(indexed_color, num_colors - 1);
+  pdfioArrayAppendBinary(indexed_color, colors[0], num_colors * 3);
+
+  return (indexed_color);
+}
 
 
 //
@@ -817,157 +1051,6 @@ pdfioContentTextShowJustified(
 
 
 //
-// 'pdfioPageDictAddICCColorSpace()' - Add an ICC color space to the page
-//                                     dictionary.
-//
-
-bool					// O - `true` on success, `false` on failure
-pdfioPageDictAddICCColorSpace(
-    pdfio_dict_t *dict,			// I - Page dictionary
-    const char   *name,			// I - Color space name
-    pdfio_obj_t  *obj)			// I - ICC profile object
-{
-  (void)dict;
-  (void)name;
-  (void)obj;
-
-  return (false);
-}
-
-
-//
-// 'pdfioPageDictAddCalibratedColorSpace()' - Add a calibrated color space to
-//                                            the page dictionary.
-//
-
-bool					// O - `true` on success, `false` on failure
-pdfioPageDictAddCalibratedColorSpace(
-    pdfio_dict_t *dict,			// I - Page dictionary
-    const char   *name,			// I - Color space name
-    size_t       num_colors,		// I - Number of color components
-    double       gamma,			// I - Gamma value
-    const double matrix[3][3],		// I - Color transform matrix
-    const double white_point[3])	// I - CIE XYZ white point
-{
-  pdfio_dict_t	*resources;		// Resource dictionary
-  pdfio_dict_t	*colorspace;		// ColorSpace dictionary
-
-
-  // Range check input...
-  if (!dict || !name || !num_colors || gamma <= 0.0)
-    return (false);
-
-  // Get the ColorSpace dictionary...
-  if ((resources = pdfioDictGetDict(dict, "Resources")) == NULL)
-  {
-    if ((resources = pdfioDictCreate(dict->pdf)) == NULL)
-      return (false);
-
-    if (!pdfioDictSetDict(dict, "Resources", resources))
-      return (false);
-  }
-
-  if ((colorspace = pdfioDictGetDict(resources, "ColorSpace")) == NULL)
-  {
-    if ((colorspace = pdfioDictCreate(dict->pdf)) == NULL)
-      return (false);
-
-    if (!pdfioDictSetDict(resources, "ColorSpace", colorspace))
-      return (false);
-  }
-
-  // Now set the color space reference and return...
-  return (pdfioDictSetArray(colorspace, name, create_calcolor(dict->pdf, num_colors, gamma, matrix, white_point)));
-}
-
-
-//
-// 'pdfioPageDictAddFont()' - Add a font object to the page dictionary.
-//
-
-bool					// O - `true` on success, `false` on failure
-pdfioPageDictAddFont(
-    pdfio_dict_t *dict,			// I - Page dictionary
-    const char   *name,			// I - Font name
-    pdfio_obj_t  *obj)			// I - Font object
-{
-  pdfio_dict_t	*resources;		// Resource dictionary
-  pdfio_dict_t	*font;			// Font dictionary
-
-
-  // Range check input...
-  if (!dict || !name || !obj)
-    return (false);
-
-  // Get the Resources dictionary...
-  if ((resources = pdfioDictGetDict(dict, "Resources")) == NULL)
-  {
-    if ((resources = pdfioDictCreate(dict->pdf)) == NULL)
-      return (false);
-
-    if (!pdfioDictSetDict(dict, "Resources", resources))
-      return (false);
-  }
-
-  // Get the Font dictionary...
-  if ((font = pdfioDictGetDict(resources, "Font")) == NULL)
-  {
-    if ((font = pdfioDictCreate(dict->pdf)) == NULL)
-      return (false);
-
-    if (!pdfioDictSetDict(resources, "Font", font))
-      return (false);
-  }
-
-  // Now set the image reference in the Font resource dictionary and return...
-  return (pdfioDictSetObject(font, name, obj));
-}
-
-
-//
-// 'pdfioPageDictAddImage()' - Add an image object to the page dictionary.
-//
-
-bool					// O - `true` on success, `false` on failure
-pdfioPageDictAddImage(
-    pdfio_dict_t *dict,			// I - Page dictionary
-    const char   *name,			// I - Image name
-    pdfio_obj_t  *obj)			// I - Image object
-{
-  pdfio_dict_t	*resources;		// Resource dictionary
-  pdfio_dict_t	*xobject;		// XObject dictionary
-
-
-  // Range check input...
-  if (!dict || !name || !obj)
-    return (false);
-
-  // Get the Resources dictionary...
-  if ((resources = pdfioDictGetDict(dict, "Resources")) == NULL)
-  {
-    if ((resources = pdfioDictCreate(dict->pdf)) == NULL)
-      return (false);
-
-    if (!pdfioDictSetDict(dict, "Resources", resources))
-      return (false);
-  }
-
-  // Get the XObject dictionary...
-  if ((xobject = pdfioDictGetDict(resources, "XObject")) == NULL)
-  {
-    if ((xobject = pdfioDictCreate(dict->pdf)) == NULL)
-      return (false);
-
-    if (!pdfioDictSetDict(resources, "XObject", xobject))
-      return (false);
-  }
-
-  // Now set the image reference in the XObject resource dictionary and return...
-  return (pdfioDictSetObject(xobject, name, obj));
-}
-
-
-//
 // 'pdfioFileCreateBaseFontObject()' - Create one of the base 14 PDF fonts.
 //
 // This function creates one of the base 14 PDF fonts. The "name" parameter
@@ -1217,6 +1300,146 @@ pdfioImageGetWidth(pdfio_obj_t *obj)	// I - Image object
 
 
 //
+// 'pdfioPageDictAddColorSpace()' - Add a color space to the page dictionary.
+//
+// This function adds a named color space to the page dictionary.
+//
+// The names "DefaultCMYK", "DefaultGray", and "DefaultRGB" specify the default
+// device color space used for the page.
+//
+// The "data" array contains a calibrated, indexed, or ICC-based color space
+// array that was created using the
+// @link pdfioArrayCreateCalibratedColorFromMatrix@,
+// @link pdfioArrayCreateCalibratedColorFromPrimaries@,
+// @link pdfioArrayCreateICCBasedColor@, or
+// @link pdfioArrayCreateIndexedColor@ functions.
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioPageDictAddColorSpace(
+    pdfio_dict_t  *dict,		// I - Page dictionary
+    const char    *name,		// I - Color space name
+    pdfio_array_t *data)		// I - Color space array
+{
+  pdfio_dict_t	*resources;		// Resource dictionary
+  pdfio_dict_t	*colorspace;		// ColorSpace dictionary
+
+
+  // Range check input...
+  if (!dict || !name || !data)
+    return (false);
+
+  // Get the ColorSpace dictionary...
+  if ((resources = pdfioDictGetDict(dict, "Resources")) == NULL)
+  {
+    if ((resources = pdfioDictCreate(dict->pdf)) == NULL)
+      return (false);
+
+    if (!pdfioDictSetDict(dict, "Resources", resources))
+      return (false);
+  }
+
+  if ((colorspace = pdfioDictGetDict(resources, "ColorSpace")) == NULL)
+  {
+    if ((colorspace = pdfioDictCreate(dict->pdf)) == NULL)
+      return (false);
+
+    if (!pdfioDictSetDict(resources, "ColorSpace", colorspace))
+      return (false);
+  }
+
+  // Now set the color space reference and return...
+  return (pdfioDictSetArray(colorspace, name, data));
+}
+
+
+//
+// 'pdfioPageDictAddFont()' - Add a font object to the page dictionary.
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioPageDictAddFont(
+    pdfio_dict_t *dict,			// I - Page dictionary
+    const char   *name,			// I - Font name
+    pdfio_obj_t  *obj)			// I - Font object
+{
+  pdfio_dict_t	*resources;		// Resource dictionary
+  pdfio_dict_t	*font;			// Font dictionary
+
+
+  // Range check input...
+  if (!dict || !name || !obj)
+    return (false);
+
+  // Get the Resources dictionary...
+  if ((resources = pdfioDictGetDict(dict, "Resources")) == NULL)
+  {
+    if ((resources = pdfioDictCreate(dict->pdf)) == NULL)
+      return (false);
+
+    if (!pdfioDictSetDict(dict, "Resources", resources))
+      return (false);
+  }
+
+  // Get the Font dictionary...
+  if ((font = pdfioDictGetDict(resources, "Font")) == NULL)
+  {
+    if ((font = pdfioDictCreate(dict->pdf)) == NULL)
+      return (false);
+
+    if (!pdfioDictSetDict(resources, "Font", font))
+      return (false);
+  }
+
+  // Now set the image reference in the Font resource dictionary and return...
+  return (pdfioDictSetObject(font, name, obj));
+}
+
+
+//
+// 'pdfioPageDictAddImage()' - Add an image object to the page dictionary.
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioPageDictAddImage(
+    pdfio_dict_t *dict,			// I - Page dictionary
+    const char   *name,			// I - Image name
+    pdfio_obj_t  *obj)			// I - Image object
+{
+  pdfio_dict_t	*resources;		// Resource dictionary
+  pdfio_dict_t	*xobject;		// XObject dictionary
+
+
+  // Range check input...
+  if (!dict || !name || !obj)
+    return (false);
+
+  // Get the Resources dictionary...
+  if ((resources = pdfioDictGetDict(dict, "Resources")) == NULL)
+  {
+    if ((resources = pdfioDictCreate(dict->pdf)) == NULL)
+      return (false);
+
+    if (!pdfioDictSetDict(dict, "Resources", resources))
+      return (false);
+  }
+
+  // Get the XObject dictionary...
+  if ((xobject = pdfioDictGetDict(resources, "XObject")) == NULL)
+  {
+    if ((xobject = pdfioDictCreate(dict->pdf)) == NULL)
+      return (false);
+
+    if (!pdfioDictSetDict(resources, "XObject", xobject))
+      return (false);
+  }
+
+  // Now set the image reference in the XObject resource dictionary and return...
+  return (pdfioDictSetObject(xobject, name, obj));
+}
+
+
+//
 // 'copy_jpeg()' - Copy a JPEG image.
 //
 
@@ -1327,7 +1550,7 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
   pdfioDictSetNumber(dict, "Width", width);
   pdfioDictSetNumber(dict, "Height", height);
   pdfioDictSetNumber(dict, "BitsPerComponent", 8);
-  pdfioDictSetArray(dict, "ColorSpace", create_calcolor(dict->pdf, num_colors, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
+  pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateCalibratedColorFromMatrix(dict->pdf, num_colors, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
   pdfioDictSetName(dict, "Filter", "DCTDecode");
 
   obj = pdfioFileCreateObject(dict->pdf, dict);
@@ -1357,92 +1580,59 @@ static pdfio_obj_t *			// O - Object or `NULL` on error
 copy_png(pdfio_dict_t *dict,		// I - Dictionary
          int          fd)		// I - File descriptor
 {
-  // TODO: Implement copy_png
-  (void)dict;
-  (void)fd;
+  pdfio_obj_t	*obj = NULL;		// Object
+  pdfio_stream_t *st = NULL;		// Stream for JPEG data
+  ssize_t	bytes;			// Bytes read
+  unsigned char	buffer[16384];		// Read buffer
+  unsigned	length,			// Length
+		type,			// Chunk code
+		crc,			// CRC-32
+		width = 0,		// Width
+		height = 0;		// Height
+  unsigned char	bit_depth = 0,		// Bit depth
+		color_type = 0;		// Color type
+
+
+  // Read the file header...
+  if (read(fd, buffer, 8) != 8)
+    return (NULL);
+
+  // Then read chunks until we have the image data...
+  while (read(fd, buffer, 8) == 8)
+  {
+    // Get the chunk length and type values...
+    length = (unsigned)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
+    type   = (unsigned)((buffer[4] << 24) | (buffer[5] << 16) | (buffer[6] << 8) | buffer[7]);
+
+    switch (type)
+    {
+      case _PDFIO_PNG_CHUNK_IDAT : // Image data
+          break;
+
+      case _PDFIO_PNG_CHUNK_IEND : // Image end
+          break;
+
+      case _PDFIO_PNG_CHUNK_IHDR : // Image header
+          break;
+
+      case _PDFIO_PNG_CHUNK_PLTE : // Palette
+          break;
+
+      case _PDFIO_PNG_CHUNK_cHRM : // Cromacities and white point
+          break;
+
+      case _PDFIO_PNG_CHUNK_gAMA : // Gamma correction
+          break;
+
+      case _PDFIO_PNG_CHUNK_tRNS : // Transparency information
+          break;
+
+      default :
+          break;
+    }
+  }
+
   return (NULL);
-}
-
-
-//
-// 'create_calcolor()' - Create a CalGray or CalRGB color array.
-//
-
-static pdfio_array_t *			// O - Array
-create_calcolor(
-    pdfio_file_t *pdf,			// I - PDF file
-    size_t       num_colors,		// I - Number of colors (1 or 3)
-    double       gamma,			// I - Gamma value
-    const double matrix[3][3],		// I - XYZ transform
-    const double white_point[3])	// I - White point
-{
-  size_t	i;			// Looping var
-  pdfio_array_t	*calcolor;		// Array to hold calibrated color space
-  pdfio_dict_t	*dict;			// Dictionary to hold color values
-  pdfio_array_t	*value;			// Value for white point, matrix, and gamma
-
-
-  // Create the array with two values - a name and a dictionary...
-  if ((calcolor = pdfioArrayCreate(pdf)) == NULL)
-    return (NULL);
-
-  if (num_colors == 1)
-    pdfioArrayAppendName(calcolor, "CalGray");
-  else
-    pdfioArrayAppendName(calcolor, "CalRGB");
-
-  if ((dict = pdfioDictCreate(pdf)) == NULL)
-    return (NULL);
-
-  pdfioArrayAppendDict(calcolor, dict);
-
-  // Then add the values...
-  if (num_colors == 1)
-  {
-    pdfioDictSetNumber(dict, "Gamma", gamma);
-  }
-  else
-  {
-    if ((value = pdfioArrayCreate(pdf)) == NULL)
-      return (NULL);
-
-    for (i = 0; i < num_colors; i ++)
-      pdfioArrayAppendNumber(value, gamma);
-
-    pdfioDictSetArray(dict, "Gamma", value);
-  }
-
-  if (white_point)
-  {
-    if ((value = pdfioArrayCreate(pdf)) == NULL)
-      return (NULL);
-
-    pdfioArrayAppendNumber(value, white_point[0]);
-    pdfioArrayAppendNumber(value, white_point[1]);
-    pdfioArrayAppendNumber(value, white_point[2]);
-
-    pdfioDictSetArray(dict, "WhitePoint", value);
-  }
-
-  if (num_colors > 1 && matrix)
-  {
-    if ((value = pdfioArrayCreate(pdf)) == NULL)
-      return (NULL);
-
-    pdfioArrayAppendNumber(value, matrix[0][0]);
-    pdfioArrayAppendNumber(value, matrix[1][0]);
-    pdfioArrayAppendNumber(value, matrix[2][0]);
-    pdfioArrayAppendNumber(value, matrix[0][1]);
-    pdfioArrayAppendNumber(value, matrix[1][1]);
-    pdfioArrayAppendNumber(value, matrix[2][1]);
-    pdfioArrayAppendNumber(value, matrix[0][2]);
-    pdfioArrayAppendNumber(value, matrix[1][2]);
-    pdfioArrayAppendNumber(value, matrix[2][2]);
-
-    pdfioDictSetArray(dict, "Matrix", value);
-  }
-
-  return (calcolor);
 }
 
 

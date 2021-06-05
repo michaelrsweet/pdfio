@@ -468,10 +468,10 @@ pdfioDictSetArray(pdfio_dict_t  *dict,	// I - Dictionary
 
 bool					// O - `true` on success, `false` on failure
 pdfioDictSetBinary(
-    pdfio_dict_t  *dict,		// I - Dictionary
-    const char    *key,			// I - Key
-    unsigned char *value,		// I - Value
-    size_t        valuelen)		// I - Length of value
+    pdfio_dict_t        *dict,		// I - Dictionary
+    const char          *key,		// I - Key
+    const unsigned char *value,		// I - Value
+    size_t              valuelen)	// I - Length of value
 {
   _pdfio_value_t temp;			// New value
 
