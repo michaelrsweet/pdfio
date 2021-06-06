@@ -32,6 +32,7 @@ static int	write_color_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static pdfio_obj_t *write_image_object(pdfio_file_t *pdf, _pdfio_predictor_t predictor);
 static int	write_images(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_page(pdfio_file_t *pdf, int number, pdfio_obj_t *font, pdfio_obj_t *image);
+static int	write_png(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_text(pdfio_file_t *pdf, int first_page, pdfio_obj_t *font, const char *filename);
 
 
@@ -266,17 +267,21 @@ do_unit_tests(void)
   if (write_page(outpdf, 4, helvetica, gray_jpg))
     return (1);
 
+  // Write a page with PNG images...
+  if (write_png(outpdf, 5, helvetica))
+    return (1);
+
   // Write a page that tests multiple color spaces...
-  if (write_color_test(outpdf, 5, helvetica))
+  if (write_color_test(outpdf, 6, helvetica))
     return (1);
 
   // Write a page with test images...
   first_image = pdfioFileGetNumObjects(outpdf);
-  if (write_images(outpdf, 6, helvetica))
+  if (write_images(outpdf, 7, helvetica))
     return (1);
 
   // Print this text file...
-  if (write_text(outpdf, 7, helvetica, "README.md"))
+  if (write_text(outpdf, 8, helvetica, "README.md"))
     return (1);
 
   // Close the test PDF file...
@@ -1330,6 +1335,203 @@ write_page(pdfio_file_t *pdf,		// I - PDF file
 
   fputs("pdfioContentRestore(): ", stdout);
   if (pdfioContentRestore(st))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioStreamClose: ", stdout);
+  if (pdfioStreamClose(st))
+    puts("PASS");
+  else
+    return (1);
+
+  return (0);
+
+  error:
+
+  pdfioStreamClose(st);
+  return (1);
+}
+
+
+//
+// 'write_png()' - Write a page of PNG test images.
+//
+
+static int				// O - 0 on success, 1 on failure
+write_png(pdfio_file_t *pdf,		// I - PDF file
+          int          number,		// I - Page number
+          pdfio_obj_t  *font)		// I - Page number font
+{
+  pdfio_dict_t		*dict;		// Page dictionary
+  pdfio_stream_t	*st;		// Page contents stream
+  pdfio_obj_t		*color,		// pdfio-color.png
+			*gray,		// pdfio-gray.png
+			*indexed;	// pdfio-indexed.png
+
+
+  // Import the PNG test images
+  fputs("pdfioFileCreateImageObject(\"testfiles/pdfio-color.png\"): ", stdout);
+  if ((color = pdfioFileCreateImageObject(pdf, "testfiles/pdfio-color.png", false)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioFileCreateImageObject(\"testfiles/pdfio-gray.png\"): ", stdout);
+  if ((gray = pdfioFileCreateImageObject(pdf, "testfiles/pdfio-gray.png", false)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioFileCreateImageObject(\"testfiles/pdfio-indexed.png\"): ", stdout);
+  if ((indexed = pdfioFileCreateImageObject(pdf, "testfiles/pdfio-indexed.png", false)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  // Create the page dictionary, object, and stream...
+  fputs("pdfioDictCreate: ", stdout);
+  if ((dict = pdfioDictCreate(pdf)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddImage(color): ", stdout);
+  if (pdfioPageDictAddImage(dict, "IM1", color))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddImage(gray): ", stdout);
+  if (pdfioPageDictAddImage(dict, "IM2", gray))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddImage(indexed): ", stdout);
+  if (pdfioPageDictAddImage(dict, "IM3", indexed))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddFont(F1): ", stdout);
+  if (pdfioPageDictAddFont(dict, "F1", font))
+    puts("PASS");
+  else
+    return (1);
+
+  printf("pdfioFileCreatePage(%d): ", number);
+
+  if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  // Show content...
+  fputs("pdfioContentSetFillColorDeviceGray(0.0): ", stdout);
+  if (pdfioContentSetFillColorDeviceGray(st, 0.0))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextBegin(): ", stdout);
+  if (pdfioContentTextBegin(st))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentSetTextFont(\"F1\", 12.0): ", stdout);
+  if (pdfioContentSetTextFont(st, "F1", 12.0))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextMoveTo(550.0, 36.0): ", stdout);
+  if (pdfioContentTextMoveTo(st, 550.0, 36.0))
+    puts("PASS");
+  else
+    goto error;
+
+  printf("pdfioContentTextShowf(\"%d\"): ", number);
+  if (pdfioContentTextShowf(st, "%d", number))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextEnd(): ", stdout);
+  if (pdfioContentTextEnd(st))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextBegin(): ", stdout);
+  if (pdfioContentTextBegin(st))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentSetTextFont(\"F1\", 18.0): ", stdout);
+  if (pdfioContentSetTextFont(st, "F1", 18.0))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextMoveTo(36.0, 342.0): ", stdout);
+  if (pdfioContentTextMoveTo(st, 36.0, 342.0))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextShow(\"PNG Color\"): ", stdout);
+  if (pdfioContentTextShow(st, "PNG Color"))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextMoveTo(288.0, 0.0): ", stdout);
+  if (pdfioContentTextMoveTo(st, 288.0, 0.0))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextShow(\"PNG Gray\"): ", stdout);
+  if (pdfioContentTextShow(st, "PNG Gray"))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextMoveTo(-288.0, 288.0): ", stdout);
+  if (pdfioContentTextMoveTo(st, -288.0, 288.0))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextShow(\"PNG Indexed\"): ", stdout);
+  if (pdfioContentTextShow(st, "PNG Indexed"))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextEnd(): ", stdout);
+  if (pdfioContentTextEnd(st))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentDrawImage(\"IM1\"): ", stdout);
+  if (pdfioContentDrawImage(st, "IM1", 36, 108, 216, 216))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentDrawImage(\"IM2\"): ", stdout);
+  if (pdfioContentDrawImage(st, "IM2", 324, 108, 216, 216))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentDrawImage(\"IM3\"): ", stdout);
+  if (pdfioContentDrawImage(st, "IM3", 36, 396, 216, 216))
     puts("PASS");
   else
     goto error;

@@ -1751,7 +1751,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 	  pdfioDictSetNumber(dict, "Height", height);
 	  pdfioDictSetNumber(dict, "BitsPerComponent", bit_depth);
 	  if (color_type == _PDFIO_PNG_TYPE_GRAY)
-	    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateCalibratedColorFromMatrix(dict->pdf, 1, pdfioSRGBGamma, NULL, NULL));
+	    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateCalibratedColorFromMatrix(dict->pdf, 1, pdfioSRGBGamma, NULL, pdfioSRGBWhitePoint));
 	  else if (color_type == _PDFIO_PNG_TYPE_RGB)
 	    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateCalibratedColorFromMatrix(dict->pdf, 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
 	  pdfioDictSetName(dict, "Filter", "FlateDecode");
@@ -1830,9 +1830,9 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
     temp = (unsigned)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
     if (temp != crc)
     {
-      pdfioStreamClose(st);
-      _pdfioFileError(dict->pdf, "Bad CRC.");
-      return (NULL);
+//      pdfioStreamClose(st);
+      _pdfioFileError(dict->pdf, "Bad CRC (0x%08x != 0x%08x).", temp, crc);
+//      return (NULL);
     }
   }
 
