@@ -87,7 +87,7 @@ extern const double	pdfioSRGBWhitePoint[3] PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioArrayCreateCalibratedColorFromMatrix(pdfio_file_t *pdf, size_t num_colors, double gamma, const double matrix[3][3], const double white_point[3]) PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioArrayCreateCalibratedColorFromPrimaries(pdfio_file_t *pdf, size_t num_colors, double gamma, double wx, double wy, double rx, double ry, double gx, double gy, double bx, double by) PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioArrayCreateICCBasedColor(pdfio_file_t *pdf, pdfio_obj_t *icc_object) PDFIO_PUBLIC;
-extern pdfio_array_t	*pdfioArrayCreateIndexedColor(pdfio_file_t *pdf, size_t num_colors, const unsigned char colors[][3]) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayCreateIndexedColor(pdfio_file_t *pdf, size_t num_colors, const unsigned char *colors) PDFIO_PUBLIC;
 
 // PDF content drawing functions...
 extern bool		pdfioContentClip(pdfio_stream_t *st, bool even_odd) PDFIO_PUBLIC;
