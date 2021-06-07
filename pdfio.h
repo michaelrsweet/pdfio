@@ -93,8 +93,6 @@ typedef enum pdfio_valtype_e		// PDF value types
   PDFIO_VALTYPE_NUMBER,			// Number (integer or real)
   PDFIO_VALTYPE_STRING			// String
 } pdfio_valtype_t;
-typedef struct _pdfio_value_s pdf_value_t;
-					// PDF value of any type
 
 
 //

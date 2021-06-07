@@ -89,9 +89,7 @@ command or as environment variables:
 Visual Studio Project
 ---------------------
 
-> Note: I haven't yet added this...
-
-The Visual Studio solution ("pdfio.sln") is provided for Windows developers
+The Visual Studio solution ("pdfio.sln") is provided for Windows developers and
 generates both a static library and DLL.
 
 
@@ -124,6 +122,9 @@ CFLAGS  +=      `pkg-config --cflags pdfio`
 LIBS    +=      `pkg-config --libs pdfio`
 ```
 
+On Windows, you need to link to the `PDFIO.LIB` (static) or `PDFIO1.LIB` (DLL)
+libraries and include the "zlib" NuGet package dependency.
+
 
 Header Files
 ------------
@@ -134,8 +135,8 @@ PDFio provides a primary header file that is always used:
 #include <pdfio.h>
 ```
 
-PDFio also provides content helper functions that are defined in a separate
-header file:
+PDFio also provides helper functions for producing PDF content that are defined
+in a separate header file:
 
 ```c
 #include <pdfio-content.h>
@@ -154,17 +155,117 @@ PDFio exposes several types:
 - `pdfio_stream_t`: An object stream
 
 
-PDF Files
----------
+Reading PDF Files
+-----------------
 
+You open an existing PDF file using the `pdfioFileOpen` function:
 
-PDF Values
-----------
+```c
+pdfio_file_t *pdf = pdfioFileOpen("myinputfile.pdf", error_cb, error_data);
+
+```
+
+where the three arguments to the function are the filename ("myinputfile.pdf"),
+an optional error callback function (`error_cb`), and an optional pointer value
+for the error callback function (`error_data`).  The error callback is called
+for both errors and warnings and accepts the `pdfio_file_t` pointer, a message
+string, and the callback pointer value, for example:
+
+```c
+bool
+error_cb(pdfio_file_t *pdf, const char *message, void *data)
+{
+  (void)data; // This callback does not use the data pointer
+
+  fprintf(stderr, "%s: %s\n", pdfioFileGetName(pdf), message);
+
+  // Return false to treat warnings as errors
+  return (false);
+}
+```
+
+The default error callback (`NULL`) does the equivalent of the above.
+
+Each PDF file contains one or more pages.  The `pdfioFileGetNumPages` function
+returns the number of pages in the file while the `pdfioFileGetPage` function
+gets the specified page in the PDF file:
+
+```c
+pdfio_file_t *pdf;   // PDF file
+size_t       i;      // Looping var
+size_t       count;  // Number of pages
+pdfio_obj_t  *page;  // Current page
+
+// Iterate the pages in the PDF file
+for (i = 0, count = pdfioFileGetNumPages(pdf); i < count; i ++)
+{
+  page = pdfioFileGetPage(pdf, i);
+  // do something with page
+}
+```
+
+Each page is represented by a "page tree" object (what `pdfioFileGetPage`
+returns) that specifies information about the page and one or more "content"
+objects that contain the images, fonts, text, and graphics that appear on the
+page.
+
+The `pdfioFileClose` function closes a PDF file and frees all memory that was
+used for it:
+
+```c
+pdfioFileClose(pdf);
+```
+
+Writing PDF Files
+-----------------
+
+You create a new PDF file using the `pdfioFileCreate` function:
+
+```c
+pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
+pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // 0.5" margins
+
+pdfio_file_t *pdf = pdfioFileCreate("myoutputfile.pdf", "2.0", &media_box, &crop_box, error_cb, error_data);
+```
+
+where the six arguments to the function are the filename ("myoutputfile.pdf"),
+PDF version ("2.0"), media box (`media_box`), crop box (`crop_box`), an optional
+error callback function (`error_cb`), and an optional pointer value for the
+error callback function (`error_data`).
+
+Once the file is created, use the `pdfioFileCreateObj`, `pdfioFileCreatePage`,
+and `pdfioPageCopy` functions to create objects and pages in the file.
+
+Finally, the `pdfioFileClose` function writes the PDF cross-reference and
+"trailer" information, closes the file, and frees all memory that was used for
+it.
 
 
 PDF Objects
 -----------
 
+PDF objects are identified using two numbers - the object number (1 to N) and
+the object generation (0 to 65535) that specifies a particular version of an
+object.  An object's numbers are returned by the `pdfioObjGetNumber` and
+`pdfioObjGetGeneration` functions.  You can find a numbered object using the
+`pdfioFileFindObj` function.
+
+Objects contain values (typically dictionaries) and usually an associated data
+stream containing images, fonts, ICC profiles, and page content.  PDFio provides several accessor functions to get the value(s) associated with an object:
+
+- `pdfioObjGetArray` returns an object's array value, if any
+- `pdfioObjGetDict` returns an object's dictionary value, if any
+- `pdfioObjGetLength` returns the length of the data stream, if any
+- `pdfioObjGetSubtype` returns the sub-type name of the object, for example
+  "Image" for an image object.
+- `pdfioObjGetType` returns the type name of the object, for example "XObject"
+  for an image object.
+
 
 PDF Streams
 -----------
+
+
+PDF Content Helper Functions
+----------------------------
+

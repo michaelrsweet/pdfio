@@ -261,10 +261,11 @@ span.string {
 <li><a href="#header-files">Header Files</a></li>
 </ul></li>
 <li><a href="#api-overview">API Overview</a><ul class="subcontents">
-<li><a href="#pdf-files">PDF Files</a></li>
-<li><a href="#pdf-values">PDF Values</a></li>
+<li><a href="#reading-pdf-files">Reading PDF Files</a></li>
+<li><a href="#writing-pdf-files">Writing PDF Files</a></li>
 <li><a href="#pdf-objects">PDF Objects</a></li>
 <li><a href="#pdf-streams">PDF Streams</a></li>
+<li><a href="#pdf-content-helper-functions">PDF Content Helper Functions</a></li>
 </ul></li>
 <li><a href="#FUNCTIONS">Functions</a><ul class="subcontents">
 <li><a href="#pdfioArrayAppendArray">pdfioArrayAppendArray</a></li>
@@ -413,7 +414,6 @@ span.string {
 <li><a href="#pdfioStringCreatef">pdfioStringCreatef</a></li>
 </ul></li>
 <li><a href="#TYPES">Data Types</a><ul class="subcontents">
-<li><a href="#pdf_value_t">pdf_value_t</a></li>
 <li><a href="#pdfio_array_t">pdfio_array_t</a></li>
 <li><a href="#pdfio_dict_t">pdfio_dict_t</a></li>
 <li><a href="#pdfio_error_cb_t">pdfio_error_cb_t</a></li>
@@ -509,10 +509,7 @@ make install-shared
 </li>
 </ul>
 <h3 class="title" id="visual-studio-project">Visual Studio Project</h3>
-<blockquote>
-<p>Note: I haven't yet added this...</p>
-</blockquote>
-<p>The Visual Studio solution (&quot;pdfio.sln&quot;) is provided for Windows developers generates both a static library and DLL.</p>
+<p>The Visual Studio solution (&quot;pdfio.sln&quot;) is provided for Windows developers and generates both a static library and DLL.</p>
 <h3 class="title" id="xcode-project">Xcode Project</h3>
 <p>There is also an Xcode project (&quot;pdfio.xcodeproj&quot;) you can use on macOS which generates a static library that will be installed under &quot;/usr/local&quot; with:</p>
 <pre><code>sudo xcodebuild install
@@ -530,11 +527,12 @@ fi
 <pre><code class="language-make">CFLAGS  +=      `pkg-config --cflags pdfio`
 LIBS    +=      `pkg-config --libs pdfio`
 </code></pre>
+<p>On Windows, you need to link to the <code>PDFIO.LIB</code> (static) or <code>PDFIO1.LIB</code> (DLL) libraries and include the &quot;zlib&quot; NuGet package dependency.</p>
 <h3 class="title" id="header-files">Header Files</h3>
 <p>PDFio provides a primary header file that is always used:</p>
 <pre><code class="language-c"><span class="directive">#include &lt;pdfio.h&gt;</span>
 </code></pre>
-<p>PDFio also provides content helper functions that are defined in a separate header file:</p>
+<p>PDFio also provides helper functions for producing PDF content that are defined in a separate header file:</p>
 <pre><code class="language-c"><span class="directive">#include &lt;pdfio-content.h&gt;</span>
 </code></pre>
 <h2 class="title" id="api-overview">API Overview</h2>
@@ -551,10 +549,67 @@ LIBS    +=      `pkg-config --libs pdfio`
 <li><p><code>pdfio_stream_t</code>: An object stream</p>
 </li>
 </ul>
-<h3 class="title" id="pdf-files">PDF Files</h3>
-<h3 class="title" id="pdf-values">PDF Values</h3>
+<h3 class="title" id="reading-pdf-files">Reading PDF Files</h3>
+<p>You open an existing PDF file using the <code>pdfioFileOpen</code> function:</p>
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileOpen(<span class="string">&quot;myinputfile.pdf&quot;</span>, error_cb, error_data);
+</code></pre>
+<p>where the three arguments to the function are the filename (&quot;myinputfile.pdf&quot;), an optional error callback function (<code>error_cb</code>), and an optional pointer value for the error callback function (<code>error_data</code>). The error callback is called for both errors and warnings and accepts the <code>pdfio_file_t</code> pointer, a message string, and the callback pointer value, for example:</p>
+<pre><code class="language-c"><span class="reserved">bool</span>
+error_cb(pdfio_file_t *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *message, <span class="reserved">void</span> *data)
+{
+  (<span class="reserved">void</span>)data; <span class="comment">// This callback does not use the data pointer</span>
+
+  fprintf(stderr, <span class="string">&quot;%s: %s\n&quot;</span>, pdfioFileGetName(pdf), message);
+
+  <span class="comment">// Return false to treat warnings as errors</span>
+  <span class="reserved">return</span> (<span class="reserved">false</span>);
+}
+</code></pre>
+<p>The default error callback (<code>NULL</code>) does the equivalent of the above.</p>
+<p>Each PDF file contains one or more pages. The <code>pdfioFileGetNumPages</code> function returns the number of pages in the file while the <code>pdfioFileGetPage</code> function gets the specified page in the PDF file:</p>
+<pre><code class="language-c">pdfio_file_t *pdf;   <span class="comment">// PDF file</span>
+size_t       i;      <span class="comment">// Looping var</span>
+size_t       count;  <span class="comment">// Number of pages</span>
+pdfio_obj_t  *page;  <span class="comment">// Current page</span>
+
+<span class="comment">// Iterate the pages in the PDF file</span>
+<span class="reserved">for</span> (i = <span class="number">0</span>, count = pdfioFileGetNumPages(pdf); i &lt; count; i ++)
+{
+  page = pdfioFileGetPage(pdf, i);
+  <span class="comment">// do something with page</span>
+}
+</code></pre>
+<p>Each page is represented by a &quot;page tree&quot; object (what <code>pdfioFileGetPage</code> returns) that specifies information about the page and one or more &quot;content&quot; objects that contain the images, fonts, text, and graphics that appear on the page.</p>
+<p>The <code>pdfioFileClose</code> function closes a PDF file and frees all memory that was used for it:</p>
+<pre><code class="language-c">pdfioFileClose(pdf);
+</code></pre>
+<h3 class="title" id="writing-pdf-files">Writing PDF Files</h3>
+<p>You create a new PDF file using the <code>pdfioFileCreate</code> function:</p>
+<pre><code class="language-c">pdfio_rect_t media_box = { <span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">612.0</span>, <span class="number">792.0</span> };  <span class="comment">// US Letter</span>
+pdfio_rect_t crop_box = { <span class="number">36.0</span>, <span class="number">36.0</span>, <span class="number">576.0</span>, <span class="number">756.0</span> }; <span class="comment">// 0.5&quot; margins</span>
+
+pdfio_file_t *pdf = pdfioFileCreate(<span class="string">&quot;myoutputfile.pdf&quot;</span>, <span class="string">&quot;2.0&quot;</span>, &amp;media_box, &amp;crop_box, error_cb, error_data);
+</code></pre>
+<p>where the six arguments to the function are the filename (&quot;myoutputfile.pdf&quot;), PDF version (&quot;2.0&quot;), media box (<code>media_box</code>), crop box (<code>crop_box</code>), an optional error callback function (<code>error_cb</code>), and an optional pointer value for the error callback function (<code>error_data</code>).</p>
+<p>Once the file is created, use the <code>pdfioFileCreateObj</code>, <code>pdfioFileCreatePage</code>, and <code>pdfioPageCopy</code> functions to create objects and pages in the file.</p>
+<p>Finally, the <code>pdfioFileClose</code> function writes the PDF cross-reference and &quot;trailer&quot; information, closes the file, and frees all memory that was used for it.</p>
 <h3 class="title" id="pdf-objects">PDF Objects</h3>
+<p>PDF objects are identified using two numbers - the object number (1 to N) and the object generation (0 to 65535) that specifies a particular version of an object. An object's numbers are returned by the <code>pdfioObjGetNumber</code> and <code>pdfioObjGetGeneration</code> functions. You can find a numbered object using the <code>pdfioFileFindObj</code> function.</p>
+<p>Objects contain values (typically dictionaries) and usually an associated data stream containing images, fonts, ICC profiles, and page content. PDFio provides several accessor functions to get the value(s) associated with an object:</p>
+<ul>
+<li><p><code>pdfioObjGetArray</code> returns an object's array value, if any</p>
+</li>
+<li><p><code>pdfioObjGetDict</code> returns an object's dictionary value, if any</p>
+</li>
+<li><p><code>pdfioObjGetLength</code> returns the length of the data stream, if any</p>
+</li>
+<li><p><code>pdfioObjGetSubtype</code> returns the sub-type name of the object, for example &quot;Image&quot; for an image object.</p>
+</li>
+<li><p><code>pdfioObjGetType</code> returns the type name of the object, for example &quot;XObject&quot; for an image object.</p>
+</li>
+</ul>
 <h3 class="title" id="pdf-streams">PDF Streams</h3>
+<h3 class="title" id="pdf-content-helper-functions">PDF Content Helper Functions</h3>
 <h2 class="title"><a id="FUNCTIONS">Functions</a></h2>
 <h3 class="function"><a id="pdfioArrayAppendArray">pdfioArrayAppendArray</a></h3>
 <p class="description">Add an array value to an array.</p>
@@ -2597,7 +2652,7 @@ char *pdfioStringCreate(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const cha
 <p class="description">Durable string pointer or <code>NULL</code> on error</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">This function creates a literal string associated with the PDF file
-&quot;pwg&quot;.  The &quot;s&quot; string points to a nul-terminated C string.<br>
+&quot;pdf&quot;.  The &quot;s&quot; string points to a nul-terminated C string.<br>
 <br>
 <code>NULL</code> is returned on error, otherwise a <code>char *</code> that is valid until
 <code>pdfioFileClose</code> is called.</p>
@@ -2618,16 +2673,11 @@ char *pdfioStringCreatef(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const ch
 <p class="description">Durable string pointer or <code>NULL</code> on error</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">This function creates a formatted string associated with the PDF file
-&quot;pwg&quot;.  The &quot;format&quot; string contains <code>printf</code>-style format characters.<br>
+&quot;pdf&quot;.  The &quot;format&quot; string contains <code>printf</code>-style format characters.<br>
 <br>
 <code>NULL</code> is returned on error, otherwise a <code>char *</code> that is valid until
 <code>pdfioFileClose</code> is called.</p>
 <h2 class="title"><a id="TYPES">Data Types</a></h2>
-<h3 class="typedef"><a id="pdf_value_t">pdf_value_t</a></h3>
-<p class="description">PDF value of any type</p>
-<p class="code">
-typedef struct _pdfio_value_s pdf_value_t;
-</p>
 <h3 class="typedef"><a id="pdfio_array_t">pdfio_array_t</a></h3>
 <p class="description">Array of PDF values</p>
 <p class="code">

@@ -105,7 +105,7 @@ Visual Studio Project
 
 > Note: I haven't yet added this...
 
-The Visual Studio solution ("pdfio.sln") is provided for Windows developers
+The Visual Studio solution ("pdfio.sln") is provided for Windows developers and
 generates both a static library and DLL.
 
 

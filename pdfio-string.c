@@ -25,7 +25,7 @@ static int	compare_strings(char **a, char **b);
 // 'pdfioStringCreate()' - Create a durable literal string.
 //
 // This function creates a literal string associated with the PDF file
-// "pwg".  The "s" string points to a nul-terminated C string.
+// "pdf".  The "s" string points to a nul-terminated C string.
 //
 // `NULL` is returned on error, otherwise a `char *` that is valid until
 // `pdfioFileClose` is called.
@@ -85,7 +85,7 @@ pdfioStringCreate(
 // 'pdfioStringCreatef()' - Create a durable formatted string.
 //
 // This function creates a formatted string associated with the PDF file
-// "pwg".  The "format" string contains `printf`-style format characters.
+// "pdf".  The "format" string contains `printf`-style format characters.
 //
 // `NULL` is returned on error, otherwise a `char *` that is valid until
 // `pdfioFileClose` is called.
