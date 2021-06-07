@@ -33,11 +33,11 @@ static bool		write_trailer(pdfio_file_t *pdf);
 
 
 //
-// '_pdfioFileAddMappedObject()' - Add a mapped object.
+// '_pdfioFileAddMappedObj()' - Add a mapped object.
 //
 
 bool					// O - `true` on success, `false` on failure
-_pdfioFileAddMappedObject(
+_pdfioFileAddMappedObj(
     pdfio_file_t *pdf,			// I - Destination PDF file
     pdfio_obj_t  *dst_obj,		// I - Destination object
     pdfio_obj_t  *src_obj)		// I - Source object
@@ -262,7 +262,7 @@ pdfioFileCreate(
 
   pdfioDictSetName(dict, "Type", "Pages");
 
-  if ((pdf->pages_root = pdfioFileCreateObject(pdf, dict)) == NULL)
+  if ((pdf->pages_root = pdfioFileCreateObj(pdf, dict)) == NULL)
   {
     pdfioFileClose(pdf);
     unlink(filename);
@@ -274,11 +274,11 @@ pdfioFileCreate(
 
 
 //
-// 'pdfioFileCreateObject()' - Create a new object in a PDF file.
+// 'pdfioFileCreateObj()' - Create a new object in a PDF file.
 //
 
 pdfio_obj_t *				// O - New object
-pdfioFileCreateObject(
+pdfioFileCreateObj(
     pdfio_file_t *pdf,			// I - PDF file
     pdfio_dict_t *dict)			// I - Object dictionary
 {
@@ -288,16 +288,16 @@ pdfioFileCreateObject(
   value.type       = PDFIO_VALTYPE_DICT;
   value.value.dict = dict;
 
-  return (_pdfioFileCreateObject(pdf, dict->pdf, &value));
+  return (_pdfioFileCreateObj(pdf, dict->pdf, &value));
 }
 
 
 //
-// '_pdfioFileCreateObject()' - Create a new object in a PDF file with a value.
+// '_pdfioFileCreateObj()' - Create a new object in a PDF file with a value.
 //
 
 pdfio_obj_t *				// O - New object
-_pdfioFileCreateObject(
+_pdfioFileCreateObj(
     pdfio_file_t   *pdf,		// I - PDF file
     pdfio_file_t   *srcpdf,		// I - Source PDF file, if any
     _pdfio_value_t *value)		// I - Object dictionary
@@ -379,7 +379,7 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
   if (!_pdfioDictGetValue(dict, "MediaBox"))
     pdfioDictSetRect(dict, "MediaBox", &pdf->media_box);
 
-  pdfioDictSetObject(dict, "Parent", pdf->pages_root);
+  pdfioDictSetObj(dict, "Parent", pdf->pages_root);
 
   if (!_pdfioDictGetValue(dict, "Resources"))
     pdfioDictSetDict(dict, "Resources", pdfioDictCreate(pdf));
@@ -388,7 +388,7 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
     pdfioDictSetName(dict, "Type", "Page");
 
   // Create the page object...
-  page = pdfioFileCreateObject(pdf, dict);
+  page = pdfioFileCreateObj(pdf, dict);
 
   // Create a contents object to hold the contents of the page...
   contents_dict = pdfioDictCreate(pdf);
@@ -396,10 +396,10 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
   pdfioDictSetName(contents_dict, "Filter", "FlateDecode");
 #endif // !DEBUG
 
-  contents = pdfioFileCreateObject(pdf, contents_dict);
+  contents = pdfioFileCreateObj(pdf, contents_dict);
 
   // Add the contents stream to the pages object and write it...
-  pdfioDictSetObject(dict, "Contents", contents);
+  pdfioDictSetObj(dict, "Contents", contents);
   if (!pdfioObjClose(page))
     return (NULL);
 
@@ -416,11 +416,11 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
-// '_pdfioFileFindMappedObject()' - Find a mapped object.
+// '_pdfioFileFindMappedObj()' - Find a mapped object.
 //
 
 pdfio_obj_t *				// O - Match object or `NULL` if none
-_pdfioFileFindMappedObject(
+_pdfioFileFindMappedObj(
     pdfio_file_t *pdf,			// I - Destination PDF file
     pdfio_file_t *src_pdf,		// I - Source PDF file
     size_t       src_number)		// I - Source object number
@@ -445,14 +445,14 @@ _pdfioFileFindMappedObject(
 
 
 //
-// 'pdfioFileFindObject()' - Find an object using its object number.
+// 'pdfioFileFindObj()' - Find an object using its object number.
 //
-// This differs from @link pdfioFileGetObject@ which takes an index into the
+// This differs from @link pdfioFileGetObj@ which takes an index into the
 // list of objects while this function takes the object number.
 //
 
 pdfio_obj_t *				// O - Object or `NULL` if not found
-pdfioFileFindObject(
+pdfioFileFindObj(
     pdfio_file_t *pdf,			// I - PDF file
     size_t       number)		// I - Object number (1 to N)
 {
@@ -497,11 +497,11 @@ pdfioFileGetName(pdfio_file_t *pdf)	// I - PDF file
 
 
 //
-// 'pdfioFileGetNumObjects()' - Get the number of objects in a PDF file.
+// 'pdfioFileGetNumObjs()' - Get the number of objects in a PDF file.
 //
 
 size_t					// O - Number of objects
-pdfioFileGetNumObjects(
+pdfioFileGetNumObjs(
     pdfio_file_t *pdf)			// I - PDF file
 {
   return (pdf ? pdf->num_objs : 0);
@@ -520,12 +520,12 @@ pdfioFileGetNumPages(pdfio_file_t *pdf)	// I - PDF file
 
 
 //
-// 'pdfioFileGetObject()' - Get an object from a PDF file.
+// 'pdfioFileGetObj()' - Get an object from a PDF file.
 //
 
 pdfio_obj_t *				// O - Object
-pdfioFileGetObject(pdfio_file_t *pdf,	// I - PDF file
-                   size_t       n)	// I - Object index (starting at 0)
+pdfioFileGetObj(pdfio_file_t *pdf,	// I - PDF file
+                size_t       n)		// I - Object index (starting at 0)
 {
   if (!pdf || n >= pdf->num_objs)
     return (NULL);
@@ -876,7 +876,7 @@ load_pages(pdfio_file_t *pdf,		// I - PDF file
 
     for (i = 0, num_kids = pdfioArrayGetSize(kids); i < num_kids; i ++)
     {
-      if (!load_pages(pdf, pdfioArrayGetObject(kids, i)))
+      if (!load_pages(pdf, pdfioArrayGetObj(kids, i)))
         return (false);
     }
   }
@@ -1080,7 +1080,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
         }
 
 	// Create a placeholder for the object in memory...
-	if (pdfioFileFindObject(pdf, (size_t)number))
+	if (pdfioFileFindObj(pdf, (size_t)number))
 	{
 	  number ++;
 	  continue;			// Don't replace newer object...
@@ -1089,7 +1089,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
         if (w[0] > 0 && buffer[0] == 2)
         {
           // Object streams need to be loaded into memory...
-          if ((obj = pdfioFileFindObject(pdf, (size_t)offset)) != NULL)
+          if ((obj = pdfioFileFindObj(pdf, (size_t)offset)) != NULL)
 	  {
 	    // Load it now...
 	    if (!load_obj_stream(obj))
@@ -1121,7 +1121,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
       for (i = 0; i < num_sobjs; i ++)
       {
-        if ((obj = pdfioFileFindObject(pdf, sobjs[i])) != NULL)
+        if ((obj = pdfioFileFindObj(pdf, sobjs[i])) != NULL)
         {
 	  PDFIO_DEBUG("load_xref: Loading compressed object stream %lu (pdf=%p, obj->pdf=%p).\n", (unsigned long)sobjs[i], pdf, obj->pdf);
 
@@ -1195,7 +1195,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	    continue;			// Don't care about free objects...
 
 	  // Create a placeholder for the object in memory...
-	  if (pdfioFileFindObject(pdf, (size_t)number))
+	  if (pdfioFileFindObj(pdf, (size_t)number))
 	    continue;			// Don't replace newer object...
 
 	  if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
@@ -1248,7 +1248,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
   // Once we have all of the xref tables loaded, get the important objects and
   // build the pages array...
-  if ((pdf->root = pdfioDictGetObject(pdf->trailer, "Root")) == NULL)
+  if ((pdf->root = pdfioDictGetObj(pdf->trailer, "Root")) == NULL)
   {
     _pdfioFileError(pdf, "Missing Root object.");
     return (false);
@@ -1256,11 +1256,11 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
   PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root, (unsigned long)pdf->root->number);
 
-  pdf->info     = pdfioDictGetObject(pdf->trailer, "Info");
-  pdf->encrypt  = pdfioDictGetObject(pdf->trailer, "Encrypt");
+  pdf->info     = pdfioDictGetObj(pdf->trailer, "Info");
+  pdf->encrypt  = pdfioDictGetObj(pdf->trailer, "Encrypt");
   pdf->id_array = pdfioDictGetArray(pdf->trailer, "ID");
 
-  return (load_pages(pdf, pdfioDictGetObject(pdfioObjGetDict(pdf->root), "Pages")));
+  return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root), "Pages")));
 }
 
 
@@ -1278,10 +1278,10 @@ write_catalog(pdfio_file_t *pdf)	// I - PDF file
     return (false);
 
   pdfioDictSetName(dict, "Type", "Catalog");
-  pdfioDictSetObject(dict, "Pages", pdf->pages_root);
+  pdfioDictSetObj(dict, "Pages", pdf->pages_root);
   // TODO: Add support for all of the root object dictionary keys
 
-  if ((pdf->root = pdfioFileCreateObject(pdf, dict)) == NULL)
+  if ((pdf->root = pdfioFileCreateObj(pdf, dict)) == NULL)
     return (false);
   else
     return (pdfioObjClose(pdf->root));
@@ -1304,7 +1304,7 @@ write_pages(pdfio_file_t *pdf)		// I - PDF file
     return (false);
 
   for (i = 0; i < pdf->num_pages; i ++)
-    pdfioArrayAppendObject(kids, pdf->pages[i]);
+    pdfioArrayAppendObj(kids, pdf->pages[i]);
 
   pdfioDictSetNumber(pdf->pages_root->value.value.dict, "Count", pdf->num_pages);
   pdfioDictSetArray(pdf->pages_root->value.value.dict, "Kids", kids);
@@ -1374,11 +1374,11 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
 
   pdf->trailer = pdfioDictCreate(pdf);
   if (pdf->encrypt)
-    pdfioDictSetObject(pdf->trailer, "Encrypt", pdf->encrypt);
+    pdfioDictSetObj(pdf->trailer, "Encrypt", pdf->encrypt);
   if (pdf->id_array)
     pdfioDictSetArray(pdf->trailer, "ID", pdf->id_array);
-  pdfioDictSetObject(pdf->trailer, "Info", pdf->info);
-  pdfioDictSetObject(pdf->trailer, "Root", pdf->root);
+  pdfioDictSetObj(pdf->trailer, "Info", pdf->info);
+  pdfioDictSetObj(pdf->trailer, "Root", pdf->root);
   pdfioDictSetNumber(pdf->trailer, "Size", pdf->num_objs + 1);
 
   if (!_pdfioDictWrite(pdf->trailer, NULL))

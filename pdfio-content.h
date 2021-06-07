@@ -144,10 +144,10 @@ extern bool		pdfioContentTextShowf(pdfio_stream_t *st, const char *format, ...) 
 extern bool		pdfioContentTextShowJustified(pdfio_stream_t *st, size_t num_fragments, const double *offsets, const char * const *fragments) PDFIO_PUBLIC;
 
 // Resource helpers...
-extern pdfio_obj_t	*pdfioFileCreateBaseFontObject(pdfio_file_t *pdf, const char *name) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreateFontObject(pdfio_file_t *pdf, const char *filename, bool unicode) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreateICCProfileObject(pdfio_file_t *pdf, const char *filename) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreateImageObject(pdfio_file_t *pdf, const char *filename, bool interpolate) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateBaseFontObj(pdfio_file_t *pdf, const char *name) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateFontObj(pdfio_file_t *pdf, const char *filename, bool unicode) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateICCProfileObj(pdfio_file_t *pdf, const char *filename) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateImageObj(pdfio_file_t *pdf, const char *filename, bool interpolate) PDFIO_PUBLIC;
 
 // Image object helpers...
 extern size_t		pdfioImageGetBytesPerLine(pdfio_obj_t *obj) PDFIO_PUBLIC;

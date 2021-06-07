@@ -180,11 +180,11 @@ pdfioArrayAppendNumber(
 
 
 //
-// 'pdfioArrayAppendObject()' - Add an indirect object reference to an array.
+// 'pdfioArrayAppendObj()' - Add an indirect object reference to an array.
 //
 
 bool					// O - `true` on success, `false` on failure
-pdfioArrayAppendObject(
+pdfioArrayAppendObj(
     pdfio_array_t *a,			// I - Array
     pdfio_obj_t   *value)		// I - Value
 {
@@ -445,13 +445,13 @@ pdfioArrayGetNumber(pdfio_array_t *a,	// I - Array
 //
 
 pdfio_obj_t *				// O - Value
-pdfioArrayGetObject(pdfio_array_t *a,	// I - Array
-                    size_t        n)	// I - Index
+pdfioArrayGetObj(pdfio_array_t *a,	// I - Array
+                 size_t        n)	// I - Index
 {
   if (!a || n >= a->num_values || a->values[n].type != PDFIO_VALTYPE_INDIRECT)
     return (NULL);
   else
-    return (pdfioFileFindObject(a->pdf, a->values[n].value.indirect.number));
+    return (pdfioFileFindObj(a->pdf, a->values[n].value.indirect.number));
 }
 
 

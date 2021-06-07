@@ -299,7 +299,7 @@ pdfioArrayCreateICCBasedColor(
     return (NULL);
 
   pdfioArrayAppendName(icc_color, "ICCBased");
-  pdfioArrayAppendObject(icc_color, icc_object);
+  pdfioArrayAppendObj(icc_color, icc_object);
 
   return (icc_color);
 }
@@ -1104,7 +1104,7 @@ pdfioContentTextShowJustified(
 
 
 //
-// 'pdfioFileCreateBaseFontObject()' - Create one of the base 14 PDF fonts.
+// 'pdfioFileCreateBaseFontObj()' - Create one of the base 14 PDF fonts.
 //
 // This function creates one of the base 14 PDF fonts. The "name" parameter
 // specifies the font nane:
@@ -1126,7 +1126,7 @@ pdfioContentTextShowJustified(
 //
 
 pdfio_obj_t *				// O - Font object
-pdfioFileCreateBaseFontObject(
+pdfioFileCreateBaseFontObj(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *name)			// I - Font name
 {
@@ -1142,7 +1142,7 @@ pdfioFileCreateBaseFontObject(
   pdfioDictSetName(dict, "BaseFont", pdfioStringCreate(pdf, name));
   pdfioDictSetName(dict, "Encoding", "WinAnsiEncoding");
 
-  if ((obj = pdfioFileCreateObject(dict->pdf, dict)) != NULL)
+  if ((obj = pdfioFileCreateObj(dict->pdf, dict)) != NULL)
     pdfioObjClose(obj);
 
   return (obj);
@@ -1150,11 +1150,11 @@ pdfioFileCreateBaseFontObject(
 
 
 //
-// 'pdfioFileCreateFontObject()' - Add a font object to a PDF file.
+// 'pdfioFileCreateFontObj()' - Add a font object to a PDF file.
 //
 
 pdfio_obj_t *				// O - Font object
-pdfioFileCreateFontObject(
+pdfioFileCreateFontObj(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *filename,		// I - Filename
     bool         unicode)		// I - Unicode font?
@@ -1177,11 +1177,11 @@ pdfioFileCreateFontObject(
 
 
 //
-// 'pdfioFileCreateICCProfileObject()' - Add an ICC profile object to a PDF file.
+// 'pdfioFileCreateICCProfileObj()' - Add an ICC profile object to a PDF file.
 //
 
 pdfio_obj_t *				// O - Object
-pdfioFileCreateICCProfileObject(
+pdfioFileCreateICCProfileObj(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *filename)		// I - Filename
 {
@@ -1193,13 +1193,13 @@ pdfioFileCreateICCProfileObject(
 
 
 //
-// 'pdfioFileCreateImageObject()' - Add an image object to a PDF file.
+// 'pdfioFileCreateImageObj()' - Add an image object to a PDF file.
 //
 // Currently only GIF, JPEG, and PNG files are supported.
 //
 
 pdfio_obj_t *				// O - Object
-pdfioFileCreateImageObject(
+pdfioFileCreateImageObj(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *filename,		// I - Filename
     bool         interpolate)		// I - Interpolate image data?
@@ -1445,7 +1445,7 @@ pdfioPageDictAddFont(
   }
 
   // Now set the image reference in the Font resource dictionary and return...
-  return (pdfioDictSetObject(font, name, obj));
+  return (pdfioDictSetObj(font, name, obj));
 }
 
 
@@ -1488,7 +1488,7 @@ pdfioPageDictAddImage(
   }
 
   // Now set the image reference in the XObject resource dictionary and return...
-  return (pdfioDictSetObject(xobject, name, obj));
+  return (pdfioDictSetObj(xobject, name, obj));
 }
 
 
@@ -1606,7 +1606,7 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
   pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateCalibratedColorFromMatrix(dict->pdf, num_colors, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
   pdfioDictSetName(dict, "Filter", "DCTDecode");
 
-  obj = pdfioFileCreateObject(dict->pdf, dict);
+  obj = pdfioFileCreateObj(dict->pdf, dict);
   st  = pdfioObjCreateStream(obj, PDFIO_FILTER_NONE);
 
   // Copy the file to a stream...
@@ -1671,7 +1671,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 
           if (!st)
           {
-	    obj = pdfioFileCreateObject(dict->pdf, dict);
+	    obj = pdfioFileCreateObj(dict->pdf, dict);
 
 	    if ((st = pdfioObjCreateStream(obj, PDFIO_FILTER_NONE)) == NULL)
 	    {

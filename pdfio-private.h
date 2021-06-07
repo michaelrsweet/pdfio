@@ -287,13 +287,13 @@ extern pdfio_dict_t	*_pdfioDictRead(pdfio_file_t *pdf, _pdfio_token_t *ts) PDFIO
 extern bool		_pdfioDictSetValue(pdfio_dict_t *dict, const char *key, _pdfio_value_t *value) PDFIO_INTERNAL;
 extern bool		_pdfioDictWrite(pdfio_dict_t *dict, off_t *length) PDFIO_INTERNAL;
 
-extern bool		_pdfioFileAddMappedObject(pdfio_file_t *pdf, pdfio_obj_t *dst_obj, pdfio_obj_t *src_obj) PDFIO_INTERNAL;
+extern bool		_pdfioFileAddMappedObj(pdfio_file_t *pdf, pdfio_obj_t *dst_obj, pdfio_obj_t *src_obj) PDFIO_INTERNAL;
 extern bool		_pdfioFileAddPage(pdfio_file_t *pdf, pdfio_obj_t *obj) PDFIO_INTERNAL;
 extern bool		_pdfioFileConsume(pdfio_file_t *pdf, size_t bytes) PDFIO_INTERNAL;
-extern pdfio_obj_t	*_pdfioFileCreateObject(pdfio_file_t *pdf, pdfio_file_t *srcpdf, _pdfio_value_t *value) PDFIO_INTERNAL;
+extern pdfio_obj_t	*_pdfioFileCreateObj(pdfio_file_t *pdf, pdfio_file_t *srcpdf, _pdfio_value_t *value) PDFIO_INTERNAL;
 extern bool		_pdfioFileDefaultError(pdfio_file_t *pdf, const char *message, void *data) PDFIO_INTERNAL;
 extern bool		_pdfioFileError(pdfio_file_t *pdf, const char *format, ...) PDFIO_FORMAT(2,3) PDFIO_INTERNAL;
-extern pdfio_obj_t	*_pdfioFileFindMappedObject(pdfio_file_t *pdf, pdfio_file_t *src_pdf, size_t src_number) PDFIO_INTERNAL;
+extern pdfio_obj_t	*_pdfioFileFindMappedObj(pdfio_file_t *pdf, pdfio_file_t *src_pdf, size_t src_number) PDFIO_INTERNAL;
 extern bool		_pdfioFileFlush(pdfio_file_t *pdf) PDFIO_INTERNAL;
 extern int		_pdfioFileGetChar(pdfio_file_t *pdf) PDFIO_INTERNAL;
 extern bool		_pdfioFileGets(pdfio_file_t *pdf, char *buffer, size_t bufsize) PDFIO_INTERNAL;

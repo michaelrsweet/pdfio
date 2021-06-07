@@ -85,11 +85,11 @@ pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
     _pdfioObjLoad(srcobj);
 
   // Create the new object...
-  if ((dstobj = _pdfioFileCreateObject(pdf, srcobj->pdf, NULL)) == NULL)
+  if ((dstobj = _pdfioFileCreateObj(pdf, srcobj->pdf, NULL)) == NULL)
     return (NULL);
 
   // Add new object to the cache of copied objects...
-  if (!_pdfioFileAddMappedObject(pdf, dstobj, srcobj))
+  if (!_pdfioFileAddMappedObj(pdf, dstobj, srcobj))
     return (NULL);
 
   // Copy the object's value...
@@ -267,7 +267,7 @@ pdfioObjGetLength(pdfio_obj_t *obj)	// I - Object
     return (length);
   }
 
-  if ((lenobj = pdfioDictGetObject(obj->value.value.dict, "Length")) == NULL)
+  if ((lenobj = pdfioDictGetObj(obj->value.value.dict, "Length")) == NULL)
   {
     _pdfioFileError(obj->pdf, "Unable to get length of stream.");
     return (0);

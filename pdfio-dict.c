@@ -54,7 +54,7 @@ pdfioDictCopy(pdfio_file_t *pdf,	// I - PDF file
     if (!strcmp(p->key, "Length") && p->value.type == PDFIO_VALTYPE_INDIRECT && dict->pdf != pdf)
     {
       // Don't use indirect stream lengths for copied objects...
-      pdfio_obj_t *lenobj = pdfioFileFindObject(dict->pdf, p->value.value.indirect.number);
+      pdfio_obj_t *lenobj = pdfioFileFindObj(dict->pdf, p->value.value.indirect.number);
 					// Length object
 
       v.type = PDFIO_VALTYPE_NUMBER;
@@ -273,17 +273,17 @@ pdfioDictGetNumber(pdfio_dict_t *dict,	// I - Dictionary
 
 
 //
-// 'pdfioDictGetObject()' - Get a key indirect object value from a dictionary.
+// 'pdfioDictGetObj()' - Get a key indirect object value from a dictionary.
 //
 
 pdfio_obj_t *				// O - Value
-pdfioDictGetObject(pdfio_dict_t *dict,	// I - Dictionary
-                   const char   *key)	// I - Key
+pdfioDictGetObj(pdfio_dict_t *dict,	// I - Dictionary
+                const char   *key)	// I - Key
 {
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
 
   if (value && value->type == PDFIO_VALTYPE_INDIRECT)
-    return (pdfioFileFindObject(dict->pdf, value->value.indirect.number));
+    return (pdfioFileFindObj(dict->pdf, value->value.indirect.number));
   else
     return (NULL);
 }
@@ -618,13 +618,13 @@ pdfioDictSetNumber(pdfio_dict_t  *dict,	// I - Dictionary
 
 
 //
-// 'pdfioDictSetObject()' - Set a key indirect object reference in a dictionary.
+// 'pdfioDictSetObj()' - Set a key indirect object reference in a dictionary.
 //
 
 bool					// O - `true` on success, `false` on failure
-pdfioDictSetObject(pdfio_dict_t *dict,	// I - Dictionary
-                   const char    *key,	// I - Key
-                   pdfio_obj_t   *value)// I - Value
+pdfioDictSetObj(pdfio_dict_t *dict,	// I - Dictionary
+                const char    *key,	// I - Key
+                pdfio_obj_t   *value)	// I - Value
 {
   _pdfio_value_t temp;			// New value
 

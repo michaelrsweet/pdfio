@@ -57,9 +57,9 @@ _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
   switch (vsrc->type)
   {
     case PDFIO_VALTYPE_INDIRECT :
-        if ((obj = _pdfioFileFindMappedObject(pdfdst, pdfsrc, vsrc->value.indirect.number)) == NULL)
+        if ((obj = _pdfioFileFindMappedObj(pdfdst, pdfsrc, vsrc->value.indirect.number)) == NULL)
         {
-          obj = pdfioObjCopy(pdfdst, pdfioFileFindObject(pdfsrc, vsrc->value.indirect.number));
+          obj = pdfioObjCopy(pdfdst, pdfioFileFindObj(pdfsrc, vsrc->value.indirect.number));
 	}
 
         if (!obj)

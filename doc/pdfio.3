@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2021-05-30" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2021-06-07" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -29,6 +29,191 @@ Provide access to objects used for each page
 PDFio is
 .I not
  concerned with rendering or viewing a PDF file, although a PDF RIP or viewer could be written using it.
+.PP
+PDFio is Copyright \[co] 2021 by Michael R Sweet and is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GPL2/LGPL2 software. See the files "LICENSE" and "NOTICE" for more information.
+.SS Requirements
+.PP
+PDFio requires the following to build the software:
+.IP \(bu 5
+.PP
+A C99 compiler such as Clang, GCC, or MS Visual C
+
+.IP \(bu 5
+.PP
+A POSIX\-compliant make program
+
+.IP \(bu 5
+.PP
+ZLIB (https://www.zlib.net) 1.0 or higher
+
+
+.PP
+IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
+.SS Installing pdfio
+.PP
+PDFio comes with a portable makefile that will work on any POSIX\-compliant system with ZLIB installed. To make it, run:
+.nf
+
+    make all
+.fi
+.PP
+To test it, run:
+.nf
+
+    make test
+.fi
+.PP
+To install it, run:
+.nf
+
+    make install
+.fi
+.PP
+If you want a shared library, run:
+.nf
+
+    make all\-shared
+    make install\-shared
+.fi
+.PP
+The default installation location is "/usr/local". Pass the prefix variable to make to install it to another location:
+.nf
+
+    make install prefix=/some/other/directory
+.fi
+.PP
+The makefile installs the pdfio header to "${prefix}/include", the library to "${prefix}/lib", the pkg\-config file to "${prefix}/lib/pkgconfig", the man page to "${prefix}/share/man/man3", and the documentation to "${prefix}/share/doc/pdfio".
+.PP
+The makefile supports the following variables that can be specified in the make command or as environment variables:
+.IP \(bu 5
+.PP
+AR: the library archiver (default "ar")
+
+.IP \(bu 5
+.PP
+ARFLAGS: options for the library archiver (default "cr")
+
+.IP \(bu 5
+.PP
+CC: the C compiler (default "cc")
+
+.IP \(bu 5
+.PP
+CFLAGS: options for the C compiler (default "")
+
+.IP \(bu 5
+.PP
+CODESIGN_IDENTITY: the identity to use when code signing the shared library on macOS (default "Developer ID")
+
+.IP \(bu 5
+.PP
+COMMONFLAGS: options for the C compiler and linker (typically architecture and optimization options, default is "\-Os \-g")
+
+.IP \(bu 5
+.PP
+CPPFLAGS: options for the C preprocessor (default "")
+
+.IP \(bu 5
+.PP
+DESTDIR" and "DSTROOT: specifies a root directory when installing (default is "", specify only one)
+
+.IP \(bu 5
+.PP
+DSOFLAGS: options for the C compiler when linking the shared library (default "")
+
+.IP \(bu 5
+.PP
+LDFLAGS: options for the C compiler when linking the test programs (default "")
+
+.IP \(bu 5
+.PP
+LIBS: library options when linking the test programs (default "\-lz")
+
+.IP \(bu 5
+.PP
+RANLIB: program that generates a table\-of\-contents in a library (default "ranlib")
+
+.IP \(bu 5
+.PP
+prefix: specifies the installation directory (default "/usr/local")
+
+
+.SS Visual Studio Project
+.PP
+Note: I haven't yet added this...
+
+.PP
+The Visual Studio solution ("pdfio.sln") is provided for Windows developers generates both a static library and DLL.
+.SS Xcode Project
+.PP
+There is also an Xcode project ("pdfio.xcodeproj") you can use on macOS which generates a static library that will be installed under "/usr/local" with:
+.nf
+
+    sudo xcodebuild install
+.fi
+.PP
+You can reproduce this with the makefile using:
+.nf
+
+    sudo make 'COMMONFLAGS="\-Os \-mmacosx\-version\-min=10.14 \-arch x86_64 \-arch arm64"' install
+.fi
+.SS Detecting PDFio
+.PP
+PDFio can be detected using the pkg\-config command, for example:
+.nf
+
+    if pkg\-config \-\-exists pdfio; then
+        ... 
+    fi
+.fi
+.PP
+In a makefile you can add the necessary compiler and linker options with:
+.nf
+
+    CFLAGS  +=      `pkg\-config \-\-cflags pdfio`
+    LIBS    +=      `pkg\-config \-\-libs pdfio`
+.fi
+.SS Header Files
+.PP
+PDFio provides a primary header file that is always used:
+.nf
+
+    #include <pdfio.h>
+.fi
+.PP
+PDFio also provides content helper functions that are defined in a separate header file:
+.nf
+
+    #include <pdfio\-content.h>
+.fi
+.SH API Overview
+.PP
+PDFio exposes several types:
+.IP \(bu 5
+.PP
+pdfio_file_t: A PDF file (for reading or writing)
+
+.IP \(bu 5
+.PP
+pdfio_array_t: An array of values
+
+.IP \(bu 5
+.PP
+pdfio_dict_t: A dictionary of key/value pairs in a PDF file, object, etc.
+
+.IP \(bu 5
+.PP
+pdfio_obj_t: An object in a PDF file
+
+.IP \(bu 5
+.PP
+pdfio_stream_t: An object stream
+
+
+.SS PDF Files
+.SS PDF Values
+.SS PDF Objects
+.SS PDF Streams
 
 .SH ENUMERATIONS
 .SS pdfio_filter_e
@@ -139,7 +324,7 @@ Add a binary string value to an array.
 .nf
 bool  pdfioArrayAppendBinary (
     pdfio_array_t *a,
-    unsigned char *value,
+    const unsigned char *value,
     size_t valuelen
 );
 .fi
@@ -179,11 +364,11 @@ bool  pdfioArrayAppendNumber (
     double value
 );
 .fi
-.SS pdfioArrayAppendObject
+.SS pdfioArrayAppendObj
 Add an indirect object reference to an array.
 .PP
 .nf
-bool  pdfioArrayAppendObject (
+bool  pdfioArrayAppendObj (
     pdfio_array_t *a,
     pdfio_obj_t *value
 );
@@ -212,6 +397,55 @@ Create an empty array.
 .nf
 pdfio_array_t * pdfioArrayCreate (
     pdfio_file_t *pdf
+);
+.fi
+.SS pdfioArrayCreateCalibratedColorFromMatrix
+Create a calibrated color space array using a CIE XYZ transform matrix.
+.PP
+.nf
+pdfio_array_t * pdfioArrayCreateCalibratedColorFromMatrix (
+    pdfio_file_t *pdf,
+    size_t num_colors,
+    double gamma,
+    const double matrix[3][3],
+    const double white_point[3]
+);
+.fi
+.SS pdfioArrayCreateCalibratedColorFromPrimaries
+Create a calibrated color sapce array using CIE xy primary chromacities.
+.PP
+.nf
+pdfio_array_t * pdfioArrayCreateCalibratedColorFromPrimaries (
+    pdfio_file_t *pdf,
+    size_t num_colors,
+    double gamma,
+    double wx,
+    double wy,
+    double rx,
+    double ry,
+    double gx,
+    double gy,
+    double bx,
+    double by
+);
+.fi
+.SS pdfioArrayCreateICCBasedColor
+Create an ICC-based color space array.
+.PP
+.nf
+pdfio_array_t * pdfioArrayCreateICCBasedColor (
+    pdfio_file_t *pdf,
+    pdfio_obj_t *icc_object
+);
+.fi
+.SS pdfioArrayCreateIndexedColor
+Create an indexed color space array.
+.PP
+.nf
+pdfio_array_t * pdfioArrayCreateIndexedColor (
+    pdfio_file_t *pdf,
+    size_t num_colors,
+    const unsigned char *colors
 );
 .fi
 .SS pdfioArrayGetArray
@@ -269,11 +503,11 @@ double  pdfioArrayGetNumber (
     size_t n
 );
 .fi
-.SS pdfioArrayGetObject
+.SS pdfioArrayGetObj
 Get an indirect object reference from an array.
 .PP
 .nf
-pdfio_obj_t * pdfioArrayGetObject (
+pdfio_obj_t * pdfioArrayGetObj (
     pdfio_array_t *a,
     size_t n
 );
@@ -304,14 +538,6 @@ pdfio_valtype_t  pdfioArrayGetType (
     size_t n
 );
 .fi
-.SS pdfioContentBeginText
-Begin a text block.
-.PP
-.nf
-bool  pdfioContentBeginText (
-    pdfio_stream_t *st
-);
-.fi
 .SS pdfioContentClip
 Clip output to the current path.
 .PP
@@ -330,21 +556,13 @@ bool  pdfioContentDrawImage (
     const char *name,
     double x,
     double y,
-    double w,
-    double h
+    double width,
+    double height
 );
 .fi
 .PP
 The object name must be part of the page dictionary resources, typically
 using the \fIpdfioPageDictAddImage\fR function.
-.SS pdfioContentEndText
-End a text block.
-.PP
-.nf
-bool  pdfioContentEndText (
-    pdfio_stream_t *st
-);
-.fi
 .SS pdfioContentFill
 Fill the current path.
 .PP
@@ -474,7 +692,10 @@ Add a rectangle to the current path.
 .nf
 bool  pdfioContentPathRect (
     pdfio_stream_t *st,
-    pdfio_rect_t *rect
+    double x,
+    double y,
+    double width,
+    double height
 );
 .fi
 .SS pdfioContentRestore
@@ -752,6 +973,22 @@ bool  pdfioContentStroke (
     pdfio_stream_t *st
 );
 .fi
+.SS pdfioContentTextBegin
+Begin a text block.
+.PP
+.nf
+bool  pdfioContentTextBegin (
+    pdfio_stream_t *st
+);
+.fi
+.SS pdfioContentTextEnd
+End a text block.
+.PP
+.nf
+bool  pdfioContentTextEnd (
+    pdfio_stream_t *st
+);
+.fi
 .SS pdfioContentTextMoveLine
 Move to the next line and offset.
 .PP
@@ -786,8 +1023,7 @@ Show text.
 .nf
 bool  pdfioContentTextShow (
     pdfio_stream_t *st,
-    const char *s,
-    bool new_line
+    const char *s
 );
 .fi
 .SS pdfioContentTextShowJustified
@@ -799,6 +1035,16 @@ bool  pdfioContentTextShowJustified (
     size_t num_fragments,
     const double *offsets,
     const char *const *fragments
+);
+.fi
+.SS pdfioContentTextShowf
+
+.PP
+.nf
+bool  pdfioContentTextShowf (
+    pdfio_stream_t *st,
+    const char *format,
+    ...
 );
 .fi
 .SS pdfioDictCopy
@@ -873,11 +1119,11 @@ double  pdfioDictGetNumber (
     const char *key
 );
 .fi
-.SS pdfioDictGetObject
+.SS pdfioDictGetObj
 Get a key indirect object value from a dictionary.
 .PP
 .nf
-pdfio_obj_t * pdfioDictGetObject (
+pdfio_obj_t * pdfioDictGetObj (
     pdfio_dict_t *dict,
     const char *key
 );
@@ -927,7 +1173,7 @@ Set a key binary string in a dictionary.
 bool  pdfioDictSetBinary (
     pdfio_dict_t *dict,
     const char *key,
-    unsigned char *value,
+    const unsigned char *value,
     size_t valuelen
 );
 .fi
@@ -980,11 +1226,11 @@ bool  pdfioDictSetNumber (
     double value
 );
 .fi
-.SS pdfioDictSetObject
+.SS pdfioDictSetObj
 Set a key indirect object reference in a dictionary.
 .PP
 .nf
-bool  pdfioDictSetObject (
+bool  pdfioDictSetObj (
     pdfio_dict_t *dict,
     const char *key,
     pdfio_obj_t *value
@@ -1042,29 +1288,72 @@ pdfio_file_t * pdfioFileCreate (
     void *error_data
 );
 .fi
-.SS pdfioFileCreateFontObject
+.SS pdfioFileCreateBaseFontObj
+Create one of the base 14 PDF fonts.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateBaseFontObj (
+    pdfio_file_t *pdf,
+    const char *name
+);
+.fi
+.PP
+This function creates one of the base 14 PDF fonts. The "name" parameter
+specifies the font nane:
+.PP
+.IP \(bu 5
+\fBCourier\fR
+.IP \(bu 5
+\fBCourier-Bold\fR
+.IP \(bu 5
+\fBCourier-BoldItalic\fR
+.IP \(bu 5
+\fBCourier-Italic\fR
+.IP \(bu 5
+\fBHelvetica\fR
+.IP \(bu 5
+\fBHelvetica-Bold\fR
+.IP \(bu 5
+\fBHelvetica-BoldOblique\fR
+.IP \(bu 5
+\fBHelvetica-Oblique\fR
+.IP \(bu 5
+\fBSymbol\fR
+.IP \(bu 5
+\fBTimes-Bold\fR
+.IP \(bu 5
+\fBTimes-BoldItalic\fR
+.IP \(bu 5
+\fBTimes-Italic\fR
+.IP \(bu 5
+\fBTimes-Roman\fR
+.IP \(bu 5
+\fBZapfDingbats\fR</li>
+</ul>
+.SS pdfioFileCreateFontObj
 Add a font object to a PDF file.
 .PP
 .nf
-pdfio_obj_t * pdfioFileCreateFontObject (
+pdfio_obj_t * pdfioFileCreateFontObj (
     pdfio_file_t *pdf,
-    const char *filename
+    const char *filename,
+    bool unicode
 );
 .fi
-.SS pdfioFileCreateICCProfileObject
+.SS pdfioFileCreateICCProfileObj
 Add an ICC profile object to a PDF file.
 .PP
 .nf
-pdfio_obj_t * pdfioFileCreateICCProfileObject (
+pdfio_obj_t * pdfioFileCreateICCProfileObj (
     pdfio_file_t *pdf,
     const char *filename
 );
 .fi
-.SS pdfioFileCreateImageObject
+.SS pdfioFileCreateImageObj
 Add an image object to a PDF file.
 .PP
 .nf
-pdfio_obj_t * pdfioFileCreateImageObject (
+pdfio_obj_t * pdfioFileCreateImageObj (
     pdfio_file_t *pdf,
     const char *filename,
     bool interpolate
@@ -1072,11 +1361,11 @@ pdfio_obj_t * pdfioFileCreateImageObject (
 .fi
 .PP
 Currently only GIF, JPEG, and PNG files are supported.
-.SS pdfioFileCreateObject
+.SS pdfioFileCreateObj
 Create a new object in a PDF file.
 .PP
 .nf
-pdfio_obj_t * pdfioFileCreateObject (
+pdfio_obj_t * pdfioFileCreateObj (
     pdfio_file_t *pdf,
     pdfio_dict_t *dict
 );
@@ -1090,17 +1379,17 @@ pdfio_stream_t * pdfioFileCreatePage (
     pdfio_dict_t *dict
 );
 .fi
-.SS pdfioFileFindObject
+.SS pdfioFileFindObj
 Find an object using its object number.
 .PP
 .nf
-pdfio_obj_t * pdfioFileFindObject (
+pdfio_obj_t * pdfioFileFindObj (
     pdfio_file_t *pdf,
     size_t number
 );
 .fi
 .PP
-This differs from \fIpdfioFileGetObject\fR which takes an index into the
+This differs from \fIpdfioFileGetObj\fR which takes an index into the
 list of objects while this function takes the object number.
 .SS pdfioFileGetID
 Get the PDF file's ID strings.
@@ -1118,11 +1407,11 @@ const char * pdfioFileGetName (
     pdfio_file_t *pdf
 );
 .fi
-.SS pdfioFileGetNumObjects
+.SS pdfioFileGetNumObjs
 Get the number of objects in a PDF file.
 .PP
 .nf
-size_t  pdfioFileGetNumObjects (
+size_t  pdfioFileGetNumObjs (
     pdfio_file_t *pdf
 );
 .fi
@@ -1134,11 +1423,11 @@ size_t  pdfioFileGetNumPages (
     pdfio_file_t *pdf
 );
 .fi
-.SS pdfioFileGetObject
+.SS pdfioFileGetObj
 Get an object from a PDF file.
 .PP
 .nf
-pdfio_obj_t * pdfioFileGetObject (
+pdfio_obj_t * pdfioFileGetObj (
     pdfio_file_t *pdf,
     size_t n
 );
@@ -1168,6 +1457,14 @@ pdfio_file_t * pdfioFileOpen (
     const char *filename,
     pdfio_error_cb_t error_cb,
     void *error_data
+);
+.fi
+.SS pdfioImageGetBytesPerLine
+Get the number of bytes to read for each line.
+.PP
+.nf
+size_t  pdfioImageGetBytesPerLine (
+    pdfio_obj_t *obj
 );
 .fi
 .SS pdfioImageGetHeight
@@ -1253,6 +1550,14 @@ size_t  pdfioObjGetNumber (
     pdfio_obj_t *obj
 );
 .fi
+.SS pdfioObjGetSubtype
+Get an object's subtype.
+.PP
+.nf
+const char * pdfioObjGetSubtype (
+    pdfio_obj_t *obj
+);
+.fi
 .SS pdfioObjGetType
 Get an object's type.
 .PP
@@ -1279,35 +1584,33 @@ bool  pdfioPageCopy (
     pdfio_obj_t *srcpage
 );
 .fi
-.SS pdfioPageDictAddCalibratedColorSpace
-Add a calibrated color space to
-the page dictionary.
+.SS pdfioPageDictAddColorSpace
+Add a color space to the page dictionary.
 .PP
 .nf
-bool  pdfioPageDictAddCalibratedColorSpace (
+bool  pdfioPageDictAddColorSpace (
     pdfio_dict_t *dict,
     const char *name,
-    size_t num_colors,
-    const double *white_point,
-    double gamma
+    pdfio_array_t *data
 );
 .fi
+.PP
+This function adds a named color space to the page dictionary.
+.PP
+The names "DefaultCMYK", "DefaultGray", and "DefaultRGB" specify the default
+device color space used for the page.
+.PP
+The "data" array contains a calibrated, indexed, or ICC-based color space
+array that was created using the
+\fIpdfioArrayCreateCalibratedColorFromMatrix\fR,
+\fIpdfioArrayCreateCalibratedColorFromPrimaries\fR,
+\fIpdfioArrayCreateICCBasedColor\fR, or
+\fIpdfioArrayCreateIndexedColor\fR functions.
 .SS pdfioPageDictAddFont
 Add a font object to the page dictionary.
 .PP
 .nf
 bool  pdfioPageDictAddFont (
-    pdfio_dict_t *dict,
-    const char *name,
-    pdfio_obj_t *obj
-);
-.fi
-.SS pdfioPageDictAddICCColorSpace
-Add an ICC color space to the page
-dictionary.
-.PP
-.nf
-bool  pdfioPageDictAddICCColorSpace (
     pdfio_dict_t *dict,
     const char *name,
     pdfio_obj_t *obj
@@ -1389,6 +1692,11 @@ ssize_t  pdfioStreamRead (
     size_t bytes
 );
 .fi
+.PP
+This function reads data from a stream.  When reading decoded image data
+from a stream, you \fImust\fR read whole scanlines.  The
+\fIpdfioImageGetBytesPerLine\fR function can be used to determine the
+proper read length.
 .SS pdfioStreamWrite
 Write data to a stream.
 .PP

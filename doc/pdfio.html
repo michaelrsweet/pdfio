@@ -252,7 +252,20 @@ span.string {
 <div class="contents">
 <h2 class="title">Contents</h2>
 <ul class="contents">
-<li><a href="#introduction">Introduction</a></li>
+<li><a href="#introduction">Introduction</a><ul class="subcontents">
+<li><a href="#requirements">Requirements</a></li>
+<li><a href="#installing-pdfio">Installing pdfio</a></li>
+<li><a href="#visual-studio-project">Visual Studio Project</a></li>
+<li><a href="#xcode-project">Xcode Project</a></li>
+<li><a href="#detecting-pdfio">Detecting PDFio</a></li>
+<li><a href="#header-files">Header Files</a></li>
+</ul></li>
+<li><a href="#api-overview">API Overview</a><ul class="subcontents">
+<li><a href="#pdf-files">PDF Files</a></li>
+<li><a href="#pdf-values">PDF Values</a></li>
+<li><a href="#pdf-objects">PDF Objects</a></li>
+<li><a href="#pdf-streams">PDF Streams</a></li>
+</ul></li>
 <li><a href="#FUNCTIONS">Functions</a><ul class="subcontents">
 <li><a href="#pdfioArrayAppendArray">pdfioArrayAppendArray</a></li>
 <li><a href="#pdfioArrayAppendBinary">pdfioArrayAppendBinary</a></li>
@@ -260,24 +273,26 @@ span.string {
 <li><a href="#pdfioArrayAppendDict">pdfioArrayAppendDict</a></li>
 <li><a href="#pdfioArrayAppendName">pdfioArrayAppendName</a></li>
 <li><a href="#pdfioArrayAppendNumber">pdfioArrayAppendNumber</a></li>
-<li><a href="#pdfioArrayAppendObject">pdfioArrayAppendObject</a></li>
+<li><a href="#pdfioArrayAppendObj">pdfioArrayAppendObj</a></li>
 <li><a href="#pdfioArrayAppendString">pdfioArrayAppendString</a></li>
 <li><a href="#pdfioArrayCopy">pdfioArrayCopy</a></li>
 <li><a href="#pdfioArrayCreate">pdfioArrayCreate</a></li>
+<li><a href="#pdfioArrayCreateCalibratedColorFromMatrix">pdfioArrayCreateCalibratedColorFromMatrix</a></li>
+<li><a href="#pdfioArrayCreateCalibratedColorFromPrimaries">pdfioArrayCreateCalibratedColorFromPrimaries</a></li>
+<li><a href="#pdfioArrayCreateICCBasedColor">pdfioArrayCreateICCBasedColor</a></li>
+<li><a href="#pdfioArrayCreateIndexedColor">pdfioArrayCreateIndexedColor</a></li>
 <li><a href="#pdfioArrayGetArray">pdfioArrayGetArray</a></li>
 <li><a href="#pdfioArrayGetBinary">pdfioArrayGetBinary</a></li>
 <li><a href="#pdfioArrayGetBoolean">pdfioArrayGetBoolean</a></li>
 <li><a href="#pdfioArrayGetDict">pdfioArrayGetDict</a></li>
 <li><a href="#pdfioArrayGetName">pdfioArrayGetName</a></li>
 <li><a href="#pdfioArrayGetNumber">pdfioArrayGetNumber</a></li>
-<li><a href="#pdfioArrayGetObject">pdfioArrayGetObject</a></li>
+<li><a href="#pdfioArrayGetObj">pdfioArrayGetObj</a></li>
 <li><a href="#pdfioArrayGetSize">pdfioArrayGetSize</a></li>
 <li><a href="#pdfioArrayGetString">pdfioArrayGetString</a></li>
 <li><a href="#pdfioArrayGetType">pdfioArrayGetType</a></li>
-<li><a href="#pdfioContentBeginText">pdfioContentBeginText</a></li>
 <li><a href="#pdfioContentClip">pdfioContentClip</a></li>
 <li><a href="#pdfioContentDrawImage">pdfioContentDrawImage</a></li>
-<li><a href="#pdfioContentEndText">pdfioContentEndText</a></li>
 <li><a href="#pdfioContentFill">pdfioContentFill</a></li>
 <li><a href="#pdfioContentFillAndStroke">pdfioContentFillAndStroke</a></li>
 <li><a href="#pdfioContentMatrixConcat">pdfioContentMatrixConcat</a></li>
@@ -320,11 +335,14 @@ span.string {
 <li><a href="#pdfioContentSetTextWordSpacing">pdfioContentSetTextWordSpacing</a></li>
 <li><a href="#pdfioContentSetTextXScaling">pdfioContentSetTextXScaling</a></li>
 <li><a href="#pdfioContentStroke">pdfioContentStroke</a></li>
+<li><a href="#pdfioContentTextBegin">pdfioContentTextBegin</a></li>
+<li><a href="#pdfioContentTextEnd">pdfioContentTextEnd</a></li>
 <li><a href="#pdfioContentTextMoveLine">pdfioContentTextMoveLine</a></li>
 <li><a href="#pdfioContentTextMoveTo">pdfioContentTextMoveTo</a></li>
 <li><a href="#pdfioContentTextNextLine">pdfioContentTextNextLine</a></li>
 <li><a href="#pdfioContentTextShow">pdfioContentTextShow</a></li>
 <li><a href="#pdfioContentTextShowJustified">pdfioContentTextShowJustified</a></li>
+<li><a href="#pdfioContentTextShowf">pdfioContentTextShowf</a></li>
 <li><a href="#pdfioDictCopy">pdfioDictCopy</a></li>
 <li><a href="#pdfioDictCreate">pdfioDictCreate</a></li>
 <li><a href="#pdfioDictGetArray">pdfioDictGetArray</a></li>
@@ -333,7 +351,7 @@ span.string {
 <li><a href="#pdfioDictGetDict">pdfioDictGetDict</a></li>
 <li><a href="#pdfioDictGetName">pdfioDictGetName</a></li>
 <li><a href="#pdfioDictGetNumber">pdfioDictGetNumber</a></li>
-<li><a href="#pdfioDictGetObject">pdfioDictGetObject</a></li>
+<li><a href="#pdfioDictGetObj">pdfioDictGetObj</a></li>
 <li><a href="#pdfioDictGetRect">pdfioDictGetRect</a></li>
 <li><a href="#pdfioDictGetString">pdfioDictGetString</a></li>
 <li><a href="#pdfioDictGetType">pdfioDictGetType</a></li>
@@ -344,26 +362,28 @@ span.string {
 <li><a href="#pdfioDictSetName">pdfioDictSetName</a></li>
 <li><a href="#pdfioDictSetNull">pdfioDictSetNull</a></li>
 <li><a href="#pdfioDictSetNumber">pdfioDictSetNumber</a></li>
-<li><a href="#pdfioDictSetObject">pdfioDictSetObject</a></li>
+<li><a href="#pdfioDictSetObj">pdfioDictSetObj</a></li>
 <li><a href="#pdfioDictSetRect">pdfioDictSetRect</a></li>
 <li><a href="#pdfioDictSetString">pdfioDictSetString</a></li>
 <li><a href="#pdfioDictSetStringf">pdfioDictSetStringf</a></li>
 <li><a href="#pdfioFileClose">pdfioFileClose</a></li>
 <li><a href="#pdfioFileCreate">pdfioFileCreate</a></li>
-<li><a href="#pdfioFileCreateFontObject">pdfioFileCreateFontObject</a></li>
-<li><a href="#pdfioFileCreateICCProfileObject">pdfioFileCreateICCProfileObject</a></li>
-<li><a href="#pdfioFileCreateImageObject">pdfioFileCreateImageObject</a></li>
-<li><a href="#pdfioFileCreateObject">pdfioFileCreateObject</a></li>
+<li><a href="#pdfioFileCreateBaseFontObj">pdfioFileCreateBaseFontObj</a></li>
+<li><a href="#pdfioFileCreateFontObj">pdfioFileCreateFontObj</a></li>
+<li><a href="#pdfioFileCreateICCProfileObj">pdfioFileCreateICCProfileObj</a></li>
+<li><a href="#pdfioFileCreateImageObj">pdfioFileCreateImageObj</a></li>
+<li><a href="#pdfioFileCreateObj">pdfioFileCreateObj</a></li>
 <li><a href="#pdfioFileCreatePage">pdfioFileCreatePage</a></li>
-<li><a href="#pdfioFileFindObject">pdfioFileFindObject</a></li>
+<li><a href="#pdfioFileFindObj">pdfioFileFindObj</a></li>
 <li><a href="#pdfioFileGetID">pdfioFileGetID</a></li>
 <li><a href="#pdfioFileGetName">pdfioFileGetName</a></li>
-<li><a href="#pdfioFileGetNumObjects">pdfioFileGetNumObjects</a></li>
+<li><a href="#pdfioFileGetNumObjs">pdfioFileGetNumObjs</a></li>
 <li><a href="#pdfioFileGetNumPages">pdfioFileGetNumPages</a></li>
-<li><a href="#pdfioFileGetObject">pdfioFileGetObject</a></li>
+<li><a href="#pdfioFileGetObj">pdfioFileGetObj</a></li>
 <li><a href="#pdfioFileGetPage">pdfioFileGetPage</a></li>
 <li><a href="#pdfioFileGetVersion">pdfioFileGetVersion</a></li>
 <li><a href="#pdfioFileOpen">pdfioFileOpen</a></li>
+<li><a href="#pdfioImageGetBytesPerLine">pdfioImageGetBytesPerLine</a></li>
 <li><a href="#pdfioImageGetHeight">pdfioImageGetHeight</a></li>
 <li><a href="#pdfioImageGetWidth">pdfioImageGetWidth</a></li>
 <li><a href="#pdfioObjClose">pdfioObjClose</a></li>
@@ -374,12 +394,12 @@ span.string {
 <li><a href="#pdfioObjGetGeneration">pdfioObjGetGeneration</a></li>
 <li><a href="#pdfioObjGetLength">pdfioObjGetLength</a></li>
 <li><a href="#pdfioObjGetNumber">pdfioObjGetNumber</a></li>
+<li><a href="#pdfioObjGetSubtype">pdfioObjGetSubtype</a></li>
 <li><a href="#pdfioObjGetType">pdfioObjGetType</a></li>
 <li><a href="#pdfioObjOpenStream">pdfioObjOpenStream</a></li>
 <li><a href="#pdfioPageCopy">pdfioPageCopy</a></li>
-<li><a href="#pdfioPageDictAddCalibratedColorSpace">pdfioPageDictAddCalibratedColorSpace</a></li>
+<li><a href="#pdfioPageDictAddColorSpace">pdfioPageDictAddColorSpace</a></li>
 <li><a href="#pdfioPageDictAddFont">pdfioPageDictAddFont</a></li>
-<li><a href="#pdfioPageDictAddICCColorSpace">pdfioPageDictAddICCColorSpace</a></li>
 <li><a href="#pdfioPageDictAddImage">pdfioPageDictAddImage</a></li>
 <li><a href="#pdfioStreamClose">pdfioStreamClose</a></li>
 <li><a href="#pdfioStreamConsume">pdfioStreamConsume</a></li>
@@ -429,6 +449,112 @@ span.string {
 </li>
 </ul>
 <p>PDFio is <em>not</em> concerned with rendering or viewing a PDF file, although a PDF RIP or viewer could be written using it.</p>
+<p>PDFio is Copyright © 2021 by Michael R Sweet and is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GPL2/LGPL2 software. See the files &quot;LICENSE&quot; and &quot;NOTICE&quot; for more information.</p>
+<h3 class="title" id="requirements">Requirements</h3>
+<p>PDFio requires the following to build the software:</p>
+<ul>
+<li><p>A C99 compiler such as Clang, GCC, or MS Visual C</p>
+</li>
+<li><p>A POSIX-compliant <code>make</code> program</p>
+</li>
+<li><p>ZLIB (<a href="https://www.zlib.net">https://www.zlib.net</a>) 1.0 or higher</p>
+</li>
+</ul>
+<p>IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.</p>
+<h3 class="title" id="installing-pdfio">Installing pdfio</h3>
+<p>PDFio comes with a portable makefile that will work on any POSIX-compliant system with ZLIB installed. To make it, run:</p>
+<pre><code>make all
+</code></pre>
+<p>To test it, run:</p>
+<pre><code>make test
+</code></pre>
+<p>To install it, run:</p>
+<pre><code>make install
+</code></pre>
+<p>If you want a shared library, run:</p>
+<pre><code>make all-shared
+make install-shared
+</code></pre>
+<p>The default installation location is &quot;/usr/local&quot;. Pass the <code>prefix</code> variable to make to install it to another location:</p>
+<pre><code>make install prefix=/some/other/directory
+</code></pre>
+<p>The makefile installs the pdfio header to &quot;${prefix}/include&quot;, the library to &quot;${prefix}/lib&quot;, the <code>pkg-config</code> file to &quot;${prefix}/lib/pkgconfig&quot;, the man page to &quot;${prefix}/share/man/man3&quot;, and the documentation to &quot;${prefix}/share/doc/pdfio&quot;.</p>
+<p>The makefile supports the following variables that can be specified in the make command or as environment variables:</p>
+<ul>
+<li><p><code>AR</code>: the library archiver (default &quot;ar&quot;)</p>
+</li>
+<li><p><code>ARFLAGS</code>: options for the library archiver (default &quot;cr&quot;)</p>
+</li>
+<li><p><code>CC</code>: the C compiler (default &quot;cc&quot;)</p>
+</li>
+<li><p><code>CFLAGS</code>: options for the C compiler (default &quot;&quot;)</p>
+</li>
+<li><p><code>CODESIGN_IDENTITY</code>: the identity to use when code signing the shared library on macOS (default &quot;Developer ID&quot;)</p>
+</li>
+<li><p><code>COMMONFLAGS</code>: options for the C compiler and linker (typically architecture and optimization options, default is &quot;-Os -g&quot;)</p>
+</li>
+<li><p><code>CPPFLAGS</code>: options for the C preprocessor (default &quot;&quot;)</p>
+</li>
+<li><p><code>DESTDIR&quot; and &quot;DSTROOT</code>: specifies a root directory when installing (default is &quot;&quot;, specify only one)</p>
+</li>
+<li><p><code>DSOFLAGS</code>: options for the C compiler when linking the shared library (default &quot;&quot;)</p>
+</li>
+<li><p><code>LDFLAGS</code>: options for the C compiler when linking the test programs (default &quot;&quot;)</p>
+</li>
+<li><p><code>LIBS</code>: library options when linking the test programs (default &quot;-lz&quot;)</p>
+</li>
+<li><p><code>RANLIB</code>: program that generates a table-of-contents in a library (default &quot;ranlib&quot;)</p>
+</li>
+<li><p><code>prefix</code>: specifies the installation directory (default &quot;/usr/local&quot;)</p>
+</li>
+</ul>
+<h3 class="title" id="visual-studio-project">Visual Studio Project</h3>
+<blockquote>
+<p>Note: I haven't yet added this...</p>
+</blockquote>
+<p>The Visual Studio solution (&quot;pdfio.sln&quot;) is provided for Windows developers generates both a static library and DLL.</p>
+<h3 class="title" id="xcode-project">Xcode Project</h3>
+<p>There is also an Xcode project (&quot;pdfio.xcodeproj&quot;) you can use on macOS which generates a static library that will be installed under &quot;/usr/local&quot; with:</p>
+<pre><code>sudo xcodebuild install
+</code></pre>
+<p>You can reproduce this with the makefile using:</p>
+<pre><code>sudo make 'COMMONFLAGS=&quot;-Os -mmacosx-version-min=10.14 -arch x86_64 -arch arm64&quot;' install
+</code></pre>
+<h3 class="title" id="detecting-pdfio">Detecting PDFio</h3>
+<p>PDFio can be detected using the <code>pkg-config</code> command, for example:</p>
+<pre><code>if pkg-config --exists pdfio; then
+    ... 
+fi
+</code></pre>
+<p>In a makefile you can add the necessary compiler and linker options with:</p>
+<pre><code class="language-make">CFLAGS  +=      `pkg-config --cflags pdfio`
+LIBS    +=      `pkg-config --libs pdfio`
+</code></pre>
+<h3 class="title" id="header-files">Header Files</h3>
+<p>PDFio provides a primary header file that is always used:</p>
+<pre><code class="language-c"><span class="directive">#include &lt;pdfio.h&gt;</span>
+</code></pre>
+<p>PDFio also provides content helper functions that are defined in a separate header file:</p>
+<pre><code class="language-c"><span class="directive">#include &lt;pdfio-content.h&gt;</span>
+</code></pre>
+<h2 class="title" id="api-overview">API Overview</h2>
+<p>PDFio exposes several types:</p>
+<ul>
+<li><p><code>pdfio_file_t</code>: A PDF file (for reading or writing)</p>
+</li>
+<li><p><code>pdfio_array_t</code>: An array of values</p>
+</li>
+<li><p><code>pdfio_dict_t</code>: A dictionary of key/value pairs in a PDF file, object, etc.</p>
+</li>
+<li><p><code>pdfio_obj_t</code>: An object in a PDF file</p>
+</li>
+<li><p><code>pdfio_stream_t</code>: An object stream</p>
+</li>
+</ul>
+<h3 class="title" id="pdf-files">PDF Files</h3>
+<h3 class="title" id="pdf-values">PDF Values</h3>
+<h3 class="title" id="pdf-objects">PDF Objects</h3>
+<h3 class="title" id="pdf-streams">PDF Streams</h3>
 <h2 class="title"><a id="FUNCTIONS">Functions</a></h2>
 <h3 class="function"><a id="pdfioArrayAppendArray">pdfioArrayAppendArray</a></h3>
 <p class="description">Add an array value to an array.</p>
@@ -446,7 +572,7 @@ bool pdfioArrayAppendArray(<a href="#pdfio_array_t">pdfio_array_t</a> *a, <a hre
 <h3 class="function"><a id="pdfioArrayAppendBinary">pdfioArrayAppendBinary</a></h3>
 <p class="description">Add a binary string value to an array.</p>
 <p class="code">
-bool pdfioArrayAppendBinary(<a href="#pdfio_array_t">pdfio_array_t</a> *a, unsigned char *value, size_t valuelen);</p>
+bool pdfioArrayAppendBinary(<a href="#pdfio_array_t">pdfio_array_t</a> *a, const unsigned char *value, size_t valuelen);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>a</th>
@@ -510,10 +636,10 @@ bool pdfioArrayAppendNumber(<a href="#pdfio_array_t">pdfio_array_t</a> *a, doubl
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
-<h3 class="function"><a id="pdfioArrayAppendObject">pdfioArrayAppendObject</a></h3>
+<h3 class="function"><a id="pdfioArrayAppendObj">pdfioArrayAppendObj</a></h3>
 <p class="description">Add an indirect object reference to an array.</p>
 <p class="code">
-bool pdfioArrayAppendObject(<a href="#pdfio_array_t">pdfio_array_t</a> *a, <a href="#pdfio_obj_t">pdfio_obj_t</a> *value);</p>
+bool pdfioArrayAppendObj(<a href="#pdfio_array_t">pdfio_array_t</a> *a, <a href="#pdfio_obj_t">pdfio_obj_t</a> *value);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>a</th>
@@ -560,6 +686,84 @@ bool pdfioArrayAppendString(<a href="#pdfio_array_t">pdfio_array_t</a> *a, const
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">New array or <code>NULL</code> on error</p>
+<h3 class="function"><a id="pdfioArrayCreateCalibratedColorFromMatrix">pdfioArrayCreateCalibratedColorFromMatrix</a></h3>
+<p class="description">Create a calibrated color space array using a CIE XYZ transform matrix.</p>
+<p class="code">
+<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateCalibratedColorFromMatrix(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t num_colors, double gamma, const double matrix[3][3], const double white_point[3]);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>num_colors</th>
+<td class="description">Number of colors (1 or 3)</td></tr>
+<tr><th>gamma</th>
+<td class="description">Gamma value</td></tr>
+<tr><th>matrix[3][3]</th>
+<td class="description">XYZ transform</td></tr>
+<tr><th>white_point[3]</th>
+<td class="description">White point</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Color space array</p>
+<h3 class="function"><a id="pdfioArrayCreateCalibratedColorFromPrimaries">pdfioArrayCreateCalibratedColorFromPrimaries</a></h3>
+<p class="description">Create a calibrated color sapce array using CIE xy primary chromacities.</p>
+<p class="code">
+<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateCalibratedColorFromPrimaries(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t num_colors, double gamma, double wx, double wy, double rx, double ry, double gx, double gy, double bx, double by);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>num_colors</th>
+<td class="description">Number of colors (1 or 3)</td></tr>
+<tr><th>gamma</th>
+<td class="description">Gama value</td></tr>
+<tr><th>wx</th>
+<td class="description">White point X chromacity</td></tr>
+<tr><th>wy</th>
+<td class="description">White point Y chromacity</td></tr>
+<tr><th>rx</th>
+<td class="description">Red X chromacity</td></tr>
+<tr><th>ry</th>
+<td class="description">Red Y chromacity</td></tr>
+<tr><th>gx</th>
+<td class="description">Green X chromacity</td></tr>
+<tr><th>gy</th>
+<td class="description">Green Y chromacity</td></tr>
+<tr><th>bx</th>
+<td class="description">Blue X chromacity</td></tr>
+<tr><th>by</th>
+<td class="description">Blue Y chromacity</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Color space array</p>
+<h3 class="function"><a id="pdfioArrayCreateICCBasedColor">pdfioArrayCreateICCBasedColor</a></h3>
+<p class="description">Create an ICC-based color space array.</p>
+<p class="code">
+<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateICCBasedColor(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <a href="#pdfio_obj_t">pdfio_obj_t</a> *icc_object);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>icc_object</th>
+<td class="description">ICC profile object</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Color array</p>
+<h3 class="function"><a id="pdfioArrayCreateIndexedColor">pdfioArrayCreateIndexedColor</a></h3>
+<p class="description">Create an indexed color space array.</p>
+<p class="code">
+<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateIndexedColor(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t num_colors, const unsigned char *colors);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>num_colors</th>
+<td class="description">Number of colors</td></tr>
+<tr><th>colors</th>
+<td class="description">RGB values for colors</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Color array</p>
 <h3 class="function"><a id="pdfioArrayGetArray">pdfioArrayGetArray</a></h3>
 <p class="description">Get an array value from an array.</p>
 <p class="code">
@@ -640,10 +844,10 @@ double pdfioArrayGetNumber(<a href="#pdfio_array_t">pdfio_array_t</a> *a, size_t
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Value</p>
-<h3 class="function"><a id="pdfioArrayGetObject">pdfioArrayGetObject</a></h3>
+<h3 class="function"><a id="pdfioArrayGetObj">pdfioArrayGetObj</a></h3>
 <p class="description">Get an indirect object reference from an array.</p>
 <p class="code">
-<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioArrayGetObject(<a href="#pdfio_array_t">pdfio_array_t</a> *a, size_t n);</p>
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioArrayGetObj(<a href="#pdfio_array_t">pdfio_array_t</a> *a, size_t n);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>a</th>
@@ -690,17 +894,6 @@ const char *pdfioArrayGetString(<a href="#pdfio_array_t">pdfio_array_t</a> *a, s
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Value type</p>
-<h3 class="function"><a id="pdfioContentBeginText">pdfioContentBeginText</a></h3>
-<p class="description">Begin a text block.</p>
-<p class="code">
-bool pdfioContentBeginText(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>st</th>
-<td class="description">Stream</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
 <h3 class="function"><a id="pdfioContentClip">pdfioContentClip</a></h3>
 <p class="description">Clip output to the current path.</p>
 <p class="code">
@@ -717,7 +910,7 @@ bool pdfioContentClip(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, bool eve
 <h3 class="function"><a id="pdfioContentDrawImage">pdfioContentDrawImage</a></h3>
 <p class="description">Draw an image object.</p>
 <p class="code">
-bool pdfioContentDrawImage(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, const char *name, double x, double y, double w, double h);</p>
+bool pdfioContentDrawImage(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, const char *name, double x, double y, double width, double height);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
@@ -728,9 +921,9 @@ bool pdfioContentDrawImage(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, con
 <td class="description">X offset of image</td></tr>
 <tr><th>y</th>
 <td class="description">Y offset of image</td></tr>
-<tr><th>w</th>
+<tr><th>width</th>
 <td class="description">Width of image</td></tr>
-<tr><th>h</th>
+<tr><th>height</th>
 <td class="description">Height of image</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
@@ -738,17 +931,6 @@ bool pdfioContentDrawImage(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, con
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">The object name must be part of the page dictionary resources, typically
 using the <a href="#pdfioPageDictAddImage"><code>pdfioPageDictAddImage</code></a> function.</p>
-<h3 class="function"><a id="pdfioContentEndText">pdfioContentEndText</a></h3>
-<p class="description">End a text block.</p>
-<p class="code">
-bool pdfioContentEndText(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>st</th>
-<td class="description">Stream</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
 <h3 class="function"><a id="pdfioContentFill">pdfioContentFill</a></h3>
 <p class="description">Fill the current path.</p>
 <p class="code">
@@ -937,13 +1119,19 @@ bool pdfioContentPathMoveTo(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, do
 <h3 class="function"><a id="pdfioContentPathRect">pdfioContentPathRect</a></h3>
 <p class="description">Add a rectangle to the current path.</p>
 <p class="code">
-bool pdfioContentPathRect(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, <a href="#pdfio_rect_t">pdfio_rect_t</a> *rect);</p>
+bool pdfioContentPathRect(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, double x, double y, double width, double height);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
 <td class="description">Stream</td></tr>
-<tr><th>rect</th>
-<td class="description">Rectangle</td></tr>
+<tr><th>x</th>
+<td class="description">X offset</td></tr>
+<tr><th>y</th>
+<td class="description">Y offset</td></tr>
+<tr><th>width</th>
+<td class="description">Width</td></tr>
+<tr><th>height</th>
+<td class="description">Height</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
@@ -1352,6 +1540,28 @@ bool pdfioContentStroke(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h3 class="function"><a id="pdfioContentTextBegin">pdfioContentTextBegin</a></h3>
+<p class="description">Begin a text block.</p>
+<p class="code">
+bool pdfioContentTextBegin(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>st</th>
+<td class="description">Stream</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h3 class="function"><a id="pdfioContentTextEnd">pdfioContentTextEnd</a></h3>
+<p class="description">End a text block.</p>
+<p class="code">
+bool pdfioContentTextEnd(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>st</th>
+<td class="description">Stream</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
 <h3 class="function"><a id="pdfioContentTextMoveLine">pdfioContentTextMoveLine</a></h3>
 <p class="description">Move to the next line and offset.</p>
 <p class="code">
@@ -1396,15 +1606,13 @@ bool pdfioContentTextNextLine(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);
 <h3 class="function"><a id="pdfioContentTextShow">pdfioContentTextShow</a></h3>
 <p class="description">Show text.</p>
 <p class="code">
-bool pdfioContentTextShow(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, const char *s, bool new_line);</p>
+bool pdfioContentTextShow(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, const char *s);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
 <td class="description">Stream</td></tr>
 <tr><th>s</th>
 <td class="description">String to show</td></tr>
-<tr><th>new_line</th>
-<td class="description">Advance to the next line afterwards</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
@@ -1425,6 +1633,21 @@ bool pdfioContentTextShowJustified(<a href="#pdfio_stream_t">pdfio_stream_t</a> 
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h3 class="function"><a id="pdfioContentTextShowf">pdfioContentTextShowf</a></h3>
+<p class="description"></p>
+<p class="code">
+bool pdfioContentTextShowf(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, const char *format, ...);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>st</th>
+<td class="description">Stream</td></tr>
+<tr><th>format</th>
+<td class="description"><code>printf</code>-style format string</td></tr>
+<tr><th>...</th>
+<td class="description">Additional arguments as needed</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Show formatted text.</p>
 <h3 class="function"><a id="pdfioDictCopy">pdfioDictCopy</a></h3>
 <p class="description">Copy a dictionary to a PDF file.</p>
 <p class="code">
@@ -1529,10 +1752,10 @@ double pdfioDictGetNumber(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const 
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Value</p>
-<h3 class="function"><a id="pdfioDictGetObject">pdfioDictGetObject</a></h3>
+<h3 class="function"><a id="pdfioDictGetObj">pdfioDictGetObj</a></h3>
 <p class="description">Get a key indirect object value from a dictionary.</p>
 <p class="code">
-<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioDictGetObject(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *key);</p>
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioDictGetObj(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *key);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>dict</th>
@@ -1601,7 +1824,7 @@ bool pdfioDictSetArray(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const cha
 <h3 class="function"><a id="pdfioDictSetBinary">pdfioDictSetBinary</a></h3>
 <p class="description">Set a key binary string in a dictionary.</p>
 <p class="code">
-bool pdfioDictSetBinary(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *key, unsigned char *value, size_t valuelen);</p>
+bool pdfioDictSetBinary(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *key, const unsigned char *value, size_t valuelen);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>dict</th>
@@ -1688,10 +1911,10 @@ bool pdfioDictSetNumber(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const ch
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
-<h3 class="function"><a id="pdfioDictSetObject">pdfioDictSetObject</a></h3>
+<h3 class="function"><a id="pdfioDictSetObj">pdfioDictSetObj</a></h3>
 <p class="description">Set a key indirect object reference in a dictionary.</p>
 <p class="code">
-bool pdfioDictSetObject(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *key, <a href="#pdfio_obj_t">pdfio_obj_t</a> *value);</p>
+bool pdfioDictSetObj(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *key, <a href="#pdfio_obj_t">pdfio_obj_t</a> *value);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>dict</th>
@@ -1782,23 +2005,71 @@ bool pdfioFileClose(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">PDF file or <code>NULL</code> on error</p>
-<h3 class="function"><a id="pdfioFileCreateFontObject">pdfioFileCreateFontObject</a></h3>
+<h3 class="function"><a id="pdfioFileCreateBaseFontObj">pdfioFileCreateBaseFontObj</a></h3>
+<p class="description">Create one of the base 14 PDF fonts.</p>
+<p class="code">
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateBaseFontObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *name);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>name</th>
+<td class="description">Font name</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Font object</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function creates one of the base 14 PDF fonts. The &quot;name&quot; parameter
+specifies the font nane:
+
+</p><ul>
+<li><code>Courier</code>
+</li>
+<li><code>Courier-Bold</code>
+</li>
+<li><code>Courier-BoldItalic</code>
+</li>
+<li><code>Courier-Italic</code>
+</li>
+<li><code>Helvetica</code>
+</li>
+<li><code>Helvetica-Bold</code>
+</li>
+<li><code>Helvetica-BoldOblique</code>
+</li>
+<li><code>Helvetica-Oblique</code>
+</li>
+<li><code>Symbol</code>
+</li>
+<li><code>Times-Bold</code>
+</li>
+<li><code>Times-BoldItalic</code>
+</li>
+<li><code>Times-Italic</code>
+</li>
+<li><code>Times-Roman</code>
+</li>
+<li><code>ZapfDingbats</code></li>
+</ul>
+<h3 class="function"><a id="pdfioFileCreateFontObj">pdfioFileCreateFontObj</a></h3>
 <p class="description">Add a font object to a PDF file.</p>
 <p class="code">
-<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateFontObject(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename);</p>
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateFontObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename, bool unicode);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
 <td class="description">PDF file</td></tr>
 <tr><th>filename</th>
 <td class="description">Filename</td></tr>
+<tr><th>unicode</th>
+<td class="description">Unicode font?</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
-<p class="description">Object</p>
-<h3 class="function"><a id="pdfioFileCreateICCProfileObject">pdfioFileCreateICCProfileObject</a></h3>
+<p class="description">Font object</p>
+<h3 class="function"><a id="pdfioFileCreateICCProfileObj">pdfioFileCreateICCProfileObj</a></h3>
 <p class="description">Add an ICC profile object to a PDF file.</p>
 <p class="code">
-<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateICCProfileObject(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename);</p>
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateICCProfileObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
@@ -1808,10 +2079,10 @@ bool pdfioFileClose(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Object</p>
-<h3 class="function"><a id="pdfioFileCreateImageObject">pdfioFileCreateImageObject</a></h3>
+<h3 class="function"><a id="pdfioFileCreateImageObj">pdfioFileCreateImageObj</a></h3>
 <p class="description">Add an image object to a PDF file.</p>
 <p class="code">
-<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateImageObject(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename, bool interpolate);</p>
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateImageObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename, bool interpolate);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
@@ -1825,10 +2096,10 @@ bool pdfioFileClose(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
 <p class="description">Object</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">Currently only GIF, JPEG, and PNG files are supported.</p>
-<h3 class="function"><a id="pdfioFileCreateObject">pdfioFileCreateObject</a></h3>
+<h3 class="function"><a id="pdfioFileCreateObj">pdfioFileCreateObj</a></h3>
 <p class="description">Create a new object in a PDF file.</p>
 <p class="code">
-<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateObject(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <a href="#pdfio_dict_t">pdfio_dict_t</a> *dict);</p>
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <a href="#pdfio_dict_t">pdfio_dict_t</a> *dict);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
@@ -1851,10 +2122,10 @@ bool pdfioFileClose(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Contents stream</p>
-<h3 class="function"><a id="pdfioFileFindObject">pdfioFileFindObject</a></h3>
+<h3 class="function"><a id="pdfioFileFindObj">pdfioFileFindObj</a></h3>
 <p class="description">Find an object using its object number.</p>
 <p class="code">
-<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileFindObject(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t number);</p>
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileFindObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t number);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
@@ -1865,7 +2136,7 @@ bool pdfioFileClose(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Object or <code>NULL</code> if not found</p>
 <h4 class="discussion">Discussion</h4>
-<p class="discussion">This differs from <a href="#pdfioFileGetObject"><code>pdfioFileGetObject</code></a> which takes an index into the
+<p class="discussion">This differs from <a href="#pdfioFileGetObj"><code>pdfioFileGetObj</code></a> which takes an index into the
 list of objects while this function takes the object number.</p>
 <h3 class="function"><a id="pdfioFileGetID">pdfioFileGetID</a></h3>
 <p class="description">Get the PDF file's ID strings.</p>
@@ -1889,10 +2160,10 @@ const char *pdfioFileGetName(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Filename</p>
-<h3 class="function"><a id="pdfioFileGetNumObjects">pdfioFileGetNumObjects</a></h3>
+<h3 class="function"><a id="pdfioFileGetNumObjs">pdfioFileGetNumObjs</a></h3>
 <p class="description">Get the number of objects in a PDF file.</p>
 <p class="code">
-size_t pdfioFileGetNumObjects(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
+size_t pdfioFileGetNumObjs(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
@@ -1911,10 +2182,10 @@ size_t pdfioFileGetNumPages(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Number of pages</p>
-<h3 class="function"><a id="pdfioFileGetObject">pdfioFileGetObject</a></h3>
+<h3 class="function"><a id="pdfioFileGetObj">pdfioFileGetObj</a></h3>
 <p class="description">Get an object from a PDF file.</p>
 <p class="code">
-<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileGetObject(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t n);</p>
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileGetObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t n);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
@@ -1963,6 +2234,17 @@ const char *pdfioFileGetVersion(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);<
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">PDF file</p>
+<h3 class="function"><a id="pdfioImageGetBytesPerLine">pdfioImageGetBytesPerLine</a></h3>
+<p class="description">Get the number of bytes to read for each line.</p>
+<p class="code">
+size_t pdfioImageGetBytesPerLine(<a href="#pdfio_obj_t">pdfio_obj_t</a> *obj);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>obj</th>
+<td class="description">Image object</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Number of bytes per line</p>
 <h3 class="function"><a id="pdfioImageGetHeight">pdfioImageGetHeight</a></h3>
 <p class="description">Get the height of an image object.</p>
 <p class="code">
@@ -2078,6 +2360,17 @@ size_t pdfioObjGetNumber(<a href="#pdfio_obj_t">pdfio_obj_t</a> *obj);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Object number (1 to 9999999999)</p>
+<h3 class="function"><a id="pdfioObjGetSubtype">pdfioObjGetSubtype</a></h3>
+<p class="description">Get an object's subtype.</p>
+<p class="code">
+const char *pdfioObjGetSubtype(<a href="#pdfio_obj_t">pdfio_obj_t</a> *obj);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>obj</th>
+<td class="description">Object</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Object subtype</p>
 <h3 class="function"><a id="pdfioObjGetType">pdfioObjGetType</a></h3>
 <p class="description">Get an object's type.</p>
 <p class="code">
@@ -2115,26 +2408,33 @@ bool pdfioPageCopy(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <a href="#pdfi
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
-<h3 class="function"><a id="pdfioPageDictAddCalibratedColorSpace">pdfioPageDictAddCalibratedColorSpace</a></h3>
-<p class="description">Add a calibrated color space to
-the page dictionary.</p>
+<h3 class="function"><a id="pdfioPageDictAddColorSpace">pdfioPageDictAddColorSpace</a></h3>
+<p class="description">Add a color space to the page dictionary.</p>
 <p class="code">
-bool pdfioPageDictAddCalibratedColorSpace(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *name, size_t num_colors, const double *white_point, double gamma);</p>
+bool pdfioPageDictAddColorSpace(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *name, <a href="#pdfio_array_t">pdfio_array_t</a> *data);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>dict</th>
 <td class="description">Page dictionary</td></tr>
 <tr><th>name</th>
 <td class="description">Color space name</td></tr>
-<tr><th>num_colors</th>
-<td class="description">Number of color components</td></tr>
-<tr><th>white_point</th>
-<td class="description">CIE XYZ white point</td></tr>
-<tr><th>gamma</th>
-<td class="description">Gamma value</td></tr>
+<tr><th>data</th>
+<td class="description">Color space array</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function adds a named color space to the page dictionary.<br>
+<br>
+The names &quot;DefaultCMYK&quot;, &quot;DefaultGray&quot;, and &quot;DefaultRGB&quot; specify the default
+device color space used for the page.<br>
+<br>
+The &quot;data&quot; array contains a calibrated, indexed, or ICC-based color space
+array that was created using the
+<a href="#pdfioArrayCreateCalibratedColorFromMatrix"><code>pdfioArrayCreateCalibratedColorFromMatrix</code></a>,
+<a href="#pdfioArrayCreateCalibratedColorFromPrimaries"><code>pdfioArrayCreateCalibratedColorFromPrimaries</code></a>,
+<a href="#pdfioArrayCreateICCBasedColor"><code>pdfioArrayCreateICCBasedColor</code></a>, or
+<a href="#pdfioArrayCreateIndexedColor"><code>pdfioArrayCreateIndexedColor</code></a> functions.</p>
 <h3 class="function"><a id="pdfioPageDictAddFont">pdfioPageDictAddFont</a></h3>
 <p class="description">Add a font object to the page dictionary.</p>
 <p class="code">
@@ -2147,22 +2447,6 @@ bool pdfioPageDictAddFont(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const 
 <td class="description">Font name</td></tr>
 <tr><th>obj</th>
 <td class="description">Font object</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
-<h3 class="function"><a id="pdfioPageDictAddICCColorSpace">pdfioPageDictAddICCColorSpace</a></h3>
-<p class="description">Add an ICC color space to the page
-dictionary.</p>
-<p class="code">
-bool pdfioPageDictAddICCColorSpace(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *name, <a href="#pdfio_obj_t">pdfio_obj_t</a> *obj);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>dict</th>
-<td class="description">Page dictionary</td></tr>
-<tr><th>name</th>
-<td class="description">Color space name</td></tr>
-<tr><th>obj</th>
-<td class="description">ICC profile object</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
@@ -2278,6 +2562,11 @@ ssize_t pdfioStreamRead(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, void *
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Number of bytes read or <code>-1</code> on error</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function reads data from a stream.  When reading decoded image data
+from a stream, you <em>must</em> read whole scanlines.  The
+<a href="#pdfioImageGetBytesPerLine"><code>pdfioImageGetBytesPerLine</code></a> function can be used to determine the
+proper read length.</p>
 <h3 class="function"><a id="pdfioStreamWrite">pdfioStreamWrite</a></h3>
 <p class="description">Write data to a stream.</p>
 <p class="code">

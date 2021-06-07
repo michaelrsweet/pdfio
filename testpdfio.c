@@ -77,7 +77,6 @@ do_test_file(const char *filename)	// I - PDF filename
 		num_pages;		// Number of pages
   pdfio_obj_t	*obj;			// Object
   pdfio_dict_t	*dict;			// Object dictionary
-  const char	*type;			// Object type
 
 
   // Try opening the file...
@@ -87,7 +86,7 @@ do_test_file(const char *filename)	// I - PDF filename
     puts("PASS");
 
     // Show basic stats...
-    num_objs  = pdfioFileGetNumObjects(pdf);
+    num_objs  = pdfioFileGetNumObjs(pdf);
     num_pages = pdfioFileGetNumPages(pdf);
 
     printf("    PDF %s, %d pages, %d objects.\n", pdfioFileGetVersion(pdf), (int)num_pages, (int)num_objs);
@@ -108,7 +107,7 @@ do_test_file(const char *filename)	// I - PDF filename
 
 	if (!pdfioDictGetRect(dict, "MediaBox", &media_box))
 	{
-	  if ((obj = pdfioDictGetObject(dict, "Parent")) != NULL)
+	  if ((obj = pdfioDictGetObj(dict, "Parent")) != NULL)
 	  {
 	    dict = pdfioObjGetDict(obj);
 	    pdfioDictGetRect(dict, "MediaBox", &media_box);
@@ -122,7 +121,7 @@ do_test_file(const char *filename)	// I - PDF filename
     // Show the associated value with each object...
     for (n = 0; n < num_objs; n ++)
     {
-      if ((obj = pdfioFileGetObject(pdf, n)) == NULL)
+      if ((obj = pdfioFileGetObj(pdf, n)) == NULL)
       {
 	printf("    Unable to get object #%d.\n", (int)n);
       }
@@ -157,7 +156,6 @@ static int				// O - Exit status
 do_unit_tests(void)
 {
   int			i;		// Looping var
-  char			filename[256];	// PDF filename
   pdfio_file_t		*pdf,		// Test PDF file
 			*outpdf;	// Output PDF file
   bool			error = false;	// Error callback data
@@ -214,21 +212,21 @@ do_unit_tests(void)
     return (1);
 
   // Create some image objects...
-  fputs("pdfioFileCreateImageObject(\"testfiles/color.jpg\"): ", stdout);
-  if ((color_jpg = pdfioFileCreateImageObject(outpdf, "testfiles/color.jpg", true)) != NULL)
+  fputs("pdfioFileCreateImageObj(\"testfiles/color.jpg\"): ", stdout);
+  if ((color_jpg = pdfioFileCreateImageObj(outpdf, "testfiles/color.jpg", true)) != NULL)
     puts("PASS");
   else
     return (1);
 
-  fputs("pdfioFileCreateImageObject(\"testfiles/gray.jpg\"): ", stdout);
-  if ((gray_jpg = pdfioFileCreateImageObject(outpdf, "testfiles/gray.jpg", true)) != NULL)
+  fputs("pdfioFileCreateImageObj(\"testfiles/gray.jpg\"): ", stdout);
+  if ((gray_jpg = pdfioFileCreateImageObj(outpdf, "testfiles/gray.jpg", true)) != NULL)
     puts("PASS");
   else
     return (1);
 
   // Create fonts...
-  fputs("pdfioFileCreateBaseFontObject(\"Helvetica\"): ", stdout);
-  if ((helvetica = pdfioFileCreateBaseFontObject(outpdf, "Helvetica")) != NULL)
+  fputs("pdfioFileCreateBaseFontObj(\"Helvetica\"): ", stdout);
+  if ((helvetica = pdfioFileCreateBaseFontObj(outpdf, "Helvetica")) != NULL)
     puts("PASS");
   else
     return (1);
@@ -276,7 +274,7 @@ do_unit_tests(void)
     return (1);
 
   // Write a page with test images...
-  first_image = pdfioFileGetNumObjects(outpdf);
+  first_image = pdfioFileGetNumObjs(outpdf);
   if (write_images(outpdf, 7, helvetica))
     return (1);
 
@@ -330,7 +328,7 @@ do_unit_tests(void)
 
   // Verify the images
   for (i = 0; i < 7; i ++)
-    verify_image(pdf, (size_t)(first_image + i));
+    verify_image(pdf, first_image + (size_t)i);
 
   // Close the new PDF file...
   fputs("pdfioFileClose(\"testpdfio-out.pdf\"): ", stdout);
@@ -489,8 +487,8 @@ verify_image(pdfio_file_t *pdf,		// I - PDF file
   ssize_t	bytes;			// Bytes read from stream
 
 
-  printf("pdfioFileFindObject(%lu): ", (unsigned long)number);
-  if ((obj = pdfioFileFindObject(pdf, number)) != NULL)
+  printf("pdfioFileFindObj(%lu): ", (unsigned long)number);
+  if ((obj = pdfioFileFindObj(pdf, number)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -550,9 +548,9 @@ verify_image(pdfio_file_t *pdf,		// I - PDF file
   {
     for (x = 0, bufptr = buffer; x < 256; x ++, bufptr += 3)
     {
-      bufptr[0] = y;
-      bufptr[1] = y + x;
-      bufptr[2] = y - x;
+      bufptr[0] = (unsigned char)y;
+      bufptr[1] = (unsigned char)(y + x);
+      bufptr[2] = (unsigned char)(y - x);
     }
 
     if ((bytes = pdfioStreamRead(st, line, sizeof(line))) != (ssize_t)sizeof(line))
@@ -1040,7 +1038,7 @@ write_image_object(
   pdfioDictSetDict(dict, "DecodeParms", decode);
 
   // Create the image object...
-  if ((obj = pdfioFileCreateObject(pdf, dict)) == NULL)
+  if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
     return (NULL);
 
   // Create the image stream and write the image...
@@ -1051,9 +1049,9 @@ write_image_object(
   {
     for (x = 0, bufptr = buffer; x < 256; x ++, bufptr += 3)
     {
-      bufptr[0] = y;
-      bufptr[1] = y + x;
-      bufptr[2] = y - x;
+      bufptr[0] = (unsigned char)y;
+      bufptr[1] = (unsigned char)(y + x);
+      bufptr[2] = (unsigned char)(y - x);
     }
 
     if (!pdfioStreamWrite(st, buffer, sizeof(buffer)))
@@ -1182,7 +1180,7 @@ write_images(pdfio_file_t *pdf,		// I - PDF file
 
   for (p = _PDFIO_PREDICTOR_PNG_NONE; p <= _PDFIO_PREDICTOR_PNG_AUTO; p ++)
   {
-    int i = p - _PDFIO_PREDICTOR_PNG_NONE;
+    int i = (int)p - _PDFIO_PREDICTOR_PNG_NONE;
 
     snprintf(pname, sizeof(pname), "IM%d", p);
     snprintf(plabel, sizeof(plabel), "PNG Predictor %d", p);
@@ -1371,20 +1369,20 @@ write_png(pdfio_file_t *pdf,		// I - PDF file
 
 
   // Import the PNG test images
-  fputs("pdfioFileCreateImageObject(\"testfiles/pdfio-color.png\"): ", stdout);
-  if ((color = pdfioFileCreateImageObject(pdf, "testfiles/pdfio-color.png", false)) != NULL)
+  fputs("pdfioFileCreateImageObj(\"testfiles/pdfio-color.png\"): ", stdout);
+  if ((color = pdfioFileCreateImageObj(pdf, "testfiles/pdfio-color.png", false)) != NULL)
     puts("PASS");
   else
     return (1);
 
-  fputs("pdfioFileCreateImageObject(\"testfiles/pdfio-gray.png\"): ", stdout);
-  if ((gray = pdfioFileCreateImageObject(pdf, "testfiles/pdfio-gray.png", false)) != NULL)
+  fputs("pdfioFileCreateImageObj(\"testfiles/pdfio-gray.png\"): ", stdout);
+  if ((gray = pdfioFileCreateImageObj(pdf, "testfiles/pdfio-gray.png", false)) != NULL)
     puts("PASS");
   else
     return (1);
 
-  fputs("pdfioFileCreateImageObject(\"testfiles/pdfio-indexed.png\"): ", stdout);
-  if ((indexed = pdfioFileCreateImageObject(pdf, "testfiles/pdfio-indexed.png", false)) != NULL)
+  fputs("pdfioFileCreateImageObj(\"testfiles/pdfio-indexed.png\"): ", stdout);
+  if ((indexed = pdfioFileCreateImageObj(pdf, "testfiles/pdfio-indexed.png", false)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -1572,8 +1570,8 @@ write_text(pdfio_file_t *pdf,		// I - PDF file
 
 
   // Create text font...
-  fputs("pdfioFileCreateBaseFontObject(\"Courier\"): ", stdout);
-  if ((courier = pdfioFileCreateBaseFontObject(pdf, "Courier")) != NULL)
+  fputs("pdfioFileCreateBaseFontObj(\"Courier\"): ", stdout);
+  if ((courier = pdfioFileCreateBaseFontObj(pdf, "Courier")) != NULL)
     puts("PASS");
   else
     return (1);
