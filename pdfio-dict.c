@@ -402,7 +402,8 @@ _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
   PDFIO_DEBUG("_pdfioDictRead(pdf=%p)\n", pdf);
 
   // Create a dictionary and start reading...
-  dict = pdfioDictCreate(pdf);
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+    return (NULL);
 
   while (_pdfioTokenGet(tb, key, sizeof(key)))
   {

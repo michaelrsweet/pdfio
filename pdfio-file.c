@@ -388,15 +388,19 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
     pdfioDictSetName(dict, "Type", "Page");
 
   // Create the page object...
-  page = pdfioFileCreateObj(pdf, dict);
+  if ((page = pdfioFileCreateObj(pdf, dict)) == NULL)
+    return (NULL);
 
   // Create a contents object to hold the contents of the page...
-  contents_dict = pdfioDictCreate(pdf);
+  if ((contents_dict = pdfioDictCreate(pdf)) == NULL)
+    return (NULL);
+
 #ifndef DEBUG
   pdfioDictSetName(contents_dict, "Filter", "FlateDecode");
 #endif // !DEBUG
 
-  contents = pdfioFileCreateObj(pdf, contents_dict);
+  if ((contents = pdfioFileCreateObj(pdf, contents_dict)) == NULL)
+    return (NULL);
 
   // Add the contents stream to the pages object and write it...
   pdfioDictSetObj(dict, "Contents", contents);
@@ -1372,7 +1376,12 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     close(fd);
   }
 
-  pdf->trailer = pdfioDictCreate(pdf);
+  if ((pdf->trailer = pdfioDictCreate(pdf)) == NULL)
+  {
+    ret = false;
+    goto done;
+  }
+
   if (pdf->encrypt)
     pdfioDictSetObj(pdf->trailer, "Encrypt", pdf->encrypt);
   if (pdf->id_array)
