@@ -285,6 +285,10 @@ pdfioFileCreateObj(
   _pdfio_value_t	value;		// Object value
 
 
+  // Range check input...
+  if (!pdf || !dict)
+    return (NULL);
+
   value.type       = PDFIO_VALTYPE_DICT;
   value.value.dict = dict;
 
@@ -371,6 +375,9 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
     dict = pdfioDictCopy(pdf, dict);
   else
     dict = pdfioDictCreate(pdf);
+
+  if (!dict)
+    return (NULL);
 
   // Make sure the page dictionary has all of the required keys...
   if (!_pdfioDictGetValue(dict, "CropBox"))
