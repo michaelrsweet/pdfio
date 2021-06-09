@@ -1646,6 +1646,11 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 		height = 0;		// Height
   unsigned char	bit_depth = 0,		// Bit depth
 		color_type = 0;		// Color type
+  double	gamma = 2.2,		// Gamma value
+		wx = 0.0, wy = 0.0,	// White point chromacity
+		rx = 0.0, ry = 0.0,	// Red chromacity
+		gx = 0.0, gy = 0.0,	// Green chromacity
+		bx = 0.0, by = 0.0;	// Blue chromacity
 
 
   // Read the file header...
@@ -1671,6 +1676,19 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 
           if (!st)
           {
+	    PDFIO_DEBUG("copy_png: wx=%g, wy=%g, rx=%g, ry=%g, gx=%g, gy=%g, bx=%g, by=%g\n", wx, wy, rx, ry, gx, gy, bx, by);
+	    PDFIO_DEBUG("copy_png: gamma=%g\n", gamma);
+
+            if (!pdfioDictGetArray(dict, "ColorSpace"))
+            {
+              PDFIO_DEBUG("copy_png: Adding %s ColorSpace value.\n", color_type == _PDFIO_PNG_TYPE_GRAY ? "CalGray" : "CalRGB");
+
+	      if (wx != 0.0)
+		pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateCalibratedColorFromPrimaries(dict->pdf, color_type == _PDFIO_PNG_TYPE_GRAY ? 1 : 3, gamma, wx, wy, rx, ry, bx, by, gx, gy));
+              else
+		pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateCalibratedColorFromMatrix(dict->pdf, color_type == _PDFIO_PNG_TYPE_GRAY ? 1 : 3, gamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
+            }
+
 	    obj = pdfioFileCreateObj(dict->pdf, dict);
 
 	    if ((st = pdfioObjCreateStream(obj, PDFIO_FILTER_NONE)) == NULL)
@@ -1750,10 +1768,6 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 	  pdfioDictSetNumber(dict, "Width", width);
 	  pdfioDictSetNumber(dict, "Height", height);
 	  pdfioDictSetNumber(dict, "BitsPerComponent", bit_depth);
-	  if (color_type == _PDFIO_PNG_TYPE_GRAY)
-	    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateCalibratedColorFromMatrix(dict->pdf, 1, pdfioSRGBGamma, NULL, pdfioSRGBWhitePoint));
-	  else if (color_type == _PDFIO_PNG_TYPE_RGB)
-	    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateCalibratedColorFromMatrix(dict->pdf, 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
 	  pdfioDictSetName(dict, "Filter", "FlateDecode");
 
 	  if ((decode = pdfioDictCreate(dict->pdf)) == NULL)
@@ -1782,16 +1796,55 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 
 	  crc = update_png_crc(crc, buffer, length);
 
+          PDFIO_DEBUG("copy_png: Adding Indexed ColorSpace value.\n");
+
           pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateIndexedColor(dict->pdf, length / 3, buffer));
           break;
 
-#if 0
       case _PDFIO_PNG_CHUNK_cHRM : // Cromacities and white point
+          if (length != 32)
+          {
+	    _pdfioFileError(dict->pdf, "Early end-of-file in image file.");
+	    return (NULL);
+          }
+
+          if (read(fd, buffer, length) != length)
+          {
+	    _pdfioFileError(dict->pdf, "Early end-of-file in image file.");
+	    return (NULL);
+          }
+
+	  crc = update_png_crc(crc, buffer, length);
+
+          wx = 0.00001 * ((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
+          wy = 0.00001 * ((buffer[4] << 24) | (buffer[5] << 16) | (buffer[6] << 8) | buffer[7]);
+          rx = 0.00001 * ((buffer[8] << 24) | (buffer[9] << 16) | (buffer[10] << 8) | buffer[11]);
+          ry = 0.00001 * ((buffer[12] << 24) | (buffer[13] << 16) | (buffer[14] << 8) | buffer[15]);
+          gx = 0.00001 * ((buffer[16] << 24) | (buffer[17] << 16) | (buffer[18] << 8) | buffer[19]);
+          gy = 0.00001 * ((buffer[20] << 24) | (buffer[21] << 16) | (buffer[22] << 8) | buffer[23]);
+          bx = 0.00001 * ((buffer[24] << 24) | (buffer[25] << 16) | (buffer[26] << 8) | buffer[27]);
+          by = 0.00001 * ((buffer[28] << 24) | (buffer[29] << 16) | (buffer[30] << 8) | buffer[31]);
           break;
 
       case _PDFIO_PNG_CHUNK_gAMA : // Gamma correction
+          if (length != 4)
+          {
+	    _pdfioFileError(dict->pdf, "Early end-of-file in image file.");
+	    return (NULL);
+          }
+
+          if (read(fd, buffer, length) != length)
+          {
+	    _pdfioFileError(dict->pdf, "Early end-of-file in image file.");
+	    return (NULL);
+          }
+
+	  crc = update_png_crc(crc, buffer, length);
+
+          gamma = 10000.0 / ((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
           break;
 
+#if 0
       case _PDFIO_PNG_CHUNK_tRNS : // Transparency information
           break;
 #endif // 0

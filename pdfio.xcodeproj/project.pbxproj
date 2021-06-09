@@ -67,12 +67,11 @@
 		273440DA263D732000FBFD63 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		273440DB263D732000FBFD63 /* NOTICE */ = {isa = PBXFileReference; lastKnownFileType = text; path = NOTICE; sourceTree = "<group>"; };
 		273440DC263D732000FBFD63 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
-		273440DD263D732000FBFD63 /* pdfio.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = pdfio.md; sourceTree = "<group>"; };
+		273440DD263D732000FBFD63 /* pdfio.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = pdfio.md; path = doc/pdfio.md; sourceTree = "<group>"; };
 		273440DE263D732000FBFD63 /* pdfio.pc.in */ = {isa = PBXFileReference; lastKnownFileType = text; path = pdfio.pc.in; sourceTree = "<group>"; };
 		273440DF263D732000FBFD63 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
-		273440E0263D732000FBFD63 /* TODO.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TODO.md; sourceTree = "<group>"; };
-		273440E1263D73A300FBFD63 /* pdfio.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = pdfio.html; sourceTree = "<group>"; };
-		273440E2263D73A300FBFD63 /* pdfio.3 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = pdfio.3; sourceTree = "<group>"; };
+		273440E1263D73A300FBFD63 /* pdfio.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = pdfio.html; path = doc/pdfio.html; sourceTree = "<group>"; };
+		273440E2263D73A300FBFD63 /* pdfio.3 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pdfio.3; path = doc/pdfio.3; sourceTree = "<group>"; };
 		273440E3263DD7EA00FBFD63 /* pdfio-token.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-token.c"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -139,7 +138,6 @@
 				273440E1263D73A300FBFD63 /* pdfio.html */,
 				273440DD263D732000FBFD63 /* pdfio.md */,
 				273440DA263D732000FBFD63 /* README.md */,
-				273440E0263D732000FBFD63 /* TODO.md */,
 			);
 			name = Documentation;
 			sourceTree = "<group>";
