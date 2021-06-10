@@ -141,6 +141,8 @@ _pdfioFileGets(pdfio_file_t *pdf,	// I - PDF file
 	*bufend = buffer + bufsize - 1;	// Pointer to end of buffer
 
 
+  PDFIO_DEBUG("_pdfioFileGets(pdf=%p, buffer=%p, bufsize=%lu) bufpos=%ld, buffer=%p, bufptr=%p, bufend=%p\n", pdf, buffer, (unsigned long)bufsize, (long)pdf->bufpos, pdf->buffer, pdf->bufptr, pdf->bufend);
+
   while (!eol)
   {
     // If there are characters ready in the buffer, use them...
@@ -179,6 +181,8 @@ _pdfioFileGets(pdfio_file_t *pdf,	// I - PDF file
   }
 
   *bufptr = '\0';
+
+  PDFIO_DEBUG("_pdfioFileGets: Returning %s, '%s'\n", eol ? "true" : "false", buffer);
 
   return (eol);
 }
@@ -310,6 +314,13 @@ _pdfioFileRead(pdfio_file_t *pdf,	// I - PDF file
     // Nothing buffered...
     if (bytes > 1024)
     {
+      // Advance current position in file as needed...
+      if (pdf->bufend)
+      {
+	pdf->bufpos += pdf->bufend - pdf->buffer;
+	pdf->bufptr = pdf->bufend = NULL;
+      }
+
       // Read directly from the file...
       if ((rbytes = read_buffer(pdf, bufptr, bytes)) > 0)
       {
@@ -356,6 +367,8 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
     {
       // Yes, seek within existing buffer...
       pdf->bufptr = pdf->buffer + offset - pdf->bufpos;
+      PDFIO_DEBUG("_pdfioFileSeek: Seek within buffer, bufpos=%ld.\n", (long)pdf->bufpos);
+      PDFIO_DEBUG("_pdfioFileSeek: buffer=%p, bufptr=%p, bufend=%p\n", pdf->buffer, pdf->bufptr, pdf->bufend);
       return (offset);
     }
 
@@ -380,6 +393,9 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
     _pdfioFileError(pdf, "Unable to seek within file - %s", strerror(errno));
     return (-1);
   }
+
+  PDFIO_DEBUG("_pdfioFileSeek: Reset bufpos=%ld.\n", (long)pdf->bufpos);
+  PDFIO_DEBUG("_pdfioFileSeek: buffer=%p, bufptr=%p, bufend=%p\n", pdf->buffer, pdf->bufptr, pdf->bufend);
 
   pdf->bufpos = offset;
 

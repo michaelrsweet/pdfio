@@ -216,7 +216,6 @@ _pdfioStreamCreate(
       if (predictor >= 10)
 	st->pbsize ++;		// Add PNG predictor byte
 
-      fprintf(stderr, "colors=%d, bpc=%d, pbpixel=%u\n", colors, bpc, (unsigned)st->pbpixel);
       if ((st->prbuffer = calloc(1, st->pbsize - 1)) == NULL || (st->psbuffer = calloc(1, st->pbsize)) == NULL)
       {
 	_pdfioFileError(st->pdf, "Unable to allocate %lu bytes for Predictor buffers.", (unsigned long)st->pbsize);

@@ -360,6 +360,8 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
     return (false);
   }
 
+  PDFIO_DEBUG("_pdfioObjLoad: Header is '%s'.\n", line);
+
   if (strtoimax(line, &ptr, 10) != (intmax_t)obj->number)
   {
     _pdfioFileError(obj->pdf, "Bad header for object %lu.", (unsigned long)obj->number);
@@ -403,7 +405,12 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   {
     // Yes, save its location...
     obj->stream_offset = _pdfioFileTell(obj->pdf);
+    PDFIO_DEBUG("_pdfioObjLoad: stream_offset=%lu.\n", (unsigned long)obj->stream_offset);
   }
+
+  PDFIO_DEBUG("_pdfioObjLoad: ");
+  PDFIO_DEBUG_VALUE(&obj->value);
+  PDFIO_DEBUG("\n");
 
   return (true);
 }

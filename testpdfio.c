@@ -274,7 +274,7 @@ do_unit_tests(void)
     return (1);
 
   // Write a page with test images...
-  first_image = pdfioFileGetNumObjs(outpdf);
+  first_image = pdfioFileGetNumObjs(outpdf) + 1;
   if (write_images(outpdf, 7, helvetica))
     return (1);
 
@@ -328,7 +328,10 @@ do_unit_tests(void)
 
   // Verify the images
   for (i = 0; i < 7; i ++)
-    verify_image(pdf, first_image + (size_t)i);
+  {
+    if (verify_image(pdf, first_image + (size_t)i))
+      return (1);
+  }
 
   // Close the new PDF file...
   fputs("pdfioFileClose(\"testpdfio-out.pdf\"): ", stdout);
@@ -401,7 +404,7 @@ draw_image(pdfio_stream_t *st,
 static bool				// O  - `true` to stop, `false` to continue
 error_cb(pdfio_file_t *pdf,		// I  - PDF file
          const char   *message,		// I  - Error message
-	 bool         *error)		// IO - Have we displayed an error? 
+	 bool         *error)		// IO - Have we displayed an error?
 {
   (void)pdf;
 
