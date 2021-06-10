@@ -121,11 +121,38 @@ static unsigned png_crc_table[256] =	// CRC-32 table for PNG files
 
 
 //
-// 'pdfioArrayCreateCalibratedColorFromMatrix()' - Create a calibrated color space array using a CIE XYZ transform matrix.
+// 'pdfioArrayCreateColorFromICCObj()' - Create an ICC-based color space array.
+//
+
+pdfio_array_t *				// O - Color array
+pdfioArrayCreateColorFromICCObj(
+    pdfio_file_t *pdf,			// I - PDF file
+    pdfio_obj_t  *icc_object)		// I - ICC profile object
+{
+  pdfio_array_t	*icc_color;		// Color array
+
+
+  // Range check input...
+  if (!pdf || !icc_object)
+    return (NULL);
+
+  // Create the array with two values - a name and an object reference...
+  if ((icc_color = pdfioArrayCreate(pdf)) == NULL)
+    return (NULL);
+
+  pdfioArrayAppendName(icc_color, "ICCBased");
+  pdfioArrayAppendObj(icc_color, icc_object);
+
+  return (icc_color);
+}
+
+
+//
+// 'pdfioArrayCreateColorFromMatrix()' - Create a calibrated color space array using a CIE XYZ transform matrix.
 //
 
 pdfio_array_t *				// O - Color space array
-pdfioArrayCreateCalibratedColorFromMatrix(
+pdfioArrayCreateColorFromMatrix(
     pdfio_file_t *pdf,			// I - PDF file
     size_t       num_colors,		// I - Number of colors (1 or 3)
     double       gamma,			// I - Gamma value
@@ -207,11 +234,41 @@ pdfioArrayCreateCalibratedColorFromMatrix(
 
 
 //
-// 'pdfioArrayCreateCalibratedColorFromPrimaries()' - Create a calibrated color sapce array using CIE xy primary chromacities.
+// 'pdfioArrayCreateColorFromPalette()' - Create an indexed color space array.
+//
+
+pdfio_array_t *				// O - Color array
+pdfioArrayCreateColorFromPalette(
+    pdfio_file_t        *pdf,		// I - PDF file
+    size_t              num_colors,	// I - Number of colors
+    const unsigned char *colors)	// I - RGB values for colors
+{
+  pdfio_array_t	*indexed_color;		// Color array
+
+
+  // Range check input...
+  if (!pdf || num_colors < 1 || !colors)
+    return (NULL);
+
+  // Create the array with four values...
+  if ((indexed_color = pdfioArrayCreate(pdf)) == NULL)
+    return (NULL);
+
+  pdfioArrayAppendName(indexed_color, "Indexed");
+  pdfioArrayAppendName(indexed_color, "DeviceRGB");
+  pdfioArrayAppendNumber(indexed_color, num_colors - 1);
+  pdfioArrayAppendBinary(indexed_color, colors, num_colors * 3);
+
+  return (indexed_color);
+}
+
+
+//
+// 'pdfioArrayCreateColorFromPrimaries()' - Create a calibrated color sapce array using CIE xy primary chromacities.
 //
 
 pdfio_array_t *				// O - Color space array
-pdfioArrayCreateCalibratedColorFromPrimaries(
+pdfioArrayCreateColorFromPrimaries(
     pdfio_file_t *pdf,			// I - PDF file
     size_t       num_colors,		// I - Number of colors (1 or 3)
     double       gamma,			// I - Gama value
@@ -274,64 +331,7 @@ pdfioArrayCreateCalibratedColorFromPrimaries(
   PDFIO_DEBUG("pdfioFileCreateCalibratedColorFromPrimaries: matrix=[%g %g %g %g %g %g %g %g %g]\n", matrix[0][0], matrix[1][0], matrix[2][0], matrix[0][1], matrix[1][1], matrix[2][2], matrix[0][2], matrix[1][2], matrix[2][1]);
 
   // Now that we have the white point and matrix, use those to make the color array...
-  return (pdfioArrayCreateCalibratedColorFromMatrix(pdf, num_colors, gamma, matrix, white_point));
-}
-
-
-//
-// 'pdfioArrayCreateICCBasedColor()' - Create an ICC-based color space array.
-//
-
-pdfio_array_t *				// O - Color array
-pdfioArrayCreateICCBasedColor(
-    pdfio_file_t *pdf,			// I - PDF file
-    pdfio_obj_t  *icc_object)		// I - ICC profile object
-{
-  pdfio_array_t	*icc_color;		// Color array
-
-
-  // Range check input...
-  if (!pdf || !icc_object)
-    return (NULL);
-
-  // Create the array with two values - a name and an object reference...
-  if ((icc_color = pdfioArrayCreate(pdf)) == NULL)
-    return (NULL);
-
-  pdfioArrayAppendName(icc_color, "ICCBased");
-  pdfioArrayAppendObj(icc_color, icc_object);
-
-  return (icc_color);
-}
-
-
-//
-// 'pdfioArrayCreateIndexedColor()' - Create an indexed color space array.
-//
-
-pdfio_array_t *				// O - Color array
-pdfioArrayCreateIndexedColor(
-    pdfio_file_t        *pdf,		// I - PDF file
-    size_t              num_colors,	// I - Number of colors
-    const unsigned char *colors)	// I - RGB values for colors
-{
-  pdfio_array_t	*indexed_color;		// Color array
-
-
-  // Range check input...
-  if (!pdf || num_colors < 1 || !colors)
-    return (NULL);
-
-  // Create the array with four values...
-  if ((indexed_color = pdfioArrayCreate(pdf)) == NULL)
-    return (NULL);
-
-  pdfioArrayAppendName(indexed_color, "Indexed");
-  pdfioArrayAppendName(indexed_color, "DeviceRGB");
-  pdfioArrayAppendNumber(indexed_color, num_colors - 1);
-  pdfioArrayAppendBinary(indexed_color, colors, num_colors * 3);
-
-  return (indexed_color);
+  return (pdfioArrayCreateColorFromMatrix(pdf, num_colors, gamma, matrix, white_point));
 }
 
 
@@ -1177,18 +1177,82 @@ pdfioFileCreateFontObj(
 
 
 //
-// 'pdfioFileCreateICCProfileObj()' - Add an ICC profile object to a PDF file.
+// 'pdfioFileCreateICCObj()' - Add an ICC profile object to a PDF file.
 //
 
 pdfio_obj_t *				// O - Object
-pdfioFileCreateICCProfileObj(
+pdfioFileCreateICCObj(
     pdfio_file_t *pdf,			// I - PDF file
-    const char   *filename)		// I - Filename
+    const char   *filename,		// I - Filename
+    size_t       num_colors)		// I - Number of color components (1, 3, or 4)
 {
-  (void)pdf;
-  (void)filename;
+  pdfio_dict_t	*dict;			// ICC profile dictionary
+  pdfio_obj_t	*obj;			// ICC profile object
+  pdfio_stream_t *st;			// ICC profile stream
+  int		fd;			// File
+  unsigned char	buffer[16384];		// Read buffer
+  ssize_t	bytes;			// Bytes read
 
-  return (NULL);
+
+  // Range check input...
+  if (!pdf)
+    return (NULL);
+
+  if (!filename)
+  {
+    _pdfioFileError(pdf, "No ICC profile filename specified.");
+    return (NULL);
+  }
+
+  if ((fd = open(filename, O_RDONLY | O_BINARY)) < 0)
+  {
+    _pdfioFileError(pdf, "Unable to open ICC profile '%s': %s", filename, strerror(errno));
+    return (NULL);
+  }
+
+  if (num_colors != 1 && num_colors != 3 && num_colors != 4)
+  {
+    _pdfioFileError(pdf, "Unsupported number of colors (%lu) for ICC profile.", (unsigned long)num_colors);
+    close(fd);
+    return (NULL);
+  }
+
+  // Create the ICC profile object...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+  {
+    close(fd);
+    return (NULL);
+  }
+
+  pdfioDictSetNumber(dict, "N", num_colors);
+  pdfioDictSetName(dict, "Filter", "FlateDecode");
+
+  if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+  {
+    close(fd);
+    return (NULL);
+  }
+
+  if ((st = pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE)) == NULL)
+  {
+    close(fd);
+    return (NULL);
+  }
+
+  while ((bytes = read(fd, buffer, sizeof(buffer))) > 0)
+  {
+    if (!pdfioStreamWrite(st, buffer, (size_t)bytes))
+    {
+      close(fd);
+      pdfioStreamClose(st);
+      return (NULL);
+    }
+  }
+
+  close(fd);
+  pdfioStreamClose(st);
+
+  return (obj);
 }
 
 
@@ -1603,7 +1667,7 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
   pdfioDictSetNumber(dict, "Width", width);
   pdfioDictSetNumber(dict, "Height", height);
   pdfioDictSetNumber(dict, "BitsPerComponent", 8);
-  pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateCalibratedColorFromMatrix(dict->pdf, num_colors, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
+  pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromMatrix(dict->pdf, num_colors, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
   pdfioDictSetName(dict, "Filter", "DCTDecode");
 
   obj = pdfioFileCreateObj(dict->pdf, dict);
@@ -1686,9 +1750,9 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
               PDFIO_DEBUG("copy_png: Adding %s ColorSpace value.\n", color_type == _PDFIO_PNG_TYPE_GRAY ? "CalGray" : "CalRGB");
 
 	      if (wx != 0.0)
-		pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateCalibratedColorFromPrimaries(dict->pdf, color_type == _PDFIO_PNG_TYPE_GRAY ? 1 : 3, gamma, wx, wy, rx, ry, bx, by, gx, gy));
+		pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPrimaries(dict->pdf, color_type == _PDFIO_PNG_TYPE_GRAY ? 1 : 3, gamma, wx, wy, rx, ry, bx, by, gx, gy));
               else
-		pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateCalibratedColorFromMatrix(dict->pdf, color_type == _PDFIO_PNG_TYPE_GRAY ? 1 : 3, gamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
+		pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromMatrix(dict->pdf, color_type == _PDFIO_PNG_TYPE_GRAY ? 1 : 3, gamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
             }
 
 	    obj = pdfioFileCreateObj(dict->pdf, dict);
@@ -1800,7 +1864,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 
           PDFIO_DEBUG("copy_png: Adding Indexed ColorSpace value.\n");
 
-          pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateIndexedColor(dict->pdf, length / 3, buffer));
+          pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPalette(dict->pdf, length / 3, buffer));
           break;
 
       case _PDFIO_PNG_CHUNK_cHRM : // Cromacities and white point

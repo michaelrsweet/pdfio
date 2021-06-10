@@ -725,7 +725,13 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   pdfio_dict_t		*dict;		// Page dictionary
   pdfio_stream_t	*st;		// Page contents stream
   pdfio_array_t		*cs;		// Color space array
+  pdfio_obj_t		*prophoto;	// ProPhotoRGB ICC profile object
 
+  fputs("pdfioFileCreateICCObj(ProPhotoRGB): ", stdout);
+  if ((prophoto = pdfioFileCreateICCObj(pdf, "testfiles/iso22028-2-romm-rgb.icc", 3)) != NULL)
+    puts("PASS");
+  else
+    return (1);
 
   fputs("pdfioDictCreate: ", stdout);
   if ((dict = pdfioDictCreate(pdf)) != NULL)
@@ -733,8 +739,8 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
-  fputs("pdfioArrayCreateCalibratedColorFromMatrix(AdobeRGB): ", stdout);
-  if ((cs = pdfioArrayCreateCalibratedColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint)) != NULL)
+  fputs("pdfioArrayCreateColorFromMatrix(AdobeRGB): ", stdout);
+  if ((cs = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -745,8 +751,8 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
-  fputs("pdfioArrayCreateCalibratedColorFromMatrix(DisplayP3): ", stdout);
-  if ((cs = pdfioArrayCreateCalibratedColorFromMatrix(pdf, 3, pdfioDisplayP3Gamma, pdfioDisplayP3Matrix, pdfioDisplayP3WhitePoint)) != NULL)
+  fputs("pdfioArrayCreateColorFromMatrix(DisplayP3): ", stdout);
+  if ((cs = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioDisplayP3Gamma, pdfioDisplayP3Matrix, pdfioDisplayP3WhitePoint)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -757,8 +763,20 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
-  fputs("pdfioArrayCreateCalibratedColorFromMatrix(sRGB): ", stdout);
-  if ((cs = pdfioArrayCreateCalibratedColorFromMatrix(pdf, 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint)) != NULL)
+  fputs("pdfioArrayCreateColorFromICCObj(ProPhotoRGB): ", stdout);
+  if ((cs = pdfioArrayCreateColorFromICCObj(pdf, prophoto)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageDictAddColorSpace(ProPhotoRGB): ", stdout);
+  if (pdfioPageDictAddColorSpace(dict, "ProPhotoRGB", cs))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioArrayCreateColorFromMatrix(sRGB): ", stdout);
+  if ((cs = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -830,8 +848,8 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     goto error;
 
-  fputs("pdfioContentTextMoveTo(82, 360): ", stdout);
-  if (pdfioContentTextMoveTo(st, 82, 360))
+  fputs("pdfioContentTextMoveTo(82, 234): ", stdout);
+  if (pdfioContentTextMoveTo(st, 82, 234))
     puts("PASS");
   else
     goto error;
@@ -872,6 +890,18 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     goto error;
 
+  fputs("pdfioContentTextShow(\"ProPhotoRGB\"): ", stdout);
+  if (pdfioContentTextShow(st, "ProPhotoRGB"))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextMoveTo(-234, 252): ", stdout);
+  if (pdfioContentTextMoveTo(st, -234, 252))
+    puts("PASS");
+  else
+    goto error;
+
   fputs("pdfioContentTextShow(\"DeviceCMYK\"): ", stdout);
   if (pdfioContentTextShow(st, "DeviceCMYK"))
     puts("PASS");
@@ -896,8 +926,8 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     goto error;
 
-  fputs("pdfioContentMatrixTranslate(82, 162): ", stdout);
-  if (pdfioContentMatrixTranslate(st, 82, 162))
+  fputs("pdfioContentMatrixTranslate(82, 36): ", stdout);
+  if (pdfioContentMatrixTranslate(st, 82, 36))
     puts("PASS");
   else
     goto error;
@@ -923,8 +953,8 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     goto error;
 
-  fputs("pdfioContentMatrixTranslate(316, 162): ", stdout);
-  if (pdfioContentMatrixTranslate(st, 316, 162))
+  fputs("pdfioContentMatrixTranslate(316, 36): ", stdout);
+  if (pdfioContentMatrixTranslate(st, 316, 36))
     puts("PASS");
   else
     goto error;
@@ -950,8 +980,8 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     goto error;
 
-  fputs("pdfioContentMatrixTranslate(82, 414): ", stdout);
-  if (pdfioContentMatrixTranslate(st, 82, 414))
+  fputs("pdfioContentMatrixTranslate(82, 288): ", stdout);
+  if (pdfioContentMatrixTranslate(st, 82, 288))
     puts("PASS");
   else
     goto error;
@@ -971,8 +1001,35 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     goto error;
 
-  fputs("pdfioContentMatrixTranslate(316, 414): ", stdout);
-  if (pdfioContentMatrixTranslate(st, 316, 414))
+  fputs("pdfioContentSetFillColorSpace(ProPhotoRGB): ", stdout);
+  if (pdfioContentSetFillColorSpace(st, "ProPhotoRGB"))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentMatrixTranslate(316, 288): ", stdout);
+  if (pdfioContentMatrixTranslate(st, 316, 288))
+    puts("PASS");
+  else
+    goto error;
+
+  if (write_color_patch(st, false))
+    goto error;
+
+  fputs("pdfioContentRestore(): ", stdout);
+  if (pdfioContentRestore(st))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentSave(): ", stdout);
+  if (pdfioContentSave(st))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentMatrixTranslate(82, 540): ", stdout);
+  if (pdfioContentMatrixTranslate(st, 82, 540))
     puts("PASS");
   else
     goto error;

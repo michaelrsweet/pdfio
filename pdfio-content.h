@@ -84,10 +84,10 @@ extern const double	pdfioSRGBWhitePoint[3] PDFIO_PUBLIC;
 //
 
 // Color array functions...
-extern pdfio_array_t	*pdfioArrayCreateCalibratedColorFromMatrix(pdfio_file_t *pdf, size_t num_colors, double gamma, const double matrix[3][3], const double white_point[3]) PDFIO_PUBLIC;
-extern pdfio_array_t	*pdfioArrayCreateCalibratedColorFromPrimaries(pdfio_file_t *pdf, size_t num_colors, double gamma, double wx, double wy, double rx, double ry, double gx, double gy, double bx, double by) PDFIO_PUBLIC;
-extern pdfio_array_t	*pdfioArrayCreateICCBasedColor(pdfio_file_t *pdf, pdfio_obj_t *icc_object) PDFIO_PUBLIC;
-extern pdfio_array_t	*pdfioArrayCreateIndexedColor(pdfio_file_t *pdf, size_t num_colors, const unsigned char *colors) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayCreateColorFromICCObj(pdfio_file_t *pdf, pdfio_obj_t *icc_object) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayCreateColorFromMatrix(pdfio_file_t *pdf, size_t num_colors, double gamma, const double matrix[3][3], const double white_point[3]) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayCreateColorFromPalette(pdfio_file_t *pdf, size_t num_colors, const unsigned char *colors) PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayCreateColorFromPrimaries(pdfio_file_t *pdf, size_t num_colors, double gamma, double wx, double wy, double rx, double ry, double gx, double gy, double bx, double by) PDFIO_PUBLIC;
 
 // PDF content drawing functions...
 extern bool		pdfioContentClip(pdfio_stream_t *st, bool even_odd) PDFIO_PUBLIC;
@@ -146,7 +146,7 @@ extern bool		pdfioContentTextShowJustified(pdfio_stream_t *st, size_t num_fragme
 // Resource helpers...
 extern pdfio_obj_t	*pdfioFileCreateBaseFontObj(pdfio_file_t *pdf, const char *name) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateFontObj(pdfio_file_t *pdf, const char *filename, bool unicode) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreateICCProfileObj(pdfio_file_t *pdf, const char *filename) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateICCObj(pdfio_file_t *pdf, const char *filename, size_t num_colors) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateImageObj(pdfio_file_t *pdf, const char *filename, bool interpolate) PDFIO_PUBLIC;
 
 // Image object helpers...
