@@ -212,21 +212,21 @@ do_unit_tests(void)
     return (1);
 
   // Create some image objects...
-  fputs("pdfioFileCreateImageObj(\"testfiles/color.jpg\"): ", stdout);
-  if ((color_jpg = pdfioFileCreateImageObj(outpdf, "testfiles/color.jpg", true)) != NULL)
+  fputs("pdfioFileCreateImageObjFromFile(\"testfiles/color.jpg\"): ", stdout);
+  if ((color_jpg = pdfioFileCreateImageObjFromFile(outpdf, "testfiles/color.jpg", true)) != NULL)
     puts("PASS");
   else
     return (1);
 
-  fputs("pdfioFileCreateImageObj(\"testfiles/gray.jpg\"): ", stdout);
-  if ((gray_jpg = pdfioFileCreateImageObj(outpdf, "testfiles/gray.jpg", true)) != NULL)
+  fputs("pdfioFileCreateImageObjFromFile(\"testfiles/gray.jpg\"): ", stdout);
+  if ((gray_jpg = pdfioFileCreateImageObjFromFile(outpdf, "testfiles/gray.jpg", true)) != NULL)
     puts("PASS");
   else
     return (1);
 
   // Create fonts...
-  fputs("pdfioFileCreateBaseFontObj(\"Helvetica\"): ", stdout);
-  if ((helvetica = pdfioFileCreateBaseFontObj(outpdf, "Helvetica")) != NULL)
+  fputs("pdfioFileCreateFontObjFromBase(\"Helvetica\"): ", stdout);
+  if ((helvetica = pdfioFileCreateFontObjFromBase(outpdf, "Helvetica")) != NULL)
     puts("PASS");
   else
     return (1);
@@ -727,8 +727,8 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   pdfio_array_t		*cs;		// Color space array
   pdfio_obj_t		*prophoto;	// ProPhotoRGB ICC profile object
 
-  fputs("pdfioFileCreateICCObj(ProPhotoRGB): ", stdout);
-  if ((prophoto = pdfioFileCreateICCObj(pdf, "testfiles/iso22028-2-romm-rgb.icc", 3)) != NULL)
+  fputs("pdfioFileCreateICCObjFromFile(ProPhotoRGB): ", stdout);
+  if ((prophoto = pdfioFileCreateICCObjFromFile(pdf, "testfiles/iso22028-2-romm-rgb.icc", 3)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -1429,20 +1429,20 @@ write_png(pdfio_file_t *pdf,		// I - PDF file
 
 
   // Import the PNG test images
-  fputs("pdfioFileCreateImageObj(\"testfiles/pdfio-color.png\"): ", stdout);
-  if ((color = pdfioFileCreateImageObj(pdf, "testfiles/pdfio-color.png", false)) != NULL)
+  fputs("pdfioFileCreateImageObjFromFile(\"testfiles/pdfio-color.png\"): ", stdout);
+  if ((color = pdfioFileCreateImageObjFromFile(pdf, "testfiles/pdfio-color.png", false)) != NULL)
     puts("PASS");
   else
     return (1);
 
-  fputs("pdfioFileCreateImageObj(\"testfiles/pdfio-gray.png\"): ", stdout);
-  if ((gray = pdfioFileCreateImageObj(pdf, "testfiles/pdfio-gray.png", false)) != NULL)
+  fputs("pdfioFileCreateImageObjFromFile(\"testfiles/pdfio-gray.png\"): ", stdout);
+  if ((gray = pdfioFileCreateImageObjFromFile(pdf, "testfiles/pdfio-gray.png", false)) != NULL)
     puts("PASS");
   else
     return (1);
 
-  fputs("pdfioFileCreateImageObj(\"testfiles/pdfio-indexed.png\"): ", stdout);
-  if ((indexed = pdfioFileCreateImageObj(pdf, "testfiles/pdfio-indexed.png", false)) != NULL)
+  fputs("pdfioFileCreateImageObjFromFile(\"testfiles/pdfio-indexed.png\"): ", stdout);
+  if ((indexed = pdfioFileCreateImageObjFromFile(pdf, "testfiles/pdfio-indexed.png", false)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -1654,8 +1654,8 @@ write_text(pdfio_file_t *pdf,		// I - PDF file
 
 
   // Create text font...
-  fputs("pdfioFileCreateBaseFontObj(\"Courier\"): ", stdout);
-  if ((courier = pdfioFileCreateBaseFontObj(pdf, "Courier")) != NULL)
+  fputs("pdfioFileCreateFontObjFromBase(\"Courier\"): ", stdout);
+  if ((courier = pdfioFileCreateFontObjFromBase(pdf, "Courier")) != NULL)
     puts("PASS");
   else
     return (1);

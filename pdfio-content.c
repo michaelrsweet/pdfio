@@ -1126,7 +1126,7 @@ pdfioContentTextShowJustified(
 //
 
 pdfio_obj_t *				// O - Font object
-pdfioFileCreateBaseFontObj(
+pdfioFileCreateFontObjFromBase(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *name)			// I - Font name
 {
@@ -1150,11 +1150,11 @@ pdfioFileCreateBaseFontObj(
 
 
 //
-// 'pdfioFileCreateFontObj()' - Add a font object to a PDF file.
+// 'pdfioFileCreateFontObjFromFile()' - Add a font object to a PDF file.
 //
 
 pdfio_obj_t *				// O - Font object
-pdfioFileCreateFontObj(
+pdfioFileCreateFontObjFromFile(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *filename,		// I - Filename
     bool         unicode)		// I - Unicode font?
@@ -1177,11 +1177,11 @@ pdfioFileCreateFontObj(
 
 
 //
-// 'pdfioFileCreateICCObj()' - Add an ICC profile object to a PDF file.
+// 'pdfioFileCreateICCObjFromFile()' - Add an ICC profile object to a PDF file.
 //
 
 pdfio_obj_t *				// O - Object
-pdfioFileCreateICCObj(
+pdfioFileCreateICCObjFromFile(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *filename,		// I - Filename
     size_t       num_colors)		// I - Number of color components (1, 3, or 4)
@@ -1257,13 +1257,17 @@ pdfioFileCreateICCObj(
 
 
 //
-// 'pdfioFileCreateImageObj()' - Add an image object to a PDF file.
+// 'pdfioFileCreateImageObjFromFile()' - Add an image object to a PDF file.
 //
-// Currently only GIF, JPEG, and PNG files are supported.
+// This function creates an image object in a PDF file from a JPEG or PNG file.
+//
+// > Note: Currently PNG support is limited to grayscale, RGB, or indexed files
+// > without interlacing or alpha.  Transparency (masking) based on color/index
+// > is supported.
 //
 
 pdfio_obj_t *				// O - Object
-pdfioFileCreateImageObj(
+pdfioFileCreateImageObjFromFile(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *filename,		// I - Filename
     bool         interpolate)		// I - Interpolate image data?

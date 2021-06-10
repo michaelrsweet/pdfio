@@ -144,10 +144,10 @@ extern bool		pdfioContentTextShowf(pdfio_stream_t *st, const char *format, ...) 
 extern bool		pdfioContentTextShowJustified(pdfio_stream_t *st, size_t num_fragments, const double *offsets, const char * const *fragments) PDFIO_PUBLIC;
 
 // Resource helpers...
-extern pdfio_obj_t	*pdfioFileCreateBaseFontObj(pdfio_file_t *pdf, const char *name) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreateFontObj(pdfio_file_t *pdf, const char *filename, bool unicode) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreateICCObj(pdfio_file_t *pdf, const char *filename, size_t num_colors) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreateImageObj(pdfio_file_t *pdf, const char *filename, bool interpolate) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateFontObjFromBase(pdfio_file_t *pdf, const char *name) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateFontObjFromFile(pdfio_file_t *pdf, const char *filename, bool unicode) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateICCObjFromFile(pdfio_file_t *pdf, const char *filename, size_t num_colors) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateImageObjFromFile(pdfio_file_t *pdf, const char *filename, bool interpolate) PDFIO_PUBLIC;
 
 // Image object helpers...
 extern size_t		pdfioImageGetBytesPerLine(pdfio_obj_t *obj) PDFIO_PUBLIC;
