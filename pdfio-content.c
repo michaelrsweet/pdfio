@@ -1638,7 +1638,8 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   pdfio_dict_t	*decode = NULL;		// Parameters for PNG decode
   ssize_t	bytes;			// Bytes read
   unsigned char	buffer[16384];		// Read buffer
-  unsigned	length,			// Length
+  unsigned	i,			// Looping var
+		length,			// Length
 		type,			// Chunk code
 		crc,			// CRC-32
 		temp,			// Temporary value
@@ -1651,6 +1652,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 		rx = 0.0, ry = 0.0,	// Red chromacity
 		gx = 0.0, gy = 0.0,	// Green chromacity
 		bx = 0.0, by = 0.0;	// Blue chromacity
+  pdfio_array_t	*mask = NULL;		// Color masking array
 
 
   // Read the file header...
@@ -1844,10 +1846,94 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
           gamma = 10000.0 / ((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
           break;
 
-#if 0
       case _PDFIO_PNG_CHUNK_tRNS : // Transparency information
+          switch (color_type)
+          {
+            case _PDFIO_PNG_TYPE_INDEXED :
+		if (length > 256)
+		{
+		  _pdfioFileError(dict->pdf, "Bad transparency chunk in image file.");
+		  return (NULL);
+		}
+
+		if (read(fd, buffer, length) != length)
+		{
+		  _pdfioFileError(dict->pdf, "Early end-of-file in image file.");
+		  return (NULL);
+		}
+
+                for (i = 0; i < length; i ++)
+                {
+                  if (!buffer[i])
+                    break;
+                }
+
+                if (i < length)
+                {
+                  if ((mask = pdfioArrayCreate(dict->pdf)) == NULL)
+                    return (NULL);
+
+                  pdfioArrayAppendNumber(mask, i);
+
+		  for (i ++; i < length; i ++)
+		  {
+		    if (buffer[i])
+		      break;
+		  }
+
+		  pdfioArrayAppendNumber(mask, i - 1);
+		}
+		break;
+
+	    case _PDFIO_PNG_TYPE_GRAY :
+		if (length != 2)
+		{
+		  _pdfioFileError(dict->pdf, "Bad transparency chunk in image file.");
+		  return (NULL);
+		}
+
+		if (read(fd, buffer, length) != length)
+		{
+		  _pdfioFileError(dict->pdf, "Early end-of-file in image file.");
+		  return (NULL);
+		}
+
+		if ((mask = pdfioArrayCreate(dict->pdf)) == NULL)
+		  return (NULL);
+
+		pdfioArrayAppendNumber(mask, buffer[1]);
+		pdfioArrayAppendNumber(mask, buffer[1]);
+	        break;
+	    case _PDFIO_PNG_TYPE_RGB :
+		if (length != 6)
+		{
+		  _pdfioFileError(dict->pdf, "Bad transparency chunk in image file.");
+		  return (NULL);
+		}
+
+		if (read(fd, buffer, length) != length)
+		{
+		  _pdfioFileError(dict->pdf, "Early end-of-file in image file.");
+		  return (NULL);
+		}
+
+		if ((mask = pdfioArrayCreate(dict->pdf)) == NULL)
+		  return (NULL);
+
+		pdfioArrayAppendNumber(mask, buffer[1]);
+		pdfioArrayAppendNumber(mask, buffer[3]);
+		pdfioArrayAppendNumber(mask, buffer[5]);
+		pdfioArrayAppendNumber(mask, buffer[1]);
+		pdfioArrayAppendNumber(mask, buffer[3]);
+		pdfioArrayAppendNumber(mask, buffer[5]);
+	        break;
+	  }
+
+	  crc = update_png_crc(crc, buffer, length);
+
+          if (mask)
+            pdfioDictSetArray(dict, "Mask", mask);
           break;
-#endif // 0
 
       default : // Something else
           while (length > 0)
