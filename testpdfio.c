@@ -1483,8 +1483,8 @@ write_png(pdfio_file_t *pdf,		// I - PDF file
   else
     goto error;
 
-  fputs("pdfioContentTextShow(\"PNG Color\"): ", stdout);
-  if (pdfioContentTextShow(st, "PNG Color"))
+  fputs("pdfioContentTextShow(\"PNG RGB Color\"): ", stdout);
+  if (pdfioContentTextShow(st, "PNG RGB Color"))
     puts("PASS");
   else
     goto error;
@@ -1533,6 +1533,30 @@ write_png(pdfio_file_t *pdf,		// I - PDF file
 
   fputs("pdfioContentDrawImage(\"IM3\"): ", stdout);
   if (pdfioContentDrawImage(st, "IM3", 36, 396, 216, 216))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentSetFillColorDeviceRGB(0, 1, 1): ", stdout);
+  if (pdfioContentSetFillColorDeviceRGB(st, 0.0, 1.0, 1.0))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentPathRect(315, 387, 234, 234): ", stdout);
+  if (pdfioContentPathRect(st, 315, 387, 234, 234))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentFill(false): ", stdout);
+  if (pdfioContentFill(st, false))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentDrawImage(\"IM3\"): ", stdout);
+  if (pdfioContentDrawImage(st, "IM3", 324, 396, 216, 216))
     puts("PASS");
   else
     goto error;
