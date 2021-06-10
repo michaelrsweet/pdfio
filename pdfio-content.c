@@ -1665,7 +1665,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
     // Get the chunk length and type values...
     length = (unsigned)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
     type   = (unsigned)((buffer[4] << 24) | (buffer[5] << 16) | (buffer[6] << 8) | buffer[7]);
-    crc    = update_png_crc(0xffffffff, buffer, 8);
+    crc    = update_png_crc(0xffffffff, buffer + 4, 4);
 
     switch (type)
     {
@@ -1969,9 +1969,9 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
     temp = (unsigned)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
     if (temp != crc)
     {
-//      pdfioStreamClose(st);
+      pdfioStreamClose(st);
       _pdfioFileError(dict->pdf, "Bad CRC (0x%08x != 0x%08x).", temp, crc);
-//      return (NULL);
+      return (NULL);
     }
   }
 
