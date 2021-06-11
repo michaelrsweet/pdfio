@@ -1940,7 +1940,23 @@ write_text_test(pdfio_file_t *pdf,		// I - PDF file
       goto error;
     if (!pdfioContentSetFillColorDeviceGray(st, 0.0))
       goto error;
-    if (!pdfioContentTextShow(st, line))
+    if (strlen(line) > 81)
+    {
+      char	temp[82];	// Temporary string
+
+      memcpy(temp, line, 80);
+      temp[80] = '\n';
+      temp[81] = '\0';
+
+      if (!pdfioContentTextShow(st, temp))
+        goto error;
+
+      if (!pdfioContentTextShowf(st, "     %s", line + 80))
+        goto error;
+
+      plinenum ++;
+    }
+    else if (!pdfioContentTextShow(st, line))
       goto error;
 
     plinenum ++;
