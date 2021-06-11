@@ -1159,20 +1159,77 @@ pdfioFileCreateFontObjFromFile(
     const char   *filename,		// I - Filename
     bool         unicode)		// I - Unicode font?
 {
-#if 0
-  pdfio_dict_t	*dict;			// Font dictionary
-  pdfio_obj_t	*obj;			// Font object
-  pdfio_st_t	*st;			// Content stream
+  pdfio_dict_t	*dict;			// ICC profile dictionary
+  pdfio_obj_t	*obj;			// ICC profile object
+  pdfio_stream_t *st;			// ICC profile stream
   int		fd;			// File
-  char		buffer[16384];		// Copy buffer
+  unsigned char	buffer[16384];		// Read buffer
   ssize_t	bytes;			// Bytes read
+
+
+  // Range check input...
+  if (!pdf)
+    return (NULL);
+
+  if (!filename)
+  {
+    _pdfioFileError(pdf, "No TrueType/OpenType filename specified.");
+    return (NULL);
+  }
+
+  if ((fd = open(filename, O_RDONLY | O_BINARY)) < 0)
+  {
+    _pdfioFileError(pdf, "Unable to open font file '%s': %s", filename, strerror(errno));
+    return (NULL);
+  }
+
+  // Create the font object...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+  {
+    close(fd);
+    return (NULL);
+  }
+
+  pdfioDictSetName(dict, "Type", "Font");
+  pdfioDictSetName(dict, "Subtype", "TrueType");
+  pdfioDictSetName(dict, "BaseFont", "Bogus"); // TODO: Fix BaseFont value
+  (void)unicode;
+  pdfioDictSetName(dict, "Encoding", "WinAnsiEncoding"); // TODO: Fix encoding
+  pdfioDictSetName(dict, "Filter", "FlateDecode");
+
+#if 0
+  pdfioDictSetObject(dict, "FontDescriptor", descriptor);
+  pdfioDictSetNumber(dict, "FirstChar", firstchar);
+  pdfioDictSetNumber(dict, "LastChar", lastchar);
+  pdfioDictSetArray(dict, "Widths", widths);
 #endif // 0
 
-  (void)pdf;
-  (void)filename;
-  (void)unicode;
+  if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+  {
+    close(fd);
+    return (NULL);
+  }
 
-  return (NULL);
+  if ((st = pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE)) == NULL)
+  {
+    close(fd);
+    return (NULL);
+  }
+
+  while ((bytes = read(fd, buffer, sizeof(buffer))) > 0)
+  {
+    if (!pdfioStreamWrite(st, buffer, (size_t)bytes))
+    {
+      close(fd);
+      pdfioStreamClose(st);
+      return (NULL);
+    }
+  }
+
+  close(fd);
+  pdfioStreamClose(st);
+
+  return (obj);
 }
 
 

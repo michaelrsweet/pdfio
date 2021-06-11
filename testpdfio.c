@@ -1043,7 +1043,165 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
 {
   pdfio_dict_t		*dict;		// Page dictionary
   pdfio_stream_t	*st;		// Page contents stream
+  pdfio_obj_t		*opensans;	// OpenSans-Regular font
+  int			i;		// Looping var
+  static const char * const welcomes[] =// "Welcome" in many languages
+  {
+    "Welcome\n",
+    "Welkom\n",
+//    "ḫaṣānu\n",
+    "Mayad-ayad nga pad-abot\n",
+    "Mir se vjên\n",
+    "Mirë se vjen\n",
+    "Wellkumma\n",
+    "Bienveniu\n",
+    "Ghini vinit!\n",
+    "Bienveníu\n",
+    "Miro peicak\n",
+//    "Xoş gəlmişsiniz!\n",
+    "Salamat datang\n",
+//    "Сәләм бирем!\n",
+    "Menjuah-juah!\n",
+//    "Še das d' kemma bisd\n",
+    "Mwaiseni\n",
+    "Maogmáng Pag-abót\n",
+    "Welkam\n",
+//    "Dobrodošli\n",
+    "Degemer mat\n",
+    "Benvingut\n",
+    "Maayong pag-abot\n",
+    "Kopisanangan do kinorikatan\n",
+    "Bienvenida\n",
+    "Bien binidu\n",
+    "Bienbenidu\n",
+//    "Hóʔą\n",
+    "Boolkhent!\n",
+    "Kopivosian do kinoikatan\n",
+    "Malipayeng Pag-abot!\n",
+    "Vítej\n",
+    "Velkommen\n",
+    "Salâm\n",
+    "Welkom\n",
+    "Emedi\n",
+    "Welkumin\n",
+    "Tere tulemast\n",
+//    "Woé zɔ\n",
+    "Bienveníu\n",
+    "Vælkomin\n",
+    "Bula\n",
+    "Tervetuloa\n",
+    "Bienvenue\n",
+    "Wäljkiimen\n",
+    "Wäilkuumen\n",
+    "Wäilkuumen\n",
+    "Wolkom\n",
+    "Benvignût\n",
+    "Benvido\n",
+    "Willkommen\n",
+//    "Ἀσπάζομαι!\n",
+//    "Καλώς Ήρθες\n",
+    "Tikilluarit\n",
+    "Byen venu\n",
+    "Sannu da zuwa\n",
+    "Aloha\n",
+    "Wayakurua\n",
+    "Dayón\n",
+    "Zoo siab txais tos!\n",
+    "Üdvözlet\n",
+    "Selamat datai\n",
+    "Velkomin\n",
+//    "Nnọọ\n",
+    "Selamat datang\n",
+    "Qaimarutin\n",
+    "Fáilte\n",
+    "Benvenuto\n",
+    "Voschata\n",
+    "Murakaza neza\n",
+    "Mauri\n",
+    "Tu be xér hatî ye!\n",
+//    "Taŋyáŋ yahí\n",
+    "Salve\n",
+//    "Laipni lūdzam\n",
+    "Wilkóm\n",
+//    "Sveiki atvykę\n",
+    "Willkamen\n",
+    "Mu amuhezwi\n",
+    "Tukusanyukidde\n",
+    "Wëllkomm\n",
+    "Swagatam\n",
+    "Tonga soa\n",
+    "Selamat datang\n",
+//    "Merħba\n",
+//    "B’a’ntulena\n",
+    "Failt ort\n",
+    "Haere mai\n",
+    "mai\n",
+//    "Pjila’si\n",
+    "Benvegnüu\n",
+    "Ne y kena\n",
+//    "Ximopanōltih\n",
+    "Yá'át'ééh\n",
+    "Siyalemukela\n",
+    "Siyalemukela\n",
+    "Bures boahtin\n",
+    "Re a go amogela\n",
+    "Velkommen\n",
+    "Benvengut!\n",
+    "Bon bini\n",
+//    "Witam Cię\n",
+    "Bem-vindo\n",
+    "Haykuykuy!\n",
+    "T'aves baxtalo\n",
+    "Bainvegni\n",
+    "Afio mai\n",
+    "Ennidos\n",
+    "Walcome\n",
+    "Fàilte\n",
+    "Mauya\n",
+    "Bon vinutu\n",
+    "Vitaj\n",
+//    "Dobrodošli\n",
+    "Soo dhowow\n",
+    "Witaj\n",
+    "Bienvenido\n",
+    "Wilujeng sumping\n",
+    "Karibu\n",
+    "Wamukelekile\n",
+    "Välkommen\n",
+    "Wilkomme\n",
+    "Maligayang pagdating\n",
+    "Maeva\n",
+    "Räxim itegez\n",
+    "Ksolok Bodik Mai\n",
+    "Ulu tons mai\n",
+    "Welkam\n",
+    "Talitali fiefia\n",
+    "Lek oy li la tale\n",
+    "amogetswe\n",
+    "Tempokani\n",
+//    "Hoş geldin\n",
+//    "Koş geldiniz\n",
+    "Ulufale mai!\n",
+    "Xush kelibsiz\n",
+    "Benvignùo\n",
+    "Tervhen tuldes\n",
+    "Hoan nghênh\n",
+    "Tere tulõmast\n",
+    "Benvnuwe\n",
+    "Croeso\n",
+    "Merhbe\n",
+    "Wamkelekile\n",
+//    "Märr-ŋamathirri\n",
+//    "Ẹ ku abọ\n",
+    "Kíimak 'oolal\n",
+    "Ngiyakwemukela\n"
+  };
 
+  fputs("pdfioFileCreateFontObjFromFile(OpenSans-Regular.ttf): ", stdout);
+  if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", false)) != NULL)
+    puts("PASS");
+  else
+    return (1);
 
   fputs("pdfioDictCreate: ", stdout);
   if ((dict = pdfioDictCreate(pdf)) != NULL)
@@ -1057,6 +1215,12 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
+  fputs("pdfioPageDictAddFont(F2): ", stdout);
+  if (pdfioPageDictAddFont(dict, "F2", opensans))
+    puts("PASS");
+  else
+    return (1);
+
   printf("pdfioFileCreatePage(%d): ", number);
 
   if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
@@ -1066,6 +1230,54 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
 
   if (write_header_footer(st, "TrueType Font Test", number))
     goto error;
+
+  fputs("pdfioContentTextBegin(): ", stdout);
+  if (pdfioContentTextBegin(st))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSetTextFont(\"F2\", 10.0): ", stdout);
+  if (pdfioContentSetTextFont(st, "F2", 10.0))
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioContentSetTextLeading(12.0): ", stdout);
+  if (pdfioContentSetTextLeading(st, 12.0))
+    puts("PASS");
+  else
+    goto error;
+
+  fputs("pdfioContentTextMoveTo(36.0, 702.0): ", stdout);
+  if (pdfioContentTextMoveTo(st, 36.0, 702.0))
+    puts("PASS");
+  else
+    return (1);
+
+  for (i = 0; i < (int)(sizeof(welcomes) / sizeof(welcomes[0])); i ++)
+  {
+    if (i > 0 && (i % 50) == 0)
+    {
+      fputs("pdfioContentTextMoveTo(200.0, 600.0): ", stdout);
+      if (pdfioContentTextMoveTo(st, 200.0, 600.0))
+	puts("PASS");
+      else
+	return (1);
+    }
+
+    printf("pdfioContentTextShow(\"%s\"): ", welcomes[i]);
+    if (pdfioContentTextShow(st, welcomes[i]))
+      puts("PASS");
+    else
+      return (1);
+  }
+
+  fputs("pdfioContentTextEnd(): ", stdout);
+  if (pdfioContentTextEnd(st))
+    puts("PASS");
+  else
+    return (1);
 
   fputs("pdfioStreamClose: ", stdout);
   if (pdfioStreamClose(st))
