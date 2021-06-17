@@ -47,7 +47,8 @@ LIBOBJS		=	\
 			pdfio-stream.o \
 			pdfio-string.o \
 			pdfio-token.o \
-			pdfio-value.o
+			pdfio-value.o \
+			ttf.o
 OBJS		=	\
 			$(LIBOBJS) \
 			testpdfio.o
@@ -133,8 +134,8 @@ testpdfio:		testpdfio.o libpdfio.a
 # Dependencies
 $(OBJS):		pdfio.h Makefile
 $(LIBOBJS):		pdfio-private.h
-pdfio-content.o:	pdfio-content.h
-
+pdfio-content.o:	pdfio-content.h ttf.h
+ttf.o:			ttf.h
 
 # Make documentation using Codedoc <https://www.msweet.org/codedoc>
 DOCFLAGS	=	\

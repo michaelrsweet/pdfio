@@ -13,6 +13,7 @@
 
 #include "pdfio-content.h"
 #include "pdfio-private.h"
+#include "ttf.h"
 #include <math.h>
 
 
@@ -64,6 +65,7 @@ typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
 
 static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
+static void		ttf_error_cb(pdfio_file_t *pdf, const char *message);
 static unsigned		update_png_crc(unsigned crc, const unsigned char *buffer, size_t length);
 static bool		write_string(pdfio_stream_t *st, const char *s, bool *newline);
 
@@ -1159,9 +1161,19 @@ pdfioFileCreateFontObjFromFile(
     const char   *filename,		// I - Filename
     bool         unicode)		// I - Unicode font?
 {
-  pdfio_dict_t	*dict;			// ICC profile dictionary
-  pdfio_obj_t	*obj;			// ICC profile object
-  pdfio_stream_t *st;			// ICC profile stream
+  ttf_t		*font;			// TrueType font
+  int		ch,			// Current character
+		firstch,		// First character
+		lastch;			// Last character
+  ttf_rect_t	bounds;			// Font bounds
+  pdfio_dict_t	*dict,			// Font dictionary
+		*desc;			// Font descriptor
+  pdfio_obj_t	*obj,			// Font object
+		*desc_obj,		// Font descriptor object
+		*widths_obj;		// Font widths object
+  pdfio_array_t	*bbox;			// Font bounding box array
+  pdfio_array_t	*widths;		// Font widths array
+  pdfio_stream_t *st;			// Font stream
   int		fd;			// File
   unsigned char	buffer[16384];		// Read buffer
   ssize_t	bytes;			// Bytes read
@@ -1183,26 +1195,100 @@ pdfioFileCreateFontObjFromFile(
     return (NULL);
   }
 
+  if ((font = ttfCreate(filename, 0, (ttf_err_cb_t)ttf_error_cb, pdf)) == NULL)
+  {
+    close(fd);
+    return (NULL);
+  }
+
+  // Create the font descriptor dictionary and object...
+  if ((bbox = pdfioArrayCreate(pdf)) == NULL)
+  {
+    ttfDelete(font);
+    close(fd);
+    return (NULL);
+  }
+
+  ttfGetBounds(font, &bounds);
+
+  pdfioArrayAppendNumber(bbox, bounds.left);
+  pdfioArrayAppendNumber(bbox, bounds.bottom);
+  pdfioArrayAppendNumber(bbox, bounds.right);
+  pdfioArrayAppendNumber(bbox, bounds.top);
+
+  if ((desc = pdfioDictCreate(pdf)) == NULL)
+  {
+    ttfDelete(font);
+    close(fd);
+    return (NULL);
+  }
+
+  pdfioDictSetName(desc, "Type", "FontDescriptor");
+  pdfioDictSetName(desc, "FontName", pdfioStringCreate(pdf, ttfGetPostScriptName(font)));
+  pdfioDictSetName(desc, "FontFamily", pdfioStringCreate(pdf, ttfGetFamily(font)));
+  pdfioDictSetNumber(desc, "Flags", ttfIsFixedPitch(font) ? 0x21 : 0x20);
+  pdfioDictSetArray(desc, "FontBBox", bbox);
+  pdfioDictSetNumber(desc, "ItalicAngle", ttfGetItalicAngle(font));
+  pdfioDictSetNumber(desc, "Ascent", ttfGetAscent(font));
+  pdfioDictSetNumber(desc, "Descent", ttfGetDescent(font));
+  pdfioDictSetNumber(desc, "CapHeight", ttfGetCapHeight(font));
+  pdfioDictSetNumber(desc, "XHeight", ttfGetXHeight(font));
+  // Note: No TrueType value exists for this but PDF requires it, so we
+  // calculate a value from 50 to 250...
+  pdfioDictSetNumber(desc, "StemV", ttfGetWeight(font) / 4 + 25);
+
+  if ((desc_obj = pdfioFileCreateObj(pdf, desc)) == NULL)
+  {
+    ttfDelete(font);
+    close(fd);
+    return (NULL);
+  }
+
+  pdfioObjClose(desc_obj);
+
+  // Create the widths array and object...
+  if ((widths = pdfioArrayCreate(pdf)) == NULL)
+  {
+    ttfDelete(font);
+    close(fd);
+    return (NULL);
+  }
+
+  firstch = 32;
+  lastch  = unicode ? 65535 : 255;
+
+  for (ch = firstch; ch <= lastch; ch ++)
+    pdfioArrayAppendNumber(widths, ttfGetWidth(font, ch));
+
+  if ((widths_obj = pdfioFileCreateArrayObj(pdf, widths)) == NULL)
+  {
+    ttfDelete(font);
+    close(fd);
+    return (NULL);
+  }
+
+  pdfioObjClose(widths_obj);
+
   // Create the font object...
   if ((dict = pdfioDictCreate(pdf)) == NULL)
   {
+    ttfDelete(font);
     close(fd);
     return (NULL);
   }
 
   pdfioDictSetName(dict, "Type", "Font");
   pdfioDictSetName(dict, "Subtype", "TrueType");
-  pdfioDictSetName(dict, "BaseFont", "Bogus"); // TODO: Fix BaseFont value
-  (void)unicode;
-  pdfioDictSetName(dict, "Encoding", "WinAnsiEncoding"); // TODO: Fix encoding
+  pdfioDictSetName(dict, "BaseFont", pdfioStringCreate(pdf, ttfGetPostScriptName(font)));
+  pdfioDictSetName(dict, "Encoding", "WinAnsiEncoding"); // TODO: Fix encoding for unicode
   pdfioDictSetName(dict, "Filter", "FlateDecode");
 
-#if 0
-  pdfioDictSetObject(dict, "FontDescriptor", descriptor);
-  pdfioDictSetNumber(dict, "FirstChar", firstchar);
-  pdfioDictSetNumber(dict, "LastChar", lastchar);
-  pdfioDictSetArray(dict, "Widths", widths);
-#endif // 0
+  pdfioDictSetObj(dict, "FontDescriptor", desc_obj);
+  pdfioDictSetNumber(dict, "FirstChar", firstch);
+  pdfioDictSetNumber(dict, "LastChar", lastch);
+  pdfioDictSetObj(dict, "Widths", widths_obj);
+
+  ttfDelete(font);
 
   if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
   {
@@ -2101,6 +2187,18 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   }
 
   return (NULL);
+}
+
+
+//
+// 'ttf_error_cb()' - Relay a message from the TTF functions.
+//
+
+static void
+ttf_error_cb(pdfio_file_t *pdf,		// I - PDF file
+             const char   *message)	// I - Error message
+{
+  (pdf->error_cb)(pdf, message, pdf->error_data);
 }
 
 

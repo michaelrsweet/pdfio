@@ -274,6 +274,32 @@ pdfioFileCreate(
 
 
 //
+// 'pdfioFileCreateArrayObj()' - Create a new object in a PDF file containing an array.
+//
+// This function creates a new object with an array value in a PDF file.
+// You must call @link pdfioObjClose@ to write the object to the file.
+//
+
+pdfio_obj_t *				// O - New object
+pdfioFileCreateArrayObj(
+    pdfio_file_t  *pdf,			// I - PDF file
+    pdfio_array_t *array)		// I - Object array
+{
+  _pdfio_value_t	value;		// Object value
+
+
+  // Range check input...
+  if (!pdf || !array)
+    return (NULL);
+
+  value.type        = PDFIO_VALTYPE_ARRAY;
+  value.value.array = array;
+
+  return (_pdfioFileCreateObj(pdf, array->pdf, &value));
+}
+
+
+//
 // 'pdfioFileCreateObj()' - Create a new object in a PDF file.
 //
 
