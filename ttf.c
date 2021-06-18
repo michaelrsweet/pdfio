@@ -311,7 +311,7 @@ ttfCreate(const char   *filename,	// I - Filename
   _ttf_off_post_t	post;		// PostScript table
 
 
-  TTF_DEBUG("ttfCreate(filename=\"%s\", idx=%u, err_cb=%p, err_data=%p)\n", filename, idx, err_cb, err_data);
+  TTF_DEBUG("ttfCreate(filename=\"%s\", idx=%u, err_cb=%p, err_data=%p)\n", filename, (unsigned)idx, err_cb, err_data);
 
   // Range check input..
   if (!filename)
@@ -802,9 +802,9 @@ ttfGetWidth(ttf_t *font,		// I - Font
   if (!font || ch < ' ' || ch == 0x7f)
     return (0);
   else if (font->widths[bin])
-    return (1000 * font->widths[bin][ch & 255].width / font->units);
+    return ((int)(1000.0f * font->widths[bin][ch & 255].width / font->units));
   else if (font->widths[0])		// .notdef
-    return (1000 * font->widths[0][0].width / font->units);
+    return ((int)(1000.0f * font->widths[0][0].width / font->units));
   else
     return (0);
 }
@@ -1117,7 +1117,7 @@ read_cmap(ttf_t *font,			// I - Font
 	  num_cmap = (int)length - 6;;
 	  *cmap    = (int *)malloc((size_t)num_cmap * sizeof(int));
 
-          if (read(font->fd, *cmap, num_cmap) != (ssize_t)num_cmap)
+          if (read(font->fd, *cmap, (size_t)num_cmap) != (ssize_t)num_cmap)
           {
 	    errorf(font, "Unable to read cmap table length at offset %u.", coffset);
 	    return (-1);
@@ -1215,7 +1215,7 @@ read_cmap(ttf_t *font,			// I - Font
               {
                 // Use an "obscure indexing trick" (words from the spec, not
                 // mine) to look up the glyph index...
-                int temp = segment->idRangeOffset / 2 + ch - segment->startCode + seg - segCount - 1;
+                temp = segment->idRangeOffset / 2 + ch - segment->startCode + seg - segCount - 1;
 
                 if (temp < 0 || temp >= numGlyphIdArray || !glyphIdArray[temp])
                   glyph = -1;
@@ -1558,7 +1558,7 @@ read_names(ttf_t *font)			// I - Font
     }
   }
 
-  length -= offset;
+  length -= (unsigned)offset;
 
   if (read(font->fd, font->names.storage, length) < 0)
   {
@@ -1630,7 +1630,7 @@ read_os_2(ttf_t           *font,	// I - Font
   {
     /* ulCodePageRange1 */  read_ulong(font);
     /* ulCodePageRange2 */  read_ulong(font);
-    os_2->sxHeight        = read_short(font);
+    os_2->sxHeight        = (short)read_short(font);
     os_2->sCapHeight      = (short)read_short(font);
   }
 
