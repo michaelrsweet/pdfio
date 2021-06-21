@@ -47,6 +47,10 @@ extern "C" {
 // Types and constants...
 //
 
+#  ifdef _WIN32
+typedef __int64 ssize_t;		// POSIX type not present on Windows...
+#  endif // _WIN32
+
 typedef struct _pdfio_array_s pdfio_array_t;
 					// Array of PDF values
 typedef struct _pdfio_dict_s pdfio_dict_t;

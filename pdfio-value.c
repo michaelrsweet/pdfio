@@ -408,7 +408,11 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
         {
           struct tm	date;		// Date values
 
-          gmtime_r(&v->value.date, &date);
+#ifdef _WIN32
+          gmtime_s(&date, &v->value.date);
+#else
+	  gmtime_r(&v->value.date, &date);
+#endif // _WIN32
           return (_pdfioFilePrintf(pdf, "(D:%04d%02d%02d%02d%02d%02dZ)", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec));
         }
 

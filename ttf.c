@@ -13,12 +13,17 @@
 // Include necessary headers...
 //
 
+#ifdef _WIN32
+#  define _CRT_SECURE_NO_WARNINGS
+#endif // _WIN32
+
 #include "ttf.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <fcntl.h>
 
 #ifdef _WIN32
 #  include <io.h>
@@ -61,9 +66,10 @@
 #  define O_CREAT	_O_CREAT
 #  define O_TRUNC	_O_TRUNC
 
+typedef __int64 ssize_t;		// POSIX type not present on Windows...
+
 #else
 #  include <unistd.h>
-#  include <fcntl.h>
 #  define O_BINARY	0
 #endif // _WIN32
 
@@ -877,7 +883,7 @@ copy_name(ttf_t    *font,		// I - Font
       int	chars,		// Length of string to copy in characters
 		bpc;		// Bytes per character
 
-      if ((name->offset + name->length) > font->names.storage_size)
+      if ((unsigned)(name->offset + name->length) > font->names.storage_size)
       {
         TTF_DEBUG("copy_name: offset(%d)+length(%d) > storage_size(%d)\n", name->offset, name->length, font->names.storage_size);
         continue;

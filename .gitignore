@@ -3,6 +3,8 @@
 *.log
 *.o
 *.so.1
+/.vs
+/packages
 /testpdfio
 /testpdfio-out.pdf
-
+/x64

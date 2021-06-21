@@ -14,10 +14,20 @@
 // Include necessary headers...
 //
 
+#  ifdef _WIN32
+/*
+ * Disable bogus VS warnings/errors...
+ */
+
+#    define _CRT_SECURE_NO_WARNINGS
+#  endif // _WIN32
+
 #  include "pdfio.h"
 #  include <stdarg.h>
+#  include <string.h>
 #  include <errno.h>
 #  include <inttypes.h>
+#  include <fcntl.h>
 #  ifdef _WIN32
 #    include <io.h>
 #    include <direct.h>
@@ -59,7 +69,6 @@
 #    define O_TRUNC	_O_TRUNC
 #    define O_BINARY	_O_BINARY
 #  else // !_WIN32
-#    include <fcntl.h>
 #    include <unistd.h>
 #    define O_BINARY	0
 #  endif // _WIN32

@@ -706,7 +706,7 @@ pdfioStreamWrite(
 
   pbpixel   = st->pbpixel;
   bufptr    = (const unsigned char *)buffer;
-  bufsecond = buffer + pbpixel;
+  bufsecond = bufptr + pbpixel;
 
   while (bytes > 0)
   {
@@ -736,7 +736,7 @@ pdfioStreamWrite(
 	  for (remaining = pbline; remaining > 0; remaining --, bufptr ++, sptr ++)
 	  {
 	    if (bufptr >= bufsecond)
-	      *sptr = *bufptr - bufptr[-pbpixel];
+	      *sptr = *bufptr - bufptr[-(int)pbpixel];
 	    else
 	      *sptr = *bufptr;
 	  }
@@ -755,7 +755,7 @@ pdfioStreamWrite(
 	  for (remaining = pbline; remaining > 0; remaining --, bufptr ++, sptr ++, pptr ++)
 	  {
 	    if (bufptr >= bufsecond)
-	      *sptr = *bufptr - (bufptr[-pbpixel] + *pptr) / 2;
+	      *sptr = *bufptr - (bufptr[-(int)pbpixel] + *pptr) / 2;
 	    else
 	      *sptr = *bufptr - *pptr / 2;
 	  }
@@ -767,7 +767,7 @@ pdfioStreamWrite(
 	  for (remaining = pbline; remaining > 0; remaining --, bufptr ++, sptr ++, pptr ++)
 	  {
 	    if (bufptr >= bufsecond)
-	      *sptr = *bufptr - stream_paeth(bufptr[-pbpixel], *pptr, pptr[-pbpixel]);
+	      *sptr = *bufptr - stream_paeth(bufptr[-(int)pbpixel], *pptr, pptr[-(int)pbpixel]);
 	    else
 	      *sptr = *bufptr - stream_paeth(0, *pptr, 0);
 	  }
@@ -939,7 +939,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
             for (; bufptr < bufsecond; remaining --, sptr ++)
               *bufptr++ = *sptr;
             for (; remaining > 0; remaining --, sptr ++, bufptr ++)
-              *bufptr = *sptr + bufptr[-pbpixel];
+              *bufptr = *sptr + bufptr[-(int)pbpixel];
             break;
         case 2 : // Up
             for (; remaining > 0; remaining --, sptr ++, pptr ++)
@@ -949,13 +949,13 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	    for (; bufptr < bufsecond; remaining --, sptr ++, pptr ++)
 	      *bufptr++ = *sptr + *pptr / 2;
 	    for (; remaining > 0; remaining --, sptr ++, pptr ++, bufptr ++)
-	      *bufptr = *sptr + (bufptr[-pbpixel] + *pptr) / 2;
+	      *bufptr = *sptr + (bufptr[-(int)pbpixel] + *pptr) / 2;
             break;
         case 4 : // Paeth
             for (; bufptr < bufsecond; remaining --, sptr ++, pptr ++)
               *bufptr++ = *sptr + stream_paeth(0, *pptr, 0);
             for (; remaining > 0; remaining --, sptr ++, pptr ++, bufptr ++)
-              *bufptr = *sptr + stream_paeth(bufptr[-pbpixel], *pptr, pptr[-pbpixel]);
+              *bufptr = *sptr + stream_paeth(bufptr[-(int)pbpixel], *pptr, pptr[-(int)pbpixel]);
             break;
 
         default :
