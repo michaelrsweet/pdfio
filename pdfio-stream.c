@@ -325,6 +325,8 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
 					// Object dictionary
 
 
+  PDFIO_DEBUG("_pdfioStreamOpen(obj=%p(%u), decode=%s)\n", obj, (unsigned)obj->number, decode ? "true" : "false");
+
   // Allocate a new stream object...
   if ((st = (pdfio_stream_t *)calloc(1, sizeof(pdfio_stream_t))) == NULL)
   {
@@ -335,13 +337,13 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
   st->pdf = obj->pdf;
   st->obj = obj;
 
-  if (_pdfioFileSeek(st->pdf, obj->stream_offset, SEEK_SET) != obj->stream_offset)
+  if ((st->remaining = pdfioObjGetLength(obj)) == 0)
   {
     free(st);
     return (NULL);
   }
 
-  if ((st->remaining = pdfioObjGetLength(obj)) == 0)
+  if (_pdfioFileSeek(st->pdf, obj->stream_offset, SEEK_SET) != obj->stream_offset)
   {
     free(st);
     return (NULL);
@@ -448,7 +450,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       st->flate.next_in  = (Bytef *)st->cbuffer;
       st->flate.avail_in = (uInt)_pdfioFileRead(st->pdf, st->cbuffer, sizeof(st->cbuffer));
 
-      PDFIO_DEBUG("_pdfioStreamOpen: avail_in=%u\n", st->flate.avail_in);
+      PDFIO_DEBUG("_pdfioStreamOpen: avail_in=%u, cbuffer=<%02X%02X%02X%02X%02X%02X%02X%02X...>\n", st->flate.avail_in, st->cbuffer[0], st->cbuffer[1], st->cbuffer[2], st->cbuffer[3], st->cbuffer[4], st->cbuffer[5], st->cbuffer[6], st->cbuffer[7]);
 
       if (inflateInit(&(st->flate)) != Z_OK)
       {
