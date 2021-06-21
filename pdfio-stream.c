@@ -448,6 +448,8 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       st->flate.next_in  = (Bytef *)st->cbuffer;
       st->flate.avail_in = (uInt)_pdfioFileRead(st->pdf, st->cbuffer, sizeof(st->cbuffer));
 
+      PDFIO_DEBUG("_pdfioStreamOpen: avail_in=%u\n", st->flate.avail_in);
+
       if (inflateInit(&(st->flate)) != Z_OK)
       {
 	_pdfioFileError(st->pdf, "Unable to start Flate filter.");

@@ -6,6 +6,12 @@
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
 //
+// Usage:
+//
+//   ./testpdfio
+//
+//   ./testpdfio FILENAME [OBJECT-NUMBER] [FILENAME [OBJECT-NUMBER]] ...
+//
 
 //
 // Include necessary headers...
@@ -20,7 +26,7 @@
 // Local functions...
 //
 
-static int	do_test_file(const char *filename);
+static int	do_test_file(const char *filename, int objnum);
 static int	do_unit_tests(void);
 static int	draw_image(pdfio_stream_t *st, const char *name, double x, double y, double w, double h, const char *label);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
@@ -52,7 +58,15 @@ main(int  argc,				// I - Number of command-line arguments
 
     for (i = 1; i < argc; i ++)
     {
-      if (do_test_file(argv[i]))
+      if ((i + 1) < argc && isdigit(argv[i + 1][0] & 255))
+      {
+        // filename.pdf object-number
+        if (do_test_file(argv[i], atoi(argv[i + 1])))
+	  return (1);
+
+	i ++;
+      }
+      else if (do_test_file(argv[i], 0))
         return (1);
     }
   }
@@ -70,7 +84,8 @@ main(int  argc,				// I - Number of command-line arguments
 //
 
 static int				// O - Exit status
-do_test_file(const char *filename)	// I - PDF filename
+do_test_file(const char *filename,	// I - PDF filename
+             int        objnum)		// I - Object number to dump, if any
 {
   bool		error = false;		// Have we shown an error yet?
   pdfio_file_t	*pdf;			// PDF file
@@ -82,59 +97,95 @@ do_test_file(const char *filename)	// I - PDF filename
 
 
   // Try opening the file...
-  printf("pdfioFileOpen(\"%s\", ...): ", filename);
+  if (!objnum)
+    printf("pdfioFileOpen(\"%s\", ...): ", filename);
+
   if ((pdf = pdfioFileOpen(filename, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
-    puts("PASS");
-
-    // Show basic stats...
-    num_objs  = pdfioFileGetNumObjs(pdf);
-    num_pages = pdfioFileGetNumPages(pdf);
-
-    printf("    PDF %s, %d pages, %d objects.\n", pdfioFileGetVersion(pdf), (int)num_pages, (int)num_objs);
-
-    // Show a summary of each page...
-    for (n = 0; n < num_pages; n ++)
+    if (objnum)
     {
-      if ((obj = pdfioFileGetPage(pdf, n)) == NULL)
+      const char	*filter;	// Stream filter
+      pdfio_stream_t	*st;		// Stream
+      char		buffer[8192];	// Read buffer
+      ssize_t		bytes;		// Bytes read
+
+      if ((obj = pdfioFileFindObj(pdf, (size_t)objnum)) == NULL)
       {
-	printf("%s: Unable to get page #%d.\n", filename, (int)n + 1);
+        puts("Not found.");
+        return (1);
       }
-      else
+
+      if ((dict = pdfioObjGetDict(obj)) == NULL)
       {
-	pdfio_rect_t media_box;	// MediaBox value
-
-	memset(&media_box, 0, sizeof(media_box));
-	dict = pdfioObjGetDict(obj);
-
-	if (!pdfioDictGetRect(dict, "MediaBox", &media_box))
-	{
-	  if ((obj = pdfioDictGetObj(dict, "Parent")) != NULL)
-	  {
-	    dict = pdfioObjGetDict(obj);
-	    pdfioDictGetRect(dict, "MediaBox", &media_box);
-	  }
-	}
-
-	printf("    Page #%d is %gx%g.\n", (int)n + 1, media_box.x2, media_box.y2);
+        puts("Not a stream.");
+        return (1);
       }
+
+      filter = pdfioDictGetName(dict, "Filter");
+
+      if ((st = pdfioObjOpenStream(obj, (filter && !strcmp(filter, "FlateDecode")) ? PDFIO_FILTER_FLATE : PDFIO_FILTER_NONE)) == NULL)
+        return (1);
+
+      while ((bytes = pdfioStreamRead(st, buffer, sizeof(buffer))) > 0)
+        fwrite(buffer, 1, (size_t)bytes, stdout);
+
+      pdfioStreamClose(st);
+
+      return (0);
     }
-
-    // Show the associated value with each object...
-    for (n = 0; n < num_objs; n ++)
+    else
     {
-      if ((obj = pdfioFileGetObj(pdf, n)) == NULL)
-      {
-	printf("    Unable to get object #%d.\n", (int)n);
-      }
-      else
-      {
-	dict = pdfioObjGetDict(obj);
+      puts("PASS");
 
-	printf("    %u %u obj dict=%p(%lu pairs)\n", (unsigned)pdfioObjGetNumber(obj), (unsigned)pdfioObjGetGeneration(obj), dict, dict ? (unsigned long)dict->num_pairs : 0UL);
-	fputs("        ", stdout);
-	_pdfioValueDebug(&obj->value, stdout);
-	putchar('\n');
+      // Show basic stats...
+      num_objs  = pdfioFileGetNumObjs(pdf);
+      num_pages = pdfioFileGetNumPages(pdf);
+
+      printf("    PDF %s, %d pages, %d objects.\n", pdfioFileGetVersion(pdf), (int)num_pages, (int)num_objs);
+
+      // Show a summary of each page...
+      for (n = 0; n < num_pages; n ++)
+      {
+	if ((obj = pdfioFileGetPage(pdf, n)) == NULL)
+	{
+	  printf("%s: Unable to get page #%d.\n", filename, (int)n + 1);
+	}
+	else
+	{
+	  pdfio_rect_t media_box;	// MediaBox value
+
+	  memset(&media_box, 0, sizeof(media_box));
+	  dict = pdfioObjGetDict(obj);
+
+	  if (!pdfioDictGetRect(dict, "MediaBox", &media_box))
+	  {
+	    if ((obj = pdfioDictGetObj(dict, "Parent")) != NULL)
+	    {
+	      dict = pdfioObjGetDict(obj);
+	      pdfioDictGetRect(dict, "MediaBox", &media_box);
+	    }
+	  }
+
+	  printf("    Page #%d is %gx%g.\n", (int)n + 1, media_box.x2, media_box.y2);
+	}
+      }
+
+      // Show the associated value with each object...
+      for (n = 0; n < num_objs; n ++)
+      {
+	if ((obj = pdfioFileGetObj(pdf, n)) == NULL)
+	{
+	  printf("    Unable to get object #%d.\n", (int)n);
+	}
+	else
+	{
+	  dict = pdfioObjGetDict(obj);
+
+	  printf("    %u %u obj dict=%p(%lu pairs)\n", (unsigned)pdfioObjGetNumber(obj), (unsigned)pdfioObjGetGeneration(obj), dict, dict ? (unsigned long)dict->num_pairs : 0UL);
+	  fputs("        ", stdout);
+	  _pdfioValueDebug(&obj->value, stdout);
+	  putchar('\n');
+	}
       }
     }
 
