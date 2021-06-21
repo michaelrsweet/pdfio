@@ -1440,9 +1440,9 @@ pdfioFileCreateFontObjFromFile(
       return (NULL);
     }
 
-    // CIDSystemInfo mapping to Adobe Identity (Unicode)
+    // CIDSystemInfo mapping to Adobe UCS2 v0 (Unicode)
     pdfioDictSetString(sidict, "Registry", "Adobe");
-    pdfioDictSetString(sidict, "Ordering", "Identity");
+    pdfioDictSetString(sidict, "Ordering", "UCS2");
     pdfioDictSetNumber(sidict, "Supplement", 0);
 
     // Then the dictionary for the CID base font...
