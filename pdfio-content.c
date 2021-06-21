@@ -1277,12 +1277,14 @@ pdfioFileCreateFontObjFromFile(
 
   if ((file_obj = pdfioFileCreateObj(pdf, file)) == NULL)
   {
+    ttfDelete(font);
     close(fd);
     return (NULL);
   }
 
   if ((st = pdfioObjCreateStream(file_obj, PDFIO_FILTER_FLATE)) == NULL)
   {
+    ttfDelete(font);
     close(fd);
     return (NULL);
   }
@@ -1291,6 +1293,7 @@ pdfioFileCreateFontObjFromFile(
   {
     if (!pdfioStreamWrite(st, buffer, (size_t)bytes))
     {
+      ttfDelete(font);
       close(fd);
       pdfioStreamClose(st);
       return (NULL);
@@ -1347,10 +1350,82 @@ pdfioFileCreateFontObjFromFile(
   if (unicode)
   {
     // Unicode (CID) font...
+    pdfio_dict_t	*cid2gid;	// CIDToGIDMap dictionary
+    pdfio_obj_t		*cid2gid_obj;	// CIDToGIDMap object
+    size_t		i,		// Looping var
+			num_cmap;	// Number of CMap entries
+    const int		*cmap;		// CMap entries
+    unsigned char	*bufptr,	// Pointer into buffer
+			*bufend;	// End of buffer
     pdfio_dict_t	*type2;		// CIDFontType2 font dictionary
     pdfio_obj_t		*type2_obj;	// CIDFontType2 font object
     pdfio_array_t	*descendants;	// Decendant font list
     pdfio_dict_t	*sidict;	// CIDSystemInfo dictionary
+
+    // Create a CIDToGIDMap object for the Unicode font...
+    if ((cid2gid = pdfioDictCreate(pdf)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    pdfioDictSetName(cid2gid, "Filter", "FlateDecode");
+
+    if ((cid2gid_obj = pdfioFileCreateObj(pdf, cid2gid)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    if ((st = pdfioObjCreateStream(cid2gid_obj, PDFIO_FILTER_FLATE)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    cmap = ttfGetCMap(font, &num_cmap);
+
+    for (i = 0, bufptr = buffer, bufend = buffer + sizeof(buffer); i < num_cmap; i ++)
+    {
+      if (cmap[i] < 0)
+      {
+        // Map undefined glyph to .notdef...
+        *bufptr++ = 0;
+        *bufptr++ = 0;
+      }
+      else
+      {
+        // Map to specified glyph...
+        *bufptr++ = (unsigned char)(cmap[i] >> 8);
+        *bufptr++ = (unsigned char)(cmap[i] & 255);
+      }
+
+      if (bufptr >= bufend)
+      {
+        // Flush buffer...
+        if (!pdfioStreamWrite(st, buffer, (size_t)(bufptr - buffer)))
+        {
+	  pdfioStreamClose(st);
+          ttfDelete(font);
+          return (NULL);
+        }
+
+        bufptr = buffer;
+      }
+    }
+
+    if (bufptr > buffer)
+    {
+      // Flush buffer...
+      if (!pdfioStreamWrite(st, buffer, (size_t)(bufptr - buffer)))
+      {
+	pdfioStreamClose(st);
+	ttfDelete(font);
+	return (NULL);
+      }
+    }
+
+    pdfioStreamClose(st);
 
     // Create a CIDFontType2 dictionary for the Unicode font...
     if ((type2 = pdfioDictCreate(pdf)) == NULL)
@@ -1375,7 +1450,7 @@ pdfioFileCreateFontObjFromFile(
     pdfioDictSetName(type2, "Subtype", "CIDFontType2");
     pdfioDictSetName(type2, "BaseFont", basefont);
     pdfioDictSetDict(type2, "CIDSystemInfo", sidict);
-    pdfioDictSetName(type2, "CIDToGIDMap", "Identity");
+    pdfioDictSetObj(type2, "CIDToGIDMap", cid2gid_obj);
     pdfioDictSetObj(type2, "FontDescriptor", desc_obj);
 
     if ((type2_obj = pdfioFileCreateObj(pdf, type2)) == NULL)

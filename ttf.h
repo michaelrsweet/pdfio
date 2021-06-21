@@ -90,6 +90,7 @@ extern void		ttfDelete(ttf_t *font);
 extern int		ttfGetAscent(ttf_t *font);
 extern ttf_rect_t	*ttfGetBounds(ttf_t *font, ttf_rect_t *bounds);
 extern int		ttfGetCapHeight(ttf_t *font);
+extern const int	*ttfGetCMap(ttf_t *font, size_t *num_cmap);
 extern const char	*ttfGetCopyright(ttf_t *font);
 extern int		ttfGetDescent(ttf_t *font);
 extern ttf_rect_t	*ttfGetExtents(ttf_t *font, float size, const char *s, ttf_rect_t *extents);
