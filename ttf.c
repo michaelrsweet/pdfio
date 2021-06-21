@@ -187,6 +187,8 @@ struct _ttf_s
   char		*postscript_name;	// PostScript name string
   char		*version;		// Font version string
   bool		is_fixed;		// Is this a fixed-width font?
+  int		max_char,		// Last character in font
+		min_char;		// First character in font
   _ttf_metric_t	*widths[TTF_FONT_MAX_CHAR / 256];
 					// Character metrics (sparse array)
   float		units;			// Width units
@@ -447,12 +449,20 @@ ttfCreate(const char   *filename,	// I - Filename
     font->x_height   = 3 * font->ascent / 5;
 
   // Build a sparse glyph widths table...
+  font->min_char = -1;
+
   for (i = 0; i < num_cmap; i ++)
   {
     if (cmap[i] >= 0)
     {
       int	bin = i / 256,		// Sub-array bin
 		glyph = cmap[i];	// Glyph index
+
+      // Update min/max...
+      if (font->min_char < 0)
+        font->min_char = i;
+
+      font->max_char = i;
 
       // Allocate a sub-array as needed...
       if (!font->widths[bin])
@@ -717,6 +727,28 @@ float					// O - Angle in degrees
 ttfGetItalicAngle(ttf_t *font)		// I - Font
 {
   return (font ? font->italic_angle : 0.0f);
+}
+
+
+//
+// 'ttfGetMaxChar()' - Get the last character in the font.
+//
+
+int					// O - Last character in font
+ttfGetMaxChar(ttf_t *font)		// I - Font
+{
+  return (font ? font->max_char : 0);
+}
+
+
+//
+// 'ttfGetMinChar()' - Get the first character in the font.
+//
+
+int					// O - First character in font
+ttfGetMinChar(ttf_t *font)		// I - Font
+{
+  return (font ? font->min_char : 0);
 }
 
 

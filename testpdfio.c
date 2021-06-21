@@ -388,7 +388,7 @@ draw_image(pdfio_stream_t *st,
     return (1);
 
   printf("pdfioContentTextShow(\"%s\"): ", label);
-  if (pdfioContentTextShow(st, label))
+  if (pdfioContentTextShow(st, false, label))
     puts("PASS");
   else
     return (1);
@@ -829,7 +829,7 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
     goto error;
 
   fputs("pdfioContentTextShow(\"AdobeRGB\"): ", stdout);
-  if (pdfioContentTextShow(st, "AdobeRGB"))
+  if (pdfioContentTextShow(st, false, "AdobeRGB"))
     puts("PASS");
   else
     goto error;
@@ -841,7 +841,7 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
     goto error;
 
   fputs("pdfioContentTextShow(\"DisplayP3\"): ", stdout);
-  if (pdfioContentTextShow(st, "DisplayP3"))
+  if (pdfioContentTextShow(st, false, "DisplayP3"))
     puts("PASS");
   else
     goto error;
@@ -853,7 +853,7 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
     goto error;
 
   fputs("pdfioContentTextShow(\"sRGB\"): ", stdout);
-  if (pdfioContentTextShow(st, "sRGB"))
+  if (pdfioContentTextShow(st, false, "sRGB"))
     puts("PASS");
   else
     goto error;
@@ -865,7 +865,7 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
     goto error;
 
   fputs("pdfioContentTextShow(\"ProPhotoRGB\"): ", stdout);
-  if (pdfioContentTextShow(st, "ProPhotoRGB"))
+  if (pdfioContentTextShow(st, false, "ProPhotoRGB"))
     puts("PASS");
   else
     goto error;
@@ -877,7 +877,7 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
     goto error;
 
   fputs("pdfioContentTextShow(\"DeviceCMYK\"): ", stdout);
-  if (pdfioContentTextShow(st, "DeviceCMYK"))
+  if (pdfioContentTextShow(st, false, "DeviceCMYK"))
     puts("PASS");
   else
     goto error;
@@ -1049,7 +1049,7 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
   {
     "Welcome\n",
     "Welkom\n",
-//    "ḫaṣānu\n",
+    "ḫaṣānu\n",
     "Mayad-ayad nga pad-abot\n",
     "Mir se vjên\n",
     "Mirë se vjen\n",
@@ -1058,15 +1058,15 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     "Ghini vinit!\n",
     "Bienveníu\n",
     "Miro peicak\n",
-//    "Xoş gəlmişsiniz!\n",
+    "Xoş gəlmişsiniz!\n",
     "Salamat datang\n",
-//    "Сәләм бирем!\n",
+    "Сәләм бирем!\n",
     "Menjuah-juah!\n",
-//    "Še das d' kemma bisd\n",
+    "Še das d' kemma bisd\n",
     "Mwaiseni\n",
     "Maogmáng Pag-abót\n",
     "Welkam\n",
-//    "Dobrodošli\n",
+    "Dobrodošli\n",
     "Degemer mat\n",
     "Benvingut\n",
     "Maayong pag-abot\n",
@@ -1074,7 +1074,7 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     "Bienvenida\n",
     "Bien binidu\n",
     "Bienbenidu\n",
-//    "Hóʔą\n",
+    "Hóʔą\n",
     "Boolkhent!\n",
     "Kopivosian do kinoikatan\n",
     "Malipayeng Pag-abot!\n",
@@ -1085,7 +1085,7 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     "Emedi\n",
     "Welkumin\n",
     "Tere tulemast\n",
-//    "Woé zɔ\n",
+    "Woé zɔ\n",
     "Bienveníu\n",
     "Vælkomin\n",
     "Bula\n",
@@ -1098,8 +1098,8 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     "Benvignût\n",
     "Benvido\n",
     "Willkommen\n",
-//    "Ἀσπάζομαι!\n",
-//    "Καλώς Ήρθες\n",
+    "Ἀσπάζομαι!\n",
+    "Καλώς Ήρθες\n",
     "Tikilluarit\n",
     "Byen venu\n",
     "Sannu da zuwa\n",
@@ -1110,7 +1110,7 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     "Üdvözlet\n",
     "Selamat datai\n",
     "Velkomin\n",
-//    "Nnọọ\n",
+    "Nnọọ\n",
     "Selamat datang\n",
     "Qaimarutin\n",
     "Fáilte\n",
@@ -1119,11 +1119,11 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     "Murakaza neza\n",
     "Mauri\n",
     "Tu be xér hatî ye!\n",
-//    "Taŋyáŋ yahí\n",
+    "Taŋyáŋ yahí\n",
     "Salve\n",
-//    "Laipni lūdzam\n",
+    "Laipni lūdzam\n",
     "Wilkóm\n",
-//    "Sveiki atvykę\n",
+    "Sveiki atvykę\n",
     "Willkamen\n",
     "Mu amuhezwi\n",
     "Tukusanyukidde\n",
@@ -1131,15 +1131,15 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     "Swagatam\n",
     "Tonga soa\n",
     "Selamat datang\n",
-//    "Merħba\n",
-//    "B’a’ntulena\n",
+    "Merħba\n",
+    "B’a’ntulena\n",
     "Failt ort\n",
     "Haere mai\n",
     "mai\n",
-//    "Pjila’si\n",
+    "Pjila’si\n",
     "Benvegnüu\n",
     "Ne y kena\n",
-//    "Ximopanōltih\n",
+    "Ximopanōltih\n",
     "Yá'át'ééh\n",
     "Siyalemukela\n",
     "Siyalemukela\n",
@@ -1148,7 +1148,7 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     "Velkommen\n",
     "Benvengut!\n",
     "Bon bini\n",
-//    "Witam Cię\n",
+    "Witam Cię\n",
     "Bem-vindo\n",
     "Haykuykuy!\n",
     "T'aves baxtalo\n",
@@ -1160,7 +1160,7 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     "Mauya\n",
     "Bon vinutu\n",
     "Vitaj\n",
-//    "Dobrodošli\n",
+    "Dobrodošli\n",
     "Soo dhowow\n",
     "Witaj\n",
     "Bienvenido\n",
@@ -1179,8 +1179,8 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     "Lek oy li la tale\n",
     "amogetswe\n",
     "Tempokani\n",
-//    "Hoş geldin\n",
-//    "Koş geldiniz\n",
+    "Hoş geldin\n",
+    "Koş geldiniz\n",
     "Ulufale mai!\n",
     "Xush kelibsiz\n",
     "Benvignùo\n",
@@ -1191,14 +1191,14 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     "Croeso\n",
     "Merhbe\n",
     "Wamkelekile\n",
-//    "Märr-ŋamathirri\n",
-//    "Ẹ ku abọ\n",
+    "Märr-ŋamathirri\n",
+    "Ẹ ku abọ\n",
     "Kíimak 'oolal\n",
     "Ngiyakwemukela\n"
   };
 
   fputs("pdfioFileCreateFontObjFromFile(OpenSans-Regular.ttf): ", stdout);
-  if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", false)) != NULL)
+  if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", true)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -1267,7 +1267,7 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     }
 
     printf("pdfioContentTextShow(\"%s\"): ", welcomes[i]);
-    if (pdfioContentTextShow(st, welcomes[i]))
+    if (pdfioContentTextShow(st, true, welcomes[i]))
       puts("PASS");
     else
       return (1);
@@ -1329,7 +1329,7 @@ write_header_footer(
     return (1);
 
   printf("pdfioContentTextShow(\"%s\"): ", title);
-  if (pdfioContentTextShow(st, title))
+  if (pdfioContentTextShow(st, false, title))
     puts("PASS");
   else
     return (1);
@@ -1347,7 +1347,7 @@ write_header_footer(
     return (1);
 
   printf("pdfioContentTextShowf(\"%d\"): ", number);
-  if (pdfioContentTextShowf(st, "%d", number))
+  if (pdfioContentTextShowf(st, false, "%d", number))
     puts("PASS");
   else
     return (1);
@@ -1740,7 +1740,7 @@ write_png_test(pdfio_file_t *pdf,		// I - PDF file
     goto error;
 
   fputs("pdfioContentTextShow(\"PNG RGB Color\"): ", stdout);
-  if (pdfioContentTextShow(st, "PNG RGB Color"))
+  if (pdfioContentTextShow(st, false, "PNG RGB Color"))
     puts("PASS");
   else
     goto error;
@@ -1752,7 +1752,7 @@ write_png_test(pdfio_file_t *pdf,		// I - PDF file
     goto error;
 
   fputs("pdfioContentTextShow(\"PNG Gray\"): ", stdout);
-  if (pdfioContentTextShow(st, "PNG Gray"))
+  if (pdfioContentTextShow(st, false, "PNG Gray"))
     puts("PASS");
   else
     goto error;
@@ -1764,7 +1764,7 @@ write_png_test(pdfio_file_t *pdf,		// I - PDF file
     goto error;
 
   fputs("pdfioContentTextShow(\"PNG Indexed\"): ", stdout);
-  if (pdfioContentTextShow(st, "PNG Indexed"))
+  if (pdfioContentTextShow(st, false, "PNG Indexed"))
     puts("PASS");
   else
     goto error;
@@ -1936,7 +1936,7 @@ write_text_test(pdfio_file_t *pdf,		// I - PDF file
 
     if (!pdfioContentSetFillColorDeviceGray(st, 0.75))
       goto error;
-    if (!pdfioContentTextShowf(st, "%3d  ", flinenum))
+    if (!pdfioContentTextShowf(st, false, "%3d  ", flinenum))
       goto error;
     if (!pdfioContentSetFillColorDeviceGray(st, 0.0))
       goto error;
@@ -1948,15 +1948,15 @@ write_text_test(pdfio_file_t *pdf,		// I - PDF file
       temp[80] = '\n';
       temp[81] = '\0';
 
-      if (!pdfioContentTextShow(st, temp))
+      if (!pdfioContentTextShow(st, false, temp))
         goto error;
 
-      if (!pdfioContentTextShowf(st, "     %s", line + 80))
+      if (!pdfioContentTextShowf(st, false, "     %s", line + 80))
         goto error;
 
       plinenum ++;
     }
-    else if (!pdfioContentTextShow(st, line))
+    else if (!pdfioContentTextShow(st, false, line))
       goto error;
 
     plinenum ++;

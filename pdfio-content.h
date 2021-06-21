@@ -139,9 +139,9 @@ extern bool		pdfioContentTextEnd(pdfio_stream_t *st) PDFIO_PUBLIC;
 extern bool		pdfioContentTextMoveLine(pdfio_stream_t *st, double tx, double ty) PDFIO_PUBLIC;
 extern bool		pdfioContentTextMoveTo(pdfio_stream_t *st, double tx, double ty) PDFIO_PUBLIC;
 extern bool		pdfioContentTextNextLine(pdfio_stream_t *st) PDFIO_PUBLIC;
-extern bool		pdfioContentTextShow(pdfio_stream_t *st, const char *s) PDFIO_PUBLIC;
-extern bool		pdfioContentTextShowf(pdfio_stream_t *st, const char *format, ...) PDFIO_PUBLIC PDFIO_FORMAT(2,3);
-extern bool		pdfioContentTextShowJustified(pdfio_stream_t *st, size_t num_fragments, const double *offsets, const char * const *fragments) PDFIO_PUBLIC;
+extern bool		pdfioContentTextShow(pdfio_stream_t *st, bool unicode, const char *s) PDFIO_PUBLIC;
+extern bool		pdfioContentTextShowf(pdfio_stream_t *st, bool unicode, const char *format, ...) PDFIO_PUBLIC PDFIO_FORMAT(3,4);
+extern bool		pdfioContentTextShowJustified(pdfio_stream_t *st, bool unicode, size_t num_fragments, const double *offsets, const char * const *fragments) PDFIO_PUBLIC;
 
 // Resource helpers...
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromBase(pdfio_file_t *pdf, const char *name) PDFIO_PUBLIC;

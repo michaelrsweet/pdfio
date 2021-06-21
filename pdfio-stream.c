@@ -557,6 +557,26 @@ pdfioStreamPrintf(
 
 
 //
+// '()' - Write a single character to a stream.
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioStreamPutChar(pdfio_stream_t *st,	// I - Stream
+                   int            ch)	// I - Character
+{
+  char	buffer[1];			// Write buffer
+
+
+  if (!st || st->pdf->mode != _PDFIO_MODE_WRITE)
+    return (false);
+
+  buffer[0] = (char)ch;
+
+  return (pdfioStreamWrite(st, buffer, 1));
+}
+
+
+//
 // 'pdfioStreamPuts()' - Write a literal string to a stream.
 //
 

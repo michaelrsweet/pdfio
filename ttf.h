@@ -95,6 +95,8 @@ extern int		ttfGetDescent(ttf_t *font);
 extern ttf_rect_t	*ttfGetExtents(ttf_t *font, float size, const char *s, ttf_rect_t *extents);
 extern const char	*ttfGetFamily(ttf_t *font);
 extern float		ttfGetItalicAngle(ttf_t *font);
+extern int		ttfGetMaxChar(ttf_t *font);
+extern int		ttfGetMinChar(ttf_t *font);
 extern size_t		ttfGetNumFonts(ttf_t *font);
 extern const char	*ttfGetPostScriptName(ttf_t *font);
 extern ttf_stretch_t	ttfGetStretch(ttf_t *font);

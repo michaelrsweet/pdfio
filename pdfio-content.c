@@ -51,6 +51,42 @@ const double	pdfioSRGBWhitePoint[3] = { 0.9505, 1.0, 1.0890 };
 #define _PDFIO_PNG_TYPE_GRAYA	4	// Grayscale + alpha
 #define _PDFIO_PNG_TYPE_RGBA	6	// RGB + alpha
 
+static int	_pdfio_cp1252[] =	// CP1252-specific character mapping
+{
+  0x20AC,
+  0x0000,
+  0x201A,
+  0x0192,
+  0x201E,
+  0x2026,
+  0x2020,
+  0x2021,
+  0x02C6,
+  0x2030,
+  0x0160,
+  0x2039,
+  0x0152,
+  0x0000,
+  0x017D,
+  0x0000,
+  0x0000,
+  0x2018,
+  0x2019,
+  0x201C,
+  0x201D,
+  0x2022,
+  0x2013,
+  0x2014,
+  0x02DC,
+  0x2122,
+  0x0161,
+  0x203A,
+  0x0153,
+  0x0000,
+  0x017E,
+  0x0178
+};
+
 
 //
 // Local types...
@@ -67,7 +103,7 @@ static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
 static void		ttf_error_cb(pdfio_file_t *pdf, const char *message);
 static unsigned		update_png_crc(unsigned crc, const unsigned char *buffer, size_t length);
-static bool		write_string(pdfio_stream_t *st, const char *s, bool *newline);
+static bool		write_string(pdfio_stream_t *st, bool unicode, const char *s, bool *newline);
 
 
 //
@@ -1015,17 +1051,22 @@ pdfioContentTextNextLine(
 //
 // 'pdfioContentTextShow()' - Show text.
 //
+// This function shows some text in a PDF content stream. The "unicode" argument
+// specifies that the current font maps to full Unicode.  The "s" argument
+// specifies a UTF-8 encoded string.
+//
 
 bool					// O - `true` on success, `false` on failure
 pdfioContentTextShow(
     pdfio_stream_t *st,			// I - Stream
+    bool           unicode,		// I - Unicode text?
     const char     *s)			// I - String to show
 {
   bool	newline = false;		// New line?
 
 
   // Write the string...
-  if (!write_string(st, s, &newline))
+  if (!write_string(st, unicode, s, &newline))
     return (false);
 
   // Draw it...
@@ -1039,10 +1080,15 @@ pdfioContentTextShow(
 //
 // 'pdfioContentTextShowf()' - Show formatted text.
 //
+// This function shows some text in a PDF content stream. The "unicode" argument
+// specifies that the current font maps to full Unicode.  The "format" argument
+// specifies a UTF-8 encoded `printf`-style format string.
+//
 
 bool
 pdfioContentTextShowf(
     pdfio_stream_t *st,			// I - Stream
+    bool           unicode,		// I - Unicode text?
     const char     *format,		// I - `printf`-style format string
     ...)				// I - Additional arguments as needed
 {
@@ -1057,7 +1103,7 @@ pdfioContentTextShowf(
   va_end(ap);
 
   // Write the string...
-  if (!write_string(st, buffer, &newline))
+  if (!write_string(st, unicode, buffer, &newline))
     return (false);
 
   // Draw it...
@@ -1071,10 +1117,15 @@ pdfioContentTextShowf(
 //
 // 'pdfioContentTextShowJustified()' - Show justified text.
 //
+// This function shows some text in a PDF content stream. The "unicode" argument
+// specifies that the current font maps to full Unicode.  The "fragments"
+// argument specifies an array of UTF-8 encoded strings.
+//
 
 bool					// O - `true` on success, `false` on failure
 pdfioContentTextShowJustified(
     pdfio_stream_t     *st,		// I - Stream
+    bool               unicode,		// I - Unicode text?
     size_t             num_fragments,	// I - Number of text fragments
     const double       *offsets,	// I - Text offsets before fragments
     const char * const *fragments)	// I - Text fragments
@@ -1096,7 +1147,7 @@ pdfioContentTextShowJustified(
 
     if (fragments[i])
     {
-      if (!write_string(st, fragments[i], NULL))
+      if (!write_string(st, unicode, fragments[i], NULL))
         return (false);
     }
   }
@@ -1126,6 +1177,9 @@ pdfioContentTextShowJustified(
 // - `Times-Roman`
 // - `ZapfDingbats`
 //
+// Base fonts always use the Windows CP1252 (ISO-8859-1 with additional
+// characters such as the Euro symbol) subset of Unicode.
+//
 
 pdfio_obj_t *				// O - Font object
 pdfioFileCreateFontObjFromBase(
@@ -1154,12 +1208,18 @@ pdfioFileCreateFontObjFromBase(
 //
 // 'pdfioFileCreateFontObjFromFile()' - Add a font object to a PDF file.
 //
+// This function embeds a TrueType/OpenType font into a PDF file.  The
+// "unicode" parameter controls whether the font is encoded for two-byte
+// characters (potentially full Unicode, but more typically a subset)
+// or to only support the Windows CP1252 (ISO-8859-1 with additional
+// characters such as the Euro symbol) subset of Unicode.
+//
 
 pdfio_obj_t *				// O - Font object
 pdfioFileCreateFontObjFromFile(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *filename,		// I - Filename
-    bool         unicode)		// I - Unicode font?
+    bool         unicode)		// I - Force Unicode
 {
   ttf_t		*font;			// TrueType font
   int		ch,			// Current character
@@ -1167,12 +1227,13 @@ pdfioFileCreateFontObjFromFile(
 		lastch;			// Last character
   ttf_rect_t	bounds;			// Font bounds
   pdfio_dict_t	*dict,			// Font dictionary
-		*desc;			// Font descriptor
+		*desc,			// Font descriptor
+		*file;			// Font file dictionary
   pdfio_obj_t	*obj,			// Font object
 		*desc_obj,		// Font descriptor object
-		*widths_obj;		// Font widths object
+		*file_obj;		// Font file object
+  const char	*basefont;		// Base font name
   pdfio_array_t	*bbox;			// Font bounding box array
-  pdfio_array_t	*widths;		// Font widths array
   pdfio_stream_t *st;			// Font stream
   int		fd;			// File
   unsigned char	buffer[16384];		// Read buffer
@@ -1201,102 +1262,23 @@ pdfioFileCreateFontObjFromFile(
     return (NULL);
   }
 
-  // Create the font descriptor dictionary and object...
-  if ((bbox = pdfioArrayCreate(pdf)) == NULL)
+  // Create the font file dictionary and object...
+  if ((file = pdfioDictCreate(pdf)) == NULL)
   {
     ttfDelete(font);
     close(fd);
     return (NULL);
   }
 
-  ttfGetBounds(font, &bounds);
+  pdfioDictSetName(file, "Filter", "FlateDecode");
 
-  pdfioArrayAppendNumber(bbox, bounds.left);
-  pdfioArrayAppendNumber(bbox, bounds.bottom);
-  pdfioArrayAppendNumber(bbox, bounds.right);
-  pdfioArrayAppendNumber(bbox, bounds.top);
-
-  if ((desc = pdfioDictCreate(pdf)) == NULL)
-  {
-    ttfDelete(font);
-    close(fd);
-    return (NULL);
-  }
-
-  pdfioDictSetName(desc, "Type", "FontDescriptor");
-  pdfioDictSetName(desc, "FontName", pdfioStringCreate(pdf, ttfGetPostScriptName(font)));
-  pdfioDictSetName(desc, "FontFamily", pdfioStringCreate(pdf, ttfGetFamily(font)));
-  pdfioDictSetNumber(desc, "Flags", ttfIsFixedPitch(font) ? 0x21 : 0x20);
-  pdfioDictSetArray(desc, "FontBBox", bbox);
-  pdfioDictSetNumber(desc, "ItalicAngle", ttfGetItalicAngle(font));
-  pdfioDictSetNumber(desc, "Ascent", ttfGetAscent(font));
-  pdfioDictSetNumber(desc, "Descent", ttfGetDescent(font));
-  pdfioDictSetNumber(desc, "CapHeight", ttfGetCapHeight(font));
-  pdfioDictSetNumber(desc, "XHeight", ttfGetXHeight(font));
-  // Note: No TrueType value exists for this but PDF requires it, so we
-  // calculate a value from 50 to 250...
-  pdfioDictSetNumber(desc, "StemV", ttfGetWeight(font) / 4 + 25);
-
-  if ((desc_obj = pdfioFileCreateObj(pdf, desc)) == NULL)
-  {
-    ttfDelete(font);
-    close(fd);
-    return (NULL);
-  }
-
-  pdfioObjClose(desc_obj);
-
-  // Create the widths array and object...
-  if ((widths = pdfioArrayCreate(pdf)) == NULL)
-  {
-    ttfDelete(font);
-    close(fd);
-    return (NULL);
-  }
-
-  firstch = 32;
-  lastch  = unicode ? 65535 : 255;
-
-  for (ch = firstch; ch <= lastch; ch ++)
-    pdfioArrayAppendNumber(widths, ttfGetWidth(font, ch));
-
-  if ((widths_obj = pdfioFileCreateArrayObj(pdf, widths)) == NULL)
-  {
-    ttfDelete(font);
-    close(fd);
-    return (NULL);
-  }
-
-  pdfioObjClose(widths_obj);
-
-  // Create the font object...
-  if ((dict = pdfioDictCreate(pdf)) == NULL)
-  {
-    ttfDelete(font);
-    close(fd);
-    return (NULL);
-  }
-
-  pdfioDictSetName(dict, "Type", "Font");
-  pdfioDictSetName(dict, "Subtype", "TrueType");
-  pdfioDictSetName(dict, "BaseFont", pdfioStringCreate(pdf, ttfGetPostScriptName(font)));
-  pdfioDictSetName(dict, "Encoding", "WinAnsiEncoding"); // TODO: Fix encoding for unicode
-  pdfioDictSetName(dict, "Filter", "FlateDecode");
-
-  pdfioDictSetObj(dict, "FontDescriptor", desc_obj);
-  pdfioDictSetNumber(dict, "FirstChar", firstch);
-  pdfioDictSetNumber(dict, "LastChar", lastch);
-  pdfioDictSetObj(dict, "Widths", widths_obj);
-
-  ttfDelete(font);
-
-  if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+  if ((file_obj = pdfioFileCreateObj(pdf, file)) == NULL)
   {
     close(fd);
     return (NULL);
   }
 
-  if ((st = pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE)) == NULL)
+  if ((st = pdfioObjCreateStream(file_obj, PDFIO_FILTER_FLATE)) == NULL)
   {
     close(fd);
     return (NULL);
@@ -1314,6 +1296,189 @@ pdfioFileCreateFontObjFromFile(
 
   close(fd);
   pdfioStreamClose(st);
+
+  // Create the font descriptor dictionary and object...
+  if ((bbox = pdfioArrayCreate(pdf)) == NULL)
+  {
+    ttfDelete(font);
+    return (NULL);
+  }
+
+  ttfGetBounds(font, &bounds);
+
+  pdfioArrayAppendNumber(bbox, bounds.left);
+  pdfioArrayAppendNumber(bbox, bounds.bottom);
+  pdfioArrayAppendNumber(bbox, bounds.right);
+  pdfioArrayAppendNumber(bbox, bounds.top);
+
+  if ((desc = pdfioDictCreate(pdf)) == NULL)
+  {
+    ttfDelete(font);
+    return (NULL);
+  }
+
+  basefont = pdfioStringCreate(pdf, ttfGetPostScriptName(font));
+
+  pdfioDictSetName(desc, "Type", "FontDescriptor");
+  pdfioDictSetName(desc, "FontName", basefont);
+  pdfioDictSetObj(desc, "FontFile2", file_obj);
+  pdfioDictSetNumber(desc, "Flags", ttfIsFixedPitch(font) ? 0x21 : 0x20);
+  pdfioDictSetArray(desc, "FontBBox", bbox);
+  pdfioDictSetNumber(desc, "ItalicAngle", ttfGetItalicAngle(font));
+  pdfioDictSetNumber(desc, "Ascent", ttfGetAscent(font));
+  pdfioDictSetNumber(desc, "Descent", ttfGetDescent(font));
+  pdfioDictSetNumber(desc, "CapHeight", ttfGetCapHeight(font));
+  pdfioDictSetNumber(desc, "XHeight", ttfGetXHeight(font));
+  // Note: No TrueType value exists for this but PDF requires it, so we
+  // calculate a value from 50 to 250...
+  pdfioDictSetNumber(desc, "StemV", ttfGetWeight(font) / 4 + 25);
+
+  if ((desc_obj = pdfioFileCreateObj(pdf, desc)) == NULL)
+  {
+    ttfDelete(font);
+    return (NULL);
+  }
+
+  pdfioObjClose(desc_obj);
+
+  if (unicode)
+  {
+    // Unicode (CID) font...
+    pdfio_dict_t	*type2;		// CIDFontType2 font dictionary
+    pdfio_obj_t		*type2_obj;	// CIDFontType2 font object
+    pdfio_array_t	*descendants;	// Decendant font list
+    pdfio_dict_t	*sidict;	// CIDSystemInfo dictionary
+
+    // Create a CIDFontType2 dictionary for the Unicode font...
+    if ((type2 = pdfioDictCreate(pdf)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    if ((sidict = pdfioDictCreate(pdf)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    // CIDSystemInfo mapping to Adobe Identity (Unicode)
+    pdfioDictSetString(sidict, "Registry", "Adobe");
+    pdfioDictSetString(sidict, "Ordering", "Identity");
+    pdfioDictSetNumber(sidict, "Supplement", 0);
+
+    // Then the dictionary for the CID base font...
+    pdfioDictSetName(type2, "Type", "Font");
+    pdfioDictSetName(type2, "Subtype", "CIDFontType2");
+    pdfioDictSetName(type2, "BaseFont", basefont);
+    pdfioDictSetDict(type2, "CIDSystemInfo", sidict);
+    pdfioDictSetName(type2, "CIDToGIDMap", "Identity");
+    pdfioDictSetObj(type2, "FontDescriptor", desc_obj);
+
+    if ((type2_obj = pdfioFileCreateObj(pdf, type2)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    pdfioObjClose(type2_obj);
+
+    // Create a Type 0 font object...
+    if ((descendants = pdfioArrayCreate(pdf)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    pdfioArrayAppendObj(descendants, type2_obj);
+
+    if ((dict = pdfioDictCreate(pdf)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    pdfioDictSetName(dict, "Type", "Font");
+    pdfioDictSetName(dict, "Subtype", "Type0");
+    pdfioDictSetName(dict, "BaseFont", basefont);
+    pdfioDictSetArray(dict, "DescendantFonts", descendants);
+    pdfioDictSetName(dict, "Encoding", "Identity-H");
+
+    if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+      return (NULL);
+
+    pdfioObjClose(obj);
+  }
+  else
+  {
+    // Simple (CP1282 or custom encoding) 8-bit font...
+    pdfio_array_t	*widths;	// Font widths array
+    pdfio_obj_t		*widths_obj;	// Font widths object
+
+    // Create the widths array and object...
+    if ((widths = pdfioArrayCreate(pdf)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    firstch = ttfGetMinChar(font);
+    lastch  = ttfGetMaxChar(font);
+
+    if (lastch < 255)
+    {
+      // Provide widths for all characters...
+      for (ch = firstch; ch <= lastch; ch ++)
+	pdfioArrayAppendNumber(widths, ttfGetWidth(font, ch));
+    }
+    else
+    {
+      // Provide widths only for CP1252 characters...
+      lastch = 255;
+
+      for (ch = firstch; ch < 128; ch ++)
+	pdfioArrayAppendNumber(widths, ttfGetWidth(font, ch));
+      for (; ch < 160; ch ++)
+	pdfioArrayAppendNumber(widths, ttfGetWidth(font, _pdfio_cp1252[ch - 128]));
+      for (; ch <= lastch && ch < 128; ch ++)
+	pdfioArrayAppendNumber(widths, ttfGetWidth(font, ch));
+    }
+
+    if ((widths_obj = pdfioFileCreateArrayObj(pdf, widths)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    pdfioObjClose(widths_obj);
+
+    // Create a TrueType font object...
+    if ((dict = pdfioDictCreate(pdf)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    pdfioDictSetName(dict, "Type", "Font");
+    pdfioDictSetName(dict, "Subtype", "TrueType");
+    pdfioDictSetName(dict, "BaseFont", basefont);
+    pdfioDictSetName(dict, "Encoding", "WinAnsi");
+
+    pdfioDictSetObj(dict, "FontDescriptor", desc_obj);
+    pdfioDictSetNumber(dict, "FirstChar", firstch);
+    pdfioDictSetNumber(dict, "LastChar", lastch);
+    pdfioDictSetObj(dict, "Widths", widths_obj);
+
+    if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    pdfioObjClose(obj);
+  }
+
+  ttfDelete(font);
 
   return (obj);
 }
@@ -2229,140 +2394,93 @@ update_png_crc(
 
 static bool				// O - `true` on success, `false` otherwise
 write_string(pdfio_stream_t *st,	// I - Stream
+             bool           unicode,	// I - Unicode text?
              const char     *s,		// I - String
              bool           *newline)	// O - Ends with a newline?
 {
+  int		ch;			// Unicode character
   const char	*ptr;			// Pointer into string
 
 
-  // Determine whether this is Unicode or just ASCII...
+  // Start the string...
+  if (!pdfioStreamPuts(st, unicode ? "<" : "("))
+    return (false);
+
+  // Loop through the string, handling UTF-8 as needed...
   for (ptr = s; *ptr; ptr ++)
   {
-    if (*ptr & 0x80)
+    if ((*ptr & 0xe0) == 0xc0)
     {
-      // UTF-8, allow Unicode up to 255...
-      if ((*ptr & 0xe0) == 0xc0 && (*ptr & 0x3f) <= 3 && (ptr[1] & 0xc0) == 0x80)
-      {
-        ptr ++;
-        continue;
-      }
-
+      // Two-byte UTF-8
+      ch = ((ptr[0] & 0x1f) << 6) | (ptr[1] & 0x3f);
+      ptr ++;
+    }
+    else if ((*ptr & 0xf0) == 0xe0)
+    {
+      // Three-byte UTF-8
+      ch = ((ptr[0] & 0x0f) << 12) | ((ptr[1] & 0x3f) << 6) | (ptr[2] & 0x3f);
+      ptr += 2;
+    }
+    else if ((*ptr & 0xf8) == 0xf0)
+    {
+      // Four-byte UTF-8
+      ch = ((ptr[0] & 0x07) << 18) | ((ptr[1] & 0x3f) << 12) | ((ptr[2] & 0x3f) << 6) | (ptr[3] & 0x3f);
+      ptr += 3;
+    }
+    else if (*ptr == '\n' && newline)
+    {
+      *newline = true;
       break;
     }
-  }
+    else
+      ch = *ptr & 255;
 
-  if (*ptr)
-  {
-    // Unicode string...
-    int		ch;			// Unicode character
-
-    if (!pdfioStreamPuts(st, "<"))
-      return (false);
-
-    for (ptr = s; *ptr; ptr ++)
+    if (unicode)
     {
-      if ((*ptr & 0xe0) == 0xc0)
-      {
-        // Two-byte UTF-8
-        ch = ((ptr[0] & 0x1f) << 6) | (ptr[1] & 0x3f);
-        ptr ++;
-      }
-      else if ((*ptr & 0xf0) == 0xe0)
-      {
-        // Three-byte UTF-8
-        ch = ((ptr[0] & 0x0f) << 12) | ((ptr[1] & 0x3f) << 6) | (ptr[2] & 0x3f);
-        ptr += 2;
-      }
-      else if ((*ptr & 0xf8) == 0xf0)
-      {
-        // Four-byte UTF-8
-        ch = ((ptr[0] & 0x07) << 18) | ((ptr[1] & 0x3f) << 12) | ((ptr[2] & 0x3f) << 6) | (ptr[3] & 0x3f);
-        ptr += 3;
-      }
-      else if (*ptr == '\n' && newline)
-      {
-        *newline = true;
-        break;
-      }
-      else
-        ch = *ptr & 255;
-
       // Write a two-byte character...
       if (!pdfioStreamPrintf(st, "%04X", ch))
-        return (false);
+	return (false);
     }
-    if (!pdfioStreamPuts(st, ">"))
-      return (false);
-  }
-  else
-  {
-    // ASCII string...
-    const char	*start = s;		// Start of fragment
-
-    if (!pdfioStreamPuts(st, "("))
-      return (false);
-
-    for (ptr = start; *ptr; ptr ++)
+    else
     {
-      if (*ptr == '\n' && newline)
+      // Write a one-byte character...
+      if (ch == '\\' || ch == '(' || ch == ')' || ch < ' ')
       {
-        if (ptr > start)
+        // Escaped character...
+        if (ch < ' ')
         {
-          if (!pdfioStreamWrite(st, start, (size_t)(ptr - start)))
-            return (false);
-
-          start = ptr + 1;
-	}
-
-        *newline = true;
-        break;
-      }
-      else if ((*ptr & 0xe0) == 0xc0)
-      {
-        // Two-byte UTF-8
-        unsigned char ch = (unsigned char)(((ptr[0] & 0x1f) << 6) | (ptr[1] & 0x3f));
-					// Unicode character
-
-        if (ptr > start)
-        {
-          if (!pdfioStreamWrite(st, start, (size_t)(ptr - start)))
-            return (false);
-	}
-
-	if (!pdfioStreamWrite(st, &ch, 1))
-	  return (false);
-
-        ptr ++;
-	start = ptr + 1;
-      }
-      else if (*ptr == '\\' || *ptr == '(' || *ptr == ')' || *ptr < ' ')
-      {
-        if (ptr > start)
-        {
-          if (!pdfioStreamWrite(st, start, (size_t)(ptr - start)))
-            return (false);
-	}
-
-	start = ptr + 1;
-
-        if (*ptr < ' ')
-        {
-          if (!pdfioStreamPrintf(st, "\\%03o", *ptr))
+          if (!pdfioStreamPrintf(st, "\\%03o", ch))
             return (false);
         }
-        else if (!pdfioStreamPrintf(st, "\\%c", *ptr))
+        else if (!pdfioStreamPrintf(st, "\\%c", ch))
           return (false);
       }
-    }
+      else
+      {
+        // Non-escaped character...
+        if (ch > 255)
+	{
+	  // Try mapping from Unicode to CP1252...
+	  int i;				// Looping var
 
-    if (ptr > start)
-    {
-      if (!pdfioStreamPrintf(st, "%s)", start))
-        return (false);
+	  for (i = 0; i < (int)(sizeof(_pdfio_cp1252) / sizeof(_pdfio_cp1252[0])); i ++)
+	  {
+	    if (ch == _pdfio_cp1252[i])
+	    {
+	      ch = i + 128;
+	      break;
+	    }
+	  }
+
+	  if (ch > 255)
+	    ch = '?';				// Unsupported chars map to ?
+	}
+
+        // Write the character...
+        pdfioStreamPutChar(st, ch);
+      }
     }
-    else if (!pdfioStreamPuts(st, ")"))
-      return (false);
   }
 
-  return (true);
+  return (pdfioStreamPuts(st, unicode ? ">" : ")"));
 }

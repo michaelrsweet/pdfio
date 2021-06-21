@@ -181,6 +181,7 @@ extern bool		pdfioStreamConsume(pdfio_stream_t *st, size_t bytes) PDFIO_PUBLIC;
 extern bool		pdfioStreamGetToken(pdfio_stream_t *st, char *buffer, size_t bufsize) PDFIO_PUBLIC;
 extern ssize_t		pdfioStreamPeek(pdfio_stream_t *st, void *buffer, size_t bytes) PDFIO_PUBLIC;
 extern bool		pdfioStreamPrintf(pdfio_stream_t *st, const char *format, ...) PDFIO_PUBLIC PDFIO_FORMAT(2,3);
+extern bool		pdfioStreamPutChar(pdfio_stream_t *st, int ch) PDFIO_PUBLIC;
 extern bool		pdfioStreamPuts(pdfio_stream_t *st, const char *s) PDFIO_PUBLIC;
 extern ssize_t		pdfioStreamRead(pdfio_stream_t *st, void *buffer, size_t bytes) PDFIO_PUBLIC;
 extern bool		pdfioStreamWrite(pdfio_stream_t *st, const void *buffer, size_t bytes) PDFIO_PUBLIC;
