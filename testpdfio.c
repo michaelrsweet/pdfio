@@ -1095,6 +1095,7 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
   pdfio_dict_t		*dict;		// Page dictionary
   pdfio_stream_t	*st;		// Page contents stream
   pdfio_obj_t		*opensans;	// OpenSans-Regular font
+  bool			unicode;	// Unicode?
   int			i;		// Looping var
   static const char * const welcomes[] =// "Welcome" in many languages
   {
@@ -1248,11 +1249,23 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     "Ngiyakwemukela\n"
   };
 
+
+  unicode = true;
+
+#if 1
   fputs("pdfioFileCreateFontObjFromFile(OpenSans-Regular.ttf): ", stdout);
-  if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", true)) != NULL)
+  if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", unicode)) != NULL)
     puts("PASS");
   else
     return (1);
+
+#else
+  fputs("pdfioFileCreateFontObjFromFile(NotoSansJP-Regular.otf): ", stdout);
+  if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/NotoSansJP-Regular.otf", unicode)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+#endif // 1
 
   fputs("pdfioDictCreate: ", stdout);
   if ((dict = pdfioDictCreate(pdf)) != NULL)
@@ -1318,7 +1331,7 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
     }
 
     printf("pdfioContentTextShow(\"%s\"): ", welcomes[i]);
-    if (pdfioContentTextShow(st, true, welcomes[i]))
+    if (pdfioContentTextShow(st, unicode, welcomes[i]))
       puts("PASS");
     else
       return (1);

@@ -1451,6 +1451,7 @@ pdfioFileCreateFontObjFromFile(
     pdfioDictSetName(type2, "BaseFont", basefont);
     pdfioDictSetDict(type2, "CIDSystemInfo", sidict);
     pdfioDictSetObj(type2, "CIDToGIDMap", cid2gid_obj);
+//    pdfioDictSetName(type2, "CIDToGIDMap", "Identity");
     pdfioDictSetObj(type2, "FontDescriptor", desc_obj);
 
     if ((type2_obj = pdfioFileCreateObj(pdf, type2)) == NULL)
