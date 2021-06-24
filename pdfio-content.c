@@ -1225,9 +1225,7 @@ pdfioFileCreateFontObjFromFile(
     bool         unicode)		// I - Force Unicode
 {
   ttf_t		*font;			// TrueType font
-  int		ch,			// Current character
-		firstch,		// First character
-		lastch;			// Last character
+  int		ch;			// Current character
   ttf_rect_t	bounds;			// Font bounds
   pdfio_dict_t	*dict,			// Font dictionary
 		*desc,			// Font descriptor
@@ -1241,6 +1239,233 @@ pdfioFileCreateFontObjFromFile(
   int		fd;			// File
   unsigned char	buffer[16384];		// Read buffer
   ssize_t	bytes;			// Bytes read
+  static const char * const cp1252[] =	// Glyphs for CP1252 encoding
+  {
+    "space",
+    "exclam",
+    "quotedbl",
+    "numbersign",
+    "dollar",
+    "percent",
+    "ampersand",
+    "quotesingle",
+    "parenleft",
+    "parenright",
+    "asterisk",
+    "plus",
+    "comma",
+    "hyphen",
+    "period",
+    "slash",
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "colon",
+    "semicolon",
+    "less",
+    "equal",
+    "greater",
+    "question",
+    "at",
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "bracketleft",
+    "backslash",
+    "bracketright",
+    "asciicircum",
+    "underscore",
+    "grave",
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+    "i",
+    "j",
+    "k",
+    "l",
+    "m",
+    "n",
+    "o",
+    "p",
+    "q",
+    "r",
+    "s",
+    "t",
+    "u",
+    "v",
+    "w",
+    "x",
+    "y",
+    "z",
+    "braceleft",
+    "bar",
+    "braceright",
+    "asciitilde",
+    "",
+    "Euro",
+    "",
+    "quotesinglbase",
+    "florin",
+    "quotedblbase",
+    "ellipsis",
+    "dagger",
+    "daggerdbl",
+    "circumflex",
+    "perthousand",
+    "Scaron",
+    "guilsinglleft",
+    "OE",
+    "",
+    "Zcaron",
+    "",
+    "",
+    "quoteleft",
+    "quoteright",
+    "quotedblleft",
+    "quotedblright",
+    "bullet",
+    "endash",
+    "emdash",
+    "tilde",
+    "trademark",
+    "scaron",
+    "guilsinglright",
+    "oe",
+    "",
+    "zcaron",
+    "Ydieresis",
+    "space",
+    "exclamdown",
+    "cent",
+    "sterling",
+    "currency",
+    "yen",
+    "brokenbar",
+    "section",
+    "dieresis",
+    "copyright",
+    "ordfeminine",
+    "guillemotleft",
+    "logicalnot",
+    "minus",
+    "registered",
+    "macron",
+    "degree",
+    "plusminus",
+    "twosuperior",
+    "threesuperior",
+    "acute",
+    "mu",
+    "paragraph",
+    "periodcentered",
+    "cedilla",
+    "onesuperior",
+    "ordmasculine",
+    "guillemotright",
+    "onequarter",
+    "onehalf",
+    "threequarters",
+    "questiondown",
+    "Agrave",
+    "Aacute",
+    "Acircumflex",
+    "Atilde",
+    "Adieresis",
+    "Aring",
+    "AE",
+    "Ccedilla",
+    "Egrave",
+    "Eacute",
+    "Ecircumflex",
+    "Edieresis",
+    "Igrave",
+    "Iacute",
+    "Icircumflex",
+    "Idieresis",
+    "Eth",
+    "Ntilde",
+    "Ograve",
+    "Oacute",
+    "Ocircumflex",
+    "Otilde",
+    "Odieresis",
+    "multiply",
+    "Oslash",
+    "Ugrave",
+    "Uacute",
+    "Ucircumflex",
+    "Udieresis",
+    "Yacute",
+    "Thorn",
+    "germandbls",
+    "agrave",
+    "aacute",
+    "acircumflex",
+    "atilde",
+    "adieresis",
+    "aring",
+    "ae",
+    "ccedilla",
+    "egrave",
+    "eacute",
+    "ecircumflex",
+    "edieresis",
+    "igrave",
+    "iacute",
+    "icircumflex",
+    "idieresis",
+    "eth",
+    "ntilde",
+    "ograve",
+    "oacute",
+    "ocircumflex",
+    "otilde",
+    "odieresis",
+    "divide",
+    "oslash",
+    "ugrave",
+    "uacute",
+    "ucircumflex",
+    "udieresis",
+    "yacute",
+    "thorn",
+    "ydieresis"
+  };
 
 
   // Range check input...
@@ -1491,45 +1716,50 @@ pdfioFileCreateFontObjFromFile(
   else
   {
     // Simple (CP1282 or custom encoding) 8-bit font...
-    pdfio_array_t	*widths;	// Font widths array
-    pdfio_obj_t		*widths_obj;	// Font widths object
-
-    // Create the widths array and object...
-    if ((widths = pdfioArrayCreate(pdf)) == NULL)
+    if (ttfGetMaxChar(font) >= 255 && !pdf->cp1252_obj)
     {
-      ttfDelete(font);
-      return (NULL);
+      bool		chindex;	// Need character index?
+      pdfio_dict_t	*cp1252_dict;	// Encoding dictionary
+      pdfio_array_t	*cp1252_array;	// Differences array
+
+      if ((cp1252_dict = pdfioDictCreate(pdf)) == NULL || (cp1252_array = pdfioArrayCreate(pdf)) == NULL)
+      {
+	ttfDelete(font);
+	return (NULL);
+      }
+
+      for (ch = 0, chindex = true; ch < (int)(sizeof(cp1252) / sizeof(cp1252[0])); ch ++)
+      {
+	if (cp1252[ch][0])
+	{
+	  // Add this character...
+	  if (chindex)
+	  {
+	    // Add the initial index...
+	    pdfioArrayAppendNumber(cp1252_array, ch + 32);
+	    chindex = false;
+	  }
+
+	  pdfioArrayAppendName(cp1252_array, cp1252[ch]);
+	}
+	else
+	{
+	  // Flag that we need a new index...
+	  chindex = true;
+	}
+      }
+
+      pdfioDictSetName(cp1252_dict, "Type", "Encoding");
+      pdfioDictSetArray(cp1252_dict, "Differences", cp1252_array);
+
+      if ((pdf->cp1252_obj = pdfioFileCreateObj(pdf, cp1252_dict)) == NULL)
+      {
+	ttfDelete(font);
+	return (NULL);
+      }
+
+      pdfioObjClose(pdf->cp1252_obj);
     }
-
-    firstch = ttfGetMinChar(font);
-    lastch  = ttfGetMaxChar(font);
-
-    if (lastch < 255)
-    {
-      // Provide widths for all characters...
-      for (ch = firstch; ch <= lastch; ch ++)
-	pdfioArrayAppendNumber(widths, ttfGetWidth(font, ch));
-    }
-    else
-    {
-      // Provide widths only for CP1252 characters...
-      lastch = 255;
-
-      for (ch = firstch; ch < 128; ch ++)
-	pdfioArrayAppendNumber(widths, ttfGetWidth(font, ch));
-      for (; ch < 160; ch ++)
-	pdfioArrayAppendNumber(widths, ttfGetWidth(font, _pdfio_cp1252[ch - 128]));
-      for (; ch <= lastch && ch < 128; ch ++)
-	pdfioArrayAppendNumber(widths, ttfGetWidth(font, ch));
-    }
-
-    if ((widths_obj = pdfioFileCreateArrayObj(pdf, widths)) == NULL)
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
-
-    pdfioObjClose(widths_obj);
 
     // Create a TrueType font object...
     if ((dict = pdfioDictCreate(pdf)) == NULL)
@@ -1541,12 +1771,10 @@ pdfioFileCreateFontObjFromFile(
     pdfioDictSetName(dict, "Type", "Font");
     pdfioDictSetName(dict, "Subtype", "TrueType");
     pdfioDictSetName(dict, "BaseFont", basefont);
-    pdfioDictSetName(dict, "Encoding", "WinAnsi");
+    if (ttfGetMaxChar(font) >= 255)
+      pdfioDictSetObj(dict, "Encoding", pdf->cp1252_obj);
 
     pdfioDictSetObj(dict, "FontDescriptor", desc_obj);
-    pdfioDictSetNumber(dict, "FirstChar", firstch);
-    pdfioDictSetNumber(dict, "LastChar", lastch);
-    pdfioDictSetObj(dict, "Widths", widths_obj);
 
     if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
     {

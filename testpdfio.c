@@ -35,7 +35,7 @@ static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
 static int	verify_image(pdfio_file_t *pdf, size_t number);
 static int	write_color_patch(pdfio_stream_t *st, bool device);
 static int	write_color_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
-static int	write_font_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
+static int	write_font_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font, bool unicode);
 static int	write_header_footer(pdfio_stream_t *st, const char *title, int number);
 static pdfio_obj_t *write_image_object(pdfio_file_t *pdf, _pdfio_predictor_t predictor);
 static int	write_images_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
@@ -332,11 +332,14 @@ do_unit_tests(void)
     return (1);
 
   // Test TrueType fonts...
-  if (write_font_test(outpdf, 8, helvetica))
+  if (write_font_test(outpdf, 8, helvetica, false))
+    return (1);
+
+  if (write_font_test(outpdf, 9, helvetica, true))
     return (1);
 
   // Print this text file...
-  if (write_text_test(outpdf, 9, helvetica, "README.md"))
+  if (write_text_test(outpdf, 10, helvetica, "README.md"))
     return (1);
 
   // Close the test PDF file...
@@ -1090,12 +1093,12 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
 static int				// O - 1 on failure, 0 on success
 write_font_test(pdfio_file_t *pdf,	// I - PDF file
                 int          number,	// I - Page number
-		pdfio_obj_t  *font)	// I - Page number font
+		pdfio_obj_t  *font,	// I - Page number font
+		bool         unicode)	// I - Use Unicode font?
 {
   pdfio_dict_t		*dict;		// Page dictionary
   pdfio_stream_t	*st;		// Page contents stream
   pdfio_obj_t		*opensans;	// OpenSans-Regular font
-  bool			unicode;	// Unicode?
   int			i;		// Looping var
   static const char * const welcomes[] =// "Welcome" in many languages
   {
@@ -1250,22 +1253,11 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
   };
 
 
-  unicode = true;
-
-#if 1
   fputs("pdfioFileCreateFontObjFromFile(OpenSans-Regular.ttf): ", stdout);
   if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", unicode)) != NULL)
     puts("PASS");
   else
     return (1);
-
-#else
-  fputs("pdfioFileCreateFontObjFromFile(NotoSansJP-Regular.otf): ", stdout);
-  if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/NotoSansJP-Regular.otf", unicode)) != NULL)
-    puts("PASS");
-  else
-    return (1);
-#endif // 1
 
   fputs("pdfioDictCreate: ", stdout);
   if ((dict = pdfioDictCreate(pdf)) != NULL)
@@ -1292,7 +1284,7 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
-  if (write_header_footer(st, "TrueType Font Test", number))
+  if (write_header_footer(st, unicode ? "Unicode TrueType Font Test" : "CP1252 TrueType Font Test", number))
     goto error;
 
   fputs("pdfioContentTextBegin(): ", stdout);
