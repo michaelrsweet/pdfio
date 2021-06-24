@@ -104,6 +104,7 @@ typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
 
 static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
+static bool		create_cp1252(pdfio_file_t *pdf);
 static void		ttf_error_cb(pdfio_file_t *pdf, const char *message);
 static unsigned		update_png_crc(unsigned crc, const unsigned char *buffer, size_t length);
 static bool		write_string(pdfio_stream_t *st, bool unicode, const char *s, bool *newline);
@@ -1199,7 +1200,14 @@ pdfioFileCreateFontObjFromBase(
   pdfioDictSetName(dict, "Type", "Font");
   pdfioDictSetName(dict, "Subtype", "Type1");
   pdfioDictSetName(dict, "BaseFont", pdfioStringCreate(pdf, name));
-  pdfioDictSetName(dict, "Encoding", "WinAnsiEncoding");
+
+  if (strcmp(name, "Symbol") && strcmp(name, "ZapfDingbats"))
+  {
+    if (!pdf->cp1252_obj && !create_cp1252(pdf))
+      return (NULL);
+
+    pdfioDictSetObj(dict, "Encoding", pdf->cp1252_obj);
+  }
 
   if ((obj = pdfioFileCreateObj(dict->pdf, dict)) != NULL)
     pdfioObjClose(obj);
@@ -1239,233 +1247,6 @@ pdfioFileCreateFontObjFromFile(
   int		fd;			// File
   unsigned char	buffer[16384];		// Read buffer
   ssize_t	bytes;			// Bytes read
-  static const char * const cp1252[] =	// Glyphs for CP1252 encoding
-  {
-    "space",
-    "exclam",
-    "quotedbl",
-    "numbersign",
-    "dollar",
-    "percent",
-    "ampersand",
-    "quotesingle",
-    "parenleft",
-    "parenright",
-    "asterisk",
-    "plus",
-    "comma",
-    "hyphen",
-    "period",
-    "slash",
-    "zero",
-    "one",
-    "two",
-    "three",
-    "four",
-    "five",
-    "six",
-    "seven",
-    "eight",
-    "nine",
-    "colon",
-    "semicolon",
-    "less",
-    "equal",
-    "greater",
-    "question",
-    "at",
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F",
-    "G",
-    "H",
-    "I",
-    "J",
-    "K",
-    "L",
-    "M",
-    "N",
-    "O",
-    "P",
-    "Q",
-    "R",
-    "S",
-    "T",
-    "U",
-    "V",
-    "W",
-    "X",
-    "Y",
-    "Z",
-    "bracketleft",
-    "backslash",
-    "bracketright",
-    "asciicircum",
-    "underscore",
-    "grave",
-    "a",
-    "b",
-    "c",
-    "d",
-    "e",
-    "f",
-    "g",
-    "h",
-    "i",
-    "j",
-    "k",
-    "l",
-    "m",
-    "n",
-    "o",
-    "p",
-    "q",
-    "r",
-    "s",
-    "t",
-    "u",
-    "v",
-    "w",
-    "x",
-    "y",
-    "z",
-    "braceleft",
-    "bar",
-    "braceright",
-    "asciitilde",
-    "",
-    "Euro",
-    "",
-    "quotesinglbase",
-    "florin",
-    "quotedblbase",
-    "ellipsis",
-    "dagger",
-    "daggerdbl",
-    "circumflex",
-    "perthousand",
-    "Scaron",
-    "guilsinglleft",
-    "OE",
-    "",
-    "Zcaron",
-    "",
-    "",
-    "quoteleft",
-    "quoteright",
-    "quotedblleft",
-    "quotedblright",
-    "bullet",
-    "endash",
-    "emdash",
-    "tilde",
-    "trademark",
-    "scaron",
-    "guilsinglright",
-    "oe",
-    "",
-    "zcaron",
-    "Ydieresis",
-    "space",
-    "exclamdown",
-    "cent",
-    "sterling",
-    "currency",
-    "yen",
-    "brokenbar",
-    "section",
-    "dieresis",
-    "copyright",
-    "ordfeminine",
-    "guillemotleft",
-    "logicalnot",
-    "minus",
-    "registered",
-    "macron",
-    "degree",
-    "plusminus",
-    "twosuperior",
-    "threesuperior",
-    "acute",
-    "mu",
-    "paragraph",
-    "periodcentered",
-    "cedilla",
-    "onesuperior",
-    "ordmasculine",
-    "guillemotright",
-    "onequarter",
-    "onehalf",
-    "threequarters",
-    "questiondown",
-    "Agrave",
-    "Aacute",
-    "Acircumflex",
-    "Atilde",
-    "Adieresis",
-    "Aring",
-    "AE",
-    "Ccedilla",
-    "Egrave",
-    "Eacute",
-    "Ecircumflex",
-    "Edieresis",
-    "Igrave",
-    "Iacute",
-    "Icircumflex",
-    "Idieresis",
-    "Eth",
-    "Ntilde",
-    "Ograve",
-    "Oacute",
-    "Ocircumflex",
-    "Otilde",
-    "Odieresis",
-    "multiply",
-    "Oslash",
-    "Ugrave",
-    "Uacute",
-    "Ucircumflex",
-    "Udieresis",
-    "Yacute",
-    "Thorn",
-    "germandbls",
-    "agrave",
-    "aacute",
-    "acircumflex",
-    "atilde",
-    "adieresis",
-    "aring",
-    "ae",
-    "ccedilla",
-    "egrave",
-    "eacute",
-    "ecircumflex",
-    "edieresis",
-    "igrave",
-    "iacute",
-    "icircumflex",
-    "idieresis",
-    "eth",
-    "ntilde",
-    "ograve",
-    "oacute",
-    "ocircumflex",
-    "otilde",
-    "odieresis",
-    "divide",
-    "oslash",
-    "ugrave",
-    "uacute",
-    "ucircumflex",
-    "udieresis",
-    "yacute",
-    "thorn",
-    "ydieresis"
-  };
 
 
   // Range check input...
@@ -1716,49 +1497,10 @@ pdfioFileCreateFontObjFromFile(
   else
   {
     // Simple (CP1282 or custom encoding) 8-bit font...
-    if (ttfGetMaxChar(font) >= 255 && !pdf->cp1252_obj)
+    if (ttfGetMaxChar(font) >= 255 && !pdf->cp1252_obj && !create_cp1252(pdf))
     {
-      bool		chindex;	// Need character index?
-      pdfio_dict_t	*cp1252_dict;	// Encoding dictionary
-      pdfio_array_t	*cp1252_array;	// Differences array
-
-      if ((cp1252_dict = pdfioDictCreate(pdf)) == NULL || (cp1252_array = pdfioArrayCreate(pdf)) == NULL)
-      {
-	ttfDelete(font);
-	return (NULL);
-      }
-
-      for (ch = 0, chindex = true; ch < (int)(sizeof(cp1252) / sizeof(cp1252[0])); ch ++)
-      {
-	if (cp1252[ch][0])
-	{
-	  // Add this character...
-	  if (chindex)
-	  {
-	    // Add the initial index...
-	    pdfioArrayAppendNumber(cp1252_array, ch + 32);
-	    chindex = false;
-	  }
-
-	  pdfioArrayAppendName(cp1252_array, cp1252[ch]);
-	}
-	else
-	{
-	  // Flag that we need a new index...
-	  chindex = true;
-	}
-      }
-
-      pdfioDictSetName(cp1252_dict, "Type", "Encoding");
-      pdfioDictSetArray(cp1252_dict, "Differences", cp1252_array);
-
-      if ((pdf->cp1252_obj = pdfioFileCreateObj(pdf, cp1252_dict)) == NULL)
-      {
-	ttfDelete(font);
-	return (NULL);
-      }
-
-      pdfioObjClose(pdf->cp1252_obj);
+      ttfDelete(font);
+      return (NULL);
     }
 
     // Create a TrueType font object...
@@ -2659,6 +2401,282 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   }
 
   return (NULL);
+}
+
+
+//
+// 'create_cp1252()' - Create the CP1252 font encoding object.
+//
+
+static bool				// O - `true` on success, `false` on failure
+create_cp1252(pdfio_file_t *pdf)	// I - PDF file
+{
+  int		ch;			// Current character
+  bool		chindex;		// Need character index?
+  pdfio_dict_t	*cp1252_dict;		// Encoding dictionary
+  pdfio_array_t	*cp1252_array;		// Differences array
+  static const char * const cp1252[] =	// Glyphs for CP1252 encoding
+  {
+    "space",
+    "exclam",
+    "quotedbl",
+    "numbersign",
+    "dollar",
+    "percent",
+    "ampersand",
+    "quotesingle",
+    "parenleft",
+    "parenright",
+    "asterisk",
+    "plus",
+    "comma",
+    "hyphen",
+    "period",
+    "slash",
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "colon",
+    "semicolon",
+    "less",
+    "equal",
+    "greater",
+    "question",
+    "at",
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z",
+    "bracketleft",
+    "backslash",
+    "bracketright",
+    "asciicircum",
+    "underscore",
+    "grave",
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "f",
+    "g",
+    "h",
+    "i",
+    "j",
+    "k",
+    "l",
+    "m",
+    "n",
+    "o",
+    "p",
+    "q",
+    "r",
+    "s",
+    "t",
+    "u",
+    "v",
+    "w",
+    "x",
+    "y",
+    "z",
+    "braceleft",
+    "bar",
+    "braceright",
+    "asciitilde",
+    "",
+    "Euro",
+    "",
+    "quotesinglbase",
+    "florin",
+    "quotedblbase",
+    "ellipsis",
+    "dagger",
+    "daggerdbl",
+    "circumflex",
+    "perthousand",
+    "Scaron",
+    "guilsinglleft",
+    "OE",
+    "",
+    "Zcaron",
+    "",
+    "",
+    "quoteleft",
+    "quoteright",
+    "quotedblleft",
+    "quotedblright",
+    "bullet",
+    "endash",
+    "emdash",
+    "tilde",
+    "trademark",
+    "scaron",
+    "guilsinglright",
+    "oe",
+    "",
+    "zcaron",
+    "Ydieresis",
+    "space",
+    "exclamdown",
+    "cent",
+    "sterling",
+    "currency",
+    "yen",
+    "brokenbar",
+    "section",
+    "dieresis",
+    "copyright",
+    "ordfeminine",
+    "guillemotleft",
+    "logicalnot",
+    "minus",
+    "registered",
+    "macron",
+    "degree",
+    "plusminus",
+    "twosuperior",
+    "threesuperior",
+    "acute",
+    "mu",
+    "paragraph",
+    "periodcentered",
+    "cedilla",
+    "onesuperior",
+    "ordmasculine",
+    "guillemotright",
+    "onequarter",
+    "onehalf",
+    "threequarters",
+    "questiondown",
+    "Agrave",
+    "Aacute",
+    "Acircumflex",
+    "Atilde",
+    "Adieresis",
+    "Aring",
+    "AE",
+    "Ccedilla",
+    "Egrave",
+    "Eacute",
+    "Ecircumflex",
+    "Edieresis",
+    "Igrave",
+    "Iacute",
+    "Icircumflex",
+    "Idieresis",
+    "Eth",
+    "Ntilde",
+    "Ograve",
+    "Oacute",
+    "Ocircumflex",
+    "Otilde",
+    "Odieresis",
+    "multiply",
+    "Oslash",
+    "Ugrave",
+    "Uacute",
+    "Ucircumflex",
+    "Udieresis",
+    "Yacute",
+    "Thorn",
+    "germandbls",
+    "agrave",
+    "aacute",
+    "acircumflex",
+    "atilde",
+    "adieresis",
+    "aring",
+    "ae",
+    "ccedilla",
+    "egrave",
+    "eacute",
+    "ecircumflex",
+    "edieresis",
+    "igrave",
+    "iacute",
+    "icircumflex",
+    "idieresis",
+    "eth",
+    "ntilde",
+    "ograve",
+    "oacute",
+    "ocircumflex",
+    "otilde",
+    "odieresis",
+    "divide",
+    "oslash",
+    "ugrave",
+    "uacute",
+    "ucircumflex",
+    "udieresis",
+    "yacute",
+    "thorn",
+    "ydieresis"
+  };
+
+
+  if ((cp1252_dict = pdfioDictCreate(pdf)) == NULL || (cp1252_array = pdfioArrayCreate(pdf)) == NULL)
+    return (false);
+
+  for (ch = 0, chindex = true; ch < (int)(sizeof(cp1252) / sizeof(cp1252[0])); ch ++)
+  {
+    if (cp1252[ch][0])
+    {
+      // Add this character...
+      if (chindex)
+      {
+	// Add the initial index...
+	pdfioArrayAppendNumber(cp1252_array, ch + 32);
+	chindex = false;
+      }
+
+      pdfioArrayAppendName(cp1252_array, cp1252[ch]);
+    }
+    else
+    {
+      // Flag that we need a new index...
+      chindex = true;
+    }
+  }
+
+  pdfioDictSetName(cp1252_dict, "Type", "Encoding");
+  pdfioDictSetArray(cp1252_dict, "Differences", cp1252_array);
+
+  if ((pdf->cp1252_obj = pdfioFileCreateObj(pdf, cp1252_dict)) == NULL)
+    return (false);
+
+  pdfioObjClose(pdf->cp1252_obj);
+
+  return (true);
 }
 
 
