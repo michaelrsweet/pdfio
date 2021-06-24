@@ -1233,7 +1233,6 @@ pdfioFileCreateFontObjFromFile(
     bool         unicode)		// I - Force Unicode
 {
   ttf_t		*font;			// TrueType font
-  int		ch;			// Current character
   ttf_rect_t	bounds;			// Font bounds
   pdfio_dict_t	*dict,			// Font dictionary
 		*desc,			// Font descriptor
@@ -1342,7 +1341,7 @@ pdfioFileCreateFontObjFromFile(
   pdfioDictSetNumber(desc, "CapHeight", ttfGetCapHeight(font));
   pdfioDictSetNumber(desc, "XHeight", ttfGetXHeight(font));
   // Note: No TrueType value exists for this but PDF requires it, so we
-  // calculate a value from 50 to 250...
+  // calculate a generic value from 50 to 250 based on the weight...
   pdfioDictSetNumber(desc, "StemV", ttfGetWeight(font) / 4 + 25);
 
   if ((desc_obj = pdfioFileCreateObj(pdf, desc)) == NULL)
@@ -1457,7 +1456,6 @@ pdfioFileCreateFontObjFromFile(
     pdfioDictSetName(type2, "BaseFont", basefont);
     pdfioDictSetDict(type2, "CIDSystemInfo", sidict);
     pdfioDictSetObj(type2, "CIDToGIDMap", cid2gid_obj);
-//    pdfioDictSetName(type2, "CIDToGIDMap", "Identity");
     pdfioDictSetObj(type2, "FontDescriptor", desc_obj);
 
     if ((type2_obj = pdfioFileCreateObj(pdf, type2)) == NULL)
@@ -1487,7 +1485,8 @@ pdfioFileCreateFontObjFromFile(
     pdfioDictSetName(dict, "Subtype", "Type0");
     pdfioDictSetName(dict, "BaseFont", basefont);
     pdfioDictSetArray(dict, "DescendantFonts", descendants);
-    pdfioDictSetName(dict, "Encoding", "Identity-H");
+//    pdfioDictSetName(dict, "Encoding", "Identity-H");
+    pdfioDictSetName(dict, "Encoding", "UniCNS-UCS2-H");
 
     if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
       return (NULL);
