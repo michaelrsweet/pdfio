@@ -1374,7 +1374,9 @@ pdfioFileCreateFontObjFromFile(
       return (NULL);
     }
 
+#ifndef DEBUG
     pdfioDictSetName(cid2gid, "Filter", "FlateDecode");
+#endif // !DEBUG
 
     if ((cid2gid_obj = pdfioFileCreateObj(pdf, cid2gid)) == NULL)
     {
@@ -1382,7 +1384,11 @@ pdfioFileCreateFontObjFromFile(
       return (NULL);
     }
 
+#ifdef DEBUG
+    if ((st = pdfioObjCreateStream(cid2gid_obj, PDFIO_FILTER_NONE)) == NULL)
+#else
     if ((st = pdfioObjCreateStream(cid2gid_obj, PDFIO_FILTER_FLATE)) == NULL)
+#endif // DEBUG
     {
       ttfDelete(font);
       return (NULL);
@@ -1447,7 +1453,7 @@ pdfioFileCreateFontObjFromFile(
 
     // CIDSystemInfo mapping to Adobe UCS2 v0 (Unicode)
     pdfioDictSetString(sidict, "Registry", "Adobe");
-    pdfioDictSetString(sidict, "Ordering", "UCS2");
+    pdfioDictSetString(sidict, "Ordering", "Identity");
     pdfioDictSetNumber(sidict, "Supplement", 0);
 
     // Then the dictionary for the CID base font...
@@ -1485,8 +1491,7 @@ pdfioFileCreateFontObjFromFile(
     pdfioDictSetName(dict, "Subtype", "Type0");
     pdfioDictSetName(dict, "BaseFont", basefont);
     pdfioDictSetArray(dict, "DescendantFonts", descendants);
-//    pdfioDictSetName(dict, "Encoding", "Identity-H");
-    pdfioDictSetName(dict, "Encoding", "UniCNS-UCS2-H");
+    pdfioDictSetName(dict, "Encoding", "Identity-H");
 
     if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
       return (NULL);

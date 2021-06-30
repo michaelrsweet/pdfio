@@ -1253,6 +1253,7 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
   };
 
 
+#if 0
   if (unicode)
   {
     fputs("pdfioFileCreateFontObjFromFile(NotoSansJP-Regular.otf): ", stdout);
@@ -1262,9 +1263,10 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
       return (1);
   }
   else
+#endif // 0
   {
     fputs("pdfioFileCreateFontObjFromFile(OpenSans-Regular.ttf): ", stdout);
-    if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", false)) != NULL)
+    if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", unicode)) != NULL)
       puts("PASS");
     else
       return (1);
