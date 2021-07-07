@@ -264,6 +264,92 @@ do_unit_tests(void)
   else
     return (1);
 
+  // Set info values...
+  fputs("pdfioFileGet/SetAuthor: ", stdout);
+  pdfioFileSetAuthor(outpdf, "Michael R Sweet");
+  if ((s = pdfioFileGetAuthor(outpdf)) != NULL && !strcmp(s, "Michael R Sweet"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'Michael R Sweet')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'Michael R Sweet')");
+    return (1);
+  }
+
+  fputs("pdfioFileGet/SetCreator: ", stdout);
+  pdfioFileSetCreator(outpdf, "testpdfio");
+  if ((s = pdfioFileGetCreator(outpdf)) != NULL && !strcmp(s, "testpdfio"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'testpdfio')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'testpdfio')");
+    return (1);
+  }
+
+  fputs("pdfioFileGet/SetKeywords: ", stdout);
+  pdfioFileSetKeywords(outpdf, "one fish,two fish,red fish,blue fish");
+  if ((s = pdfioFileGetKeywords(outpdf)) != NULL && !strcmp(s, "one fish,two fish,red fish,blue fish"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'one fish,two fish,red fish,blue fish')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'one fish,two fish,red fish,blue fish')");
+    return (1);
+  }
+
+  fputs("pdfioFileGet/SetSubject: ", stdout);
+  pdfioFileSetSubject(outpdf, "Unit test document");
+  if ((s = pdfioFileGetSubject(outpdf)) != NULL && !strcmp(s, "Unit test document"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'Unit test document')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'Unit test document')");
+    return (1);
+  }
+
+  fputs("pdfioFileGet/SetTitle: ", stdout);
+  pdfioFileSetTitle(outpdf, "Test Document");
+  if ((s = pdfioFileGetTitle(outpdf)) != NULL && !strcmp(s, "Test Document"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'Test Document')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'Test Document')");
+    return (1);
+  }
+
   // Create some image objects...
   fputs("pdfioFileCreateImageObjFromFile(\"testfiles/color.jpg\"): ", stdout);
   if ((color_jpg = pdfioFileCreateImageObjFromFile(outpdf, "testfiles/color.jpg", true)) != NULL)
