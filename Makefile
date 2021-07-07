@@ -17,15 +17,15 @@ CC		=	cc
 CFLAGS		=
 CODESIGN_IDENTITY =	Developer ID
 COMMONFLAGS	=	-Os -g
-CPPFLAGS	=
+CPPFLAGS	=	'-DPDFIO_VERSION="$(VERSION)"'
 DESTDIR		=	$(DSTROOT)
 DSO		=	cc
-DSOFLAGS	=	
+DSOFLAGS	=
 DSONAME		=
 LDFLAGS		=
 LIBS		=	-lm -lz
 RANLIB		=	ranlib
-VERSION		=	0.1
+VERSION		=	0.2
 prefix		=	/usr/local
 
 

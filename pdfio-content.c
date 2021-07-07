@@ -1491,7 +1491,8 @@ pdfioFileCreateFontObjFromFile(
     pdfioDictSetName(dict, "Subtype", "Type0");
     pdfioDictSetName(dict, "BaseFont", basefont);
     pdfioDictSetArray(dict, "DescendantFonts", descendants);
-    pdfioDictSetName(dict, "Encoding", "Identity-H");
+//    pdfioDictSetName(dict, "Encoding", "Identity-H");
+    pdfioDictSetName(dict, "Encoding", "UniCNS-UCS2-H");
 
     if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
       return (NULL);

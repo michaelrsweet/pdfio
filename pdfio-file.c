@@ -123,10 +123,11 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
   {
     ret = false;
 
-    if (write_pages(pdf))
-      if (write_catalog(pdf))
-        if (write_trailer(pdf))
-          ret = _pdfioFileFlush(pdf);
+    if (pdfioObjClose(pdf->info))
+      if (write_pages(pdf))
+	if (write_catalog(pdf))
+	  if (write_trailer(pdf))
+	    ret = _pdfioFileFlush(pdf);
   }
 
   if (close(pdf->fd) < 0)
@@ -177,6 +178,7 @@ pdfioFileCreate(
 {
   pdfio_file_t	*pdf;			// PDF file
   pdfio_dict_t	*dict;			// Dictionary for pages object
+  pdfio_dict_t	*info_dict;		// Dictionary for information object
 
 
   // Range check input...
@@ -263,6 +265,24 @@ pdfioFileCreate(
   pdfioDictSetName(dict, "Type", "Pages");
 
   if ((pdf->pages_root = pdfioFileCreateObj(pdf, dict)) == NULL)
+  {
+    pdfioFileClose(pdf);
+    unlink(filename);
+    return (NULL);
+  }
+
+  // Create the info object...
+  if ((info_dict = pdfioDictCreate(pdf)) == NULL)
+  {
+    pdfioFileClose(pdf);
+    unlink(filename);
+    return (NULL);
+  }
+
+//  pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
+  pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
+
+  if ((pdf->info = pdfioFileCreateObj(pdf, info_dict)) == NULL)
   {
     pdfioFileClose(pdf);
     unlink(filename);
@@ -512,13 +532,60 @@ pdfioFileFindObj(
 
 
 //
+// 'pdfioFileGetAuthor()' - Get the author for a PDF file.
+//
+
+const char *				// O - Author or `NULL` for none
+pdfioFileGetAuthor(pdfio_file_t *pdf)	// I - PDF file
+{
+  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Author") : NULL);
+}
+
+
+//
+// 'pdfioFileGetCreationDate()' - Get the creation date for a PDF file.
+//
+
+time_t					// O - Creation date or `0` for none
+pdfioFileGetCreationDate(
+    pdfio_file_t *pdf)			// I - PDF file
+{
+  (void)pdf;
+  return (0);
+//  return (pdf && pdf->info ? pdfioDictGetDate(pdf->info->value.value.dict, "CreationDate") : 0);
+}
+
+
+//
+// 'pdfioFileGetCreator()' - Get the creator string for a PDF file.
+//
+
+const char *				// O - Creator string or `NULL` for none
+pdfioFileGetCreator(pdfio_file_t *pdf)	// I - PDF file
+{
+  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Creator") : NULL);
+}
+
+
+//
 // 'pdfioFileGetID()' - Get the PDF file's ID strings.
 //
 
 pdfio_array_t *				// O - Array with binary strings
 pdfioFileGetID(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf ? pdfioDictGetArray(pdf->trailer, "ID") : NULL);
+  return (pdf && pdf->info ? pdfioDictGetArray(pdf->trailer, "ID") : NULL);
+}
+
+
+//
+// 'pdfioFileGetKeywords()' - Get the keywords for a PDF file.
+//
+
+const char *				// O - Keywords string or `NULL` for none
+pdfioFileGetKeywords(pdfio_file_t *pdf)	// I - PDF file
+{
+  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Keywords") : NULL);
 }
 
 
@@ -583,6 +650,39 @@ pdfioFileGetPage(pdfio_file_t *pdf,	// I - PDF file
     return (NULL);
   else
     return (pdf->pages[n]);
+}
+
+
+//
+// 'pdfioFileGetProducer()' - Get the producer string for a PDF file.
+//
+
+const char *				// O - Producer string or `NULL` for none
+pdfioFileGetProducer(pdfio_file_t *pdf)	// I - PDF file
+{
+  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Producer") : NULL);
+}
+
+
+//
+// 'pdfioFileGetSubject()' - Get the subject for a PDF file.
+//
+
+const char *				// O - Subject or `NULL` for none
+pdfioFileGetSubject(pdfio_file_t *pdf)	// I - PDF file
+{
+  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Subject") : NULL);
+}
+
+
+//
+// 'pdfioFileGetTitle()' - Get the title for a PDF file.
+//
+
+const char *				// O - Title or `NULL` for none
+pdfioFileGetTitle(pdfio_file_t *pdf)	// I - PDF file
+{
+  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Title") : NULL);
 }
 
 
@@ -698,6 +798,88 @@ pdfioFileOpen(
   pdfioFileClose(pdf);
 
   return (NULL);
+}
+
+
+//
+// 'pdfioFileSetAuthor()' - Set the author for a PDF file.
+//
+
+void
+pdfioFileSetAuthor(pdfio_file_t *pdf,	// I - PDF file
+                   const char   *value)	// I - Value
+{
+  if (pdf && pdf->info)
+    pdfioDictSetString(pdf->info->value.value.dict, "Author", pdfioStringCreate(pdf, value));
+}
+
+
+//
+// 'pdfioFileSetCreationDate()' - Set the creation date for a PDF file.
+//
+
+void
+pdfioFileSetCreationDate(
+    pdfio_file_t *pdf,			// I - PDF file
+    time_t       value)			// I - Value
+{
+  (void)pdf;
+  (void)value;
+//  if (pdf && pdf->info)
+//    pdfioDictSetDate(pdf->info->value.value.dict, "CreationDate", value);
+}
+
+
+//
+// 'pdfioFileSetCreator()' - Set the creator string for a PDF file.
+//
+
+void
+pdfioFileSetCreator(pdfio_file_t *pdf,	// I - PDF file
+                    const char   *value)// I - Value
+{
+  if (pdf && pdf->info)
+    pdfioDictSetString(pdf->info->value.value.dict, "Creator", pdfioStringCreate(pdf, value));
+}
+
+
+//
+// 'pdfioFileSetKeywords()' - Set the keywords string for a PDF file.
+//
+
+void
+pdfioFileSetKeywords(
+    pdfio_file_t *pdf,			// I - PDF file
+    const char   *value)		// I - Value
+{
+  if (pdf && pdf->info)
+    pdfioDictSetString(pdf->info->value.value.dict, "Keywords", pdfioStringCreate(pdf, value));
+}
+
+
+//
+// 'pdfioFileSetSubject()' - Set the subject for a PDF file.
+//
+
+void
+pdfioFileSetSubject(pdfio_file_t *pdf,	// I - PDF file
+                   const char    *value)// I - Value
+{
+  if (pdf && pdf->info)
+    pdfioDictSetString(pdf->info->value.value.dict, "Subject", pdfioStringCreate(pdf, value));
+}
+
+
+//
+// 'pdfioFileSetTitle()' - Set the title for a PDF file.
+//
+
+void
+pdfioFileSetTitle(pdfio_file_t *pdf,	// I - PDF file
+                  const char   *value)	// I - Value
+{
+  if (pdf && pdf->info)
+    pdfioDictSetString(pdf->info->value.value.dict, "Title", pdfioStringCreate(pdf, value));
 }
 
 

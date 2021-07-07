@@ -155,14 +155,27 @@ extern pdfio_obj_t	*pdfioFileCreateObj(pdfio_file_t *pdf, pdfio_dict_t *dict) PD
 // TODO: Add number, array, string, etc. versions of pdfioFileCreateObject?
 extern pdfio_stream_t	*pdfioFileCreatePage(pdfio_file_t *pdf, pdfio_dict_t *dict) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileFindObj(pdfio_file_t *pdf, size_t number) PDFIO_PUBLIC;
+extern const char	*pdfioFileGetAuthor(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern time_t		pdfioFileGetCreationDate(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern const char	*pdfioFileGetCreator(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioFileGetID(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern const char	*pdfioFileGetKeywords(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern const char	*pdfioFileGetName(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern size_t		pdfioFileGetNumObjs(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern size_t		pdfioFileGetNumPages(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileGetObj(pdfio_file_t *pdf, size_t n) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileGetPage(pdfio_file_t *pdf, size_t n) PDFIO_PUBLIC;
+extern const char	*pdfioFileGetProducer(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern const char	*pdfioFileGetSubject(pdfio_file_t *pdf) PDFIO_PUBLIC;
+extern const char	*pdfioFileGetTitle(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern const char	*pdfioFileGetVersion(pdfio_file_t *pdf) PDFIO_PUBLIC;
 extern pdfio_file_t	*pdfioFileOpen(const char *filename, pdfio_error_cb_t error_cb, void *error_data) PDFIO_PUBLIC;
+extern void		pdfioFileSetAuthor(pdfio_file_t *pdf, const char *value) PDFIO_PUBLIC;
+extern void		pdfioFileSetCreationDate(pdfio_file_t *pdf, time_t value) PDFIO_PUBLIC;
+extern void		pdfioFileSetCreator(pdfio_file_t *pdf, const char *value) PDFIO_PUBLIC;
+extern void		pdfioFileSetKeywords(pdfio_file_t *pdf, const char *value) PDFIO_PUBLIC;
+extern void		pdfioFileSetSubject(pdfio_file_t *pdf, const char *value) PDFIO_PUBLIC;
+extern void		pdfioFileSetTitle(pdfio_file_t *pdf, const char *value) PDFIO_PUBLIC;
 
 extern bool		pdfioObjClose(pdfio_obj_t *obj) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioObjCopy(pdfio_file_t *pdf, pdfio_obj_t *srcobj) PDFIO_PUBLIC;
