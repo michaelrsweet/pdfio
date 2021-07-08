@@ -137,8 +137,17 @@ _pdfioValueDebug(_pdfio_value_t *v,	// I - Value
 	fputs(v->value.boolean ? " true" : " false", fp);
 	break;
     case PDFIO_VALTYPE_DATE :
-        // TODO: Implement date value support
-        fputs("(D:YYYYMMDDhhmmssZ)", fp);
+        {
+	  struct tm	dateval;	// Date value
+
+#ifdef _WIN32
+          gmtime_s(&dateval, &v->value.date);
+#else
+          gmtime_r(&v->value.date, &dateval);
+#endif // _WIN32
+
+          fprintf(fp, "(D:%04d%02d%02d%02d%02d%02dZ)", dateval.tm_year + 1900, dateval.tm_mon + 1, dateval.tm_mday, dateval.tm_hour, dateval.tm_min, dateval.tm_sec);
+        }
         break;
     case PDFIO_VALTYPE_DICT :
 	fputs("<<", fp);
@@ -226,9 +235,73 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
     if ((v->value.dict = _pdfioDictRead(pdf, tb)) == NULL)
       return (NULL);
   }
+  else if (!strncmp(token, "(D:", 3))
+  {
+    // Possible date value of the form:
+    //
+    //   (D:YYYYMMDDhhmmssZ)
+    //   (D:YYYYMMDDhhmmss+HH'mm)
+    //   (D:YYYYMMDDhhmmss-HH'mm)
+    //
+    int		i;			// Looping var
+    struct tm	dateval;		// Date value
+    int		offset;			// Date offset
+
+    for (i = 3; i < 17; i ++)
+    {
+      if (!isdigit(token[i] & 255))
+        break;
+    }
+
+    if (i >= 17)
+    {
+      if (token[i] == 'Z')
+      {
+        i ++;
+      }
+      else if (token[i] == '-' || token[i] == '+')
+      {
+        if (isdigit(token[i + 1] & 255) && isdigit(token[i + 2] & 255) && token[i + 3] == '\'' && isdigit(token[i + 4] & 255) && isdigit(token[i + 5] & 255))
+        {
+          i += 6;
+          if (token[i] == '\'')
+            i ++;
+	}
+      }
+    }
+    if (token[i])
+    {
+      // Just a string...
+      v->type         = PDFIO_VALTYPE_STRING;
+      v->value.string = pdfioStringCreate(pdf, token + 1);
+    }
+    else
+    {
+      // Date value...
+      dateval.tm_year = (token[3] - '0') * 1000 + (token[4] - '0') * 100 + (token[5] - '0') * 10 + token[6] - '0' - 1900;
+      dateval.tm_mon  = (token[7] - '0') * 10 + token[8] - '0' - 1;
+      dateval.tm_mday = (token[9] - '0') * 10 + token[10] - '0';
+      dateval.tm_hour = (token[11] - '0') * 10 + token[12] - '0';
+      dateval.tm_min  = (token[13] - '0') * 10 + token[14] - '0';
+      dateval.tm_sec  = (token[15] - '0') * 10 + token[16] - '0';
+
+      if (token[17] == 'Z')
+      {
+        offset = 0;
+      }
+      else
+      {
+        offset = (token[18] - '0') * 600 + (token[19] - '0') * 60 + (token[20] - '0') * 10 + token[21] - '0';
+        if (token[17] == '-')
+          offset = -offset;
+      }
+
+      v->type       = PDFIO_VALTYPE_DATE;
+      v->value.date = mktime(&dateval) + offset;
+    }
+  }
   else if (token[0] == '(')
   {
-    // TODO: Add date value support
     // String
     v->type         = PDFIO_VALTYPE_STRING;
     v->value.string = pdfioStringCreate(pdf, token + 1);
@@ -413,6 +486,7 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
 #else
 	  gmtime_r(&v->value.date, &date);
 #endif // _WIN32
+
           return (_pdfioFilePrintf(pdf, "(D:%04d%02d%02d%02d%02d%02dZ)", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec));
         }
 

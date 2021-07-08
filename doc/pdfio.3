@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2021-06-07" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2021-07-07" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -424,6 +424,15 @@ bool  pdfioArrayAppendBoolean (
     bool value
 );
 .fi
+.SS pdfioArrayAppendDate
+Add a date value to an array.
+.PP
+.nf
+bool  pdfioArrayAppendDate (
+    pdfio_array_t *a,
+    time_t value
+);
+.fi
 .SS pdfioArrayAppendDict
 Add a dictionary to an array.
 .PP
@@ -486,11 +495,20 @@ pdfio_array_t * pdfioArrayCreate (
     pdfio_file_t *pdf
 );
 .fi
-.SS pdfioArrayCreateCalibratedColorFromMatrix
+.SS pdfioArrayCreateColorFromICCObj
+Create an ICC-based color space array.
+.PP
+.nf
+pdfio_array_t * pdfioArrayCreateColorFromICCObj (
+    pdfio_file_t *pdf,
+    pdfio_obj_t *icc_object
+);
+.fi
+.SS pdfioArrayCreateColorFromMatrix
 Create a calibrated color space array using a CIE XYZ transform matrix.
 .PP
 .nf
-pdfio_array_t * pdfioArrayCreateCalibratedColorFromMatrix (
+pdfio_array_t * pdfioArrayCreateColorFromMatrix (
     pdfio_file_t *pdf,
     size_t num_colors,
     double gamma,
@@ -498,11 +516,21 @@ pdfio_array_t * pdfioArrayCreateCalibratedColorFromMatrix (
     const double white_point[3]
 );
 .fi
-.SS pdfioArrayCreateCalibratedColorFromPrimaries
+.SS pdfioArrayCreateColorFromPalette
+Create an indexed color space array.
+.PP
+.nf
+pdfio_array_t * pdfioArrayCreateColorFromPalette (
+    pdfio_file_t *pdf,
+    size_t num_colors,
+    const unsigned char *colors
+);
+.fi
+.SS pdfioArrayCreateColorFromPrimaries
 Create a calibrated color sapce array using CIE xy primary chromacities.
 .PP
 .nf
-pdfio_array_t * pdfioArrayCreateCalibratedColorFromPrimaries (
+pdfio_array_t * pdfioArrayCreateColorFromPrimaries (
     pdfio_file_t *pdf,
     size_t num_colors,
     double gamma,
@@ -514,25 +542,6 @@ pdfio_array_t * pdfioArrayCreateCalibratedColorFromPrimaries (
     double gy,
     double bx,
     double by
-);
-.fi
-.SS pdfioArrayCreateICCBasedColor
-Create an ICC-based color space array.
-.PP
-.nf
-pdfio_array_t * pdfioArrayCreateICCBasedColor (
-    pdfio_file_t *pdf,
-    pdfio_obj_t *icc_object
-);
-.fi
-.SS pdfioArrayCreateIndexedColor
-Create an indexed color space array.
-.PP
-.nf
-pdfio_array_t * pdfioArrayCreateIndexedColor (
-    pdfio_file_t *pdf,
-    size_t num_colors,
-    const unsigned char *colors
 );
 .fi
 .SS pdfioArrayGetArray
@@ -559,6 +568,15 @@ Get a boolean value from an array.
 .PP
 .nf
 bool  pdfioArrayGetBoolean (
+    pdfio_array_t *a,
+    size_t n
+);
+.fi
+.SS pdfioArrayGetDate
+Get a date value from an array.
+.PP
+.nf
+time_t  pdfioArrayGetDate (
     pdfio_array_t *a,
     size_t n
 );
@@ -1110,26 +1128,37 @@ Show text.
 .nf
 bool  pdfioContentTextShow (
     pdfio_stream_t *st,
+    bool unicode,
     const char *s
 );
 .fi
+.PP
+This function shows some text in a PDF content stream. The "unicode" argument
+specifies that the current font maps to full Unicode.  The "s" argument
+specifies a UTF-8 encoded string.
 .SS pdfioContentTextShowJustified
 Show justified text.
 .PP
 .nf
 bool  pdfioContentTextShowJustified (
     pdfio_stream_t *st,
+    bool unicode,
     size_t num_fragments,
     const double *offsets,
     const char *const *fragments
 );
 .fi
+.PP
+This function shows some text in a PDF content stream. The "unicode" argument
+specifies that the current font maps to full Unicode.  The "fragments"
+argument specifies an array of UTF-8 encoded strings.
 .SS pdfioContentTextShowf
 
 .PP
 .nf
 bool  pdfioContentTextShowf (
     pdfio_stream_t *st,
+    bool unicode,
     const char *format,
     ...
 );
@@ -1175,6 +1204,15 @@ Get a key boolean value from a dictionary.
 .PP
 .nf
 bool  pdfioDictGetBoolean (
+    pdfio_dict_t *dict,
+    const char *key
+);
+.fi
+.SS pdfioDictGetDate
+Get a date value from a dictionary.
+.PP
+.nf
+time_t  pdfioDictGetDate (
     pdfio_dict_t *dict,
     const char *key
 );
@@ -1272,6 +1310,16 @@ bool  pdfioDictSetBoolean (
     pdfio_dict_t *dict,
     const char *key,
     bool value
+);
+.fi
+.SS pdfioDictSetDate
+Set a date value in a dictionary.
+.PP
+.nf
+bool  pdfioDictSetDate (
+    pdfio_dict_t *dict,
+    const char *key,
+    time_t value
 );
 .fi
 .SS pdfioDictSetDict
@@ -1375,11 +1423,23 @@ pdfio_file_t * pdfioFileCreate (
     void *error_data
 );
 .fi
-.SS pdfioFileCreateBaseFontObj
+.SS pdfioFileCreateArrayObj
+Create a new object in a PDF file containing an array.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateArrayObj (
+    pdfio_file_t *pdf,
+    pdfio_array_t *array
+);
+.fi
+.PP
+This function creates a new object with an array value in a PDF file.
+You must call \fIpdfioObjClose\fR to write the object to the file.
+.SS pdfioFileCreateFontObjFromBase
 Create one of the base 14 PDF fonts.
 .PP
 .nf
-pdfio_obj_t * pdfioFileCreateBaseFontObj (
+pdfio_obj_t * pdfioFileCreateFontObjFromBase (
     pdfio_file_t *pdf,
     const char *name
 );
@@ -1415,39 +1475,55 @@ specifies the font nane:
 .IP \(bu 5
 \fBTimes-Roman\fR
 .IP \(bu 5
-\fBZapfDingbats\fR</li>
-</ul>
-.SS pdfioFileCreateFontObj
+\fBZapfDingbats\fR
+.PP
+Base fonts always use the Windows CP1252 (ISO-8859-1 with additional
+characters such as the Euro symbol) subset of Unicode.
+.SS pdfioFileCreateFontObjFromFile
 Add a font object to a PDF file.
 .PP
 .nf
-pdfio_obj_t * pdfioFileCreateFontObj (
+pdfio_obj_t * pdfioFileCreateFontObjFromFile (
     pdfio_file_t *pdf,
     const char *filename,
     bool unicode
 );
 .fi
-.SS pdfioFileCreateICCProfileObj
+.PP
+This function embeds a TrueType/OpenType font into a PDF file.  The
+"unicode" parameter controls whether the font is encoded for two-byte
+characters (potentially full Unicode, but more typically a subset)
+or to only support the Windows CP1252 (ISO-8859-1 with additional
+characters such as the Euro symbol) subset of Unicode.
+.SS pdfioFileCreateICCObjFromFile
 Add an ICC profile object to a PDF file.
 .PP
 .nf
-pdfio_obj_t * pdfioFileCreateICCProfileObj (
+pdfio_obj_t * pdfioFileCreateICCObjFromFile (
     pdfio_file_t *pdf,
-    const char *filename
+    const char *filename,
+    size_t num_colors
 );
 .fi
-.SS pdfioFileCreateImageObj
+.SS pdfioFileCreateImageObjFromFile
 Add an image object to a PDF file.
 .PP
 .nf
-pdfio_obj_t * pdfioFileCreateImageObj (
+pdfio_obj_t * pdfioFileCreateImageObjFromFile (
     pdfio_file_t *pdf,
     const char *filename,
     bool interpolate
 );
 .fi
 .PP
-Currently only GIF, JPEG, and PNG files are supported.
+This function creates an image object in a PDF file from a JPEG or PNG file.
+.PP
+.IP 5
+Note: Currently PNG support is limited to grayscale, RGB, or indexed files
+.IP 5
+without interlacing or alpha.  Transparency (masking) based on color/index
+.IP 5
+is supported.
 .SS pdfioFileCreateObj
 Create a new object in a PDF file.
 .PP
@@ -1478,11 +1554,43 @@ pdfio_obj_t * pdfioFileFindObj (
 .PP
 This differs from \fIpdfioFileGetObj\fR which takes an index into the
 list of objects while this function takes the object number.
+.SS pdfioFileGetAuthor
+Get the author for a PDF file.
+.PP
+.nf
+const char * pdfioFileGetAuthor (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioFileGetCreationDate
+Get the creation date for a PDF file.
+.PP
+.nf
+time_t  pdfioFileGetCreationDate (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioFileGetCreator
+Get the creator string for a PDF file.
+.PP
+.nf
+const char * pdfioFileGetCreator (
+    pdfio_file_t *pdf
+);
+.fi
 .SS pdfioFileGetID
 Get the PDF file's ID strings.
 .PP
 .nf
 pdfio_array_t * pdfioFileGetID (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioFileGetKeywords
+Get the keywords for a PDF file.
+.PP
+.nf
+const char * pdfioFileGetKeywords (
     pdfio_file_t *pdf
 );
 .fi
@@ -1528,6 +1636,30 @@ pdfio_obj_t * pdfioFileGetPage (
     size_t n
 );
 .fi
+.SS pdfioFileGetProducer
+Get the producer string for a PDF file.
+.PP
+.nf
+const char * pdfioFileGetProducer (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioFileGetSubject
+Get the subject for a PDF file.
+.PP
+.nf
+const char * pdfioFileGetSubject (
+    pdfio_file_t *pdf
+);
+.fi
+.SS pdfioFileGetTitle
+Get the title for a PDF file.
+.PP
+.nf
+const char * pdfioFileGetTitle (
+    pdfio_file_t *pdf
+);
+.fi
 .SS pdfioFileGetVersion
 Get the PDF version number for a PDF file.
 .PP
@@ -1544,6 +1676,60 @@ pdfio_file_t * pdfioFileOpen (
     const char *filename,
     pdfio_error_cb_t error_cb,
     void *error_data
+);
+.fi
+.SS pdfioFileSetAuthor
+Set the author for a PDF file.
+.PP
+.nf
+void pdfioFileSetAuthor (
+    pdfio_file_t *pdf,
+    const char *value
+);
+.fi
+.SS pdfioFileSetCreationDate
+Set the creation date for a PDF file.
+.PP
+.nf
+void pdfioFileSetCreationDate (
+    pdfio_file_t *pdf,
+    time_t value
+);
+.fi
+.SS pdfioFileSetCreator
+Set the creator string for a PDF file.
+.PP
+.nf
+void pdfioFileSetCreator (
+    pdfio_file_t *pdf,
+    const char *value
+);
+.fi
+.SS pdfioFileSetKeywords
+Set the keywords string for a PDF file.
+.PP
+.nf
+void pdfioFileSetKeywords (
+    pdfio_file_t *pdf,
+    const char *value
+);
+.fi
+.SS pdfioFileSetSubject
+Set the subject for a PDF file.
+.PP
+.nf
+void pdfioFileSetSubject (
+    pdfio_file_t *pdf,
+    const char *value
+);
+.fi
+.SS pdfioFileSetTitle
+Set the title for a PDF file.
+.PP
+.nf
+void pdfioFileSetTitle (
+    pdfio_file_t *pdf,
+    const char *value
 );
 .fi
 .SS pdfioImageGetBytesPerLine
@@ -1760,6 +1946,15 @@ bool  pdfioStreamPrintf (
     ...
 );
 .fi
+.SS pdfioStreamPutChar
+Write a single character to a stream.
+.PP
+.nf
+bool  pdfioStreamPutChar (
+    pdfio_stream_t *st,
+    int ch
+);
+.fi
 .SS pdfioStreamPuts
 Write a literal string to a stream.
 .PP
@@ -1825,6 +2020,194 @@ This function creates a formatted string associated with the PDF file
 .PP
 \fBNULL\fR is returned on error, otherwise a \fBchar *\fR that is valid until
 \fBpdfioFileClose\fR is called.
+.SS ttfCreate
+Create a new font object for the named font family.
+.PP
+.nf
+ttf_t * ttfCreate (
+    const char *filename,
+    size_t idx,
+    ttf_err_cb_t err_cb,
+    void *err_data
+);
+.fi
+.SS ttfDelete
+Free all memory used for a font family object.
+.PP
+.nf
+void ttfDelete (
+    ttf_t *font
+);
+.fi
+.SS ttfGetAscent
+Get the maximum height of non-accented characters.
+.PP
+.nf
+int  ttfGetAscent (
+    ttf_t *font
+);
+.fi
+.SS ttfGetBounds
+Get the bounds of all characters in a font.
+.PP
+.nf
+ttf_rect_t * ttfGetBounds (
+    ttf_t *font,
+    ttf_rect_t *bounds
+);
+.fi
+.SS ttfGetCMap
+Get the Unicode to glyph mapping table.
+.PP
+.nf
+const int * ttfGetCMap (
+    ttf_t *font,
+    size_t *num_cmap
+);
+.fi
+.SS ttfGetCapHeight
+Get the height of capital letters.
+.PP
+.nf
+int  ttfGetCapHeight (
+    ttf_t *font
+);
+.fi
+.SS ttfGetCopyright
+Get the copyright text for a font.
+.PP
+.nf
+const char * ttfGetCopyright (
+    ttf_t *font
+);
+.fi
+.SS ttfGetDescent
+Get the maximum depth of non-accented characters.
+.PP
+.nf
+int  ttfGetDescent (
+    ttf_t *font
+);
+.fi
+.SS ttfGetExtents
+Get the extents of a UTF-8 string.
+.PP
+.nf
+ttf_rect_t * ttfGetExtents (
+    ttf_t *font,
+    float size,
+    const char *s,
+    ttf_rect_t *extents
+);
+.fi
+.PP
+This function computes the extents of a UTF-8 string when rendered using the
+specified font and size.
+.SS ttfGetFamily
+Get the family name of a font.
+.PP
+.nf
+const char * ttfGetFamily (
+    ttf_t *font
+);
+.fi
+.SS ttfGetItalicAngle
+Get the italic angle.
+.PP
+.nf
+float  ttfGetItalicAngle (
+    ttf_t *font
+);
+.fi
+.SS ttfGetMaxChar
+Get the last character in the font.
+.PP
+.nf
+int  ttfGetMaxChar (
+    ttf_t *font
+);
+.fi
+.SS ttfGetMinChar
+Get the first character in the font.
+.PP
+.nf
+int  ttfGetMinChar (
+    ttf_t *font
+);
+.fi
+.SS ttfGetNumFonts
+Get the number of fonts in this collection.
+.PP
+.nf
+size_t  ttfGetNumFonts (
+    ttf_t *font
+);
+.fi
+.SS ttfGetPostScriptName
+Get the PostScript name of a font.
+.PP
+.nf
+const char * ttfGetPostScriptName (
+    ttf_t *font
+);
+.fi
+.SS ttfGetStretch
+Get the font "stretch" value...
+.PP
+.nf
+ttf_stretch_t  ttfGetStretch (
+    ttf_t *font
+);
+.fi
+.SS ttfGetStyle
+Get the font style.
+.PP
+.nf
+ttf_style_t  ttfGetStyle (
+    ttf_t *font
+);
+.fi
+.SS ttfGetVersion
+Get the version number of a font.
+.PP
+.nf
+const char * ttfGetVersion (
+    ttf_t *font
+);
+.fi
+.SS ttfGetWeight
+Get the weight of a font.
+.PP
+.nf
+ttf_weight_t  ttfGetWeight (
+    ttf_t *font
+);
+.fi
+.SS ttfGetWidth
+Get the width of a single character.
+.PP
+.nf
+int  ttfGetWidth (
+    ttf_t *font,
+    int ch
+);
+.fi
+.SS ttfGetXHeight
+Get the height of lowercase letters.
+.PP
+.nf
+int  ttfGetXHeight (
+    ttf_t *font
+);
+.fi
+.SS ttfIsFixedPitch
+Determine whether a font is fixedpitch.
+.PP
+.nf
+bool  ttfIsFixedPitch (
+    ttf_t *font
+);
+.fi
 .SH STRUCTURES
 .SS pdfio_rect_s
 PDF rectangle
@@ -1892,6 +2275,12 @@ PDF value types
 .PP
 .nf
 typedef enum pdfio_valtype_e pdfio_valtype_t;
+.fi
+.SS ssize_t
+POSIX type not present on Windows...
+.PP
+.nf
+typedef __int64 ssize_t;
 .fi
 .SH AUTHOR
 .PP

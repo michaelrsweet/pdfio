@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<title>PDFio Programming Manual v0.1</title>
+<title>PDFio Programming Manual v0.2</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.7">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
 <meta name="copyright" content="Copyright © 2021 by Michael R Sweet">
-<meta name="version" content="0.1">
+<meta name="version" content="0.2">
 <style type="text/css"><!--
 body {
   background: white;
@@ -245,7 +245,7 @@ span.string {
 <body>
 <div class="header">
 <p><img class="title" src="pdfio-512.png"></p>
-<h1 class="title">PDFio Programming Manual v0.1</h1>
+<h1 class="title">PDFio Programming Manual v0.2</h1>
 <p>Michael R Sweet</p>
 <p>Copyright © 2021 by Michael R Sweet</p>
 </div>
@@ -271,6 +271,7 @@ span.string {
 <li><a href="#pdfioArrayAppendArray">pdfioArrayAppendArray</a></li>
 <li><a href="#pdfioArrayAppendBinary">pdfioArrayAppendBinary</a></li>
 <li><a href="#pdfioArrayAppendBoolean">pdfioArrayAppendBoolean</a></li>
+<li><a href="#pdfioArrayAppendDate">pdfioArrayAppendDate</a></li>
 <li><a href="#pdfioArrayAppendDict">pdfioArrayAppendDict</a></li>
 <li><a href="#pdfioArrayAppendName">pdfioArrayAppendName</a></li>
 <li><a href="#pdfioArrayAppendNumber">pdfioArrayAppendNumber</a></li>
@@ -278,13 +279,14 @@ span.string {
 <li><a href="#pdfioArrayAppendString">pdfioArrayAppendString</a></li>
 <li><a href="#pdfioArrayCopy">pdfioArrayCopy</a></li>
 <li><a href="#pdfioArrayCreate">pdfioArrayCreate</a></li>
-<li><a href="#pdfioArrayCreateCalibratedColorFromMatrix">pdfioArrayCreateCalibratedColorFromMatrix</a></li>
-<li><a href="#pdfioArrayCreateCalibratedColorFromPrimaries">pdfioArrayCreateCalibratedColorFromPrimaries</a></li>
-<li><a href="#pdfioArrayCreateICCBasedColor">pdfioArrayCreateICCBasedColor</a></li>
-<li><a href="#pdfioArrayCreateIndexedColor">pdfioArrayCreateIndexedColor</a></li>
+<li><a href="#pdfioArrayCreateColorFromICCObj">pdfioArrayCreateColorFromICCObj</a></li>
+<li><a href="#pdfioArrayCreateColorFromMatrix">pdfioArrayCreateColorFromMatrix</a></li>
+<li><a href="#pdfioArrayCreateColorFromPalette">pdfioArrayCreateColorFromPalette</a></li>
+<li><a href="#pdfioArrayCreateColorFromPrimaries">pdfioArrayCreateColorFromPrimaries</a></li>
 <li><a href="#pdfioArrayGetArray">pdfioArrayGetArray</a></li>
 <li><a href="#pdfioArrayGetBinary">pdfioArrayGetBinary</a></li>
 <li><a href="#pdfioArrayGetBoolean">pdfioArrayGetBoolean</a></li>
+<li><a href="#pdfioArrayGetDate">pdfioArrayGetDate</a></li>
 <li><a href="#pdfioArrayGetDict">pdfioArrayGetDict</a></li>
 <li><a href="#pdfioArrayGetName">pdfioArrayGetName</a></li>
 <li><a href="#pdfioArrayGetNumber">pdfioArrayGetNumber</a></li>
@@ -349,6 +351,7 @@ span.string {
 <li><a href="#pdfioDictGetArray">pdfioDictGetArray</a></li>
 <li><a href="#pdfioDictGetBinary">pdfioDictGetBinary</a></li>
 <li><a href="#pdfioDictGetBoolean">pdfioDictGetBoolean</a></li>
+<li><a href="#pdfioDictGetDate">pdfioDictGetDate</a></li>
 <li><a href="#pdfioDictGetDict">pdfioDictGetDict</a></li>
 <li><a href="#pdfioDictGetName">pdfioDictGetName</a></li>
 <li><a href="#pdfioDictGetNumber">pdfioDictGetNumber</a></li>
@@ -359,6 +362,7 @@ span.string {
 <li><a href="#pdfioDictSetArray">pdfioDictSetArray</a></li>
 <li><a href="#pdfioDictSetBinary">pdfioDictSetBinary</a></li>
 <li><a href="#pdfioDictSetBoolean">pdfioDictSetBoolean</a></li>
+<li><a href="#pdfioDictSetDate">pdfioDictSetDate</a></li>
 <li><a href="#pdfioDictSetDict">pdfioDictSetDict</a></li>
 <li><a href="#pdfioDictSetName">pdfioDictSetName</a></li>
 <li><a href="#pdfioDictSetNull">pdfioDictSetNull</a></li>
@@ -369,21 +373,35 @@ span.string {
 <li><a href="#pdfioDictSetStringf">pdfioDictSetStringf</a></li>
 <li><a href="#pdfioFileClose">pdfioFileClose</a></li>
 <li><a href="#pdfioFileCreate">pdfioFileCreate</a></li>
-<li><a href="#pdfioFileCreateBaseFontObj">pdfioFileCreateBaseFontObj</a></li>
-<li><a href="#pdfioFileCreateFontObj">pdfioFileCreateFontObj</a></li>
-<li><a href="#pdfioFileCreateICCProfileObj">pdfioFileCreateICCProfileObj</a></li>
-<li><a href="#pdfioFileCreateImageObj">pdfioFileCreateImageObj</a></li>
+<li><a href="#pdfioFileCreateArrayObj">pdfioFileCreateArrayObj</a></li>
+<li><a href="#pdfioFileCreateFontObjFromBase">pdfioFileCreateFontObjFromBase</a></li>
+<li><a href="#pdfioFileCreateFontObjFromFile">pdfioFileCreateFontObjFromFile</a></li>
+<li><a href="#pdfioFileCreateICCObjFromFile">pdfioFileCreateICCObjFromFile</a></li>
+<li><a href="#pdfioFileCreateImageObjFromFile">pdfioFileCreateImageObjFromFile</a></li>
 <li><a href="#pdfioFileCreateObj">pdfioFileCreateObj</a></li>
 <li><a href="#pdfioFileCreatePage">pdfioFileCreatePage</a></li>
 <li><a href="#pdfioFileFindObj">pdfioFileFindObj</a></li>
+<li><a href="#pdfioFileGetAuthor">pdfioFileGetAuthor</a></li>
+<li><a href="#pdfioFileGetCreationDate">pdfioFileGetCreationDate</a></li>
+<li><a href="#pdfioFileGetCreator">pdfioFileGetCreator</a></li>
 <li><a href="#pdfioFileGetID">pdfioFileGetID</a></li>
+<li><a href="#pdfioFileGetKeywords">pdfioFileGetKeywords</a></li>
 <li><a href="#pdfioFileGetName">pdfioFileGetName</a></li>
 <li><a href="#pdfioFileGetNumObjs">pdfioFileGetNumObjs</a></li>
 <li><a href="#pdfioFileGetNumPages">pdfioFileGetNumPages</a></li>
 <li><a href="#pdfioFileGetObj">pdfioFileGetObj</a></li>
 <li><a href="#pdfioFileGetPage">pdfioFileGetPage</a></li>
+<li><a href="#pdfioFileGetProducer">pdfioFileGetProducer</a></li>
+<li><a href="#pdfioFileGetSubject">pdfioFileGetSubject</a></li>
+<li><a href="#pdfioFileGetTitle">pdfioFileGetTitle</a></li>
 <li><a href="#pdfioFileGetVersion">pdfioFileGetVersion</a></li>
 <li><a href="#pdfioFileOpen">pdfioFileOpen</a></li>
+<li><a href="#pdfioFileSetAuthor">pdfioFileSetAuthor</a></li>
+<li><a href="#pdfioFileSetCreationDate">pdfioFileSetCreationDate</a></li>
+<li><a href="#pdfioFileSetCreator">pdfioFileSetCreator</a></li>
+<li><a href="#pdfioFileSetKeywords">pdfioFileSetKeywords</a></li>
+<li><a href="#pdfioFileSetSubject">pdfioFileSetSubject</a></li>
+<li><a href="#pdfioFileSetTitle">pdfioFileSetTitle</a></li>
 <li><a href="#pdfioImageGetBytesPerLine">pdfioImageGetBytesPerLine</a></li>
 <li><a href="#pdfioImageGetHeight">pdfioImageGetHeight</a></li>
 <li><a href="#pdfioImageGetWidth">pdfioImageGetWidth</a></li>
@@ -407,11 +425,34 @@ span.string {
 <li><a href="#pdfioStreamGetToken">pdfioStreamGetToken</a></li>
 <li><a href="#pdfioStreamPeek">pdfioStreamPeek</a></li>
 <li><a href="#pdfioStreamPrintf">pdfioStreamPrintf</a></li>
+<li><a href="#pdfioStreamPutChar">pdfioStreamPutChar</a></li>
 <li><a href="#pdfioStreamPuts">pdfioStreamPuts</a></li>
 <li><a href="#pdfioStreamRead">pdfioStreamRead</a></li>
 <li><a href="#pdfioStreamWrite">pdfioStreamWrite</a></li>
 <li><a href="#pdfioStringCreate">pdfioStringCreate</a></li>
 <li><a href="#pdfioStringCreatef">pdfioStringCreatef</a></li>
+<li><a href="#ttfCreate">ttfCreate</a></li>
+<li><a href="#ttfDelete">ttfDelete</a></li>
+<li><a href="#ttfGetAscent">ttfGetAscent</a></li>
+<li><a href="#ttfGetBounds">ttfGetBounds</a></li>
+<li><a href="#ttfGetCMap">ttfGetCMap</a></li>
+<li><a href="#ttfGetCapHeight">ttfGetCapHeight</a></li>
+<li><a href="#ttfGetCopyright">ttfGetCopyright</a></li>
+<li><a href="#ttfGetDescent">ttfGetDescent</a></li>
+<li><a href="#ttfGetExtents">ttfGetExtents</a></li>
+<li><a href="#ttfGetFamily">ttfGetFamily</a></li>
+<li><a href="#ttfGetItalicAngle">ttfGetItalicAngle</a></li>
+<li><a href="#ttfGetMaxChar">ttfGetMaxChar</a></li>
+<li><a href="#ttfGetMinChar">ttfGetMinChar</a></li>
+<li><a href="#ttfGetNumFonts">ttfGetNumFonts</a></li>
+<li><a href="#ttfGetPostScriptName">ttfGetPostScriptName</a></li>
+<li><a href="#ttfGetStretch">ttfGetStretch</a></li>
+<li><a href="#ttfGetStyle">ttfGetStyle</a></li>
+<li><a href="#ttfGetVersion">ttfGetVersion</a></li>
+<li><a href="#ttfGetWeight">ttfGetWeight</a></li>
+<li><a href="#ttfGetWidth">ttfGetWidth</a></li>
+<li><a href="#ttfGetXHeight">ttfGetXHeight</a></li>
+<li><a href="#ttfIsFixedPitch">ttfIsFixedPitch</a></li>
 </ul></li>
 <li><a href="#TYPES">Data Types</a><ul class="subcontents">
 <li><a href="#pdfio_array_t">pdfio_array_t</a></li>
@@ -423,6 +464,7 @@ span.string {
 <li><a href="#pdfio_rect_t">pdfio_rect_t</a></li>
 <li><a href="#pdfio_stream_t">pdfio_stream_t</a></li>
 <li><a href="#pdfio_valtype_t">pdfio_valtype_t</a></li>
+<li><a href="#ssize_t">ssize_t</a></li>
 </ul></li>
 <li><a href="#STRUCTURES">Structures</a><ul class="subcontents">
 <li><a href="#pdfio_rect_s">pdfio_rect_s</a></li>
@@ -652,6 +694,19 @@ bool pdfioArrayAppendBoolean(<a href="#pdfio_array_t">pdfio_array_t</a> *a, bool
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h3 class="function"><a id="pdfioArrayAppendDate">pdfioArrayAppendDate</a></h3>
+<p class="description">Add a date value to an array.</p>
+<p class="code">
+bool pdfioArrayAppendDate(<a href="#pdfio_array_t">pdfio_array_t</a> *a, time_t value);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>a</th>
+<td class="description">Array</td></tr>
+<tr><th>value</th>
+<td class="description">Value</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
 <h3 class="function"><a id="pdfioArrayAppendDict">pdfioArrayAppendDict</a></h3>
 <p class="description">Add a dictionary to an array.</p>
 <p class="code">
@@ -741,10 +796,23 @@ bool pdfioArrayAppendString(<a href="#pdfio_array_t">pdfio_array_t</a> *a, const
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">New array or <code>NULL</code> on error</p>
-<h3 class="function"><a id="pdfioArrayCreateCalibratedColorFromMatrix">pdfioArrayCreateCalibratedColorFromMatrix</a></h3>
+<h3 class="function"><a id="pdfioArrayCreateColorFromICCObj">pdfioArrayCreateColorFromICCObj</a></h3>
+<p class="description">Create an ICC-based color space array.</p>
+<p class="code">
+<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateColorFromICCObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <a href="#pdfio_obj_t">pdfio_obj_t</a> *icc_object);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>icc_object</th>
+<td class="description">ICC profile object</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Color array</p>
+<h3 class="function"><a id="pdfioArrayCreateColorFromMatrix">pdfioArrayCreateColorFromMatrix</a></h3>
 <p class="description">Create a calibrated color space array using a CIE XYZ transform matrix.</p>
 <p class="code">
-<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateCalibratedColorFromMatrix(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t num_colors, double gamma, const double matrix[3][3], const double white_point[3]);</p>
+<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateColorFromMatrix(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t num_colors, double gamma, const double matrix[3][3], const double white_point[3]);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
@@ -760,10 +828,25 @@ bool pdfioArrayAppendString(<a href="#pdfio_array_t">pdfio_array_t</a> *a, const
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Color space array</p>
-<h3 class="function"><a id="pdfioArrayCreateCalibratedColorFromPrimaries">pdfioArrayCreateCalibratedColorFromPrimaries</a></h3>
+<h3 class="function"><a id="pdfioArrayCreateColorFromPalette">pdfioArrayCreateColorFromPalette</a></h3>
+<p class="description">Create an indexed color space array.</p>
+<p class="code">
+<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateColorFromPalette(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t num_colors, const unsigned char *colors);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>num_colors</th>
+<td class="description">Number of colors</td></tr>
+<tr><th>colors</th>
+<td class="description">RGB values for colors</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Color array</p>
+<h3 class="function"><a id="pdfioArrayCreateColorFromPrimaries">pdfioArrayCreateColorFromPrimaries</a></h3>
 <p class="description">Create a calibrated color sapce array using CIE xy primary chromacities.</p>
 <p class="code">
-<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateCalibratedColorFromPrimaries(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t num_colors, double gamma, double wx, double wy, double rx, double ry, double gx, double gy, double bx, double by);</p>
+<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateColorFromPrimaries(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t num_colors, double gamma, double wx, double wy, double rx, double ry, double gx, double gy, double bx, double by);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
@@ -791,34 +874,6 @@ bool pdfioArrayAppendString(<a href="#pdfio_array_t">pdfio_array_t</a> *a, const
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Color space array</p>
-<h3 class="function"><a id="pdfioArrayCreateICCBasedColor">pdfioArrayCreateICCBasedColor</a></h3>
-<p class="description">Create an ICC-based color space array.</p>
-<p class="code">
-<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateICCBasedColor(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <a href="#pdfio_obj_t">pdfio_obj_t</a> *icc_object);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>pdf</th>
-<td class="description">PDF file</td></tr>
-<tr><th>icc_object</th>
-<td class="description">ICC profile object</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Color array</p>
-<h3 class="function"><a id="pdfioArrayCreateIndexedColor">pdfioArrayCreateIndexedColor</a></h3>
-<p class="description">Create an indexed color space array.</p>
-<p class="code">
-<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateIndexedColor(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t num_colors, const unsigned char *colors);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>pdf</th>
-<td class="description">PDF file</td></tr>
-<tr><th>num_colors</th>
-<td class="description">Number of colors</td></tr>
-<tr><th>colors</th>
-<td class="description">RGB values for colors</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Color array</p>
 <h3 class="function"><a id="pdfioArrayGetArray">pdfioArrayGetArray</a></h3>
 <p class="description">Get an array value from an array.</p>
 <p class="code">
@@ -851,6 +906,19 @@ unsigned char *pdfioArrayGetBinary(<a href="#pdfio_array_t">pdfio_array_t</a> *a
 <p class="description">Get a boolean value from an array.</p>
 <p class="code">
 bool pdfioArrayGetBoolean(<a href="#pdfio_array_t">pdfio_array_t</a> *a, size_t n);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>a</th>
+<td class="description">Array</td></tr>
+<tr><th>n</th>
+<td class="description">Index</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Value</p>
+<h3 class="function"><a id="pdfioArrayGetDate">pdfioArrayGetDate</a></h3>
+<p class="description">Get a date value from an array.</p>
+<p class="code">
+time_t pdfioArrayGetDate(<a href="#pdfio_array_t">pdfio_array_t</a> *a, size_t n);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>a</th>
@@ -1661,24 +1729,32 @@ bool pdfioContentTextNextLine(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);
 <h3 class="function"><a id="pdfioContentTextShow">pdfioContentTextShow</a></h3>
 <p class="description">Show text.</p>
 <p class="code">
-bool pdfioContentTextShow(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, const char *s);</p>
+bool pdfioContentTextShow(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, bool unicode, const char *s);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
 <td class="description">Stream</td></tr>
+<tr><th>unicode</th>
+<td class="description">Unicode text?</td></tr>
 <tr><th>s</th>
 <td class="description">String to show</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function shows some text in a PDF content stream. The &quot;unicode&quot; argument
+specifies that the current font maps to full Unicode.  The &quot;s&quot; argument
+specifies a UTF-8 encoded string.</p>
 <h3 class="function"><a id="pdfioContentTextShowJustified">pdfioContentTextShowJustified</a></h3>
 <p class="description">Show justified text.</p>
 <p class="code">
-bool pdfioContentTextShowJustified(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, size_t num_fragments, const double *offsets, const char *const *fragments);</p>
+bool pdfioContentTextShowJustified(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, bool unicode, size_t num_fragments, const double *offsets, const char *const *fragments);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
 <td class="description">Stream</td></tr>
+<tr><th>unicode</th>
+<td class="description">Unicode text?</td></tr>
 <tr><th>num_fragments</th>
 <td class="description">Number of text fragments</td></tr>
 <tr><th>offsets</th>
@@ -1688,14 +1764,20 @@ bool pdfioContentTextShowJustified(<a href="#pdfio_stream_t">pdfio_stream_t</a> 
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function shows some text in a PDF content stream. The &quot;unicode&quot; argument
+specifies that the current font maps to full Unicode.  The &quot;fragments&quot;
+argument specifies an array of UTF-8 encoded strings.</p>
 <h3 class="function"><a id="pdfioContentTextShowf">pdfioContentTextShowf</a></h3>
 <p class="description"></p>
 <p class="code">
-bool pdfioContentTextShowf(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, const char *format, ...);</p>
+bool pdfioContentTextShowf(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, bool unicode, const char *format, ...);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
 <td class="description">Stream</td></tr>
+<tr><th>unicode</th>
+<td class="description">Unicode text?</td></tr>
 <tr><th>format</th>
 <td class="description"><code>printf</code>-style format string</td></tr>
 <tr><th>...</th>
@@ -1703,6 +1785,9 @@ bool pdfioContentTextShowf(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, con
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Show formatted text.</p>
+<p class="discussion">This function shows some text in a PDF content stream. The &quot;unicode&quot; argument
+specifies that the current font maps to full Unicode.  The &quot;format&quot; argument
+specifies a UTF-8 encoded <code>printf</code>-style format string.</p>
 <h3 class="function"><a id="pdfioDictCopy">pdfioDictCopy</a></h3>
 <p class="description">Copy a dictionary to a PDF file.</p>
 <p class="code">
@@ -1759,6 +1844,19 @@ unsigned char *pdfioDictGetBinary(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict
 <p class="description">Get a key boolean value from a dictionary.</p>
 <p class="code">
 bool pdfioDictGetBoolean(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *key);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>dict</th>
+<td class="description">Dictionary</td></tr>
+<tr><th>key</th>
+<td class="description">Key</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Value</p>
+<h3 class="function"><a id="pdfioDictGetDate">pdfioDictGetDate</a></h3>
+<p class="description">Get a date value from a dictionary.</p>
+<p class="code">
+time_t pdfioDictGetDate(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *key);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>dict</th>
@@ -1897,6 +1995,21 @@ bool pdfioDictSetBinary(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const ch
 <p class="description">Set a key boolean in a dictionary.</p>
 <p class="code">
 bool pdfioDictSetBoolean(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *key, bool value);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>dict</th>
+<td class="description">Dictionary</td></tr>
+<tr><th>key</th>
+<td class="description">Key</td></tr>
+<tr><th>value</th>
+<td class="description">Value</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h3 class="function"><a id="pdfioDictSetDate">pdfioDictSetDate</a></h3>
+<p class="description">Set a date value in a dictionary.</p>
+<p class="code">
+bool pdfioDictSetDate(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *key, time_t value);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>dict</th>
@@ -2060,10 +2173,26 @@ bool pdfioFileClose(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">PDF file or <code>NULL</code> on error</p>
-<h3 class="function"><a id="pdfioFileCreateBaseFontObj">pdfioFileCreateBaseFontObj</a></h3>
+<h3 class="function"><a id="pdfioFileCreateArrayObj">pdfioFileCreateArrayObj</a></h3>
+<p class="description">Create a new object in a PDF file containing an array.</p>
+<p class="code">
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateArrayObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <a href="#pdfio_array_t">pdfio_array_t</a> *array);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>array</th>
+<td class="description">Object array</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">New object</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function creates a new object with an array value in a PDF file.
+You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write the object to the file.</p>
+<h3 class="function"><a id="pdfioFileCreateFontObjFromBase">pdfioFileCreateFontObjFromBase</a></h3>
 <p class="description">Create one of the base 14 PDF fonts.</p>
 <p class="code">
-<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateBaseFontObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *name);</p>
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateFontObjFromBase(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *name);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
@@ -2106,10 +2235,12 @@ specifies the font nane:
 </li>
 <li><code>ZapfDingbats</code></li>
 </ul>
-<h3 class="function"><a id="pdfioFileCreateFontObj">pdfioFileCreateFontObj</a></h3>
+<p class="discussion">Base fonts always use the Windows CP1252 (ISO-8859-1 with additional
+characters such as the Euro symbol) subset of Unicode.</p>
+<h3 class="function"><a id="pdfioFileCreateFontObjFromFile">pdfioFileCreateFontObjFromFile</a></h3>
 <p class="description">Add a font object to a PDF file.</p>
 <p class="code">
-<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateFontObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename, bool unicode);</p>
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateFontObjFromFile(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename, bool unicode);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
@@ -2117,27 +2248,35 @@ specifies the font nane:
 <tr><th>filename</th>
 <td class="description">Filename</td></tr>
 <tr><th>unicode</th>
-<td class="description">Unicode font?</td></tr>
+<td class="description">Force Unicode</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Font object</p>
-<h3 class="function"><a id="pdfioFileCreateICCProfileObj">pdfioFileCreateICCProfileObj</a></h3>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function embeds a TrueType/OpenType font into a PDF file.  The
+&quot;unicode&quot; parameter controls whether the font is encoded for two-byte
+characters (potentially full Unicode, but more typically a subset)
+or to only support the Windows CP1252 (ISO-8859-1 with additional
+characters such as the Euro symbol) subset of Unicode.</p>
+<h3 class="function"><a id="pdfioFileCreateICCObjFromFile">pdfioFileCreateICCObjFromFile</a></h3>
 <p class="description">Add an ICC profile object to a PDF file.</p>
 <p class="code">
-<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateICCProfileObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename);</p>
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateICCObjFromFile(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename, size_t num_colors);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
 <td class="description">PDF file</td></tr>
 <tr><th>filename</th>
 <td class="description">Filename</td></tr>
+<tr><th>num_colors</th>
+<td class="description">Number of color components (1, 3, or 4)</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Object</p>
-<h3 class="function"><a id="pdfioFileCreateImageObj">pdfioFileCreateImageObj</a></h3>
+<h3 class="function"><a id="pdfioFileCreateImageObjFromFile">pdfioFileCreateImageObjFromFile</a></h3>
 <p class="description">Add an image object to a PDF file.</p>
 <p class="code">
-<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateImageObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename, bool interpolate);</p>
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateImageObjFromFile(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename, bool interpolate);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>
@@ -2150,7 +2289,12 @@ specifies the font nane:
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Object</p>
 <h4 class="discussion">Discussion</h4>
-<p class="discussion">Currently only GIF, JPEG, and PNG files are supported.</p>
+<p class="discussion">This function creates an image object in a PDF file from a JPEG or PNG file.<br>
+<br>
+</p><blockquote>
+Note: Currently PNG support is limited to grayscale, RGB, or indexed files
+without interlacing or alpha.  Transparency (masking) based on color/index
+is supported.</blockquote>
 <h3 class="function"><a id="pdfioFileCreateObj">pdfioFileCreateObj</a></h3>
 <p class="description">Create a new object in a PDF file.</p>
 <p class="code">
@@ -2193,6 +2337,39 @@ specifies the font nane:
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">This differs from <a href="#pdfioFileGetObj"><code>pdfioFileGetObj</code></a> which takes an index into the
 list of objects while this function takes the object number.</p>
+<h3 class="function"><a id="pdfioFileGetAuthor">pdfioFileGetAuthor</a></h3>
+<p class="description">Get the author for a PDF file.</p>
+<p class="code">
+const char *pdfioFileGetAuthor(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Author or <code>NULL</code> for none</p>
+<h3 class="function"><a id="pdfioFileGetCreationDate">pdfioFileGetCreationDate</a></h3>
+<p class="description">Get the creation date for a PDF file.</p>
+<p class="code">
+time_t pdfioFileGetCreationDate(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Creation date or <code>0</code> for none</p>
+<h3 class="function"><a id="pdfioFileGetCreator">pdfioFileGetCreator</a></h3>
+<p class="description">Get the creator string for a PDF file.</p>
+<p class="code">
+const char *pdfioFileGetCreator(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Creator string or <code>NULL</code> for none</p>
 <h3 class="function"><a id="pdfioFileGetID">pdfioFileGetID</a></h3>
 <p class="description">Get the PDF file's ID strings.</p>
 <p class="code">
@@ -2204,6 +2381,17 @@ list of objects while this function takes the object number.</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Array with binary strings</p>
+<h3 class="function"><a id="pdfioFileGetKeywords">pdfioFileGetKeywords</a></h3>
+<p class="description">Get the keywords for a PDF file.</p>
+<p class="code">
+const char *pdfioFileGetKeywords(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Keywords string or <code>NULL</code> for none</p>
 <h3 class="function"><a id="pdfioFileGetName">pdfioFileGetName</a></h3>
 <p class="description">Get a PDF's filename.</p>
 <p class="code">
@@ -2263,6 +2451,39 @@ size_t pdfioFileGetNumPages(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Object</p>
+<h3 class="function"><a id="pdfioFileGetProducer">pdfioFileGetProducer</a></h3>
+<p class="description">Get the producer string for a PDF file.</p>
+<p class="code">
+const char *pdfioFileGetProducer(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Producer string or <code>NULL</code> for none</p>
+<h3 class="function"><a id="pdfioFileGetSubject">pdfioFileGetSubject</a></h3>
+<p class="description">Get the subject for a PDF file.</p>
+<p class="code">
+const char *pdfioFileGetSubject(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Subject or <code>NULL</code> for none</p>
+<h3 class="function"><a id="pdfioFileGetTitle">pdfioFileGetTitle</a></h3>
+<p class="description">Get the title for a PDF file.</p>
+<p class="code">
+const char *pdfioFileGetTitle(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Title or <code>NULL</code> for none</p>
 <h3 class="function"><a id="pdfioFileGetVersion">pdfioFileGetVersion</a></h3>
 <p class="description">Get the PDF version number for a PDF file.</p>
 <p class="code">
@@ -2289,6 +2510,72 @@ const char *pdfioFileGetVersion(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);<
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">PDF file</p>
+<h3 class="function"><a id="pdfioFileSetAuthor">pdfioFileSetAuthor</a></h3>
+<p class="description">Set the author for a PDF file.</p>
+<p class="code">
+void pdfioFileSetAuthor(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *value);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>value</th>
+<td class="description">Value</td></tr>
+</tbody></table>
+<h3 class="function"><a id="pdfioFileSetCreationDate">pdfioFileSetCreationDate</a></h3>
+<p class="description">Set the creation date for a PDF file.</p>
+<p class="code">
+void pdfioFileSetCreationDate(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, time_t value);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>value</th>
+<td class="description">Value</td></tr>
+</tbody></table>
+<h3 class="function"><a id="pdfioFileSetCreator">pdfioFileSetCreator</a></h3>
+<p class="description">Set the creator string for a PDF file.</p>
+<p class="code">
+void pdfioFileSetCreator(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *value);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>value</th>
+<td class="description">Value</td></tr>
+</tbody></table>
+<h3 class="function"><a id="pdfioFileSetKeywords">pdfioFileSetKeywords</a></h3>
+<p class="description">Set the keywords string for a PDF file.</p>
+<p class="code">
+void pdfioFileSetKeywords(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *value);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>value</th>
+<td class="description">Value</td></tr>
+</tbody></table>
+<h3 class="function"><a id="pdfioFileSetSubject">pdfioFileSetSubject</a></h3>
+<p class="description">Set the subject for a PDF file.</p>
+<p class="code">
+void pdfioFileSetSubject(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *value);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>value</th>
+<td class="description">Value</td></tr>
+</tbody></table>
+<h3 class="function"><a id="pdfioFileSetTitle">pdfioFileSetTitle</a></h3>
+<p class="description">Set the title for a PDF file.</p>
+<p class="code">
+void pdfioFileSetTitle(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *value);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>value</th>
+<td class="description">Value</td></tr>
+</tbody></table>
 <h3 class="function"><a id="pdfioImageGetBytesPerLine">pdfioImageGetBytesPerLine</a></h3>
 <p class="description">Get the number of bytes to read for each line.</p>
 <p class="code">
@@ -2562,7 +2849,7 @@ bool pdfioStreamGetToken(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, char 
 <h3 class="function"><a id="pdfioStreamPeek">pdfioStreamPeek</a></h3>
 <p class="description">Peek at data in a stream.</p>
 <p class="code">
-ssize_t pdfioStreamPeek(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, void *buffer, size_t bytes);</p>
+<a href="#ssize_t">ssize_t</a> pdfioStreamPeek(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, void *buffer, size_t bytes);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
@@ -2589,6 +2876,19 @@ bool pdfioStreamPrintf(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, const c
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h3 class="function"><a id="pdfioStreamPutChar">pdfioStreamPutChar</a></h3>
+<p class="description">Write a single character to a stream.</p>
+<p class="code">
+bool pdfioStreamPutChar(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, int ch);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>st</th>
+<td class="description">Stream</td></tr>
+<tr><th>ch</th>
+<td class="description">Character</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
 <h3 class="function"><a id="pdfioStreamPuts">pdfioStreamPuts</a></h3>
 <p class="description">Write a literal string to a stream.</p>
 <p class="code">
@@ -2605,7 +2905,7 @@ bool pdfioStreamPuts(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, const cha
 <h3 class="function"><a id="pdfioStreamRead">pdfioStreamRead</a></h3>
 <p class="description">Read data from a stream.</p>
 <p class="code">
-ssize_t pdfioStreamRead(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, void *buffer, size_t bytes);</p>
+<a href="#ssize_t">ssize_t</a> pdfioStreamRead(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, void *buffer, size_t bytes);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
@@ -2677,6 +2977,267 @@ char *pdfioStringCreatef(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const ch
 <br>
 <code>NULL</code> is returned on error, otherwise a <code>char *</code> that is valid until
 <code>pdfioFileClose</code> is called.</p>
+<h3 class="function"><a id="ttfCreate">ttfCreate</a></h3>
+<p class="description">Create a new font object for the named font family.</p>
+<p class="code">
+ttf_t *ttfCreate(const char *filename, size_t idx, ttf_err_cb_t err_cb, void *err_data);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>filename</th>
+<td class="description">Filename</td></tr>
+<tr><th>idx</th>
+<td class="description">Font number to create in collection (0-based)</td></tr>
+<tr><th>err_cb</th>
+<td class="description">Error callback or <code>NULL</code> to log to stderr</td></tr>
+<tr><th>err_data</th>
+<td class="description">Error callback data</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">New font object</p>
+<h3 class="function"><a id="ttfDelete">ttfDelete</a></h3>
+<p class="description">Free all memory used for a font family object.</p>
+<p class="code">
+void ttfDelete(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h3 class="function"><a id="ttfGetAscent">ttfGetAscent</a></h3>
+<p class="description">Get the maximum height of non-accented characters.</p>
+<p class="code">
+int ttfGetAscent(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Ascent in 1000ths</p>
+<h3 class="function"><a id="ttfGetBounds">ttfGetBounds</a></h3>
+<p class="description">Get the bounds of all characters in a font.</p>
+<p class="code">
+ttf_rect_t *ttfGetBounds(ttf_t *font, ttf_rect_t *bounds);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+<tr><th>bounds</th>
+<td class="description">Bounds buffer</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Bounds or <code>NULL</code> on error</p>
+<h3 class="function"><a id="ttfGetCMap">ttfGetCMap</a></h3>
+<p class="description">Get the Unicode to glyph mapping table.</p>
+<p class="code">
+const int *ttfGetCMap(ttf_t *font, size_t *num_cmap);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+<tr><th>num_cmap</th>
+<td class="description">Number of entries in table</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">CMap table</p>
+<h3 class="function"><a id="ttfGetCapHeight">ttfGetCapHeight</a></h3>
+<p class="description">Get the height of capital letters.</p>
+<p class="code">
+int ttfGetCapHeight(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Capital letter height in 1000ths</p>
+<h3 class="function"><a id="ttfGetCopyright">ttfGetCopyright</a></h3>
+<p class="description">Get the copyright text for a font.</p>
+<p class="code">
+const char *ttfGetCopyright(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Copyright text</p>
+<h3 class="function"><a id="ttfGetDescent">ttfGetDescent</a></h3>
+<p class="description">Get the maximum depth of non-accented characters.</p>
+<p class="code">
+int ttfGetDescent(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Descent in 1000ths</p>
+<h3 class="function"><a id="ttfGetExtents">ttfGetExtents</a></h3>
+<p class="description">Get the extents of a UTF-8 string.</p>
+<p class="code">
+ttf_rect_t *ttfGetExtents(ttf_t *font, float size, const char *s, ttf_rect_t *extents);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+<tr><th>size</th>
+<td class="description">Font size</td></tr>
+<tr><th>s</th>
+<td class="description">String</td></tr>
+<tr><th>extents</th>
+<td class="description">Extents of the string</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Pointer to extents or <code>NULL</code> on error</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function computes the extents of a UTF-8 string when rendered using the
+specified font and size.</p>
+<h3 class="function"><a id="ttfGetFamily">ttfGetFamily</a></h3>
+<p class="description">Get the family name of a font.</p>
+<p class="code">
+const char *ttfGetFamily(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Family name</p>
+<h3 class="function"><a id="ttfGetItalicAngle">ttfGetItalicAngle</a></h3>
+<p class="description">Get the italic angle.</p>
+<p class="code">
+float ttfGetItalicAngle(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Angle in degrees</p>
+<h3 class="function"><a id="ttfGetMaxChar">ttfGetMaxChar</a></h3>
+<p class="description">Get the last character in the font.</p>
+<p class="code">
+int ttfGetMaxChar(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Last character in font</p>
+<h3 class="function"><a id="ttfGetMinChar">ttfGetMinChar</a></h3>
+<p class="description">Get the first character in the font.</p>
+<p class="code">
+int ttfGetMinChar(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">First character in font</p>
+<h3 class="function"><a id="ttfGetNumFonts">ttfGetNumFonts</a></h3>
+<p class="description">Get the number of fonts in this collection.</p>
+<p class="code">
+size_t ttfGetNumFonts(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Number of fonts</p>
+<h3 class="function"><a id="ttfGetPostScriptName">ttfGetPostScriptName</a></h3>
+<p class="description">Get the PostScript name of a font.</p>
+<p class="code">
+const char *ttfGetPostScriptName(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">PostScript name</p>
+<h3 class="function"><a id="ttfGetStretch">ttfGetStretch</a></h3>
+<p class="description">Get the font &quot;stretch&quot; value...</p>
+<p class="code">
+ttf_stretch_t ttfGetStretch(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Stretch value</p>
+<h3 class="function"><a id="ttfGetStyle">ttfGetStyle</a></h3>
+<p class="description">Get the font style.</p>
+<p class="code">
+ttf_style_t ttfGetStyle(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Style</p>
+<h3 class="function"><a id="ttfGetVersion">ttfGetVersion</a></h3>
+<p class="description">Get the version number of a font.</p>
+<p class="code">
+const char *ttfGetVersion(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Version number</p>
+<h3 class="function"><a id="ttfGetWeight">ttfGetWeight</a></h3>
+<p class="description">Get the weight of a font.</p>
+<p class="code">
+ttf_weight_t ttfGetWeight(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Weight</p>
+<h3 class="function"><a id="ttfGetWidth">ttfGetWidth</a></h3>
+<p class="description">Get the width of a single character.</p>
+<p class="code">
+int ttfGetWidth(ttf_t *font, int ch);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+<tr><th>ch</th>
+<td class="description">Unicode character</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Width in 1000ths</p>
+<h3 class="function"><a id="ttfGetXHeight">ttfGetXHeight</a></h3>
+<p class="description">Get the height of lowercase letters.</p>
+<p class="code">
+int ttfGetXHeight(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Lowercase letter height in 1000ths</p>
+<h3 class="function"><a id="ttfIsFixedPitch">ttfIsFixedPitch</a></h3>
+<p class="description">Determine whether a font is fixedpitch.</p>
+<p class="code">
+bool ttfIsFixedPitch(ttf_t *font);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> if fixed pitch, <code>false</code> otherwise</p>
 <h2 class="title"><a id="TYPES">Data Types</a></h2>
 <h3 class="typedef"><a id="pdfio_array_t">pdfio_array_t</a></h3>
 <p class="description">Array of PDF values</p>
@@ -2722,6 +3283,11 @@ typedef struct _pdfio_stream_s pdfio_stream_t;
 <p class="description">PDF value types</p>
 <p class="code">
 typedef enum <a href="#pdfio_valtype_e">pdfio_valtype_e</a> pdfio_valtype_t;
+</p>
+<h3 class="typedef"><a id="ssize_t">ssize_t</a></h3>
+<p class="description">POSIX type not present on Windows...</p>
+<p class="code">
+typedef __int64 ssize_t;
 </p>
 <h2 class="title"><a id="STRUCTURES">Structures</a></h2>
 <h3 class="struct"><a id="pdfio_rect_s">pdfio_rect_s</a></h3>

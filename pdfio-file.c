@@ -279,7 +279,7 @@ pdfioFileCreate(
     return (NULL);
   }
 
-//  pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
+  pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
   pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
 
   if ((pdf->info = pdfioFileCreateObj(pdf, info_dict)) == NULL)
@@ -550,9 +550,7 @@ time_t					// O - Creation date or `0` for none
 pdfioFileGetCreationDate(
     pdfio_file_t *pdf)			// I - PDF file
 {
-  (void)pdf;
-  return (0);
-//  return (pdf && pdf->info ? pdfioDictGetDate(pdf->info->value.value.dict, "CreationDate") : 0);
+  return (pdf && pdf->info ? pdfioDictGetDate(pdf->info->value.value.dict, "CreationDate") : 0);
 }
 
 
@@ -823,10 +821,8 @@ pdfioFileSetCreationDate(
     pdfio_file_t *pdf,			// I - PDF file
     time_t       value)			// I - Value
 {
-  (void)pdf;
-  (void)value;
-//  if (pdf && pdf->info)
-//    pdfioDictSetDate(pdf->info->value.value.dict, "CreationDate", value);
+  if (pdf && pdf->info)
+    pdfioDictSetDate(pdf->info->value.value.dict, "CreationDate", value);
 }
 
 

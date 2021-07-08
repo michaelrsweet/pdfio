@@ -108,6 +108,30 @@ pdfioArrayAppendBoolean(
 
 
 //
+// 'pdfioArrayAppendDate()' - Add a date value to an array.
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioArrayAppendDate(
+    pdfio_array_t *a,			// I - Array
+    time_t        value)		// I - Value
+{
+  _pdfio_value_t	v;		// Value for array
+
+
+  // Range check input
+  if (!a)
+    return (false);
+
+  // Add a dictionary...
+  v.type       = PDFIO_VALTYPE_DATE;
+  v.value.date = value;
+
+  return (append_value(a, &v));
+}
+
+
+//
 // 'pdfioArrayAppendDict()' - Add a dictionary to an array.
 //
 
@@ -392,6 +416,21 @@ pdfioArrayGetBoolean(pdfio_array_t *a,	// I - Array
     return (false);
   else
     return (a->values[n].value.boolean);
+}
+
+
+//
+// 'pdfioArrayGetDate()' - Get a date value from an array.
+//
+
+time_t					// O - Value
+pdfioArrayGetDate(pdfio_array_t *a,	// I - Array
+		  size_t        n)	// I - Index
+{
+  if (!a || n >= a->num_values || a->values[n].type != PDFIO_VALTYPE_DATE)
+    return (0);
+  else
+    return (a->values[n].value.date);
 }
 
 

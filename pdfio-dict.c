@@ -170,6 +170,7 @@ pdfioDictGetArray(pdfio_dict_t *dict,	// I - Dictionary
 {
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
 
+
   if (value && value->type == PDFIO_VALTYPE_ARRAY)
     return (value->value.array);
   else
@@ -187,6 +188,7 @@ pdfioDictGetBinary(pdfio_dict_t *dict,	// I - Dictionary
                    size_t       *length)// O - Length of value
 {
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
+
 
   if (!length)
     return (NULL);
@@ -214,10 +216,29 @@ pdfioDictGetBoolean(pdfio_dict_t *dict,	// I - Dictionary
 {
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
 
+
   if (value && value->type == PDFIO_VALTYPE_BOOLEAN)
     return (value->value.boolean);
   else
     return (false);
+}
+
+
+//
+// 'pdfioDictGetDate()' - Get a date value from a dictionary.
+//
+
+time_t					// O - Value
+pdfioDictGetDate(pdfio_dict_t *dict,	// I - Dictionary
+                 const char   *key)	// I - Key
+{
+  _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
+
+
+  if (value && value->type == PDFIO_VALTYPE_DATE)
+    return (value->value.date);
+  else
+    return (0);
 }
 
 
@@ -230,6 +251,7 @@ pdfioDictGetDict(pdfio_dict_t *dict,	// I - Dictionary
                  const char   *key)	// I - Key
 {
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
+
 
   if (value && value->type == PDFIO_VALTYPE_DICT)
     return (value->value.dict);
@@ -248,6 +270,7 @@ pdfioDictGetName(pdfio_dict_t *dict,	// I - Dictionary
 {
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
 
+
   if (value && value->type == PDFIO_VALTYPE_NAME)
     return (value->value.name);
   else
@@ -264,6 +287,7 @@ pdfioDictGetNumber(pdfio_dict_t *dict,	// I - Dictionary
                    const char   *key)	// I - Key
 {
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
+
 
   if (value && value->type == PDFIO_VALTYPE_NUMBER)
     return (value->value.number);
@@ -282,6 +306,7 @@ pdfioDictGetObj(pdfio_dict_t *dict,	// I - Dictionary
 {
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
 
+
   if (value && value->type == PDFIO_VALTYPE_INDIRECT)
     return (pdfioFileFindObj(dict->pdf, value->value.indirect.number));
   else
@@ -299,6 +324,7 @@ pdfioDictGetRect(pdfio_dict_t *dict,	// I - Dictionary
                  pdfio_rect_t *rect)	// I - Rectangle
 {
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
+
 
   if (value && value->type == PDFIO_VALTYPE_ARRAY && pdfioArrayGetSize(value->value.array) == 4)
   {
@@ -326,6 +352,7 @@ pdfioDictGetString(pdfio_dict_t *dict,	// I - Dictionary
 {
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
 
+
   if (value && value->type == PDFIO_VALTYPE_STRING)
     return (value->value.string);
   else
@@ -342,6 +369,7 @@ pdfioDictGetType(pdfio_dict_t *dict,	// I - Dictionary
                  const char   *key)	// I - Key
 {
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
+
 
   return (value ? value->type : PDFIO_VALTYPE_NONE);
 }
@@ -519,6 +547,30 @@ pdfioDictSetBoolean(pdfio_dict_t *dict,	// I - Dictionary
   // Set the key/value pair...
   temp.type          = PDFIO_VALTYPE_BOOLEAN;
   temp.value.boolean = value;
+
+  return (_pdfioDictSetValue(dict, key, &temp));
+}
+
+
+//
+// 'pdfioDictSetDate()' - Set a date value in a dictionary.
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioDictSetDate(pdfio_dict_t *dict,	// I - Dictionary
+                 const char   *key,	// I - Key
+                 time_t       value)	// I - Value
+{
+  _pdfio_value_t temp;			// New value
+
+
+  // Range check input...
+  if (!dict || !key)
+    return (false);
+
+  // Set the key/value pair...
+  temp.type       = PDFIO_VALTYPE_DATE;
+  temp.value.date = value;
 
   return (_pdfioDictSetValue(dict, key, &temp));
 }
