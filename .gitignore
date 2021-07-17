@@ -5,6 +5,7 @@
 *.so.1
 /.vs
 /packages
+/pdfio.xcodeproj/xcshareddata
 /testpdfio
 /testpdfio-out.pdf
 /x64
