@@ -772,7 +772,10 @@ write_alpha_test(
 	      if (i > 2)
 	      {
 	        // Add alpha channel
-	        *bufptr++ = (unsigned char)((x + y) / 2);
+	        if (x < 112 || x >= 144 || y < 112 || y >= 144)
+		  *bufptr++ = (unsigned char)((x - 128) * (y - 128));
+		else
+		  *bufptr++ = 0;
 	      }
 	    }
 	  }
@@ -792,7 +795,10 @@ write_alpha_test(
 	      if (i > 2)
 	      {
 	        // Add alpha channel
-	        *bufptr++ = (unsigned char)((x + y) / 2);
+	        if (x < 112 || x >= 144 || y < 112 || y >= 144)
+		  *bufptr++ = (unsigned char)((x - 128) * (y - 128));
+		else
+		  *bufptr++ = 0;
 	      }
 	    }
 	  }
@@ -817,7 +823,10 @@ write_alpha_test(
 	      if (i > 2)
 	      {
 	        // Add alpha channel
-	        *bufptr++ = (unsigned char)((x + y) / 2);
+	        if (x < 112 || x >= 144 || y < 112 || y >= 144)
+		  *bufptr++ = (unsigned char)((x - 128) * (y - 128));
+		else
+		  *bufptr++ = 0;
 	      }
 	    }
 	  }
@@ -828,7 +837,7 @@ write_alpha_test(
     printf("pdfioFileCreateImageObjFromData(num_colors=%u, alpha=%s): ", (unsigned)num_colors, i > 2 ? "true" : "false");
     if ((images[i] = pdfioFileCreateImageObjFromData(pdf, buffer, 256, 256, num_colors, NULL, i > 2, false)) != NULL)
     {
-      puts("PASS");
+      printf("PASS (%u)\n", (unsigned)pdfioObjGetNumber(images[i]));
     }
     else
     {
@@ -877,9 +886,9 @@ write_alpha_test(
       "DeviceGray",
       "DeviceRGB",
       "DeviceCMYK",
-      "DeviceGray + Alpha",
-      "DeviceRGB + Alpha",
-      "DeviceCMYK + Alpha"
+      "DevGray + Alpha",
+      "DevRGB + Alpha",
+      "DevCMYK + Alpha"
     };
 
     snprintf(iname, sizeof(iname), "IM%d", i + 1);

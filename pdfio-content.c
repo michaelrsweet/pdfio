@@ -1694,7 +1694,8 @@ pdfioFileCreateImageObjFromData(
     pdfioDictSetNumber(dict, "Width", width);
     pdfioDictSetNumber(dict, "Height", height);
     pdfioDictSetNumber(dict, "BitsPerComponent", 8);
-    pdfioDictSetBoolean(dict, "ImageMask", true);
+    pdfioDictSetName(dict, "ColorSpace", "DeviceGray");
+    pdfioDictSetName(dict, "Filter", "FlateDecode");
 
     if ((decode = pdfioDictCreate(pdf)) == NULL)
     {
@@ -1703,7 +1704,7 @@ pdfioFileCreateImageObjFromData(
     }
 
     pdfioDictSetNumber(decode, "BitsPerComponent", 8);
-    pdfioDictSetNumber(decode, "Colors", num_colors - 1);
+    pdfioDictSetNumber(decode, "Colors", 1);
     pdfioDictSetNumber(decode, "Columns", width);
     pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
     pdfioDictSetDict(dict, "DecodeParms", decode);
@@ -1746,6 +1747,7 @@ pdfioFileCreateImageObjFromData(
   pdfioDictSetNumber(dict, "Width", width);
   pdfioDictSetNumber(dict, "Height", height);
   pdfioDictSetNumber(dict, "BitsPerComponent", 8);
+  pdfioDictSetName(dict, "Filter", "FlateDecode");
 
   if (color_data)
     pdfioDictSetArray(dict, "ColorSpace", color_data);
