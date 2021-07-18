@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2021-07-07" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2021-07-18" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -349,6 +349,68 @@ No filter
 PDFIO_FILTER_RUNLENGTH
 .br
 RunLengthDecode filter (reading only)
+.SS pdfio_linecap_e
+Line capping modes
+.TP 5
+PDFIO_LINECAP_BUTT
+.br
+Butt ends
+.TP 5
+PDFIO_LINECAP_ROUND
+.br
+Round ends
+.TP 5
+PDFIO_LINECAP_SQUARE
+.br
+Square ends
+.SS pdfio_linejoin_e
+Line joining modes
+.TP 5
+PDFIO_LINEJOIN_BEVEL
+.br
+Bevel joint
+.TP 5
+PDFIO_LINEJOIN_MITER
+.br
+Miter joint
+.TP 5
+PDFIO_LINEJOIN_ROUND
+.br
+Round joint
+.SS pdfio_textrendering_e
+Text rendering modes
+.TP 5
+PDFIO_TEXTRENDERING_FILL
+.br
+Fill text
+.TP 5
+PDFIO_TEXTRENDERING_FILL_AND_STROKE
+.br
+Fill then stroke text
+.TP 5
+PDFIO_TEXTRENDERING_FILL_AND_STROKE_PATH
+.br
+Fill then stroke text and add to path
+.TP 5
+PDFIO_TEXTRENDERING_FILL_PATH
+.br
+Fill text and add to path
+.TP 5
+PDFIO_TEXTRENDERING_INVISIBLE
+.br
+Don't fill or stroke (invisible)
+.TP 5
+PDFIO_TEXTRENDERING_STROKE
+.br
+Stroke text
+.TP 5
+PDFIO_TEXTRENDERING_STROKE_PATH
+.br
+Stroke text and add to path
+.TP 5
+PDFIO_TEXTRENDERING_TEXT_PATH
+.br
+Add text to path (invisible)
 .SS pdfio_valtype_e
 PDF value types
 .TP 5
@@ -1505,8 +1567,37 @@ pdfio_obj_t * pdfioFileCreateICCObjFromFile (
     size_t num_colors
 );
 .fi
+.SS pdfioFileCreateImageObjFromData
+Add image object(s) to a PDF file from memory.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateImageObjFromData (
+    pdfio_file_t *pdf,
+    const unsigned char *data,
+    size_t width,
+    size_t height,
+    size_t num_colors,
+    pdfio_array_t *color_data,
+    bool alpha,
+    bool interpolate
+);
+.fi
+.PP
+This function creates image object(s) in a PDF file from a data buffer in
+memory.  The "data" parameter points to the image data as 8-bit color values.
+The "width" and "height" parameters specify the image dimensions.  The
+"num_colors" parameter specifies the number of color components (\fB1\fR for
+grayscale, \fB3\fR for RGB, and \fB4\fR for CMYK) and the "alpha" parameter specifies
+whether each color tuple is followed by an alpha value.  The "color_data"
+parameter specifies an optional color space array for the image - if \fBNULL\fR,
+the image is encoded in the corresponding device color space.  The
+"interpolate" parameter specifies whether to interpolate when scaling the
+image on the page.
+.PP
+Note: When creating an image object with alpha, a second image object is
+created to hold the "soft mask" data for the primary image.
 .SS pdfioFileCreateImageObjFromFile
-Add an image object to a PDF file.
+Add an image object to a PDF file from a file.
 .PP
 .nf
 pdfio_obj_t * pdfioFileCreateImageObjFromFile (
@@ -1517,6 +1608,9 @@ pdfio_obj_t * pdfioFileCreateImageObjFromFile (
 .fi
 .PP
 This function creates an image object in a PDF file from a JPEG or PNG file.
+The "filename" parameter specifies the name of the JPEG or PNG file, while
+the "interpolate" parameter specifies whether to interpolate when scaling the
+image on the page.
 .PP
 .IP 5
 Note: Currently PNG support is limited to grayscale, RGB, or indexed files
@@ -2020,194 +2114,6 @@ This function creates a formatted string associated with the PDF file
 .PP
 \fBNULL\fR is returned on error, otherwise a \fBchar *\fR that is valid until
 \fBpdfioFileClose\fR is called.
-.SS ttfCreate
-Create a new font object for the named font family.
-.PP
-.nf
-ttf_t * ttfCreate (
-    const char *filename,
-    size_t idx,
-    ttf_err_cb_t err_cb,
-    void *err_data
-);
-.fi
-.SS ttfDelete
-Free all memory used for a font family object.
-.PP
-.nf
-void ttfDelete (
-    ttf_t *font
-);
-.fi
-.SS ttfGetAscent
-Get the maximum height of non-accented characters.
-.PP
-.nf
-int  ttfGetAscent (
-    ttf_t *font
-);
-.fi
-.SS ttfGetBounds
-Get the bounds of all characters in a font.
-.PP
-.nf
-ttf_rect_t * ttfGetBounds (
-    ttf_t *font,
-    ttf_rect_t *bounds
-);
-.fi
-.SS ttfGetCMap
-Get the Unicode to glyph mapping table.
-.PP
-.nf
-const int * ttfGetCMap (
-    ttf_t *font,
-    size_t *num_cmap
-);
-.fi
-.SS ttfGetCapHeight
-Get the height of capital letters.
-.PP
-.nf
-int  ttfGetCapHeight (
-    ttf_t *font
-);
-.fi
-.SS ttfGetCopyright
-Get the copyright text for a font.
-.PP
-.nf
-const char * ttfGetCopyright (
-    ttf_t *font
-);
-.fi
-.SS ttfGetDescent
-Get the maximum depth of non-accented characters.
-.PP
-.nf
-int  ttfGetDescent (
-    ttf_t *font
-);
-.fi
-.SS ttfGetExtents
-Get the extents of a UTF-8 string.
-.PP
-.nf
-ttf_rect_t * ttfGetExtents (
-    ttf_t *font,
-    float size,
-    const char *s,
-    ttf_rect_t *extents
-);
-.fi
-.PP
-This function computes the extents of a UTF-8 string when rendered using the
-specified font and size.
-.SS ttfGetFamily
-Get the family name of a font.
-.PP
-.nf
-const char * ttfGetFamily (
-    ttf_t *font
-);
-.fi
-.SS ttfGetItalicAngle
-Get the italic angle.
-.PP
-.nf
-float  ttfGetItalicAngle (
-    ttf_t *font
-);
-.fi
-.SS ttfGetMaxChar
-Get the last character in the font.
-.PP
-.nf
-int  ttfGetMaxChar (
-    ttf_t *font
-);
-.fi
-.SS ttfGetMinChar
-Get the first character in the font.
-.PP
-.nf
-int  ttfGetMinChar (
-    ttf_t *font
-);
-.fi
-.SS ttfGetNumFonts
-Get the number of fonts in this collection.
-.PP
-.nf
-size_t  ttfGetNumFonts (
-    ttf_t *font
-);
-.fi
-.SS ttfGetPostScriptName
-Get the PostScript name of a font.
-.PP
-.nf
-const char * ttfGetPostScriptName (
-    ttf_t *font
-);
-.fi
-.SS ttfGetStretch
-Get the font "stretch" value...
-.PP
-.nf
-ttf_stretch_t  ttfGetStretch (
-    ttf_t *font
-);
-.fi
-.SS ttfGetStyle
-Get the font style.
-.PP
-.nf
-ttf_style_t  ttfGetStyle (
-    ttf_t *font
-);
-.fi
-.SS ttfGetVersion
-Get the version number of a font.
-.PP
-.nf
-const char * ttfGetVersion (
-    ttf_t *font
-);
-.fi
-.SS ttfGetWeight
-Get the weight of a font.
-.PP
-.nf
-ttf_weight_t  ttfGetWeight (
-    ttf_t *font
-);
-.fi
-.SS ttfGetWidth
-Get the width of a single character.
-.PP
-.nf
-int  ttfGetWidth (
-    ttf_t *font,
-    int ch
-);
-.fi
-.SS ttfGetXHeight
-Get the height of lowercase letters.
-.PP
-.nf
-int  ttfGetXHeight (
-    ttf_t *font
-);
-.fi
-.SS ttfIsFixedPitch
-Determine whether a font is fixedpitch.
-.PP
-.nf
-bool  ttfIsFixedPitch (
-    ttf_t *font
-);
-.fi
 .SH STRUCTURES
 .SS pdfio_rect_s
 PDF rectangle
@@ -2252,6 +2158,24 @@ Compression/decompression filters for streams
 .nf
 typedef enum pdfio_filter_e pdfio_filter_t;
 .fi
+.SS pdfio_linecap_t
+Line capping modes
+.PP
+.nf
+typedef enum pdfio_linecap_e pdfio_linecap_t;
+.fi
+.SS pdfio_linejoin_t
+Line joining modes
+.PP
+.nf
+typedef enum pdfio_linejoin_e pdfio_linejoin_t;
+.fi
+.SS pdfio_matrix_t[3][2]
+Transform matrix
+.PP
+.nf
+typedef double pdfio_matrix_t[3][2];
+.fi
 .SS pdfio_obj_t
 Numbered object in PDF file
 .PP
@@ -2270,17 +2194,24 @@ Object data stream in PDF file
 .nf
 typedef struct _pdfio_stream_s pdfio_stream_t;
 .fi
+.SS pdfio_textrendering_t
+Text rendering modes
+.PP
+.nf
+typedef enum pdfio_textrendering_e pdfio_textrendering_t;
+.fi
 .SS pdfio_valtype_t
 PDF value types
 .PP
 .nf
 typedef enum pdfio_valtype_e pdfio_valtype_t;
 .fi
-.SS ssize_t
-POSIX type not present on Windows...
+.SH VARIABLES
+.SS PDFIO_PUBLIC
+C++ magic...
 .PP
 .nf
-typedef __int64 ssize_t;
+pdfio_dict_t *dict const char *name pdfio_obj_t *obj)PDFIO_PUBLIC;
 .fi
 .SH AUTHOR
 .PP

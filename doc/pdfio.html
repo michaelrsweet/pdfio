@@ -377,6 +377,7 @@ span.string {
 <li><a href="#pdfioFileCreateFontObjFromBase">pdfioFileCreateFontObjFromBase</a></li>
 <li><a href="#pdfioFileCreateFontObjFromFile">pdfioFileCreateFontObjFromFile</a></li>
 <li><a href="#pdfioFileCreateICCObjFromFile">pdfioFileCreateICCObjFromFile</a></li>
+<li><a href="#pdfioFileCreateImageObjFromData">pdfioFileCreateImageObjFromData</a></li>
 <li><a href="#pdfioFileCreateImageObjFromFile">pdfioFileCreateImageObjFromFile</a></li>
 <li><a href="#pdfioFileCreateObj">pdfioFileCreateObj</a></li>
 <li><a href="#pdfioFileCreatePage">pdfioFileCreatePage</a></li>
@@ -431,28 +432,6 @@ span.string {
 <li><a href="#pdfioStreamWrite">pdfioStreamWrite</a></li>
 <li><a href="#pdfioStringCreate">pdfioStringCreate</a></li>
 <li><a href="#pdfioStringCreatef">pdfioStringCreatef</a></li>
-<li><a href="#ttfCreate">ttfCreate</a></li>
-<li><a href="#ttfDelete">ttfDelete</a></li>
-<li><a href="#ttfGetAscent">ttfGetAscent</a></li>
-<li><a href="#ttfGetBounds">ttfGetBounds</a></li>
-<li><a href="#ttfGetCMap">ttfGetCMap</a></li>
-<li><a href="#ttfGetCapHeight">ttfGetCapHeight</a></li>
-<li><a href="#ttfGetCopyright">ttfGetCopyright</a></li>
-<li><a href="#ttfGetDescent">ttfGetDescent</a></li>
-<li><a href="#ttfGetExtents">ttfGetExtents</a></li>
-<li><a href="#ttfGetFamily">ttfGetFamily</a></li>
-<li><a href="#ttfGetItalicAngle">ttfGetItalicAngle</a></li>
-<li><a href="#ttfGetMaxChar">ttfGetMaxChar</a></li>
-<li><a href="#ttfGetMinChar">ttfGetMinChar</a></li>
-<li><a href="#ttfGetNumFonts">ttfGetNumFonts</a></li>
-<li><a href="#ttfGetPostScriptName">ttfGetPostScriptName</a></li>
-<li><a href="#ttfGetStretch">ttfGetStretch</a></li>
-<li><a href="#ttfGetStyle">ttfGetStyle</a></li>
-<li><a href="#ttfGetVersion">ttfGetVersion</a></li>
-<li><a href="#ttfGetWeight">ttfGetWeight</a></li>
-<li><a href="#ttfGetWidth">ttfGetWidth</a></li>
-<li><a href="#ttfGetXHeight">ttfGetXHeight</a></li>
-<li><a href="#ttfIsFixedPitch">ttfIsFixedPitch</a></li>
 </ul></li>
 <li><a href="#TYPES">Data Types</a><ul class="subcontents">
 <li><a href="#pdfio_array_t">pdfio_array_t</a></li>
@@ -460,17 +439,26 @@ span.string {
 <li><a href="#pdfio_error_cb_t">pdfio_error_cb_t</a></li>
 <li><a href="#pdfio_file_t">pdfio_file_t</a></li>
 <li><a href="#pdfio_filter_t">pdfio_filter_t</a></li>
+<li><a href="#pdfio_linecap_t">pdfio_linecap_t</a></li>
+<li><a href="#pdfio_linejoin_t">pdfio_linejoin_t</a></li>
+<li><a href="#pdfio_matrix_t[3][2]">pdfio_matrix_t[3][2]</a></li>
 <li><a href="#pdfio_obj_t">pdfio_obj_t</a></li>
 <li><a href="#pdfio_rect_t">pdfio_rect_t</a></li>
 <li><a href="#pdfio_stream_t">pdfio_stream_t</a></li>
+<li><a href="#pdfio_textrendering_t">pdfio_textrendering_t</a></li>
 <li><a href="#pdfio_valtype_t">pdfio_valtype_t</a></li>
-<li><a href="#ssize_t">ssize_t</a></li>
 </ul></li>
 <li><a href="#STRUCTURES">Structures</a><ul class="subcontents">
 <li><a href="#pdfio_rect_s">pdfio_rect_s</a></li>
 </ul></li>
+<li><a href="#VARIABLES">Variables</a><ul class="subcontents">
+<li><a href="#PDFIO_PUBLIC">PDFIO_PUBLIC</a></li>
+</ul></li>
 <li><a href="#ENUMERATIONS">Enumerations</a><ul class="subcontents">
 <li><a href="#pdfio_filter_e">pdfio_filter_e</a></li>
+<li><a href="#pdfio_linecap_e">pdfio_linecap_e</a></li>
+<li><a href="#pdfio_linejoin_e">pdfio_linejoin_e</a></li>
+<li><a href="#pdfio_textrendering_e">pdfio_textrendering_e</a></li>
 <li><a href="#pdfio_valtype_e">pdfio_valtype_e</a></li>
 </ul></li>
 </ul>
@@ -1405,7 +1393,7 @@ bool pdfioContentSetFlatness(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, d
 <h3 class="function"><a id="pdfioContentSetLineCap">pdfioContentSetLineCap</a></h3>
 <p class="description">Set the line ends style.</p>
 <p class="code">
-bool pdfioContentSetLineCap(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, pdfio_linecap_t lc);</p>
+bool pdfioContentSetLineCap(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, <a href="#pdfio_linecap_t">pdfio_linecap_t</a> lc);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
@@ -1418,7 +1406,7 @@ bool pdfioContentSetLineCap(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, pd
 <h3 class="function"><a id="pdfioContentSetLineJoin">pdfioContentSetLineJoin</a></h3>
 <p class="description">Set the line joining style.</p>
 <p class="code">
-bool pdfioContentSetLineJoin(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, pdfio_linejoin_t lj);</p>
+bool pdfioContentSetLineJoin(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, <a href="#pdfio_linejoin_t">pdfio_linejoin_t</a> lj);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
@@ -1603,7 +1591,7 @@ bool pdfioContentSetTextMatrix(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st,
 <h3 class="function"><a id="pdfioContentSetTextRenderingMode">pdfioContentSetTextRenderingMode</a></h3>
 <p class="description">Set the text rendering mode.</p>
 <p class="code">
-bool pdfioContentSetTextRenderingMode(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, pdfio_textrendering_t mode);</p>
+bool pdfioContentSetTextRenderingMode(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, <a href="#pdfio_textrendering_t">pdfio_textrendering_t</a> mode);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
@@ -2273,8 +2261,47 @@ characters such as the Euro symbol) subset of Unicode.</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Object</p>
+<h3 class="function"><a id="pdfioFileCreateImageObjFromData">pdfioFileCreateImageObjFromData</a></h3>
+<p class="description">Add image object(s) to a PDF file from memory.</p>
+<p class="code">
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateImageObjFromData(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const unsigned char *data, size_t width, size_t height, size_t num_colors, <a href="#pdfio_array_t">pdfio_array_t</a> *color_data, bool alpha, bool interpolate);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>data</th>
+<td class="description">Pointer to image data</td></tr>
+<tr><th>width</th>
+<td class="description">Width of image</td></tr>
+<tr><th>height</th>
+<td class="description">Height of image</td></tr>
+<tr><th>num_colors</th>
+<td class="description">Number of colors</td></tr>
+<tr><th>color_data</th>
+<td class="description">Colorspace data or <code>NULL</code> for default</td></tr>
+<tr><th>alpha</th>
+<td class="description"><code>true</code> if data contains an alpha channel</td></tr>
+<tr><th>interpolate</th>
+<td class="description">Interpolate image data?</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Object</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function creates image object(s) in a PDF file from a data buffer in
+memory.  The &quot;data&quot; parameter points to the image data as 8-bit color values.
+The &quot;width&quot; and &quot;height&quot; parameters specify the image dimensions.  The
+&quot;num_colors&quot; parameter specifies the number of color components (<code>1</code> for
+grayscale, <code>3</code> for RGB, and <code>4</code> for CMYK) and the &quot;alpha&quot; parameter specifies
+whether each color tuple is followed by an alpha value.  The &quot;color_data&quot;
+parameter specifies an optional color space array for the image - if <code>NULL</code>,
+the image is encoded in the corresponding device color space.  The
+&quot;interpolate&quot; parameter specifies whether to interpolate when scaling the
+image on the page.<br>
+<br>
+Note: When creating an image object with alpha, a second image object is
+created to hold the &quot;soft mask&quot; data for the primary image.</p>
 <h3 class="function"><a id="pdfioFileCreateImageObjFromFile">pdfioFileCreateImageObjFromFile</a></h3>
-<p class="description">Add an image object to a PDF file.</p>
+<p class="description">Add an image object to a PDF file from a file.</p>
 <p class="code">
 <a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateImageObjFromFile(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *filename, bool interpolate);</p>
 <h4 class="parameters">Parameters</h4>
@@ -2289,7 +2316,10 @@ characters such as the Euro symbol) subset of Unicode.</p>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Object</p>
 <h4 class="discussion">Discussion</h4>
-<p class="discussion">This function creates an image object in a PDF file from a JPEG or PNG file.<br>
+<p class="discussion">This function creates an image object in a PDF file from a JPEG or PNG file.
+The &quot;filename&quot; parameter specifies the name of the JPEG or PNG file, while
+the &quot;interpolate&quot; parameter specifies whether to interpolate when scaling the
+image on the page.<br>
 <br>
 </p><blockquote>
 Note: Currently PNG support is limited to grayscale, RGB, or indexed files
@@ -2849,7 +2879,7 @@ bool pdfioStreamGetToken(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, char 
 <h3 class="function"><a id="pdfioStreamPeek">pdfioStreamPeek</a></h3>
 <p class="description">Peek at data in a stream.</p>
 <p class="code">
-<a href="#ssize_t">ssize_t</a> pdfioStreamPeek(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, void *buffer, size_t bytes);</p>
+ssize_t pdfioStreamPeek(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, void *buffer, size_t bytes);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
@@ -2905,7 +2935,7 @@ bool pdfioStreamPuts(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, const cha
 <h3 class="function"><a id="pdfioStreamRead">pdfioStreamRead</a></h3>
 <p class="description">Read data from a stream.</p>
 <p class="code">
-<a href="#ssize_t">ssize_t</a> pdfioStreamRead(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, void *buffer, size_t bytes);</p>
+ssize_t pdfioStreamRead(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, void *buffer, size_t bytes);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
@@ -2977,267 +3007,6 @@ char *pdfioStringCreatef(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const ch
 <br>
 <code>NULL</code> is returned on error, otherwise a <code>char *</code> that is valid until
 <code>pdfioFileClose</code> is called.</p>
-<h3 class="function"><a id="ttfCreate">ttfCreate</a></h3>
-<p class="description">Create a new font object for the named font family.</p>
-<p class="code">
-ttf_t *ttfCreate(const char *filename, size_t idx, ttf_err_cb_t err_cb, void *err_data);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>filename</th>
-<td class="description">Filename</td></tr>
-<tr><th>idx</th>
-<td class="description">Font number to create in collection (0-based)</td></tr>
-<tr><th>err_cb</th>
-<td class="description">Error callback or <code>NULL</code> to log to stderr</td></tr>
-<tr><th>err_data</th>
-<td class="description">Error callback data</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">New font object</p>
-<h3 class="function"><a id="ttfDelete">ttfDelete</a></h3>
-<p class="description">Free all memory used for a font family object.</p>
-<p class="code">
-void ttfDelete(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h3 class="function"><a id="ttfGetAscent">ttfGetAscent</a></h3>
-<p class="description">Get the maximum height of non-accented characters.</p>
-<p class="code">
-int ttfGetAscent(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Ascent in 1000ths</p>
-<h3 class="function"><a id="ttfGetBounds">ttfGetBounds</a></h3>
-<p class="description">Get the bounds of all characters in a font.</p>
-<p class="code">
-ttf_rect_t *ttfGetBounds(ttf_t *font, ttf_rect_t *bounds);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-<tr><th>bounds</th>
-<td class="description">Bounds buffer</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Bounds or <code>NULL</code> on error</p>
-<h3 class="function"><a id="ttfGetCMap">ttfGetCMap</a></h3>
-<p class="description">Get the Unicode to glyph mapping table.</p>
-<p class="code">
-const int *ttfGetCMap(ttf_t *font, size_t *num_cmap);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-<tr><th>num_cmap</th>
-<td class="description">Number of entries in table</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">CMap table</p>
-<h3 class="function"><a id="ttfGetCapHeight">ttfGetCapHeight</a></h3>
-<p class="description">Get the height of capital letters.</p>
-<p class="code">
-int ttfGetCapHeight(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Capital letter height in 1000ths</p>
-<h3 class="function"><a id="ttfGetCopyright">ttfGetCopyright</a></h3>
-<p class="description">Get the copyright text for a font.</p>
-<p class="code">
-const char *ttfGetCopyright(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Copyright text</p>
-<h3 class="function"><a id="ttfGetDescent">ttfGetDescent</a></h3>
-<p class="description">Get the maximum depth of non-accented characters.</p>
-<p class="code">
-int ttfGetDescent(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Descent in 1000ths</p>
-<h3 class="function"><a id="ttfGetExtents">ttfGetExtents</a></h3>
-<p class="description">Get the extents of a UTF-8 string.</p>
-<p class="code">
-ttf_rect_t *ttfGetExtents(ttf_t *font, float size, const char *s, ttf_rect_t *extents);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-<tr><th>size</th>
-<td class="description">Font size</td></tr>
-<tr><th>s</th>
-<td class="description">String</td></tr>
-<tr><th>extents</th>
-<td class="description">Extents of the string</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Pointer to extents or <code>NULL</code> on error</p>
-<h4 class="discussion">Discussion</h4>
-<p class="discussion">This function computes the extents of a UTF-8 string when rendered using the
-specified font and size.</p>
-<h3 class="function"><a id="ttfGetFamily">ttfGetFamily</a></h3>
-<p class="description">Get the family name of a font.</p>
-<p class="code">
-const char *ttfGetFamily(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Family name</p>
-<h3 class="function"><a id="ttfGetItalicAngle">ttfGetItalicAngle</a></h3>
-<p class="description">Get the italic angle.</p>
-<p class="code">
-float ttfGetItalicAngle(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Angle in degrees</p>
-<h3 class="function"><a id="ttfGetMaxChar">ttfGetMaxChar</a></h3>
-<p class="description">Get the last character in the font.</p>
-<p class="code">
-int ttfGetMaxChar(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Last character in font</p>
-<h3 class="function"><a id="ttfGetMinChar">ttfGetMinChar</a></h3>
-<p class="description">Get the first character in the font.</p>
-<p class="code">
-int ttfGetMinChar(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">First character in font</p>
-<h3 class="function"><a id="ttfGetNumFonts">ttfGetNumFonts</a></h3>
-<p class="description">Get the number of fonts in this collection.</p>
-<p class="code">
-size_t ttfGetNumFonts(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Number of fonts</p>
-<h3 class="function"><a id="ttfGetPostScriptName">ttfGetPostScriptName</a></h3>
-<p class="description">Get the PostScript name of a font.</p>
-<p class="code">
-const char *ttfGetPostScriptName(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">PostScript name</p>
-<h3 class="function"><a id="ttfGetStretch">ttfGetStretch</a></h3>
-<p class="description">Get the font &quot;stretch&quot; value...</p>
-<p class="code">
-ttf_stretch_t ttfGetStretch(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Stretch value</p>
-<h3 class="function"><a id="ttfGetStyle">ttfGetStyle</a></h3>
-<p class="description">Get the font style.</p>
-<p class="code">
-ttf_style_t ttfGetStyle(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Style</p>
-<h3 class="function"><a id="ttfGetVersion">ttfGetVersion</a></h3>
-<p class="description">Get the version number of a font.</p>
-<p class="code">
-const char *ttfGetVersion(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Version number</p>
-<h3 class="function"><a id="ttfGetWeight">ttfGetWeight</a></h3>
-<p class="description">Get the weight of a font.</p>
-<p class="code">
-ttf_weight_t ttfGetWeight(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Weight</p>
-<h3 class="function"><a id="ttfGetWidth">ttfGetWidth</a></h3>
-<p class="description">Get the width of a single character.</p>
-<p class="code">
-int ttfGetWidth(ttf_t *font, int ch);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-<tr><th>ch</th>
-<td class="description">Unicode character</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Width in 1000ths</p>
-<h3 class="function"><a id="ttfGetXHeight">ttfGetXHeight</a></h3>
-<p class="description">Get the height of lowercase letters.</p>
-<p class="code">
-int ttfGetXHeight(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description">Lowercase letter height in 1000ths</p>
-<h3 class="function"><a id="ttfIsFixedPitch">ttfIsFixedPitch</a></h3>
-<p class="description">Determine whether a font is fixedpitch.</p>
-<p class="code">
-bool ttfIsFixedPitch(ttf_t *font);</p>
-<h4 class="parameters">Parameters</h4>
-<table class="list"><tbody>
-<tr><th>font</th>
-<td class="description">Font</td></tr>
-</tbody></table>
-<h4 class="returnvalue">Return Value</h4>
-<p class="description"><code>true</code> if fixed pitch, <code>false</code> otherwise</p>
 <h2 class="title"><a id="TYPES">Data Types</a></h2>
 <h3 class="typedef"><a id="pdfio_array_t">pdfio_array_t</a></h3>
 <p class="description">Array of PDF values</p>
@@ -3264,6 +3033,21 @@ typedef struct _pdfio_file_s pdfio_file_t;
 <p class="code">
 typedef enum <a href="#pdfio_filter_e">pdfio_filter_e</a> pdfio_filter_t;
 </p>
+<h3 class="typedef"><a id="pdfio_linecap_t">pdfio_linecap_t</a></h3>
+<p class="description">Line capping modes</p>
+<p class="code">
+typedef enum <a href="#pdfio_linecap_e">pdfio_linecap_e</a> pdfio_linecap_t;
+</p>
+<h3 class="typedef"><a id="pdfio_linejoin_t">pdfio_linejoin_t</a></h3>
+<p class="description">Line joining modes</p>
+<p class="code">
+typedef enum <a href="#pdfio_linejoin_e">pdfio_linejoin_e</a> pdfio_linejoin_t;
+</p>
+<h3 class="typedef"><a id="pdfio_matrix_t[3][2]">pdfio_matrix_t[3][2]</a></h3>
+<p class="description">Transform matrix</p>
+<p class="code">
+typedef double pdfio_matrix_t[3][2];
+</p>
 <h3 class="typedef"><a id="pdfio_obj_t">pdfio_obj_t</a></h3>
 <p class="description">Numbered object in PDF file</p>
 <p class="code">
@@ -3279,15 +3063,15 @@ typedef struct <a href="#pdfio_rect_s">pdfio_rect_s</a> pdfio_rect_t;
 <p class="code">
 typedef struct _pdfio_stream_s pdfio_stream_t;
 </p>
+<h3 class="typedef"><a id="pdfio_textrendering_t">pdfio_textrendering_t</a></h3>
+<p class="description">Text rendering modes</p>
+<p class="code">
+typedef enum <a href="#pdfio_textrendering_e">pdfio_textrendering_e</a> pdfio_textrendering_t;
+</p>
 <h3 class="typedef"><a id="pdfio_valtype_t">pdfio_valtype_t</a></h3>
 <p class="description">PDF value types</p>
 <p class="code">
 typedef enum <a href="#pdfio_valtype_e">pdfio_valtype_e</a> pdfio_valtype_t;
-</p>
-<h3 class="typedef"><a id="ssize_t">ssize_t</a></h3>
-<p class="description">POSIX type not present on Windows...</p>
-<p class="code">
-typedef __int64 ssize_t;
 </p>
 <h2 class="title"><a id="STRUCTURES">Structures</a></h2>
 <h3 class="struct"><a id="pdfio_rect_s">pdfio_rect_s</a></h3>
@@ -3309,6 +3093,10 @@ typedef __int64 ssize_t;
 <tr><th>y2 </th>
 <td class="description">Upper-right Y coordinate</td></tr>
 </tbody></table>
+<h2 class="title"><a id="VARIABLES">Variables</a></h2>
+<h3 class="variable"><a id="PDFIO_PUBLIC">PDFIO_PUBLIC</a></h3>
+<p class="description">C++ magic...</p>
+<p class="code"><a href="#pdfio_dict_t">pdfio_dict_t</a> *dict const char *name <a href="#pdfio_obj_t">pdfio_obj_t</a> *obj) PDFIO_PUBLIC;</p>
 <h2 class="title"><a id="ENUMERATIONS">Constants</a></h2>
 <h3 class="enumeration"><a id="pdfio_filter_e">pdfio_filter_e</a></h3>
 <p class="description">Compression/decompression filters for streams</p>
@@ -3325,6 +3113,35 @@ typedef __int64 ssize_t;
 <tr><th>PDFIO_FILTER_LZW </th><td class="description">LZWDecode filter (reading only)</td></tr>
 <tr><th>PDFIO_FILTER_NONE </th><td class="description">No filter</td></tr>
 <tr><th>PDFIO_FILTER_RUNLENGTH </th><td class="description">RunLengthDecode filter (reading only)</td></tr>
+</tbody></table>
+<h3 class="enumeration"><a id="pdfio_linecap_e">pdfio_linecap_e</a></h3>
+<p class="description">Line capping modes</p>
+<h4 class="constants">Constants</h4>
+<table class="list"><tbody>
+<tr><th>PDFIO_LINECAP_BUTT </th><td class="description">Butt ends</td></tr>
+<tr><th>PDFIO_LINECAP_ROUND </th><td class="description">Round ends</td></tr>
+<tr><th>PDFIO_LINECAP_SQUARE </th><td class="description">Square ends</td></tr>
+</tbody></table>
+<h3 class="enumeration"><a id="pdfio_linejoin_e">pdfio_linejoin_e</a></h3>
+<p class="description">Line joining modes</p>
+<h4 class="constants">Constants</h4>
+<table class="list"><tbody>
+<tr><th>PDFIO_LINEJOIN_BEVEL </th><td class="description">Bevel joint</td></tr>
+<tr><th>PDFIO_LINEJOIN_MITER </th><td class="description">Miter joint</td></tr>
+<tr><th>PDFIO_LINEJOIN_ROUND </th><td class="description">Round joint</td></tr>
+</tbody></table>
+<h3 class="enumeration"><a id="pdfio_textrendering_e">pdfio_textrendering_e</a></h3>
+<p class="description">Text rendering modes</p>
+<h4 class="constants">Constants</h4>
+<table class="list"><tbody>
+<tr><th>PDFIO_TEXTRENDERING_FILL </th><td class="description">Fill text</td></tr>
+<tr><th>PDFIO_TEXTRENDERING_FILL_AND_STROKE </th><td class="description">Fill then stroke text</td></tr>
+<tr><th>PDFIO_TEXTRENDERING_FILL_AND_STROKE_PATH </th><td class="description">Fill then stroke text and add to path</td></tr>
+<tr><th>PDFIO_TEXTRENDERING_FILL_PATH </th><td class="description">Fill text and add to path</td></tr>
+<tr><th>PDFIO_TEXTRENDERING_INVISIBLE </th><td class="description">Don't fill or stroke (invisible)</td></tr>
+<tr><th>PDFIO_TEXTRENDERING_STROKE </th><td class="description">Stroke text</td></tr>
+<tr><th>PDFIO_TEXTRENDERING_STROKE_PATH </th><td class="description">Stroke text and add to path</td></tr>
+<tr><th>PDFIO_TEXTRENDERING_TEXT_PATH </th><td class="description">Add text to path (invisible)</td></tr>
 </tbody></table>
 <h3 class="enumeration"><a id="pdfio_valtype_e">pdfio_valtype_e</a></h3>
 <p class="description">PDF value types</p>

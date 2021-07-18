@@ -1618,21 +1618,21 @@ pdfioFileCreateICCObjFromFile(
 
 
 //
-// 'pdfioFileCreateImageObjFromData()' - Add an image object to a PDF file from memory.
+// 'pdfioFileCreateImageObjFromData()' - Add image object(s) to a PDF file from memory.
 //
-// This function creates an image object in a PDF file from a data buffer in
-// memory.  The "data" parameter points to the image data as 8-bit values.  The
-// "width" and "height" parameters specify the image dimensions.  The
-// "num_colors" parameter specifies the number of color components as follows:
+// This function creates image object(s) in a PDF file from a data buffer in
+// memory.  The "data" parameter points to the image data as 8-bit color values.
+// The "width" and "height" parameters specify the image dimensions.  The
+// "num_colors" parameter specifies the number of color components (`1` for
+// grayscale, `3` for RGB, and `4` for CMYK) and the "alpha" parameter specifies
+// whether each color tuple is followed by an alpha value.  The "color_data"
+// parameter specifies an optional color space array for the image - if `NULL`,
+// the image is encoded in the corresponding device color space.  The
+// "interpolate" parameter specifies whether to interpolate when scaling the
+// image on the page.
 //
-// - 1 = grayscale
-// - 2 = grayscale + alpha
-// - 3 = RGB
-// - 4 = RGBA
-//
-// The "color_data" parameter specifies an optional color space array for the
-// image.  The "interpolate" parameter specifies whether to interpolate when
-// scaling the image on the page.
+// Note: When creating an image object with alpha, a second image object is
+// created to hold the "soft mask" data for the primary image.
 //
 
 pdfio_obj_t *				// O - Object

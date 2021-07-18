@@ -48,7 +48,7 @@ extern "C" {
 //
 
 #  ifdef _WIN32
-typedef __int64 ssize_t;		// POSIX type not present on Windows...
+typedef __int64 ssize_t;		// POSIX type not present on Windows... @private@
 #  endif // _WIN32
 
 typedef struct _pdfio_array_s pdfio_array_t;

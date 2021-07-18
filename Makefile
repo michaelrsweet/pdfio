@@ -36,7 +36,10 @@ prefix		=	/usr/local
 
 
 # Files
-LIBOBJS		=	\
+PUBHEADERS	=	\
+			pdfio.h \
+			pdfio-content.h
+PUBOBJS		=	\
 			pdfio-array.o \
 			pdfio-common.o \
 			pdfio-content.o \
@@ -47,7 +50,9 @@ LIBOBJS		=	\
 			pdfio-stream.o \
 			pdfio-string.o \
 			pdfio-token.o \
-			pdfio-value.o \
+			pdfio-value.o
+LIBOBJS		=	\
+			$(PUBOBJS) \
 			ttf.o
 OBJS		=	\
 			$(LIBOBJS) \
@@ -80,7 +85,7 @@ clean:
 # Install everything
 install:	$(TARGETS)
 	-mkdir -p $(DESTDIR)$(prefix)/include
-	cp pdfio.h pdfio-content.h $(DESTDIR)$(prefix)/include
+	cp $(PUBHEADERS) $(DESTDIR)$(prefix)/include
 	-mkdir -p $(DESTDIR)$(prefix)/lib
 	cp libpdfio.a $(DESTDIR)$(prefix)/lib
 	$(RANLIB) $(DESTDIR)$(prefix)/lib/libpdfio.a
@@ -145,7 +150,7 @@ DOCFLAGS	=	\
 
 .PHONY: doc
 doc:
-	codedoc $(DOCFLAGS) --title "PDFio Programming Manual v$(VERSION)" pdfio.h $(LIBOBJS:.o=.c) --body doc/pdfio.md --coverimage doc/pdfio-512.png pdfio.xml >doc/pdfio.html
+	codedoc $(DOCFLAGS) --title "PDFio Programming Manual v$(VERSION)" $(PUBHEADERS) $(PUBOBJS:.o=.c) --body doc/pdfio.md --coverimage doc/pdfio-512.png pdfio.xml >doc/pdfio.html
 	codedoc $(DOCFLAGS) --title "pdf read/write library" --man pdfio --section 3 --body doc/pdfio.md pdfio.xml >doc/pdfio.3
 	rm -f pdfio.xml
 
