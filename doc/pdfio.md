@@ -74,7 +74,7 @@ command or as environment variables:
 - `COMMONFLAGS`: options for the C compiler and linker (typically architecture
   and optimization options, default is "-Os -g")
 - `CPPFLAGS`: options for the C preprocessor (default "")
-- `DESTDIR" and "DSTROOT`: specifies a root directory when installing
+- `DESTDIR` and `DSTROOT`: specifies a root directory when installing
   (default is "", specify only one)
 - `DSOFLAGS`: options for the C compiler when linking the shared library
   (default "")
