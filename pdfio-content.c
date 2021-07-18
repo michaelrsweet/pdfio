@@ -1491,8 +1491,7 @@ pdfioFileCreateFontObjFromFile(
     pdfioDictSetName(dict, "Subtype", "Type0");
     pdfioDictSetName(dict, "BaseFont", basefont);
     pdfioDictSetArray(dict, "DescendantFonts", descendants);
-//    pdfioDictSetName(dict, "Encoding", "Identity-H");
-    pdfioDictSetName(dict, "Encoding", "UniCNS-UCS2-H");
+    pdfioDictSetName(dict, "Encoding", "Identity-H");
 
     if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
       return (NULL);
@@ -1619,9 +1618,200 @@ pdfioFileCreateICCObjFromFile(
 
 
 //
-// 'pdfioFileCreateImageObjFromFile()' - Add an image object to a PDF file.
+// 'pdfioFileCreateImageObjFromData()' - Add an image object to a PDF file from memory.
+//
+// This function creates an image object in a PDF file from a data buffer in
+// memory.  The "data" parameter points to the image data as 8-bit values.  The
+// "width" and "height" parameters specify the image dimensions.  The
+// "num_colors" parameter specifies the number of color components as follows:
+//
+// - 1 = grayscale
+// - 2 = grayscale + alpha
+// - 3 = RGB
+// - 4 = RGBA
+//
+// The "color_data" parameter specifies an optional color space array for the
+// image.  The "interpolate" parameter specifies whether to interpolate when
+// scaling the image on the page.
+//
+
+pdfio_obj_t *				// O - Object
+pdfioFileCreateImageObjFromData(
+    pdfio_file_t        *pdf,		// I - PDF file
+    const unsigned char *data,		// I - Pointer to image data
+    size_t              width,		// I - Width of image
+    size_t              height,		// I - Height of image
+    int                 num_colors,	// I - Number of colors
+    pdfio_array_t       *color_data,	// I - Colorspace data or `NULL` for default
+    bool                interpolate)	// I - Interpolate image data?
+{
+  pdfio_dict_t		*dict,		// Image dictionary
+			*decode;	// DecodeParms dictionary
+  pdfio_obj_t		*obj,		// Image object
+			*mask_obj = NULL;
+					// Mask image object, if any
+  pdfio_stream_t	*st;		// Image stream
+  size_t		x, y,		// X and Y position in image
+			linelen;	// Line length
+  const unsigned char	*dataptr;	// Pointer into image data
+  unsigned char		*line = NULL,	// Current line
+			*lineptr;	// Pointer into line
+
+
+  // Range check input...
+  if (!pdf || !data || !width || !height || num_colors < 1 || num_colors > 4)
+    return (NULL);
+
+  // Allocate memory for one line of data...
+  linelen = (num_colors < 3 ? 1 : 3) * width;
+
+  if ((line = malloc(linelen)) == NULL)
+    return (NULL);
+
+  // Generate a mask image, as needed...
+  if (!(num_colors & 1))
+  {
+    // Create the image mask dictionary...
+    if ((dict = pdfioDictCreate(pdf)) == NULL)
+    {
+      free(line);
+      return (NULL);
+    }
+
+    pdfioDictSetName(dict, "Type", "XObject");
+    pdfioDictSetName(dict, "Subtype", "Image");
+    pdfioDictSetNumber(dict, "Width", width);
+    pdfioDictSetNumber(dict, "Height", height);
+    pdfioDictSetNumber(dict, "BitsPerComponent", 8);
+    pdfioDictSetBoolean(dict, "ImageMask", true);
+
+    if ((decode = pdfioDictCreate(pdf)) == NULL)
+    {
+      free(line);
+      return (NULL);
+    }
+
+    pdfioDictSetNumber(decode, "BitsPerComponent", 8);
+    pdfioDictSetNumber(decode, "Colors", num_colors - 1);
+    pdfioDictSetNumber(decode, "Columns", width);
+    pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
+    pdfioDictSetDict(dict, "DecodeParms", decode);
+
+    // Create the mask object and write the mask image...
+    if ((mask_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+    {
+      free(line);
+      return (NULL);
+    }
+
+    if ((st = pdfioObjCreateStream(mask_obj, PDFIO_FILTER_FLATE)) == NULL)
+    {
+      free(line);
+      pdfioObjClose(mask_obj);
+      return (NULL);
+    }
+
+    for (y = height, dataptr = data + num_colors - 1; y > 0; y --)
+    {
+      for (x = width, lineptr = line; x > 0; x --, dataptr += num_colors)
+        *lineptr++ = *dataptr;
+
+      pdfioStreamWrite(st, line, width);
+    }
+
+    pdfioStreamClose(st);
+  }
+
+  // Now create the image...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+  {
+    free(line);
+    return (NULL);
+  }
+
+  pdfioDictSetName(dict, "Type", "XObject");
+  pdfioDictSetName(dict, "Subtype", "Image");
+  pdfioDictSetBoolean(dict, "Interpolate", interpolate);
+  pdfioDictSetNumber(dict, "Width", width);
+  pdfioDictSetNumber(dict, "Height", height);
+  pdfioDictSetNumber(dict, "BitsPerComponent", 8);
+
+  if (color_data)
+    pdfioDictSetArray(dict, "ColorSpace", color_data);
+  else
+    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromMatrix(pdf, num_colors < 3 ? 1 : 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
+
+  if (mask_obj)
+    pdfioDictSetObj(dict, "SMask", mask_obj);
+
+  if ((decode = pdfioDictCreate(pdf)) == NULL)
+  {
+    free(line);
+    return (NULL);
+  }
+
+  pdfioDictSetNumber(decode, "BitsPerComponent", 8);
+  pdfioDictSetNumber(decode, "Colors", num_colors < 3 ? 1 : 3);
+  pdfioDictSetNumber(decode, "Columns", width);
+  pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
+  pdfioDictSetDict(dict, "DecodeParms", decode);
+
+  if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+  {
+    free(line);
+    return (NULL);
+  }
+
+  if ((st = pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE)) == NULL)
+  {
+    free(line);
+    pdfioObjClose(obj);
+    return (NULL);
+  }
+
+  for (y = height, dataptr = data; y > 0; y --)
+  {
+    switch (num_colors)
+    {
+      case 1 :
+	  pdfioStreamWrite(st, dataptr, linelen);
+	  dataptr += linelen;
+	  break;
+      case 2 :
+	  for (x = width, lineptr = line; x > 0; x --, dataptr += num_colors)
+	    *lineptr++ = *dataptr;
+	  pdfioStreamWrite(st, line, linelen);
+	  break;
+      case 3 :
+	  pdfioStreamWrite(st, dataptr, linelen);
+	  dataptr += linelen;
+	  break;
+      case 4 :
+	  for (x = width, lineptr = line; x > 0; x --, dataptr += num_colors)
+	  {
+	    *lineptr++ = dataptr[0];
+	    *lineptr++ = dataptr[1];
+	    *lineptr++ = dataptr[2];
+	  }
+	  pdfioStreamWrite(st, line, linelen);
+	  break;
+    }
+  }
+
+  free(line);
+  pdfioStreamClose(st);
+
+  return (obj);
+}
+
+
+//
+// 'pdfioFileCreateImageObjFromFile()' - Add an image object to a PDF file from a file.
 //
 // This function creates an image object in a PDF file from a JPEG or PNG file.
+// The "filename" parameter specifies the name of the JPEG or PNG file, while
+// the "interpolate" parameter specifies whether to interpolate when scaling the
+// image on the page.
 //
 // > Note: Currently PNG support is limited to grayscale, RGB, or indexed files
 // > without interlacing or alpha.  Transparency (masking) based on color/index
