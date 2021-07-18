@@ -33,6 +33,7 @@ static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
 static ssize_t	token_consume_cb(const char **s, size_t bytes);
 static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
 static int	verify_image(pdfio_file_t *pdf, size_t number);
+static int	write_alpha_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_color_patch(pdfio_stream_t *st, bool device);
 static int	write_color_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_font_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font, bool unicode);
@@ -417,15 +418,19 @@ do_unit_tests(void)
   if (write_images_test(outpdf, 7, helvetica))
     return (1);
 
-  // Test TrueType fonts...
-  if (write_font_test(outpdf, 8, helvetica, false))
+  // Write a page width alpha (soft masks)...
+  if (write_alpha_test(outpdf, 8, helvetica))
     return (1);
 
-  if (write_font_test(outpdf, 9, helvetica, true))
+  // Test TrueType fonts...
+  if (write_font_test(outpdf, 9, helvetica, false))
+    return (1);
+
+  if (write_font_test(outpdf, 10, helvetica, true))
     return (1);
 
   // Print this text file...
-  if (write_text_test(outpdf, 10, helvetica, "README.md"))
+  if (write_text_test(outpdf, 11, helvetica, "README.md"))
     return (1);
 
   // Close the test PDF file...
@@ -720,6 +725,182 @@ verify_image(pdfio_file_t *pdf,		// I - PDF file
   pdfioStreamClose(st);
 
   return (0);
+}
+
+
+//
+// 'write_alpha_test()' - Write a series of test images with alpha channels.
+//
+
+static int				// O - 1 on failure, 0 on success
+write_alpha_test(
+    pdfio_file_t *pdf,			// I - PDF file
+    int          number,		// I - Page number
+    pdfio_obj_t  *font)			// I - Text font
+{
+  pdfio_dict_t	*dict;			// Page dictionary
+  pdfio_stream_t *st;			// Page stream
+  pdfio_obj_t	*images[6];		// Images using PNG predictors
+  char		iname[32];		// Image name
+  int		i,			// Image number
+		x, y;			// Coordinates in image
+  unsigned char	buffer[1280 * 256],	// Buffer for image
+		*bufptr;		// Pointer into buffer
+
+
+  // Create the images...
+  for (i = 0; i < 6; i ++)
+  {
+    size_t	num_colors = 0;		// Number of colors
+
+    // Generate test image data...
+    switch (i)
+    {
+      case 0 : // Grayscale
+      case 3 : // Grayscale + alpha
+          num_colors = 1;
+	  for (y = 0, bufptr = buffer; y < 256; y ++)
+	  {
+	    for (x = 0; x < 256; x ++)
+	    {
+	      unsigned char r = (unsigned char)y;
+	      unsigned char g = (unsigned char)(y + x);
+	      unsigned char b = (unsigned char)(y - x);
+
+              *bufptr++ = (unsigned char)((r * 30 + g * 59 + b * 11) / 100);
+
+	      if (i > 2)
+	      {
+	        // Add alpha channel
+	        *bufptr++ = (unsigned char)((x + y) / 2);
+	      }
+	    }
+	  }
+          break;
+
+      case 1 : // RGB
+      case 4 : // RGB + alpha
+          num_colors = 3;
+	  for (y = 0, bufptr = buffer; y < 256; y ++)
+	  {
+	    for (x = 0; x < 256; x ++)
+	    {
+	      *bufptr++ = (unsigned char)y;
+	      *bufptr++ = (unsigned char)(y + x);
+	      *bufptr++ = (unsigned char)(y - x);
+
+	      if (i > 2)
+	      {
+	        // Add alpha channel
+	        *bufptr++ = (unsigned char)((x + y) / 2);
+	      }
+	    }
+	  }
+          break;
+      case 2 : // CMYK
+      case 5 : // CMYK + alpha
+          num_colors = 4;
+	  for (y = 0, bufptr = buffer; y < 256; y ++)
+	  {
+	    for (x = 0; x < 256; x ++)
+	    {
+	      unsigned char cc = (unsigned char)y;
+	      unsigned char mm = (unsigned char)(y + x);
+	      unsigned char yy = (unsigned char)(y - x);
+	      unsigned char kk = cc < mm ? cc < yy ? cc : yy : mm < yy ? mm : yy;
+
+              *bufptr++ = (unsigned char)(cc - kk);
+              *bufptr++ = (unsigned char)(mm - kk);
+              *bufptr++ = (unsigned char)(yy - kk);
+              *bufptr++ = (unsigned char)(kk);
+
+	      if (i > 2)
+	      {
+	        // Add alpha channel
+	        *bufptr++ = (unsigned char)((x + y) / 2);
+	      }
+	    }
+	  }
+          break;
+    }
+
+    // Write the image...
+    printf("pdfioFileCreateImageObjFromData(num_colors=%u, alpha=%s): ", (unsigned)num_colors, i > 2 ? "true" : "false");
+    if ((images[i] = pdfioFileCreateImageObjFromData(pdf, buffer, 256, 256, num_colors, NULL, i > 2, false)) != NULL)
+    {
+      puts("PASS");
+    }
+    else
+    {
+      puts("FAIL");
+      return (1);
+    }
+  }
+
+  // Create the page dictionary, object, and stream...
+  fputs("pdfioDictCreate: ", stdout);
+  if ((dict = pdfioDictCreate(pdf)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  for (i = 0; i < 6; i ++)
+  {
+    printf("pdfioPageDictAddImage(%d): ", i + 1);
+    snprintf(iname, sizeof(iname), "IM%d", i + 1);
+    if (pdfioPageDictAddImage(dict, pdfioStringCreate(pdf, iname), images[i]))
+      puts("PASS");
+    else
+      return (1);
+  }
+
+  fputs("pdfioPageDictAddFont(F1): ", stdout);
+  if (pdfioPageDictAddFont(dict, "F1", font))
+    puts("PASS");
+  else
+    return (1);
+
+  printf("pdfioFileCreatePage(%d): ", number);
+
+  if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  if (write_header_footer(st, "Image Writing Test", number))
+    goto error;
+
+  // Draw images
+  for (i = 0; i < 6; i ++)
+  {
+    static const char *labels[] = {
+      "DeviceGray",
+      "DeviceRGB",
+      "DeviceCMYK",
+      "DeviceGray + Alpha",
+      "DeviceRGB + Alpha",
+      "DeviceCMYK + Alpha"
+    };
+
+    snprintf(iname, sizeof(iname), "IM%d", i + 1);
+
+    if (draw_image(st, iname, 36 + 180 * (i % 3), 306 - 216 * (i / 3), 144, 144, labels[i]))
+      goto error;
+  }
+
+  // Wrap up...
+  fputs("pdfioStreamClose: ", stdout);
+  if (pdfioStreamClose(st))
+    puts("PASS");
+  else
+    return (1);
+
+  return (0);
+
+  error:
+
+  pdfioStreamClose(st);
+  return (1);
 }
 
 
@@ -1594,9 +1775,10 @@ write_image_object(
 //
 
 static int				// O - 1 on failure, 0 on success
-write_images_test(pdfio_file_t *pdf,		// I - PDF file
-             int          number,	// I - Page number
-             pdfio_obj_t  *font)	// I - Text font
+write_images_test(
+    pdfio_file_t *pdf,			// I - PDF file
+    int          number,		// I - Page number
+    pdfio_obj_t  *font)			// I - Text font
 {
   pdfio_dict_t	*dict;			// Page dictionary
   pdfio_stream_t *st;			// Page stream

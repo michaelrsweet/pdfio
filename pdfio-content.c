@@ -1641,8 +1641,9 @@ pdfioFileCreateImageObjFromData(
     const unsigned char *data,		// I - Pointer to image data
     size_t              width,		// I - Width of image
     size_t              height,		// I - Height of image
-    int                 num_colors,	// I - Number of colors
+    size_t              num_colors,	// I - Number of colors
     pdfio_array_t       *color_data,	// I - Colorspace data or `NULL` for default
+    bool                alpha,		// I - `true` if data contains an alpha channel
     bool                interpolate)	// I - Interpolate image data?
 {
   pdfio_dict_t		*dict,		// Image dictionary
@@ -1652,24 +1653,34 @@ pdfioFileCreateImageObjFromData(
 					// Mask image object, if any
   pdfio_stream_t	*st;		// Image stream
   size_t		x, y,		// X and Y position in image
+			bpp,		// Bytes per pixel
 			linelen;	// Line length
   const unsigned char	*dataptr;	// Pointer into image data
   unsigned char		*line = NULL,	// Current line
 			*lineptr;	// Pointer into line
+  static const char	*defcolors[] =	// Default ColorSpace values
+  {
+    NULL,
+    "DeviceGray",
+    NULL,
+    "DeviceRGB",
+    "DeviceCMYK"
+  };
 
 
   // Range check input...
-  if (!pdf || !data || !width || !height || num_colors < 1 || num_colors > 4)
+  if (!pdf || !data || !width || !height || num_colors < 1 || num_colors == 2 || num_colors > 4)
     return (NULL);
 
   // Allocate memory for one line of data...
-  linelen = (num_colors < 3 ? 1 : 3) * width;
+  bpp     = alpha ? num_colors + 1 : num_colors;
+  linelen = num_colors * width;
 
   if ((line = malloc(linelen)) == NULL)
     return (NULL);
 
   // Generate a mask image, as needed...
-  if (!(num_colors & 1))
+  if (alpha)
   {
     // Create the image mask dictionary...
     if ((dict = pdfioDictCreate(pdf)) == NULL)
@@ -1711,9 +1722,9 @@ pdfioFileCreateImageObjFromData(
       return (NULL);
     }
 
-    for (y = height, dataptr = data + num_colors - 1; y > 0; y --)
+    for (y = height, dataptr = data + num_colors; y > 0; y --)
     {
-      for (x = width, lineptr = line; x > 0; x --, dataptr += num_colors)
+      for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
         *lineptr++ = *dataptr;
 
       pdfioStreamWrite(st, line, width);
@@ -1739,7 +1750,7 @@ pdfioFileCreateImageObjFromData(
   if (color_data)
     pdfioDictSetArray(dict, "ColorSpace", color_data);
   else
-    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromMatrix(pdf, num_colors < 3 ? 1 : 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
+    pdfioDictSetName(dict, "ColorSpace", defcolors[num_colors]);
 
   if (mask_obj)
     pdfioDictSetObj(dict, "SMask", mask_obj);
@@ -1751,7 +1762,7 @@ pdfioFileCreateImageObjFromData(
   }
 
   pdfioDictSetNumber(decode, "BitsPerComponent", 8);
-  pdfioDictSetNumber(decode, "Colors", num_colors < 3 ? 1 : 3);
+  pdfioDictSetNumber(decode, "Colors", num_colors);
   pdfioDictSetNumber(decode, "Columns", width);
   pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
   pdfioDictSetDict(dict, "DecodeParms", decode);
@@ -1771,30 +1782,39 @@ pdfioFileCreateImageObjFromData(
 
   for (y = height, dataptr = data; y > 0; y --)
   {
-    switch (num_colors)
+    if (alpha)
     {
-      case 1 :
-	  pdfioStreamWrite(st, dataptr, linelen);
-	  dataptr += linelen;
-	  break;
-      case 2 :
-	  for (x = width, lineptr = line; x > 0; x --, dataptr += num_colors)
-	    *lineptr++ = *dataptr;
-	  pdfioStreamWrite(st, line, linelen);
-	  break;
-      case 3 :
-	  pdfioStreamWrite(st, dataptr, linelen);
-	  dataptr += linelen;
-	  break;
-      case 4 :
-	  for (x = width, lineptr = line; x > 0; x --, dataptr += num_colors)
-	  {
-	    *lineptr++ = dataptr[0];
-	    *lineptr++ = dataptr[1];
-	    *lineptr++ = dataptr[2];
-	  }
-	  pdfioStreamWrite(st, line, linelen);
-	  break;
+      switch (num_colors)
+      {
+	case 1 :
+	    for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
+	      *lineptr++ = *dataptr;
+	    break;
+	case 3 :
+	    for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
+	    {
+	      *lineptr++ = dataptr[0];
+	      *lineptr++ = dataptr[1];
+	      *lineptr++ = dataptr[2];
+	    }
+	    break;
+	case 4 :
+	    for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
+	    {
+	      *lineptr++ = dataptr[0];
+	      *lineptr++ = dataptr[1];
+	      *lineptr++ = dataptr[2];
+	      *lineptr++ = dataptr[3];
+	    }
+	    break;
+      }
+
+      pdfioStreamWrite(st, line, linelen);
+    }
+    else
+    {
+      pdfioStreamWrite(st, dataptr, linelen);
+      dataptr += linelen;
     }
   }
 

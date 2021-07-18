@@ -147,7 +147,7 @@ extern bool		pdfioContentTextShowJustified(pdfio_stream_t *st, bool unicode, siz
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromBase(pdfio_file_t *pdf, const char *name) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromFile(pdfio_file_t *pdf, const char *filename, bool unicode) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateICCObjFromFile(pdfio_file_t *pdf, const char *filename, size_t num_colors) PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreateImageObjFromData(pdfio_file_t *pdf, const unsigned char *data, size_t width, size_t height, int num_colors, pdfio_array_t *color_data, bool interpolate) PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateImageObjFromData(pdfio_file_t *pdf, const unsigned char *data, size_t width, size_t height, size_t num_colors, pdfio_array_t *color_data, bool alpha, bool interpolate) PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateImageObjFromFile(pdfio_file_t *pdf, const char *filename, bool interpolate) PDFIO_PUBLIC;
 
 // Image object helpers...
