@@ -521,6 +521,36 @@ Note: Not all fonts support Unicode.
 .PP
 Image Object Functions
 .PP
+PDF supports images with many different color spaces and bit depths with optional transparency. PDFio provides two helper functions for creating image objects that can be referenced in page streams. The first function is pdfioFileCreateImageObjFromData which creates an image object from data in memory, for example:
+.nf
+
+    pdfio_file_t *pdf = pdfioFileCreate(...);
+    unsigned char data[1024 * 1024 * 4]; // 1024x1024 RGBA image data
+    pdfio_obj_t *img = pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024, /*height*/1024, /*num_colors*/3, /*color_data*/NULL, /*alpha*/true, /*interpolate*/false);
+.fi
+.PP
+will create an object for a 1024x1024 RGBA image in memory, using the default color space for 3 colors ("DeviceRGB"). We can use one of the color space functions to use a specific color space for this image, for example:
+.nf
+
+    pdfio_file_t *pdf = pdfioFileCreate(...);
+    
+    // Create an AdobeRGB color array
+    pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint);
+    
+    // Create a 1024x1024 RGBA image using AdobeRGB
+    unsigned char data[1024 * 1024 * 4]; // 1024x1024 RGBA image data
+    pdfio_obj_t *img = pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024, /*height*/1024, /*num_colors*/3, /*color_data*/adobe_rgb, /*alpha*/true, /*interpolate*/false);
+.fi
+.PP
+The "interpolate" argument specifies whether the colors in the image should be smoothed/interpolated when scaling. This is most useful for photographs but should be false for screenshot and barcode images.
+.PP
+If you have a JPEG or PNG file, use the pdfioFileCreateImageObjFromFile function to copy the image into a PDF image object, for example:
+.nf
+
+    pdfio_file_t *pdf = pdfioFileCreate(...);
+    pdfio_obj_t *img = pdfioFileCreateImageObjFromFile(pdf, "myphoto.jpg", /*interpolate*/true);
+.fi
+.PP
 Page Dictionary Functions
 .PP
 Page Stream Functions

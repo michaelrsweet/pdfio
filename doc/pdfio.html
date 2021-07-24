@@ -762,6 +762,26 @@ pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, <span class="string">&q
 <p>will embed the NotoSansJP Regular OpenType font with full support for Unicode.</p>
 <p>Note: Not all fonts support Unicode.</p>
 <h4 id="image-object-functions">Image Object Functions</h4>
+<p>PDF supports images with many different color spaces and bit depths with optional transparency. PDFio provides two helper functions for creating image objects that can be referenced in page streams. The first function is <a href="#pdfioFileCreateImageObjFromData"><code>pdfioFileCreateImageObjFromData</code></a> which creates an image object from data in memory, for example:</p>
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
+<span class="reserved">unsigned</span> <span class="reserved">char</span> data[<span class="number">1024</span> * <span class="number">1024</span> * <span class="number">4</span>]; <span class="comment">// 1024x1024 RGBA image data</span>
+pdfio_obj_t *img = pdfioFileCreateImageObjFromData(pdf, data, <span class="comment">/*width*/</span><span class="number">1024</span>, <span class="comment">/*height*/</span><span class="number">1024</span>, <span class="comment">/*num_colors*/</span><span class="number">3</span>, <span class="comment">/*color_data*/</span>NULL, <span class="comment">/*alpha*/</span><span class="reserved">true</span>, <span class="comment">/*interpolate*/</span><span class="reserved">false</span>);
+</code></pre>
+<p>will create an object for a 1024x1024 RGBA image in memory, using the default color space for 3 colors (&quot;DeviceRGB&quot;). We can use one of the <a href="#color-space-functions">color space functions</a> to use a specific color space for this image, for example:</p>
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
+
+<span class="comment">// Create an AdobeRGB color array</span>
+pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromMatrix(pdf, <span class="number">3</span>, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint);
+
+<span class="comment">// Create a 1024x1024 RGBA image using AdobeRGB</span>
+<span class="reserved">unsigned</span> <span class="reserved">char</span> data[<span class="number">1024</span> * <span class="number">1024</span> * <span class="number">4</span>]; <span class="comment">// 1024x1024 RGBA image data</span>
+pdfio_obj_t *img = pdfioFileCreateImageObjFromData(pdf, data, <span class="comment">/*width*/</span><span class="number">1024</span>, <span class="comment">/*height*/</span><span class="number">1024</span>, <span class="comment">/*num_colors*/</span><span class="number">3</span>, <span class="comment">/*color_data*/</span>adobe_rgb, <span class="comment">/*alpha*/</span><span class="reserved">true</span>, <span class="comment">/*interpolate*/</span><span class="reserved">false</span>);
+</code></pre>
+<p>The &quot;interpolate&quot; argument specifies whether the colors in the image should be smoothed/interpolated when scaling. This is most useful for photographs but should be <code>false</code> for screenshot and barcode images.</p>
+<p>If you have a JPEG or PNG file, use the <a href="#pdfioFileCreateImageObjFromFile"><code>pdfioFileCreateImageObjFromFile</code></a> function to copy the image into a PDF image object, for example:</p>
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
+pdfio_obj_t *img = pdfioFileCreateImageObjFromFile(pdf, <span class="string">&quot;myphoto.jpg&quot;</span>, <span class="comment">/*interpolate*/</span><span class="reserved">true</span>);
+</code></pre>
 <h4 id="page-dictionary-functions">Page Dictionary Functions</h4>
 <h4 id="page-stream-functions">Page Stream Functions</h4>
 <h2 class="title"><a id="FUNCTIONS">Functions</a></h2>
