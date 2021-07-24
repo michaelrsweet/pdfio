@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<title>PDFio Programming Manual v0.2</title>
+<title>PDFio Programming Manual v1.0b1</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.7">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
 <meta name="copyright" content="Copyright © 2021 by Michael R Sweet">
-<meta name="version" content="0.2">
+<meta name="version" content="1.0b1">
 <style type="text/css"><!--
 body {
   background: white;
@@ -245,7 +245,7 @@ span.string {
 <body>
 <div class="header">
 <p><img class="title" src="pdfio-512.png"></p>
-<h1 class="title">PDFio Programming Manual v0.2</h1>
+<h1 class="title">PDFio Programming Manual v1.0b1</h1>
 <p>Michael R Sweet</p>
 <p>Copyright © 2021 by Michael R Sweet</p>
 </div>
@@ -451,9 +451,6 @@ span.string {
 <li><a href="#STRUCTURES">Structures</a><ul class="subcontents">
 <li><a href="#pdfio_rect_s">pdfio_rect_s</a></li>
 </ul></li>
-<li><a href="#VARIABLES">Variables</a><ul class="subcontents">
-<li><a href="#PDFIO_PUBLIC">PDFIO_PUBLIC</a></li>
-</ul></li>
 <li><a href="#ENUMERATIONS">Enumerations</a><ul class="subcontents">
 <li><a href="#pdfio_filter_e">pdfio_filter_e</a></li>
 <li><a href="#pdfio_linecap_e">pdfio_linecap_e</a></li>
@@ -562,7 +559,7 @@ LIBS    +=      `pkg-config --libs pdfio`
 <p>PDFio provides a primary header file that is always used:</p>
 <pre><code class="language-c"><span class="directive">#include &lt;pdfio.h&gt;</span>
 </code></pre>
-<p>PDFio also provides helper functions for producing PDF content that are defined in a separate header file:</p>
+<p>PDFio also provides <a href="#pdf-content-helper-functions">PDF content helper functions</a> for producing PDF content that are defined in a separate header file:</p>
 <pre><code class="language-c"><span class="directive">#include &lt;pdfio-content.h&gt;</span>
 </code></pre>
 <h2 class="title" id="api-overview">API Overview</h2>
@@ -580,7 +577,7 @@ LIBS    +=      `pkg-config --libs pdfio`
 </li>
 </ul>
 <h3 class="title" id="reading-pdf-files">Reading PDF Files</h3>
-<p>You open an existing PDF file using the <code>pdfioFileOpen</code> function:</p>
+<p>You open an existing PDF file using the <a href="#pdfioFileOpen"><code>pdfioFileOpen</code></a> function:</p>
 <pre><code class="language-c">pdfio_file_t *pdf = pdfioFileOpen(<span class="string">&quot;myinputfile.pdf&quot;</span>, error_cb, error_data);
 </code></pre>
 <p>where the three arguments to the function are the filename (&quot;myinputfile.pdf&quot;), an optional error callback function (<code>error_cb</code>), and an optional pointer value for the error callback function (<code>error_data</code>). The error callback is called for both errors and warnings and accepts the <code>pdfio_file_t</code> pointer, a message string, and the callback pointer value, for example:</p>
@@ -596,7 +593,7 @@ error_cb(pdfio_file_t *pdf, <span class="reserved">const</span> <span class="res
 }
 </code></pre>
 <p>The default error callback (<code>NULL</code>) does the equivalent of the above.</p>
-<p>Each PDF file contains one or more pages. The <code>pdfioFileGetNumPages</code> function returns the number of pages in the file while the <code>pdfioFileGetPage</code> function gets the specified page in the PDF file:</p>
+<p>Each PDF file contains one or more pages. The <a href="#pdfioFileGetNumPages"><code>pdfioFileGetNumPages</code></a> function returns the number of pages in the file while the <a href="#pdfioFileGetPage"><code>pdfioFileGetPage</code></a> function gets the specified page in the PDF file:</p>
 <pre><code class="language-c">pdfio_file_t *pdf;   <span class="comment">// PDF file</span>
 size_t       i;      <span class="comment">// Looping var</span>
 size_t       count;  <span class="comment">// Number of pages</span>
@@ -609,37 +606,164 @@ pdfio_obj_t  *page;  <span class="comment">// Current page</span>
   <span class="comment">// do something with page</span>
 }
 </code></pre>
-<p>Each page is represented by a &quot;page tree&quot; object (what <code>pdfioFileGetPage</code> returns) that specifies information about the page and one or more &quot;content&quot; objects that contain the images, fonts, text, and graphics that appear on the page.</p>
-<p>The <code>pdfioFileClose</code> function closes a PDF file and frees all memory that was used for it:</p>
+<p>Each page is represented by a &quot;page tree&quot; object (what <a href="#pdfioFileGetPage"><code>pdfioFileGetPage</code></a> returns) that specifies information about the page and one or more &quot;content&quot; objects that contain the images, fonts, text, and graphics that appear on the page.</p>
+<p>The <a href="#pdfioFileClose"><code>pdfioFileClose</code></a> function closes a PDF file and frees all memory that was used for it:</p>
 <pre><code class="language-c">pdfioFileClose(pdf);
 </code></pre>
 <h3 class="title" id="writing-pdf-files">Writing PDF Files</h3>
-<p>You create a new PDF file using the <code>pdfioFileCreate</code> function:</p>
+<p>You create a new PDF file using the <a href="#pdfioFileCreate"><code>pdfioFileCreate</code></a> function:</p>
 <pre><code class="language-c">pdfio_rect_t media_box = { <span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">612.0</span>, <span class="number">792.0</span> };  <span class="comment">// US Letter</span>
-pdfio_rect_t crop_box = { <span class="number">36.0</span>, <span class="number">36.0</span>, <span class="number">576.0</span>, <span class="number">756.0</span> }; <span class="comment">// 0.5&quot; margins</span>
+pdfio_rect_t crop_box = { <span class="number">36.0</span>, <span class="number">36.0</span>, <span class="number">576.0</span>, <span class="number">756.0</span> }; <span class="comment">// w/0.5&quot; margins</span>
 
 pdfio_file_t *pdf = pdfioFileCreate(<span class="string">&quot;myoutputfile.pdf&quot;</span>, <span class="string">&quot;2.0&quot;</span>, &amp;media_box, &amp;crop_box, error_cb, error_data);
 </code></pre>
-<p>where the six arguments to the function are the filename (&quot;myoutputfile.pdf&quot;), PDF version (&quot;2.0&quot;), media box (<code>media_box</code>), crop box (<code>crop_box</code>), an optional error callback function (<code>error_cb</code>), and an optional pointer value for the error callback function (<code>error_data</code>).</p>
-<p>Once the file is created, use the <code>pdfioFileCreateObj</code>, <code>pdfioFileCreatePage</code>, and <code>pdfioPageCopy</code> functions to create objects and pages in the file.</p>
-<p>Finally, the <code>pdfioFileClose</code> function writes the PDF cross-reference and &quot;trailer&quot; information, closes the file, and frees all memory that was used for it.</p>
+<p>where the six arguments to the function are the filename (&quot;myoutputfile.pdf&quot;), PDF version (&quot;2.0&quot;), media box (<code>media_box</code>), crop box (<code>crop_box</code>), an optional error callback function (<code>error_cb</code>), and an optional pointer value for the error callback function (<code>error_data</code>). The units for the media and crop boxes are points (1/72nd of an inch).</p>
+<p>Once the file is created, use the <a href="#pdfioFileCreateObj"><code>pdfioFileCreateObj</code></a>, <a href="#pdfioFileCreatePage"><code>pdfioFileCreatePage</code></a>, and <a href="#pdfioPageCopy"><code>pdfioPageCopy</code></a> functions to create objects and pages in the file.</p>
+<p>Finally, the <a href="#pdfioFileClose"><code>pdfioFileClose</code></a> function writes the PDF cross-reference and &quot;trailer&quot; information, closes the file, and frees all memory that was used for it.</p>
 <h3 class="title" id="pdf-objects">PDF Objects</h3>
-<p>PDF objects are identified using two numbers - the object number (1 to N) and the object generation (0 to 65535) that specifies a particular version of an object. An object's numbers are returned by the <code>pdfioObjGetNumber</code> and <code>pdfioObjGetGeneration</code> functions. You can find a numbered object using the <code>pdfioFileFindObj</code> function.</p>
+<p>PDF objects are identified using two numbers - the object number (1 to N) and the object generation (0 to 65535) that specifies a particular version of an object. An object's numbers are returned by the <a href="#pdfioObjGetNumber"><code>pdfioObjGetNumber</code></a> and <a href="#pdfioObjGetGeneration"><code>pdfioObjGetGeneration</code></a> functions. You can find a numbered object using the <a href="#pdfioFileFindObj"><code>pdfioFileFindObj</code></a> function.</p>
 <p>Objects contain values (typically dictionaries) and usually an associated data stream containing images, fonts, ICC profiles, and page content. PDFio provides several accessor functions to get the value(s) associated with an object:</p>
 <ul>
-<li><p><code>pdfioObjGetArray</code> returns an object's array value, if any</p>
+<li><p><a href="#pdfioObjGetArray"><code>pdfioObjGetArray</code></a> returns an object's array value, if any</p>
 </li>
-<li><p><code>pdfioObjGetDict</code> returns an object's dictionary value, if any</p>
+<li><p><a href="#pdfioObjGetDict"><code>pdfioObjGetDict</code></a> returns an object's dictionary value, if any</p>
 </li>
-<li><p><code>pdfioObjGetLength</code> returns the length of the data stream, if any</p>
+<li><p><a href="#pdfioObjGetLength"><code>pdfioObjGetLength</code></a> returns the length of the data stream, if any</p>
 </li>
-<li><p><code>pdfioObjGetSubtype</code> returns the sub-type name of the object, for example &quot;Image&quot; for an image object.</p>
+<li><p><a href="#pdfioObjGetSubtype"><code>pdfioObjGetSubtype</code></a> returns the sub-type name of the object, for example &quot;Image&quot; for an image object.</p>
 </li>
-<li><p><code>pdfioObjGetType</code> returns the type name of the object, for example &quot;XObject&quot; for an image object.</p>
+<li><p><a href="#pdfioObjGetType"><code>pdfioObjGetType</code></a> returns the type name of the object, for example &quot;XObject&quot; for an image object.</p>
 </li>
 </ul>
 <h3 class="title" id="pdf-streams">PDF Streams</h3>
+<p>Some PDF objects have an associated data stream, such as for pages, images, ICC color profiles, and fonts. You access the stream for an existing object using the <a href="#pdfioObjOpenStream"><code>pdfioObjOpenStream</code></a> function:</p>
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileOpen(...);
+pdfio_obj_t *obj = pdfioFileFindObj(pdf, number);
+pdfio_stream_t *st = pdfioObjOpenStream(obj, <span class="reserved">true</span>);
+</code></pre>
+<p>The first argument is the object pointer. The second argument is a boolean value that specifies whether you want to decode (typically decompress) the stream data or return it as-is.</p>
+<p>Once you have the stream open, you can use one of several functions to read from it:</p>
+<ul>
+<li><p><a href="#pdfioStreamConsume"><code>pdfioStreamConsume</code></a> reads and discards a number of bytes in the stream</p>
+</li>
+<li><p><a href="#pdfioStreamGetToken"><code>pdfioStreamGetToken</code></a> reads a PDF token from the stream</p>
+</li>
+<li><p><a href="#pdfioStreamPeek"><code>pdfioStreamPeek</code></a> peeks at the next stream data without advancing or &quot;consuming&quot; it</p>
+</li>
+<li><p><a href="#pdfioStreamRead"><code>pdfioStreamRead</code></a> reads a buffer of data</p>
+</li>
+</ul>
+<p>When you are done reading from the stream, call the <a href="#pdfioStreamClose"><code>pdfioStreamClose</code></a> function:</p>
+<pre><code class="language-c">pdfioStreamClose(st);
+</code></pre>
+<p>To create a stream for a new object, call the <a href="#pdfioObjCreateStream"><code>pdfioObjCreateStream</code></a> function:</p>
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
+pdfio_obj_t *pdfioFileCreateObj(pdf, ...);
+pdfio_stream_t *pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE);
+</code></pre>
+<p>The first argument is the newly created object. The second argument is either <code>PDFIO_FILTER_NONE</code> to specify that any encoding is done by your program or <code>PDFIO_FILTER_FLATE</code> to specify that PDFio should Flate compress the stream.</p>
+<p>Once you have created the stream, use any of the following functions to write to the stream:</p>
+<ul>
+<li><p><a href="#pdfioStreamPrintf"><code>pdfioStreamPrintf</code></a> writes a formatted string to the stream</p>
+</li>
+<li><p><a href="#pdfioStreamPutChar"><code>pdfioStreamPutChar</code></a> writes a single character to the stream</p>
+</li>
+<li><p><a href="#pdfioStreamPuts"><code>pdfioStreamPuts</code></a> writes a C string to the stream</p>
+</li>
+<li><p><a href="#pdfioStreamWrite"><code>pdfioStreamWrite</code></a> writes a buffer of data to the stream</p>
+</li>
+</ul>
+<p>The <a href="#pdf-content-helper-functions">PDF content helper functions</a> provide additional functions for writing specific PDF page stream commands.</p>
+<p>When you are done writing the stream, call <a href="#pdfioStreamCLose"><code>pdfioStreamCLose</code></a> to close both the stream and the object.</p>
 <h3 class="title" id="pdf-content-helper-functions">PDF Content Helper Functions</h3>
+<p>PDFio includes many helper functions for embedding or writing specific kinds of content to a PDF file. These functions can be roughly grouped into ??? categories:</p>
+<ul>
+<li><p><a href="#color-space-functions">Color Space Functions</a></p>
+</li>
+<li><p><a href="#font-object-functions">Font Object Functions</a></p>
+</li>
+<li><p><a href="#image-object-functions">Image Object Functions</a></p>
+</li>
+<li><p><a href="#page-stream-functions">Page Stream Functions</a></p>
+</li>
+<li><p><a href="#page-dictionary-functions">Page Dictionary Functions</a></p>
+</li>
+</ul>
+<h4 id="color-space-functions">Color Space Functions</h4>
+<p>PDF color spaces are specified using well-known names like &quot;DeviceCMYK&quot;, &quot;DeviceGray&quot;, and &quot;DeviceRGB&quot; or using arrays that define so-called calibrated color spaces. PDFio provides several functions for embedding ICC profiles and creating color space arrays:</p>
+<ul>
+<li><p><a href="#pdfioArrayCreateColorFromICCObj"><code>pdfioArrayCreateColorFromICCObj</code></a> creates a color array for an ICC color profile object</p>
+</li>
+<li><p><a href="#pdfioArrayCreateColorFromMatrix"><code>pdfioArrayCreateColorFromMatrix</code></a> creates a color array using a CIE XYZ color transform matrix, a gamma value, and a CIE XYZ white point</p>
+</li>
+<li><p><a href="#pdfioArrayCreateColorFromPalette"><code>pdfioArrayCreateColorFromPalette</code></a> creates an indexed color array from an array of sRGB values</p>
+</li>
+<li><p><a href="#pdfioArrayCreateColorFromPrimaries"><code>pdfioArrayCreateColorFromPrimaries</code></a> creates a color array using CIE XYZ primaries and a gamma value</p>
+</li>
+</ul>
+<p>You can embed an ICC color profile using the <a href="#pdfioFileCreateICCObjFromFile"><code>pdfioFileCreateICCObjFromFile</code></a> function:</p>
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
+pdfio_obj_t *icc = pdfioFileCreateICCObjFromFile(pdf, <span class="string">&quot;filename.icc&quot;</span>);
+</code></pre>
+<p>where the first argument is the PDF file and the second argument is the filename of the ICC color profile.</p>
+<p>PDFio also includes predefined constants for creating a few standard color spaces:</p>
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
+
+<span class="comment">// Create an AdobeRGB color array</span>
+pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromMatrix(pdf, <span class="number">3</span>, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint);
+
+<span class="comment">// Create an Display P3 color array</span>
+pdfio_array_t *display_p3 = pdfioArrayCreateColorFromMatrix(pdf, <span class="number">3</span>, pdfioDisplay P3Gamma, pdfioDisplay P3Matrix, pdfioDisplay P3WhitePoint);
+
+<span class="comment">// Create an sRGB color array</span>
+pdfio_array_t *srgb = pdfioArrayCreateColorFromMatrix(pdf, <span class="number">3</span>, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint);
+</code></pre>
+<h4 id="font-object-functions">Font Object Functions</h4>
+<p>PDF supports many kinds of fonts, including PostScript Type1, PDF Type3, TrueType/OpenType, and CID. PDFio provides two functions for creating font objects. The first is <a href="#pdfioFileCreateFontObjFromBase"><code>pdfioFileCreateFontObjFromBase</code></a> which creates a font object for one of the base PDF fonts:</p>
+<ul>
+<li><p>&quot;Courier&quot;</p>
+</li>
+<li><p>&quot;Courier-Bold&quot;</p>
+</li>
+<li><p>&quot;Courier-BoldItalic&quot;</p>
+</li>
+<li><p>&quot;Courier-Italic&quot;</p>
+</li>
+<li><p>&quot;Helvetica&quot;</p>
+</li>
+<li><p>&quot;Helvetica-Bold&quot;</p>
+</li>
+<li><p>&quot;Helvetica-BoldOblique&quot;</p>
+</li>
+<li><p>&quot;Helvetica-Oblique&quot;</p>
+</li>
+<li><p>&quot;Symbol&quot;</p>
+</li>
+<li><p>&quot;Times-Bold&quot;</p>
+</li>
+<li><p>&quot;Times-BoldItalic&quot;</p>
+</li>
+<li><p>&quot;Times-Italic&quot;</p>
+</li>
+<li><p>&quot;Times-Roman&quot;</p>
+</li>
+<li><p>&quot;ZapfDingbats&quot;</p>
+</li>
+</ul>
+<p>PDFio always uses the Windows CP1252 subset of Unicode for these fonts.</p>
+<p>The second function is <a href="#pdfioFileCreateFontObjFromFile"><code>pdfioFileCreateFontObjFromFile</code></a> which creates a font object from a TrueType/OpenType font file, for example:</p>
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
+pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, <span class="string">&quot;OpenSans-Regular.ttf&quot;</span>, <span class="reserved">false</span>);
+</code></pre>
+<p>will embed an OpenSans Regular TrueType font using the Windows CP1252 subset of Unicode. Pass <code>true</code> for the third argument to embed it as a Unicode CID font instead, for example:</p>
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
+pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, <span class="string">&quot;NotoSansJP-Regular.otf&quot;</span>, <span class="reserved">true</span>);
+</code></pre>
+<p>will embed the NotoSansJP Regular OpenType font with full support for Unicode.</p>
+<p>Note: Not all fonts support Unicode.</p>
+<h4 id="image-object-functions">Image Object Functions</h4>
+<h4 id="page-dictionary-functions">Page Dictionary Functions</h4>
+<h4 id="page-stream-functions">Page Stream Functions</h4>
 <h2 class="title"><a id="FUNCTIONS">Functions</a></h2>
 <h3 class="function"><a id="pdfioArrayAppendArray">pdfioArrayAppendArray</a></h3>
 <p class="description">Add an array value to an array.</p>
@@ -2195,33 +2319,33 @@ You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write t
 specifies the font nane:
 
 </p><ul>
-<li><code>Courier</code>
+<li>&quot;Courier&quot;
 </li>
-<li><code>Courier-Bold</code>
+<li>&quot;Courier-Bold&quot;
 </li>
-<li><code>Courier-BoldItalic</code>
+<li>&quot;Courier-BoldItalic&quot;
 </li>
-<li><code>Courier-Italic</code>
+<li>&quot;Courier-Italic&quot;
 </li>
-<li><code>Helvetica</code>
+<li>&quot;Helvetica&quot;
 </li>
-<li><code>Helvetica-Bold</code>
+<li>&quot;Helvetica-Bold&quot;
 </li>
-<li><code>Helvetica-BoldOblique</code>
+<li>&quot;Helvetica-BoldOblique&quot;
 </li>
-<li><code>Helvetica-Oblique</code>
+<li>&quot;Helvetica-Oblique&quot;
 </li>
-<li><code>Symbol</code>
+<li>&quot;Symbol&quot;
 </li>
-<li><code>Times-Bold</code>
+<li>&quot;Times-Bold&quot;
 </li>
-<li><code>Times-BoldItalic</code>
+<li>&quot;Times-BoldItalic&quot;
 </li>
-<li><code>Times-Italic</code>
+<li>&quot;Times-Italic&quot;
 </li>
-<li><code>Times-Roman</code>
+<li>&quot;Times-Roman&quot;
 </li>
-<li><code>ZapfDingbats</code></li>
+<li>&quot;ZapfDingbats&quot;</li>
 </ul>
 <p class="discussion">Base fonts always use the Windows CP1252 (ISO-8859-1 with additional
 characters such as the Euro symbol) subset of Unicode.</p>
@@ -3093,10 +3217,6 @@ typedef enum <a href="#pdfio_valtype_e">pdfio_valtype_e</a> pdfio_valtype_t;
 <tr><th>y2 </th>
 <td class="description">Upper-right Y coordinate</td></tr>
 </tbody></table>
-<h2 class="title"><a id="VARIABLES">Variables</a></h2>
-<h3 class="variable"><a id="PDFIO_PUBLIC">PDFIO_PUBLIC</a></h3>
-<p class="description">C++ magic...</p>
-<p class="code"><a href="#pdfio_dict_t">pdfio_dict_t</a> *dict const char *name <a href="#pdfio_obj_t">pdfio_obj_t</a> *obj) PDFIO_PUBLIC;</p>
 <h2 class="title"><a id="ENUMERATIONS">Constants</a></h2>
 <h3 class="enumeration"><a id="pdfio_filter_e">pdfio_filter_e</a></h3>
 <p class="description">Compression/decompression filters for streams</p>

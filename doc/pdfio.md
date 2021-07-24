@@ -135,8 +135,8 @@ PDFio provides a primary header file that is always used:
 #include <pdfio.h>
 ```
 
-PDFio also provides helper functions for producing PDF content that are defined
-in a separate header file:
+PDFio also provides [PDF content helper functions](@) for producing PDF content
+that are defined in a separate header file:
 
 ```c
 #include <pdfio-content.h>
@@ -158,7 +158,7 @@ PDFio exposes several types:
 Reading PDF Files
 -----------------
 
-You open an existing PDF file using the `pdfioFileOpen` function:
+You open an existing PDF file using the [`pdfioFileOpen`](@@) function:
 
 ```c
 pdfio_file_t *pdf = pdfioFileOpen("myinputfile.pdf", error_cb, error_data);
@@ -186,9 +186,9 @@ error_cb(pdfio_file_t *pdf, const char *message, void *data)
 
 The default error callback (`NULL`) does the equivalent of the above.
 
-Each PDF file contains one or more pages.  The `pdfioFileGetNumPages` function
-returns the number of pages in the file while the `pdfioFileGetPage` function
-gets the specified page in the PDF file:
+Each PDF file contains one or more pages.  The [`pdfioFileGetNumPages`](@@)
+function returns the number of pages in the file while the
+[`pdfioFileGetPage`](@@) function gets the specified page in the PDF file:
 
 ```c
 pdfio_file_t *pdf;   // PDF file
@@ -204,26 +204,27 @@ for (i = 0, count = pdfioFileGetNumPages(pdf); i < count; i ++)
 }
 ```
 
-Each page is represented by a "page tree" object (what `pdfioFileGetPage`
+Each page is represented by a "page tree" object (what [`pdfioFileGetPage`](@@)
 returns) that specifies information about the page and one or more "content"
 objects that contain the images, fonts, text, and graphics that appear on the
 page.
 
-The `pdfioFileClose` function closes a PDF file and frees all memory that was
-used for it:
+The [`pdfioFileClose`](@@) function closes a PDF file and frees all memory that
+was used for it:
 
 ```c
 pdfioFileClose(pdf);
 ```
 
+
 Writing PDF Files
 -----------------
 
-You create a new PDF file using the `pdfioFileCreate` function:
+You create a new PDF file using the [`pdfioFileCreate`](@@) function:
 
 ```c
 pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
-pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // 0.5" margins
+pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // w/0.5" margins
 
 pdfio_file_t *pdf = pdfioFileCreate("myoutputfile.pdf", "2.0", &media_box, &crop_box, error_cb, error_data);
 ```
@@ -231,12 +232,14 @@ pdfio_file_t *pdf = pdfioFileCreate("myoutputfile.pdf", "2.0", &media_box, &crop
 where the six arguments to the function are the filename ("myoutputfile.pdf"),
 PDF version ("2.0"), media box (`media_box`), crop box (`crop_box`), an optional
 error callback function (`error_cb`), and an optional pointer value for the
-error callback function (`error_data`).
+error callback function (`error_data`).  The units for the media and crop boxes
+are points (1/72nd of an inch).
 
-Once the file is created, use the `pdfioFileCreateObj`, `pdfioFileCreatePage`,
-and `pdfioPageCopy` functions to create objects and pages in the file.
+Once the file is created, use the [`pdfioFileCreateObj`](@@),
+[`pdfioFileCreatePage`](@@), and [`pdfioPageCopy`](@@) functions to create
+objects and pages in the file.
 
-Finally, the `pdfioFileClose` function writes the PDF cross-reference and
+Finally, the [`pdfioFileClose`](@@) function writes the PDF cross-reference and
 "trailer" information, closes the file, and frees all memory that was used for
 it.
 
@@ -246,26 +249,188 @@ PDF Objects
 
 PDF objects are identified using two numbers - the object number (1 to N) and
 the object generation (0 to 65535) that specifies a particular version of an
-object.  An object's numbers are returned by the `pdfioObjGetNumber` and
-`pdfioObjGetGeneration` functions.  You can find a numbered object using the
-`pdfioFileFindObj` function.
+object.  An object's numbers are returned by the [`pdfioObjGetNumber`](@@) and
+[`pdfioObjGetGeneration`](@@) functions.  You can find a numbered object using
+the [`pdfioFileFindObj`](@@) function.
 
 Objects contain values (typically dictionaries) and usually an associated data
 stream containing images, fonts, ICC profiles, and page content.  PDFio provides several accessor functions to get the value(s) associated with an object:
 
-- `pdfioObjGetArray` returns an object's array value, if any
-- `pdfioObjGetDict` returns an object's dictionary value, if any
-- `pdfioObjGetLength` returns the length of the data stream, if any
-- `pdfioObjGetSubtype` returns the sub-type name of the object, for example
-  "Image" for an image object.
-- `pdfioObjGetType` returns the type name of the object, for example "XObject"
-  for an image object.
+- [`pdfioObjGetArray`](@@) returns an object's array value, if any
+- [`pdfioObjGetDict`](@@) returns an object's dictionary value, if any
+- [`pdfioObjGetLength`](@@) returns the length of the data stream, if any
+- [`pdfioObjGetSubtype`](@@) returns the sub-type name of the object, for
+  example "Image" for an image object.
+- [`pdfioObjGetType`](@@) returns the type name of the object, for example
+  "XObject" for an image object.
 
 
 PDF Streams
 -----------
 
+Some PDF objects have an associated data stream, such as for pages, images, ICC
+color profiles, and fonts.  You access the stream for an existing object using
+the [`pdfioObjOpenStream`](@@) function:
+
+```c
+pdfio_file_t *pdf = pdfioFileOpen(...);
+pdfio_obj_t *obj = pdfioFileFindObj(pdf, number);
+pdfio_stream_t *st = pdfioObjOpenStream(obj, true);
+```
+
+The first argument is the object pointer.  The second argument is a boolean
+value that specifies whether you want to decode (typically decompress) the
+stream data or return it as-is.
+
+Once you have the stream open, you can use one of several functions to read
+from it:
+
+- [`pdfioStreamConsume`](@@) reads and discards a number of bytes in the stream
+- [`pdfioStreamGetToken`](@@) reads a PDF token from the stream
+- [`pdfioStreamPeek`](@@) peeks at the next stream data without advancing or
+  "consuming" it
+- [`pdfioStreamRead`](@@) reads a buffer of data
+
+When you are done reading from the stream, call the [`pdfioStreamClose`](@@)
+function:
+
+```c
+pdfioStreamClose(st);
+```
+
+To create a stream for a new object, call the [`pdfioObjCreateStream`](@@)
+function:
+
+```c
+pdfio_file_t *pdf = pdfioFileCreate(...);
+pdfio_obj_t *pdfioFileCreateObj(pdf, ...);
+pdfio_stream_t *pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE);
+```
+
+The first argument is the newly created object.  The second argument is either
+`PDFIO_FILTER_NONE` to specify that any encoding is done by your program or
+`PDFIO_FILTER_FLATE` to specify that PDFio should Flate compress the stream.
+
+Once you have created the stream, use any of the following functions to write
+to the stream:
+
+- [`pdfioStreamPrintf`](@@) writes a formatted string to the stream
+- [`pdfioStreamPutChar`](@@) writes a single character to the stream
+- [`pdfioStreamPuts`](@@) writes a C string to the stream
+- [`pdfioStreamWrite`](@@) writes a buffer of data to the stream
+
+The [PDF content helper functions](@) provide additional functions for writing
+specific PDF page stream commands.
+
+When you are done writing the stream, call [`pdfioStreamCLose`](@@) to close
+both the stream and the object.
+
 
 PDF Content Helper Functions
 ----------------------------
+
+PDFio includes many helper functions for embedding or writing specific kinds of
+content to a PDF file.  These functions can be roughly grouped into ???
+categories:
+
+- [Color Space Functions](@)
+- [Font Object Functions](@)
+- [Image Object Functions](@)
+- [Page Stream Functions](@)
+- [Page Dictionary Functions](@)
+
+
+### Color Space Functions
+
+PDF color spaces are specified using well-known names like "DeviceCMYK",
+"DeviceGray", and "DeviceRGB" or using arrays that define so-called calibrated
+color spaces.  PDFio provides several functions for embedding ICC profiles and
+creating color space arrays:
+
+- [`pdfioArrayCreateColorFromICCObj`](@@) creates a color array for an ICC color profile object
+- [`pdfioArrayCreateColorFromMatrix`](@@) creates a color array using a CIE XYZ color transform matrix, a gamma value, and a CIE XYZ white point
+- [`pdfioArrayCreateColorFromPalette`](@@) creates an indexed color array from an array of sRGB values
+- [`pdfioArrayCreateColorFromPrimaries`](@@) creates a color array using CIE XYZ primaries and a gamma value
+
+You can embed an ICC color profile using the
+[`pdfioFileCreateICCObjFromFile`](@@) function:
+
+```c
+pdfio_file_t *pdf = pdfioFileCreate(...);
+pdfio_obj_t *icc = pdfioFileCreateICCObjFromFile(pdf, "filename.icc");
+```
+
+where the first argument is the PDF file and the second argument is the filename
+of the ICC color profile.
+
+PDFio also includes predefined constants for creating a few standard color
+spaces:
+
+```c
+pdfio_file_t *pdf = pdfioFileCreate(...);
+
+// Create an AdobeRGB color array
+pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint);
+
+// Create an Display P3 color array
+pdfio_array_t *display_p3 = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioDisplay P3Gamma, pdfioDisplay P3Matrix, pdfioDisplay P3WhitePoint);
+
+// Create an sRGB color array
+pdfio_array_t *srgb = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint);
+```
+
+
+### Font Object Functions
+
+PDF supports many kinds of fonts, including PostScript Type1, PDF Type3,
+TrueType/OpenType, and CID.  PDFio provides two functions for creating font
+objects.  The first is [`pdfioFileCreateFontObjFromBase`](@@) which creates a
+font object for one of the base PDF fonts:
+
+- "Courier"
+- "Courier-Bold"
+- "Courier-BoldItalic"
+- "Courier-Italic"
+- "Helvetica"
+- "Helvetica-Bold"
+- "Helvetica-BoldOblique"
+- "Helvetica-Oblique"
+- "Symbol"
+- "Times-Bold"
+- "Times-BoldItalic"
+- "Times-Italic"
+- "Times-Roman"
+- "ZapfDingbats"
+
+PDFio always uses the Windows CP1252 subset of Unicode for these fonts.
+
+The second function is [`pdfioFileCreateFontObjFromFile`](@@) which creates a
+font object from a TrueType/OpenType font file, for example:
+
+```c
+pdfio_file_t *pdf = pdfioFileCreate(...);
+pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, "OpenSans-Regular.ttf", false);
+```
+
+will embed an OpenSans Regular TrueType font using the Windows CP1252 subset of
+Unicode.  Pass `true` for the third argument to embed it as a Unicode CID font
+instead, for example:
+
+```c
+pdfio_file_t *pdf = pdfioFileCreate(...);
+pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, "NotoSansJP-Regular.otf", true);
+```
+
+will embed the NotoSansJP Regular OpenType font with full support for Unicode.
+
+Note: Not all fonts support Unicode.
+
+
+### Image Object Functions
+
+
+### Page Dictionary Functions
+
+
+### Page Stream Functions
 

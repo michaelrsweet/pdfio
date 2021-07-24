@@ -1166,20 +1166,20 @@ pdfioContentTextShowJustified(
 // This function creates one of the base 14 PDF fonts. The "name" parameter
 // specifies the font nane:
 //
-// - `Courier`
-// - `Courier-Bold`
-// - `Courier-BoldItalic`
-// - `Courier-Italic`
-// - `Helvetica`
-// - `Helvetica-Bold`
-// - `Helvetica-BoldOblique`
-// - `Helvetica-Oblique`
-// - `Symbol`
-// - `Times-Bold`
-// - `Times-BoldItalic`
-// - `Times-Italic`
-// - `Times-Roman`
-// - `ZapfDingbats`
+// - "Courier"
+// - "Courier-Bold"
+// - "Courier-BoldItalic"
+// - "Courier-Italic"
+// - "Helvetica"
+// - "Helvetica-Bold"
+// - "Helvetica-BoldOblique"
+// - "Helvetica-Oblique"
+// - "Symbol"
+// - "Times-Bold"
+// - "Times-BoldItalic"
+// - "Times-Italic"
+// - "Times-Roman"
+// - "ZapfDingbats"
 //
 // Base fonts always use the Windows CP1252 (ISO-8859-1 with additional
 // characters such as the Euro symbol) subset of Unicode.

@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2021-07-18" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2021-07-24" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -180,7 +180,7 @@ PDFio provides a primary header file that is always used:
     #include <pdfio.h>
 .fi
 .PP
-PDFio also provides helper functions for producing PDF content that are defined in a separate header file:
+PDFio also provides PDF content helper functions for producing PDF content that are defined in a separate header file:
 .nf
 
     #include <pdfio\-content.h>
@@ -263,12 +263,12 @@ You create a new PDF file using the pdfioFileCreate function:
 .nf
 
     pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
-    pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // 0.5" margins
+    pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // w/0.5" margins
     
     pdfio_file_t *pdf = pdfioFileCreate("myoutputfile.pdf", "2.0", &media_box, &crop_box, error_cb, error_data);
 .fi
 .PP
-where the six arguments to the function are the filename ("myoutputfile.pdf"), PDF version ("2.0"), media box (media_box), crop box (crop_box), an optional error callback function (error_cb), and an optional pointer value for the error callback function (error_data).
+where the six arguments to the function are the filename ("myoutputfile.pdf"), PDF version ("2.0"), media box (media_box), crop box (crop_box), an optional error callback function (error_cb), and an optional pointer value for the error callback function (error_data). The units for the media and crop boxes are points (1/72nd of an inch).
 .PP
 Once the file is created, use the pdfioFileCreateObj, pdfioFileCreatePage, and pdfioPageCopy functions to create objects and pages in the file.
 .PP
@@ -300,7 +300,230 @@ pdfioObjGetType returns the type name of the object, for example "XObject" for a
 
 
 .SS PDF Streams
+.PP
+Some PDF objects have an associated data stream, such as for pages, images, ICC color profiles, and fonts. You access the stream for an existing object using the pdfioObjOpenStream function:
+.nf
+
+    pdfio_file_t *pdf = pdfioFileOpen(...);
+    pdfio_obj_t *obj = pdfioFileFindObj(pdf, number);
+    pdfio_stream_t *st = pdfioObjOpenStream(obj, true);
+.fi
+.PP
+The first argument is the object pointer. The second argument is a boolean value that specifies whether you want to decode (typically decompress) the stream data or return it as\-is.
+.PP
+Once you have the stream open, you can use one of several functions to read from it:
+.IP \(bu 5
+.PP
+pdfioStreamConsume reads and discards a number of bytes in the stream
+
+.IP \(bu 5
+.PP
+pdfioStreamGetToken reads a PDF token from the stream
+
+.IP \(bu 5
+.PP
+pdfioStreamPeek peeks at the next stream data without advancing or "consuming" it
+
+.IP \(bu 5
+.PP
+pdfioStreamRead reads a buffer of data
+
+
+.PP
+When you are done reading from the stream, call the pdfioStreamClose function:
+.nf
+
+    pdfioStreamClose(st);
+.fi
+.PP
+To create a stream for a new object, call the pdfioObjCreateStream function:
+.nf
+
+    pdfio_file_t *pdf = pdfioFileCreate(...);
+    pdfio_obj_t *pdfioFileCreateObj(pdf, ...);
+    pdfio_stream_t *pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE);
+.fi
+.PP
+The first argument is the newly created object. The second argument is either PDFIO_FILTER_NONE to specify that any encoding is done by your program or PDFIO_FILTER_FLATE to specify that PDFio should Flate compress the stream.
+.PP
+Once you have created the stream, use any of the following functions to write to the stream:
+.IP \(bu 5
+.PP
+pdfioStreamPrintf writes a formatted string to the stream
+
+.IP \(bu 5
+.PP
+pdfioStreamPutChar writes a single character to the stream
+
+.IP \(bu 5
+.PP
+pdfioStreamPuts writes a C string to the stream
+
+.IP \(bu 5
+.PP
+pdfioStreamWrite writes a buffer of data to the stream
+
+
+.PP
+The PDF content helper functions provide additional functions for writing specific PDF page stream commands.
+.PP
+When you are done writing the stream, call pdfioStreamCLose to close both the stream and the object.
 .SS PDF Content Helper Functions
+.PP
+PDFio includes many helper functions for embedding or writing specific kinds of content to a PDF file. These functions can be roughly grouped into ??? categories:
+.IP \(bu 5
+.PP
+Color Space Functions
+
+.IP \(bu 5
+.PP
+Font Object Functions
+
+.IP \(bu 5
+.PP
+Image Object Functions
+
+.IP \(bu 5
+.PP
+Page Stream Functions
+
+.IP \(bu 5
+.PP
+Page Dictionary Functions
+
+
+.PP
+Color Space Functions
+.PP
+PDF color spaces are specified using well\-known names like "DeviceCMYK", "DeviceGray", and "DeviceRGB" or using arrays that define so\-called calibrated color spaces. PDFio provides several functions for embedding ICC profiles and creating color space arrays:
+.IP \(bu 5
+.PP
+pdfioArrayCreateColorFromICCObj creates a color array for an ICC color profile object
+
+.IP \(bu 5
+.PP
+pdfioArrayCreateColorFromMatrix creates a color array using a CIE XYZ color transform matrix, a gamma value, and a CIE XYZ white point
+
+.IP \(bu 5
+.PP
+pdfioArrayCreateColorFromPalette creates an indexed color array from an array of sRGB values
+
+.IP \(bu 5
+.PP
+pdfioArrayCreateColorFromPrimaries creates a color array using CIE XYZ primaries and a gamma value
+
+
+.PP
+You can embed an ICC color profile using the pdfioFileCreateICCObjFromFile function:
+.nf
+
+    pdfio_file_t *pdf = pdfioFileCreate(...);
+    pdfio_obj_t *icc = pdfioFileCreateICCObjFromFile(pdf, "filename.icc");
+.fi
+.PP
+where the first argument is the PDF file and the second argument is the filename of the ICC color profile.
+.PP
+PDFio also includes predefined constants for creating a few standard color spaces:
+.nf
+
+    pdfio_file_t *pdf = pdfioFileCreate(...);
+    
+    // Create an AdobeRGB color array
+    pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint);
+    
+    // Create an Display P3 color array
+    pdfio_array_t *display_p3 = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioDisplay P3Gamma, pdfioDisplay P3Matrix, pdfioDisplay P3WhitePoint);
+    
+    // Create an sRGB color array
+    pdfio_array_t *srgb = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint);
+.fi
+.PP
+Font Object Functions
+.PP
+PDF supports many kinds of fonts, including PostScript Type1, PDF Type3, TrueType/OpenType, and CID. PDFio provides two functions for creating font objects. The first is pdfioFileCreateFontObjFromBase which creates a font object for one of the base PDF fonts:
+.IP \(bu 5
+.PP
+"Courier"
+
+.IP \(bu 5
+.PP
+"Courier\-Bold"
+
+.IP \(bu 5
+.PP
+"Courier\-BoldItalic"
+
+.IP \(bu 5
+.PP
+"Courier\-Italic"
+
+.IP \(bu 5
+.PP
+"Helvetica"
+
+.IP \(bu 5
+.PP
+"Helvetica\-Bold"
+
+.IP \(bu 5
+.PP
+"Helvetica\-BoldOblique"
+
+.IP \(bu 5
+.PP
+"Helvetica\-Oblique"
+
+.IP \(bu 5
+.PP
+"Symbol"
+
+.IP \(bu 5
+.PP
+"Times\-Bold"
+
+.IP \(bu 5
+.PP
+"Times\-BoldItalic"
+
+.IP \(bu 5
+.PP
+"Times\-Italic"
+
+.IP \(bu 5
+.PP
+"Times\-Roman"
+
+.IP \(bu 5
+.PP
+"ZapfDingbats"
+
+
+.PP
+PDFio always uses the Windows CP1252 subset of Unicode for these fonts.
+.PP
+The second function is pdfioFileCreateFontObjFromFile which creates a font object from a TrueType/OpenType font file, for example:
+.nf
+
+    pdfio_file_t *pdf = pdfioFileCreate(...);
+    pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, "OpenSans\-Regular.ttf", false);
+.fi
+.PP
+will embed an OpenSans Regular TrueType font using the Windows CP1252 subset of Unicode. Pass true for the third argument to embed it as a Unicode CID font instead, for example:
+.nf
+
+    pdfio_file_t *pdf = pdfioFileCreate(...);
+    pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, "NotoSansJP\-Regular.otf", true);
+.fi
+.PP
+will embed the NotoSansJP Regular OpenType font with full support for Unicode.
+.PP
+Note: Not all fonts support Unicode.
+.PP
+Image Object Functions
+.PP
+Page Dictionary Functions
+.PP
+Page Stream Functions
 
 .SH ENUMERATIONS
 .SS pdfio_filter_e
@@ -1511,33 +1734,33 @@ This function creates one of the base 14 PDF fonts. The "name" parameter
 specifies the font nane:
 .PP
 .IP \(bu 5
-\fBCourier\fR
+"Courier"
 .IP \(bu 5
-\fBCourier-Bold\fR
+"Courier-Bold"
 .IP \(bu 5
-\fBCourier-BoldItalic\fR
+"Courier-BoldItalic"
 .IP \(bu 5
-\fBCourier-Italic\fR
+"Courier-Italic"
 .IP \(bu 5
-\fBHelvetica\fR
+"Helvetica"
 .IP \(bu 5
-\fBHelvetica-Bold\fR
+"Helvetica-Bold"
 .IP \(bu 5
-\fBHelvetica-BoldOblique\fR
+"Helvetica-BoldOblique"
 .IP \(bu 5
-\fBHelvetica-Oblique\fR
+"Helvetica-Oblique"
 .IP \(bu 5
-\fBSymbol\fR
+"Symbol"
 .IP \(bu 5
-\fBTimes-Bold\fR
+"Times-Bold"
 .IP \(bu 5
-\fBTimes-BoldItalic\fR
+"Times-BoldItalic"
 .IP \(bu 5
-\fBTimes-Italic\fR
+"Times-Italic"
 .IP \(bu 5
-\fBTimes-Roman\fR
+"Times-Roman"
 .IP \(bu 5
-\fBZapfDingbats\fR
+"ZapfDingbats"
 .PP
 Base fonts always use the Windows CP1252 (ISO-8859-1 with additional
 characters such as the Euro symbol) subset of Unicode.
@@ -2205,13 +2428,6 @@ PDF value types
 .PP
 .nf
 typedef enum pdfio_valtype_e pdfio_valtype_t;
-.fi
-.SH VARIABLES
-.SS PDFIO_PUBLIC
-C++ magic...
-.PP
-.nf
-pdfio_dict_t *dict const char *name pdfio_obj_t *obj)PDFIO_PUBLIC;
 .fi
 .SH AUTHOR
 .PP
