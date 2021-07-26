@@ -131,6 +131,21 @@ libpdfio.1.dylib:	$(LIBOBJS)
 	$(CC) $(DSOFLAGS) $(COMMONFLAGS) -dynamiclib -o $@ -install_name $(prefix)/lib/$@ -current_version $(VERSION) -compatibility_version 1.0 $(LIBOBJS) $(LIBS)
 
 
+# pdfio1.def (Windows DLL exports file...)
+#
+# I'd love to use __declspec(dllexport) but MS puts it before the function
+# declaration instead of after like everyone else, and it breaks Codedoc and
+# other tools I rely on...
+pdfio1.def: $(LIBOBJS) Makefile
+	echo Generating $@...
+	echo "LIBRARY pdfio1" >$@
+	echo "VERSION 1.0" >>$@
+	echo "EXPORTS" >>$@
+	(nm $(LIBOBJS) 2>/dev/null | grep "T _" | awk '{print $$3}' | \
+		grep -v '^_ttf' | grep -v '^__' | sed -e '1,$$s/^_//'; \
+		echo _pdfioTokenInit; echo _pdfioValueRead) | sort >>$@
+
+
 # pdfio test program
 testpdfio:		testpdfio.o libpdfio.a
 	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o $@ testpdfio.o libpdfio.a $(LIBS)
