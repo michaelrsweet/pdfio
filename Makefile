@@ -143,7 +143,14 @@ pdfio1.def: $(LIBOBJS) Makefile
 	echo "EXPORTS" >>$@
 	(nm $(LIBOBJS) 2>/dev/null | grep "T _" | awk '{print $$3}' | \
 		grep -v '^_ttf' | grep -v '^__' | sed -e '1,$$s/^_//'; \
-		echo _pdfioTokenInit; echo _pdfioValueRead) | sort >>$@
+		echo pdfioAdobeRGBGamma; echo pdfioAdobeRGBMatrix; \
+		echo pdfioAdobeRGBWhitePoint; \
+		echo pdfioDisplayP3Gamma; echo pdfioDisplayP3Matrix; \
+		echo pdfioDisplayP3WhitePoint; \
+		echo pdfioSRGBGamma; echo pdfioSRGBMatrix; \
+		echo pdfioSRGBWhitePoint; \
+		echo _pdfioTokenInit; \
+		echo _pdfioValueDebug; echo _pdfioValueRead) | sort >>$@
 
 
 # pdfio test program
