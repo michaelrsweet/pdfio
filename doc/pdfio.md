@@ -471,6 +471,90 @@ pdfio_obj_t *img = pdfioFileCreateImageObjFromFile(pdf, "myphoto.jpg", /*interpo
 
 ### Page Dictionary Functions
 
+PDF pages each have an associated dictionary to specify the images, fonts, and color spaces used by the page.  PDFio provides functions to add these resources
+to the dictionary:
+
+- [`pdfioPageDictAddColorSpace`](@@) adds a named color space to the page dictionary
+- [`pdfioPageDictAddFont`](@@) adds a named font to the page dictionary
+- [`pdfioPageDictAddImage`](@@) adds a named image to the page dictionary
+
 
 ### Page Stream Functions
 
+PDF page streams contain textual commands for drawing on the page.  PDFio
+provides many functions for writing these commands with the correct format and
+escaping, as needed:
+
+- [`pdfioContentClip`](@@) clips future drawing to the current path
+- [`pdfioContentDrawImage`](@@) draws an image object
+- [`pdfioContentFill`](@@) fills the current path
+- [`pdfioContentFillAndStroke`](@@) fills and strokes the current path
+- [`pdfioContentMatrixConcat`](@@) concatenates a matrix with the current
+  transform matrix
+- [`pdfioContentMatrixRotate`](@@) concatenates a rotation matrix with the
+  current transform matrix
+- [`pdfioContentMatrixScale`](@@) concatenates a scaling matrix with the
+  current transform matrix
+- [`pdfioContentMatrixTranslate`](@@) concatenates a translation matrix with the
+  current transform matrix
+- [`pdfioContentPathClose`](@@) closes the current path
+- [`pdfioContentPathCurve`](@@) appends a Bezier curve to the current path
+- [`pdfioContentPathCurve13`](@@) appends a Bezier curve with 2 control points
+  to the current path
+- [`pdfioContentPathCurve23`](@@) appends a Bezier curve with 2 control points
+  to the current path
+- [`pdfioContentPathLineTo`](@@) appends a line to the current path
+- [`pdfioContentPathMoveTo`](@@) moves the current point in the current path
+- [`pdfioContentPathRect`](@@) appends a rectangle to the current path
+- [`pdfioContentRestore`](@@) restores a previous graphics state
+- [`pdfioContentSave`](@@) saves the current graphics state
+- [`pdfioContentSetDashPattern`](@@) sets the line dash pattern
+- [`pdfioContentSetFillColorDeviceCMYK`](@@) sets the current fill color using a
+  device CMYK color
+- [`pdfioContentSetFillColorDeviceGray`](@@) sets the current fill color using a
+  device gray color
+- [`pdfioContentSetFillColorDeviceRGB`](@@) sets the current fill color using a
+  device RGB color
+- [`pdfioContentSetFillColorGray`](@@) sets the current fill color using a
+  calibrated gray color
+- [`pdfioContentSetFillColorRGB`](@@) sets the current fill color using a
+  calibrated RGB color
+- [`pdfioContentSetFillColorSpace`](@@) sets the current fill color space
+- [`pdfioContentSetFlatness`](@@) sets the flatness for curves
+- [`pdfioContentSetLineCap`](@@) sets how the ends of lines are stroked
+- [`pdfioContentSetLineJoin`](@@) sets how connections between lines are stroked
+- [`pdfioContentSetLineWidth`](@@) sets the width of stroked lines
+- [`pdfioContentSetMiterLimit`](@@) sets the miter limit for stroked lines
+- [`pdfioContentSetStrokeColorDeviceCMYK`](@@) sets the current stroke color
+  using a device CMYK color
+- [`pdfioContentSetStrokeColorDeviceGray`](@@) sets the current stroke color
+  using a device gray color
+- [`pdfioContentSetStrokeColorDeviceRGB`](@@) sets the current stroke color
+  using a device RGB color
+- [`pdfioContentSetStrokeColorGray`](@@) sets the current stroke color
+  using a calibrated gray color
+- [`pdfioContentSetStrokeColorRGB`](@@) sets the current stroke color
+  using a calibrated RGB color
+- [`pdfioContentSetStrokeColorSpace`](@@) sets the current stroke color space
+- [`pdfioContentSetTextCharacterSpacing`](@@) sets the spacing between
+  characters for text
+- [`pdfioContentSetTextFont`](@@) sets the font and size for text
+- [`pdfioContentSetTextLeading`](@@) sets the line height for text
+- [`pdfioContentSetTextMatrix`](@@) concatenates a matrix with the current text
+  matrix
+- [`pdfioContentSetTextRenderingMode`](@@) sets the text rendering mode
+- [`pdfioContentSetTextRise`](@@) adjusts the baseline for text
+- [`pdfioContentSetTextWordSpacing`](@@) sets the spacing between words for text
+- [`pdfioContentSetTextXScaling`](@@) sets the horizontal scaling for text
+- [`pdfioContentStroke`](@@) strokes the current path
+- [`pdfioContentTextBegin`](@@) begins a block of text
+- [`pdfioContentTextEnd`](@@) ends a block of text
+- [`pdfioContentTextMoveLine`](@@) moves to the next line with an offset in a
+  text block
+- [`pdfioContentTextMoveTo`](@@) moves within the current line in a text block
+- [`pdfioContentTextNextLine`](@@) moves to the beginning of the next line in a
+  text block
+- [`pdfioContentTextShow`](@@) draws a literal string in a text block
+- [`pdfioContentTextShowf`](@@) draws a formatted string in a text block
+- [`pdfioContentTextShowJustified`](@@) draws an array of literal strings with
+  offsets between them

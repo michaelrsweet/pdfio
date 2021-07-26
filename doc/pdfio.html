@@ -783,7 +783,123 @@ pdfio_obj_t *img = pdfioFileCreateImageObjFromData(pdf, data, <span class="comme
 pdfio_obj_t *img = pdfioFileCreateImageObjFromFile(pdf, <span class="string">&quot;myphoto.jpg&quot;</span>, <span class="comment">/*interpolate*/</span><span class="reserved">true</span>);
 </code></pre>
 <h4 id="page-dictionary-functions">Page Dictionary Functions</h4>
+<p>PDF pages each have an associated dictionary to specify the images, fonts, and color spaces used by the page. PDFio provides functions to add these resources to the dictionary:</p>
+<ul>
+<li><p><a href="#pdfioPageDictAddColorSpace"><code>pdfioPageDictAddColorSpace</code></a> adds a named color space to the page dictionary</p>
+</li>
+<li><p><a href="#pdfioPageDictAddFont"><code>pdfioPageDictAddFont</code></a> adds a named font to the page dictionary</p>
+</li>
+<li><p><a href="#pdfioPageDictAddImage"><code>pdfioPageDictAddImage</code></a> adds a named image to the page dictionary</p>
+</li>
+</ul>
 <h4 id="page-stream-functions">Page Stream Functions</h4>
+<p>PDF page streams contain textual commands for drawing on the page. PDFio provides many functions for writing these commands with the correct format and escaping, as needed:</p>
+<ul>
+<li><p><a href="#pdfioContentClip"><code>pdfioContentClip</code></a> clips future drawing to the current path</p>
+</li>
+<li><p><a href="#pdfioContentDrawImage"><code>pdfioContentDrawImage</code></a> draws an image object</p>
+</li>
+<li><p><a href="#pdfioContentFill"><code>pdfioContentFill</code></a> fills the current path</p>
+</li>
+<li><p><a href="#pdfioContentFillAndStroke"><code>pdfioContentFillAndStroke</code></a> fills and strokes the current path</p>
+</li>
+<li><p><a href="#pdfioContentMatrixConcat"><code>pdfioContentMatrixConcat</code></a> concatenates a matrix with the current transform matrix</p>
+</li>
+<li><p><a href="#pdfioContentMatrixRotate"><code>pdfioContentMatrixRotate</code></a> concatenates a rotation matrix with the current transform matrix</p>
+</li>
+<li><p><a href="#pdfioContentMatrixScale"><code>pdfioContentMatrixScale</code></a> concatenates a scaling matrix with the current transform matrix</p>
+</li>
+<li><p><a href="#pdfioContentMatrixTranslate"><code>pdfioContentMatrixTranslate</code></a> concatenates a translation matrix with the current transform matrix</p>
+</li>
+<li><p><a href="#pdfioContentPathClose"><code>pdfioContentPathClose</code></a> closes the current path</p>
+</li>
+<li><p><a href="#pdfioContentPathCurve"><code>pdfioContentPathCurve</code></a> appends a Bezier curve to the current path</p>
+</li>
+<li><p><a href="#pdfioContentPathCurve13"><code>pdfioContentPathCurve13</code></a> appends a Bezier curve with 2 control points to the current path</p>
+</li>
+<li><p><a href="#pdfioContentPathCurve23"><code>pdfioContentPathCurve23</code></a> appends a Bezier curve with 2 control points to the current path</p>
+</li>
+<li><p><a href="#pdfioContentPathLineTo"><code>pdfioContentPathLineTo</code></a> appends a line to the current path</p>
+</li>
+<li><p><a href="#pdfioContentPathMoveTo"><code>pdfioContentPathMoveTo</code></a> moves the current point in the current path</p>
+</li>
+<li><p><a href="#pdfioContentPathRect"><code>pdfioContentPathRect</code></a> appends a rectangle to the current path</p>
+</li>
+<li><p><a href="#pdfioContentRestore"><code>pdfioContentRestore</code></a> restores a previous graphics state</p>
+</li>
+<li><p><a href="#pdfioContentSave"><code>pdfioContentSave</code></a> saves the current graphics state</p>
+</li>
+<li><p><a href="#pdfioContentSetDashPattern"><code>pdfioContentSetDashPattern</code></a> sets the line dash pattern</p>
+</li>
+<li><p><a href="#pdfioContentSetFillColorDeviceCMYK"><code>pdfioContentSetFillColorDeviceCMYK</code></a> sets the current fill color using a device CMYK color</p>
+</li>
+<li><p><a href="#pdfioContentSetFillColorDeviceGray"><code>pdfioContentSetFillColorDeviceGray</code></a> sets the current fill color using a device gray color</p>
+</li>
+<li><p><a href="#pdfioContentSetFillColorDeviceRGB"><code>pdfioContentSetFillColorDeviceRGB</code></a> sets the current fill color using a device RGB color</p>
+</li>
+<li><p><a href="#pdfioContentSetFillColorGray"><code>pdfioContentSetFillColorGray</code></a> sets the current fill color using a calibrated gray color</p>
+</li>
+<li><p><a href="#pdfioContentSetFillColorRGB"><code>pdfioContentSetFillColorRGB</code></a> sets the current fill color using a calibrated RGB color</p>
+</li>
+<li><p><a href="#pdfioContentSetFillColorSpace"><code>pdfioContentSetFillColorSpace</code></a> sets the current fill color space</p>
+</li>
+<li><p><a href="#pdfioContentSetFlatness"><code>pdfioContentSetFlatness</code></a> sets the flatness for curves</p>
+</li>
+<li><p><a href="#pdfioContentSetLineCap"><code>pdfioContentSetLineCap</code></a> sets how the ends of lines are stroked</p>
+</li>
+<li><p><a href="#pdfioContentSetLineJoin"><code>pdfioContentSetLineJoin</code></a> sets how connections between lines are stroked</p>
+</li>
+<li><p><a href="#pdfioContentSetLineWidth"><code>pdfioContentSetLineWidth</code></a> sets the width of stroked lines</p>
+</li>
+<li><p><a href="#pdfioContentSetMiterLimit"><code>pdfioContentSetMiterLimit</code></a> sets the miter limit for stroked lines</p>
+</li>
+<li><p><a href="#pdfioContentSetStrokeColorDeviceCMYK"><code>pdfioContentSetStrokeColorDeviceCMYK</code></a> sets the current stroke color using a device CMYK color</p>
+</li>
+<li><p><a href="#pdfioContentSetStrokeColorDeviceGray"><code>pdfioContentSetStrokeColorDeviceGray</code></a> sets the current stroke color using a device gray color</p>
+</li>
+<li><p><a href="#pdfioContentSetStrokeColorDeviceRGB"><code>pdfioContentSetStrokeColorDeviceRGB</code></a> sets the current stroke color using a device RGB color</p>
+</li>
+<li><p><a href="#pdfioContentSetStrokeColorGray"><code>pdfioContentSetStrokeColorGray</code></a> sets the current stroke color using a calibrated gray color</p>
+</li>
+<li><p><a href="#pdfioContentSetStrokeColorRGB"><code>pdfioContentSetStrokeColorRGB</code></a> sets the current stroke color using a calibrated RGB color</p>
+</li>
+<li><p><a href="#pdfioContentSetStrokeColorSpace"><code>pdfioContentSetStrokeColorSpace</code></a> sets the current stroke color space</p>
+</li>
+<li><p><a href="#pdfioContentSetTextCharacterSpacing"><code>pdfioContentSetTextCharacterSpacing</code></a> sets the spacing between characters for text</p>
+</li>
+<li><p><a href="#pdfioContentSetTextFont"><code>pdfioContentSetTextFont</code></a> sets the font and size for text</p>
+</li>
+<li><p><a href="#pdfioContentSetTextLeading"><code>pdfioContentSetTextLeading</code></a> sets the line height for text</p>
+</li>
+<li><p><a href="#pdfioContentSetTextMatrix"><code>pdfioContentSetTextMatrix</code></a> concatenates a matrix with the current text matrix</p>
+</li>
+<li><p><a href="#pdfioContentSetTextRenderingMode"><code>pdfioContentSetTextRenderingMode</code></a> sets the text rendering mode</p>
+</li>
+<li><p><a href="#pdfioContentSetTextRise"><code>pdfioContentSetTextRise</code></a> adjusts the baseline for text</p>
+</li>
+<li><p><a href="#pdfioContentSetTextWordSpacing"><code>pdfioContentSetTextWordSpacing</code></a> sets the spacing between words for text</p>
+</li>
+<li><p><a href="#pdfioContentSetTextXScaling"><code>pdfioContentSetTextXScaling</code></a> sets the horizontal scaling for text</p>
+</li>
+<li><p><a href="#pdfioContentStroke"><code>pdfioContentStroke</code></a> strokes the current path</p>
+</li>
+<li><p><a href="#pdfioContentTextBegin"><code>pdfioContentTextBegin</code></a> begins a block of text</p>
+</li>
+<li><p><a href="#pdfioContentTextEnd"><code>pdfioContentTextEnd</code></a> ends a block of text</p>
+</li>
+<li><p><a href="#pdfioContentTextMoveLine"><code>pdfioContentTextMoveLine</code></a> moves to the next line with an offset in a text block</p>
+</li>
+<li><p><a href="#pdfioContentTextMoveTo"><code>pdfioContentTextMoveTo</code></a> moves within the current line in a text block</p>
+</li>
+<li><p><a href="#pdfioContentTextNextLine"><code>pdfioContentTextNextLine</code></a> moves to the beginning of the next line in a text block</p>
+</li>
+<li><p><a href="#pdfioContentTextShow"><code>pdfioContentTextShow</code></a> draws a literal string in a text block</p>
+</li>
+<li><p><a href="#pdfioContentTextShowf"><code>pdfioContentTextShowf</code></a> draws a formatted string in a text block</p>
+</li>
+<li><p><a href="#pdfioContentTextShowJustified"><code>pdfioContentTextShowJustified</code></a> draws an array of literal strings with offsets between them</p>
+</li>
+</ul>
 <h2 class="title"><a id="FUNCTIONS">Functions</a></h2>
 <h3 class="function"><a id="pdfioArrayAppendArray">pdfioArrayAppendArray</a></h3>
 <p class="description">Add an array value to an array.</p>

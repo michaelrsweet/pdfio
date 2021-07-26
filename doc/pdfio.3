@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2021-07-24" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2021-07-26" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -553,7 +553,233 @@ If you have a JPEG or PNG file, use the pdfioFileCreateImageObjFromFile function
 .PP
 Page Dictionary Functions
 .PP
+PDF pages each have an associated dictionary to specify the images, fonts, and color spaces used by the page. PDFio provides functions to add these resources to the dictionary:
+.IP \(bu 5
+.PP
+pdfioPageDictAddColorSpace adds a named color space to the page dictionary
+
+.IP \(bu 5
+.PP
+pdfioPageDictAddFont adds a named font to the page dictionary
+
+.IP \(bu 5
+.PP
+pdfioPageDictAddImage adds a named image to the page dictionary
+
+
+.PP
 Page Stream Functions
+.PP
+PDF page streams contain textual commands for drawing on the page. PDFio provides many functions for writing these commands with the correct format and escaping, as needed:
+.IP \(bu 5
+.PP
+pdfioContentClip clips future drawing to the current path
+
+.IP \(bu 5
+.PP
+pdfioContentDrawImage draws an image object
+
+.IP \(bu 5
+.PP
+pdfioContentFill fills the current path
+
+.IP \(bu 5
+.PP
+pdfioContentFillAndStroke fills and strokes the current path
+
+.IP \(bu 5
+.PP
+pdfioContentMatrixConcat concatenates a matrix with the current transform matrix
+
+.IP \(bu 5
+.PP
+pdfioContentMatrixRotate concatenates a rotation matrix with the current transform matrix
+
+.IP \(bu 5
+.PP
+pdfioContentMatrixScale concatenates a scaling matrix with the current transform matrix
+
+.IP \(bu 5
+.PP
+pdfioContentMatrixTranslate concatenates a translation matrix with the current transform matrix
+
+.IP \(bu 5
+.PP
+pdfioContentPathClose closes the current path
+
+.IP \(bu 5
+.PP
+pdfioContentPathCurve appends a Bezier curve to the current path
+
+.IP \(bu 5
+.PP
+pdfioContentPathCurve13 appends a Bezier curve with 2 control points to the current path
+
+.IP \(bu 5
+.PP
+pdfioContentPathCurve23 appends a Bezier curve with 2 control points to the current path
+
+.IP \(bu 5
+.PP
+pdfioContentPathLineTo appends a line to the current path
+
+.IP \(bu 5
+.PP
+pdfioContentPathMoveTo moves the current point in the current path
+
+.IP \(bu 5
+.PP
+pdfioContentPathRect appends a rectangle to the current path
+
+.IP \(bu 5
+.PP
+pdfioContentRestore restores a previous graphics state
+
+.IP \(bu 5
+.PP
+pdfioContentSave saves the current graphics state
+
+.IP \(bu 5
+.PP
+pdfioContentSetDashPattern sets the line dash pattern
+
+.IP \(bu 5
+.PP
+pdfioContentSetFillColorDeviceCMYK sets the current fill color using a device CMYK color
+
+.IP \(bu 5
+.PP
+pdfioContentSetFillColorDeviceGray sets the current fill color using a device gray color
+
+.IP \(bu 5
+.PP
+pdfioContentSetFillColorDeviceRGB sets the current fill color using a device RGB color
+
+.IP \(bu 5
+.PP
+pdfioContentSetFillColorGray sets the current fill color using a calibrated gray color
+
+.IP \(bu 5
+.PP
+pdfioContentSetFillColorRGB sets the current fill color using a calibrated RGB color
+
+.IP \(bu 5
+.PP
+pdfioContentSetFillColorSpace sets the current fill color space
+
+.IP \(bu 5
+.PP
+pdfioContentSetFlatness sets the flatness for curves
+
+.IP \(bu 5
+.PP
+pdfioContentSetLineCap sets how the ends of lines are stroked
+
+.IP \(bu 5
+.PP
+pdfioContentSetLineJoin sets how connections between lines are stroked
+
+.IP \(bu 5
+.PP
+pdfioContentSetLineWidth sets the width of stroked lines
+
+.IP \(bu 5
+.PP
+pdfioContentSetMiterLimit sets the miter limit for stroked lines
+
+.IP \(bu 5
+.PP
+pdfioContentSetStrokeColorDeviceCMYK sets the current stroke color using a device CMYK color
+
+.IP \(bu 5
+.PP
+pdfioContentSetStrokeColorDeviceGray sets the current stroke color using a device gray color
+
+.IP \(bu 5
+.PP
+pdfioContentSetStrokeColorDeviceRGB sets the current stroke color using a device RGB color
+
+.IP \(bu 5
+.PP
+pdfioContentSetStrokeColorGray sets the current stroke color using a calibrated gray color
+
+.IP \(bu 5
+.PP
+pdfioContentSetStrokeColorRGB sets the current stroke color using a calibrated RGB color
+
+.IP \(bu 5
+.PP
+pdfioContentSetStrokeColorSpace sets the current stroke color space
+
+.IP \(bu 5
+.PP
+pdfioContentSetTextCharacterSpacing sets the spacing between characters for text
+
+.IP \(bu 5
+.PP
+pdfioContentSetTextFont sets the font and size for text
+
+.IP \(bu 5
+.PP
+pdfioContentSetTextLeading sets the line height for text
+
+.IP \(bu 5
+.PP
+pdfioContentSetTextMatrix concatenates a matrix with the current text matrix
+
+.IP \(bu 5
+.PP
+pdfioContentSetTextRenderingMode sets the text rendering mode
+
+.IP \(bu 5
+.PP
+pdfioContentSetTextRise adjusts the baseline for text
+
+.IP \(bu 5
+.PP
+pdfioContentSetTextWordSpacing sets the spacing between words for text
+
+.IP \(bu 5
+.PP
+pdfioContentSetTextXScaling sets the horizontal scaling for text
+
+.IP \(bu 5
+.PP
+pdfioContentStroke strokes the current path
+
+.IP \(bu 5
+.PP
+pdfioContentTextBegin begins a block of text
+
+.IP \(bu 5
+.PP
+pdfioContentTextEnd ends a block of text
+
+.IP \(bu 5
+.PP
+pdfioContentTextMoveLine moves to the next line with an offset in a text block
+
+.IP \(bu 5
+.PP
+pdfioContentTextMoveTo moves within the current line in a text block
+
+.IP \(bu 5
+.PP
+pdfioContentTextNextLine moves to the beginning of the next line in a text block
+
+.IP \(bu 5
+.PP
+pdfioContentTextShow draws a literal string in a text block
+
+.IP \(bu 5
+.PP
+pdfioContentTextShowf draws a formatted string in a text block
+
+.IP \(bu 5
+.PP
+pdfioContentTextShowJustified draws an array of literal strings with offsets between them
+
+
 
 .SH ENUMERATIONS
 .SS pdfio_filter_e
