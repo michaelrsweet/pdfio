@@ -20,6 +20,9 @@
 #include "pdfio-private.h"
 #include "pdfio-content.h"
 #include <math.h>
+#ifndef M_PI
+#  define M_PI	3.14159265358979323846264338327950288
+#endif // M_PI
 
 
 //
@@ -249,7 +252,7 @@ do_unit_tests(void)
   // Test the value parsers for edge cases...
   fputs("_pdfioValueRead(complex_dict): ", stdout);
   s = complex_dict;
-  _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)token_consume_cb, (_pdfio_tpeek_cb_t)token_peek_cb, &s);
+  _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)token_consume_cb, (_pdfio_tpeek_cb_t)token_peek_cb, (void *)&s);
   if (_pdfioValueRead(pdf, &tb, &value))
   {
     // TODO: Check value...
