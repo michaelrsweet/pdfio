@@ -47,5 +47,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
     - name: devenv
-      run: devenv pdfio.sln /build
+      run: msbuild pdfio.sln
