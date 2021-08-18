@@ -21,22 +21,6 @@
 
 
 //
-// Global constants...
-//
-
-const double	pdfioAdobeRGBGamma = 2.2;
-const double	pdfioAdobeRGBMatrix[3][3] = { { 0.57667, 0.18556, 0.18823 }, { 0.29734, 0.62736, 0.07529 }, { 0.02703, 0.07069, 0.99134 } };
-const double	pdfioAdobeRGBWhitePoint[3] = { 0.9505, 1.0, 1.0890 };
-const double	pdfioDisplayP3Gamma = 2.2;
-const double	pdfioDisplayP3Matrix[3][3] = { { 0.48657, 0.26567, 0.19822 }, {
-0.22897, 0.69174, 0.07929 }, { 0.00000, 0.04511, 1.04394 } };
-const double	pdfioDisplayP3WhitePoint[3] = { 0.9505, 1.0, 1.0890 };
-const double	pdfioSRGBGamma = 2.2;
-const double	pdfioSRGBMatrix[3][3] = { { 0.4124, 0.3576, 0.1805 }, { 0.2126, 0.7152, 0.0722 }, { 0.0193, 0.1192, 0.9505 } };
-const double	pdfioSRGBWhitePoint[3] = { 0.9505, 1.0, 1.0890 };
-
-
-//
 // Local constants...
 //
 
@@ -374,6 +358,41 @@ pdfioArrayCreateColorFromPrimaries(
 
   // Now that we have the white point and matrix, use those to make the color array...
   return (pdfioArrayCreateColorFromMatrix(pdf, num_colors, gamma, matrix, white_point));
+}
+
+
+//
+// 'pdfioArrayCreateColorFromStandard()' - Create a color array for a standard color space.
+//
+// This function creates a color array for a standard `PDFIO_CS_` enumerated constant.
+// The "num_colors" argument must be `1` for grayscale and `3` for RGB color.
+//
+
+pdfio_array_t *				// O - Color array
+pdfioArrayCreateColorFromStandard(
+    pdfio_file_t *pdf,			// I - PDF file
+    size_t       num_colors,		// I - Number of colors (1 or 3)
+    pdfio_cs_t   cs)			// I - Color space enumeration
+{
+  static const double	adobe_matrix[3][3] = { { 0.57667, 0.18556, 0.18823 }, { 0.29734, 0.62736, 0.07529 }, { 0.02703, 0.07069, 0.99134 } };
+  static const double	d65_white_point[3] = { 0.9505, 1.0, 1.0890 };
+  static const double	p3_d65_matrix[3][3] = { { 0.48657, 0.26567, 0.19822 }, { 0.22897, 0.69174, 0.07929 }, { 0.00000, 0.04511, 1.04394 } };
+  static const double	srgb_matrix[3][3] = { { 0.4124, 0.3576, 0.1805 }, { 0.2126, 0.7152, 0.0722 }, { 0.0193, 0.1192, 0.9505 } };
+
+
+  // Range check input...
+  if (!pdf || (num_colors != 1 && num_colors != 3) || cs < PDFIO_CS_ADOBE || cs > PDFIO_CS_SRGB)
+    return (NULL);
+
+  switch (cs)
+  {
+    case PDFIO_CS_ADOBE :
+        return (pdfioArrayCreateColorFromMatrix(pdf, num_colors, 2.2, adobe_matrix, d65_white_point));
+    case PDFIO_CS_P3_D65 :
+        return (pdfioArrayCreateColorFromMatrix(pdf, num_colors, 2.2, p3_d65_matrix, d65_white_point));
+    case PDFIO_CS_SRGB :
+        return (pdfioArrayCreateColorFromMatrix(pdf, num_colors, 2.2, srgb_matrix, d65_white_point));
+  }
 }
 
 
@@ -2245,7 +2264,7 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
   pdfioDictSetNumber(dict, "Width", width);
   pdfioDictSetNumber(dict, "Height", height);
   pdfioDictSetNumber(dict, "BitsPerComponent", 8);
-  pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromMatrix(dict->pdf, num_colors, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
+  pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, num_colors, PDFIO_CS_SRGB));
   pdfioDictSetName(dict, "Filter", "DCTDecode");
 
   obj = pdfioFileCreateObj(dict->pdf, dict);
@@ -2330,7 +2349,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 	      if (wx != 0.0)
 		pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPrimaries(dict->pdf, color_type == _PDFIO_PNG_TYPE_GRAY ? 1 : 3, gamma, wx, wy, rx, ry, bx, by, gx, gy));
               else
-		pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromMatrix(dict->pdf, color_type == _PDFIO_PNG_TYPE_GRAY ? 1 : 3, gamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint));
+		pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, color_type == _PDFIO_PNG_TYPE_GRAY ? 1 : 3, PDFIO_CS_SRGB));
             }
 
 	    obj = pdfioFileCreateObj(dict->pdf, dict);

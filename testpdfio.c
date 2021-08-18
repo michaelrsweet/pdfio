@@ -76,6 +76,12 @@ main(int  argc,				// I - Number of command-line arguments
   }
   else
   {
+#if _WIN32
+    // Windows puts executables in Platform/Configuration subdirs...
+    if (!_access("../../testfiles", 0))
+      _chdir("../..");
+#endif // _WIN32
+
     do_unit_tests();
   }
 
@@ -1079,8 +1085,8 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
-  fputs("pdfioArrayCreateColorFromMatrix(AdobeRGB): ", stdout);
-  if ((cs = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint)) != NULL)
+  fputs("pdfioArrayCreateColorFromStandard(AdobeRGB): ", stdout);
+  if ((cs = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_ADOBE)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -1091,8 +1097,8 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
-  fputs("pdfioArrayCreateColorFromMatrix(DisplayP3): ", stdout);
-  if ((cs = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioDisplayP3Gamma, pdfioDisplayP3Matrix, pdfioDisplayP3WhitePoint)) != NULL)
+  fputs("pdfioArrayCreateColorFromStandard(DisplayP3): ", stdout);
+  if ((cs = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_P3_D65)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -1115,8 +1121,8 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
-  fputs("pdfioArrayCreateColorFromMatrix(sRGB): ", stdout);
-  if ((cs = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint)) != NULL)
+  fputs("pdfioArrayCreateColorFromStandard(sRGB): ", stdout);
+  if ((cs = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_SRGB)) != NULL)
     puts("PASS");
   else
     return (1);

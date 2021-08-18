@@ -4,9 +4,6 @@ EXPORTS
 _pdfioTokenInit
 _pdfioValueDebug
 _pdfioValueRead
-pdfioAdobeRGBGamma
-pdfioAdobeRGBMatrix
-pdfioAdobeRGBWhitePoint
 pdfioArrayAppendArray
 pdfioArrayAppendBinary
 pdfioArrayAppendBoolean
@@ -22,6 +19,7 @@ pdfioArrayCreateColorFromICCObj
 pdfioArrayCreateColorFromMatrix
 pdfioArrayCreateColorFromPalette
 pdfioArrayCreateColorFromPrimaries
+pdfioArrayCreateColorFromStandard
 pdfioArrayGetArray
 pdfioArrayGetBinary
 pdfioArrayGetBoolean
@@ -110,9 +108,6 @@ pdfioDictSetObj
 pdfioDictSetRect
 pdfioDictSetString
 pdfioDictSetStringf
-pdfioDisplayP3Gamma
-pdfioDisplayP3Matrix
-pdfioDisplayP3WhitePoint
 pdfioFileClose
 pdfioFileCreate
 pdfioFileCreateArrayObj
@@ -163,9 +158,6 @@ pdfioPageCopy
 pdfioPageDictAddColorSpace
 pdfioPageDictAddFont
 pdfioPageDictAddImage
-pdfioSRGBGamma
-pdfioSRGBMatrix
-pdfioSRGBWhitePoint
 pdfioStreamClose
 pdfioStreamConsume
 pdfioStreamGetToken

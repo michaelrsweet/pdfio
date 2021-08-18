@@ -30,6 +30,13 @@ extern "C" {
 // Types and constants...
 //
 
+typedef enum pdfio_cs_e			// Standard color spaces
+{
+  PDFIO_CS_ADOBE,			// AdobeRGB 1998
+  PDFIO_CS_P3_D65,			// Display P3
+  PDFIO_CS_SRGB				// sRGB
+} pdfio_cs_t;
+
 typedef enum pdfio_linecap_e		// Line capping modes
 {
   PDFIO_LINECAP_BUTT,			// Butt ends
@@ -59,25 +66,6 @@ typedef enum pdfio_textrendering_e	// Text rendering modes
   PDFIO_TEXTRENDERING_TEXT_PATH		// Add text to path (invisible)
 } pdfio_textrendering_t;
 
-extern const double	pdfioAdobeRGBGamma _PDFIO_PUBLIC;
-					// AdobeRGB gamma
-extern const double	pdfioAdobeRGBMatrix[3][3] _PDFIO_PUBLIC;
-					// AdobeRGB matrix
-extern const double	pdfioAdobeRGBWhitePoint[3] _PDFIO_PUBLIC;
-					// AdobeRGB white point
-extern const double	pdfioDisplayP3Gamma _PDFIO_PUBLIC;
-					// Display P3 gamma
-extern const double	pdfioDisplayP3Matrix[3][3] _PDFIO_PUBLIC;
-					// Display P3 matrix
-extern const double	pdfioDisplayP3WhitePoint[3] _PDFIO_PUBLIC;
-					// Display P3 white point
-extern const double	pdfioSRGBGamma _PDFIO_PUBLIC;
-					// sRGB gamma
-extern const double	pdfioSRGBMatrix[3][3] _PDFIO_PUBLIC;
-					// sRGB matrix
-extern const double	pdfioSRGBWhitePoint[3] _PDFIO_PUBLIC;
-					// sRGB white point
-
 
 //
 // Functions...
@@ -88,6 +76,7 @@ extern pdfio_array_t	*pdfioArrayCreateColorFromICCObj(pdfio_file_t *pdf, pdfio_o
 extern pdfio_array_t	*pdfioArrayCreateColorFromMatrix(pdfio_file_t *pdf, size_t num_colors, double gamma, const double matrix[3][3], const double white_point[3]) _PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioArrayCreateColorFromPalette(pdfio_file_t *pdf, size_t num_colors, const unsigned char *colors) _PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioArrayCreateColorFromPrimaries(pdfio_file_t *pdf, size_t num_colors, double gamma, double wx, double wy, double rx, double ry, double gx, double gy, double bx, double by) _PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioArrayCreateColorFromStandard(pdfio_file_t *pdf, size_t num_colors, pdfio_cs_t cs);
 
 // PDF content drawing functions...
 extern bool		pdfioContentClip(pdfio_stream_t *st, bool even_odd) _PDFIO_PUBLIC;
