@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
+  <PropertyGroup>
+    <LibraryName Condition="'$(Configuration)'=='Debug'">pappld</LibraryName>
+    <LibraryName Condition="'$(Configuration)'=='Release'">pappl</LibraryName>
+  </PropertyGroup>
+  <ItemGroup>
+    <LinkLibrary Include="$(MSBuildThisFileDirectory)\lib\$(Platform)\$(Configuration)\$(LibraryName).lib" />
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>   <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\include</AdditionalIncludeDirectories></ClCompile>
+    <Link>
+      <AdditionalDependencies>@$(LinkLibrary);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

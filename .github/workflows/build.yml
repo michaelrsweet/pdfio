@@ -40,3 +40,16 @@ jobs:
       run: make test
     - name: clang static analyzer
       run: make CC=clang "GHA_ERROR=::error::" clang
+
+  build-windows:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: setup-msbuild
+      uses: microsoft/setup-msbuild@v1.0.2
+    - name: nuget restore
+      run: nuget restore pdfio.sln
+    - name: msbuild
+      run: msbuild pdfio.sln
