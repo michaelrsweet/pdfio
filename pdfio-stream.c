@@ -872,7 +872,64 @@ stream_read(pdfio_stream_t *st,		// I - Stream
     }
     else if (st->predictor == _PDFIO_PREDICTOR_TIFF2)
     {
-      // TODO: Implement TIFF2 predictor
+      size_t		pbpixel = st->pbpixel,
+					// Size of pixel in bytes
+      			remaining = st->pbsize;
+					// Remaining bytes
+      unsigned char	*bufptr = (unsigned char *)buffer,
+					// Pointer into buffer
+			*bufsecond = (unsigned char *)buffer + pbpixel,
+					// Pointer to second pixel in buffer
+			*sptr = st->psbuffer;
+					// Current (raw) line
+
+      PDFIO_DEBUG("stream_read: TIFF predictor 2.\n");
+
+      if (bytes < st->pbsize)
+      {
+        _pdfioFileError(st->pdf, "Read buffer too small for stream.");
+        return (-1);
+      }
+
+      st->flate.next_out  = (Bytef *)sptr;
+      st->flate.avail_out = (uInt)st->pbsize;
+
+      while (st->flate.avail_out > 0)
+      {
+	if (st->flate.avail_in == 0)
+	{
+	  // Read more from the file...
+	  if (sizeof(st->cbuffer) > st->remaining)
+	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->remaining);
+	  else
+	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, sizeof(st->cbuffer));
+
+	  if (rbytes <= 0)
+	    return (-1);		// End of file...
+
+	  st->remaining      -= (size_t)rbytes;
+	  st->flate.next_in  = (Bytef *)st->cbuffer;
+	  st->flate.avail_in = (uInt)rbytes;
+	}
+
+	if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
+	{
+	  _pdfioFileError(st->pdf, "Unable to decompress stream data: %d", status);
+	  return (-1);
+	}
+	else if (status == Z_STREAM_END)
+	  break;
+      }
+
+      if (st->flate.avail_out > 0)
+        return (-1);			// Early end of stream
+
+      for (; bufptr < bufsecond; remaining --, sptr ++)
+	*bufptr++ = *sptr;
+      for (; remaining > 0; remaining --, sptr ++, bufptr ++)
+	*bufptr = *sptr + bufptr[-(int)pbpixel];
+
+      return ((ssize_t)st->pbsize);
     }
     else
     {
@@ -912,7 +969,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, sizeof(st->cbuffer));
 
 	  if (rbytes <= 0)
-	    return (-1);			// End of file...
+	    return (-1);		// End of file...
 
 	  st->remaining      -= (size_t)rbytes;
 	  st->flate.next_in  = (Bytef *)st->cbuffer;
@@ -929,7 +986,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       }
 
       if (st->flate.avail_out > 0)
-        return (-1);				// Early end of stream
+        return (-1);			// Early end of stream
 
       // Apply predictor for this line
       PDFIO_DEBUG("stream_read: Line %02X %02X %02X %02X %02X.\n", sptr[-1], sptr[0], sptr[0], sptr[2], sptr[3]);
