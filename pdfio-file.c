@@ -1160,6 +1160,8 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       pdfio_obj_t	*obj;		// Object
       size_t		i;		// Looping var
       pdfio_array_t	*index_array;	// Index array
+      size_t		index_n,	// Current element in array
+			index_count;	// Number of values in index array
       pdfio_array_t	*w_array;	// W array
       size_t		w[3];		// Size of each cross-reference field
       size_t		w_2,		// Offset to second field
@@ -1225,18 +1227,9 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       obj->stream_offset = _pdfioFileTell(pdf);
 
       if ((index_array = pdfioDictGetArray(trailer.value.dict, "Index")) != NULL)
-      {
-        if (index_array->num_values > 2)
-        {
-          // TODO: Support Index array with multiple values in xref streams
-	  _pdfioFileError(pdf, "Multiple indices not supported in cross-reference stream.");
-	  return (false);
-        }
-
-        number = (intmax_t)pdfioArrayGetNumber(index_array, 0);
-      }
+        index_count = index_array->num_values;
       else
-        number = 0;
+        index_count = 0;
 
       if ((w_array = pdfioDictGetArray(trailer.value.dict, "W")) == NULL)
       {
@@ -1263,70 +1256,75 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	return (false);
       }
 
-      while (pdfioStreamRead(st, buffer, w_total) > 0)
+      for (index_n = 0; index_n < index_count; index_n ++)
       {
-        PDFIO_DEBUG("load_xref: %02X%02X%02X%02X%02X\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+        number = (intmax_t)pdfioArrayGetNumber(index_array, index_n);
 
-        // Check whether this is an object definition...
-        if (w[0] > 0)
-        {
-          if (buffer[0] == 0)
-          {
-            // Ignore free objects...
-            number ++;
-            continue;
-	  }
-	}
-
-        for (i = 1, offset = buffer[w_2]; i < w[1]; i ++)
-          offset = (offset << 8) | buffer[w_2 + i];
-
-        switch (w[2])
-        {
-          default :
-              generation = 0;
-              break;
-	  case 1 :
-	      generation = buffer[w_3];
-	      break;
-	  case 2 :
-	      generation = (buffer[w_3] << 8) | buffer[w_3 + 1];
-	      break;
-        }
-
-	// Create a placeholder for the object in memory...
-	if (pdfioFileFindObj(pdf, (size_t)number))
+	while (pdfioStreamRead(st, buffer, w_total) > 0)
 	{
-	  number ++;
-	  continue;			// Don't replace newer object...
-	}
+	  PDFIO_DEBUG("load_xref: %02X%02X%02X%02X%02X\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
 
-        if (w[0] > 0 && buffer[0] == 2)
-        {
-          // Object streams need to be loaded into memory...
-          if ((obj = pdfioFileFindObj(pdf, (size_t)offset)) != NULL)
+	  // Check whether this is an object definition...
+	  if (w[0] > 0)
 	  {
-	    // Load it now...
-	    if (!load_obj_stream(obj))
-	      return (false);
-	  }
-	  else
-	  {
-	    // Add it to the list of objects to load later...
-	    for (i = 0; i < num_sobjs; i ++)
+	    if (buffer[0] == 0)
 	    {
-	      if (sobjs[i] == (size_t)offset)
-	        break;
+	      // Ignore free objects...
+	      number ++;
+	      continue;
 	    }
-
-	    if (i >= num_sobjs && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
-	      sobjs[num_sobjs ++] = (size_t)offset;
 	  }
-        }
-	else if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
-	  return (false);
 
-        number ++;
+	  for (i = 1, offset = buffer[w_2]; i < w[1]; i ++)
+	    offset = (offset << 8) | buffer[w_2 + i];
+
+	  switch (w[2])
+	  {
+	    default :
+		generation = 0;
+		break;
+	    case 1 :
+		generation = buffer[w_3];
+		break;
+	    case 2 :
+		generation = (buffer[w_3] << 8) | buffer[w_3 + 1];
+		break;
+	  }
+
+	  // Create a placeholder for the object in memory...
+	  if (pdfioFileFindObj(pdf, (size_t)number))
+	  {
+	    number ++;
+	    continue;			// Don't replace newer object...
+	  }
+
+	  if (w[0] > 0 && buffer[0] == 2)
+	  {
+	    // Object streams need to be loaded into memory...
+	    if ((obj = pdfioFileFindObj(pdf, (size_t)offset)) != NULL)
+	    {
+	      // Load it now...
+	      if (!load_obj_stream(obj))
+		return (false);
+	    }
+	    else
+	    {
+	      // Add it to the list of objects to load later...
+	      for (i = 0; i < num_sobjs; i ++)
+	      {
+		if (sobjs[i] == (size_t)offset)
+		  break;
+	      }
+
+	      if (i >= num_sobjs && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
+		sobjs[num_sobjs ++] = (size_t)offset;
+	    }
+	  }
+	  else if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
+	    return (false);
+
+	  number ++;
+	}
       }
 
       pdfioStreamClose(st);
