@@ -340,8 +340,9 @@ pdfioObjGetType(pdfio_obj_t *obj)	// I - Object
 bool					// O - `true` on success, `false` otherwise
 _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
 {
-  char			line[1024],	// Line from file
+  char			line[64],	// Line from file
 			*ptr;		// Pointer into line
+  ssize_t		bytes;		// Bytes read
   _pdfio_token_t	tb;		// Token buffer/stack
 
 
@@ -354,11 +355,13 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
     return (false);
   }
 
-  if (!_pdfioFileGets(obj->pdf, line, sizeof(line)))
+  if ((bytes = _pdfioFilePeek(obj->pdf, line, sizeof(line) - 1)) < 0)
   {
     _pdfioFileError(obj->pdf, "Unable to read header for object %lu.", (unsigned long)obj->number);
     return (false);
   }
+
+  line[bytes] = '\0';
 
   PDFIO_DEBUG("_pdfioObjLoad: Header is '%s'.\n", line);
 
@@ -377,11 +380,14 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   while (isspace(*ptr & 255))
     ptr ++;
 
-  if (strcmp(ptr, "obj"))
+  if (strncmp(ptr, "obj", 3) || (ptr[3] && ptr[3] != '<' && ptr[3] != '[' && !isspace(ptr[3] & 255)))
   {
     _pdfioFileError(obj->pdf, "Bad header for object %lu.", (unsigned long)obj->number);
     return (false);
   }
+
+  ptr += 3;
+  _pdfioFileConsume(obj->pdf, (size_t)(ptr - line));
 
   // Then grab the object value...
   _pdfioTokenInit(&tb, obj->pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, obj->pdf);
