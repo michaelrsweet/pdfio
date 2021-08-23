@@ -197,7 +197,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
                 _pdfio_token_t *tb,	// I - Token buffer/stack
                 _pdfio_value_t *v)	// I - Value
 {
-  char		token[8192];		// Token buffer
+  char		token[32768];		// Token buffer
 #ifdef DEBUG
   static const char * const valtypes[] =
   {
