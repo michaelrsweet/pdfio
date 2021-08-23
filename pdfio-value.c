@@ -357,52 +357,75 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
     if (isdigit(token[0]) && !strchr(token, '.'))
     {
       // Integer or object ref...
-      char	token2[8192],		// Second token (generation number)
-		token3[8192],		// Third token ("R")
-		*tokptr;		// Pointer into token
+      unsigned char *tempptr;		// Pointer into buffer
 
-      if (_pdfioTokenGet(tb, token2, sizeof(token2)))
+      PDFIO_DEBUG("_pdfioValueRead: %d bytes left in buffer.\n", (int)(tb->bufend - tb->bufptr));
+      if ((tb->bufend - tb->bufptr) < 10)
       {
-        // Got the second token, is it an integer?
-        for (tokptr = token2; *tokptr; tokptr ++)
-	{
-	  if (!isdigit(*tokptr))
-	    break;
-	}
+        // Fill up buffer...
+        ssize_t	bytes;			// Bytes peeked
 
-	if (*tokptr)
-	{
-	  // Not an object reference, push this token for later use...
-	  _pdfioTokenPush(tb, token2);
-	}
-	else
-	{
-	  // A possible reference, get one more...
-	  if (_pdfioTokenGet(tb, token3, sizeof(token3)))
+        _pdfioTokenFlush(tb);
+
+        if ((bytes = (tb->peek_cb)(tb->cb_data, tb->buffer, sizeof(tb->buffer))) > 0)
+	  tb->bufend = tb->buffer + bytes;
+
+	PDFIO_DEBUG("_pdfioValueRead: %d bytes now left in buffer.\n", (int)(tb->bufend - tb->bufptr));
+      }
+
+#ifdef DEBUG
+	  PDFIO_DEBUG("_pdfioValueRead: Bytes are '");
+	  for (tempptr = tb->bufptr; tempptr < tb->bufend; tempptr ++)
 	  {
-	    if (!strcmp(token3, "R"))
-	    {
-	      // Reference!
-	      v->type                      = PDFIO_VALTYPE_INDIRECT;
-	      v->value.indirect.number     = (size_t)strtoimax(token, NULL, 10);
-	      v->value.indirect.generation = (unsigned short)strtol(token2, NULL, 10);
-
-              PDFIO_DEBUG("_pdfioValueRead: Returning indirect value %lu %u R.\n", (unsigned long)v->value.indirect.number, v->value.indirect.generation);
-
-              return (v);
-	    }
+	    if (*tempptr < ' ' || *tempptr == 0x7f)
+	      PDFIO_DEBUG("\\%03o", *tempptr);
 	    else
-	    {
-	      // Not a reference, push the tokens back...
-	      _pdfioTokenPush(tb, token3);
-	      _pdfioTokenPush(tb, token2);
-	    }
+	      PDFIO_DEBUG("%c", *tempptr);
 	  }
-	  else
+	  PDFIO_DEBUG("'.\n");
+#endif // DEBUG
+
+      tempptr = tb->bufptr;
+
+      if (tempptr < tb->bufend && isdigit(*tempptr & 255))
+      {
+        // Integer...
+        long generation = 0;		// Generation number
+
+        while (tempptr < tb->bufend && isdigit(*tempptr & 255))
+        {
+          generation = generation * 10 + *tempptr - '0';
+          tempptr ++;
+        }
+
+	while (tempptr < tb->bufend && isspace(*tempptr & 255))
+	  tempptr ++;
+
+	if (tempptr < tb->bufend && *tempptr == 'R')
+	{
+	  // Reference!
+	  PDFIO_DEBUG("_pdfioValueRead: Consuming %d bytes.\n", (int)(tempptr - tb->bufptr + 1));
+	  tb->bufptr = tempptr + 1;
+
+#ifdef DEBUG
+	  PDFIO_DEBUG("_pdfioValueRead: Next bytes are '");
+	  for (tempptr = tb->bufptr; tempptr < tb->bufend; tempptr ++)
 	  {
-	    // Not a reference...
-	    _pdfioTokenPush(tb, token2);
+	    if (*tempptr < ' ' || *tempptr == 0x7f)
+	      PDFIO_DEBUG("\\%03o", *tempptr);
+	    else
+	      PDFIO_DEBUG("%c", *tempptr);
 	  }
+	  PDFIO_DEBUG("'.\n");
+#endif // DEBUG
+
+	  v->type                      = PDFIO_VALTYPE_INDIRECT;
+	  v->value.indirect.number     = (size_t)strtoimax(token, NULL, 10);
+	  v->value.indirect.generation = (unsigned short)generation;
+
+	  PDFIO_DEBUG("_pdfioValueRead: Returning indirect value %lu %u R.\n", (unsigned long)v->value.indirect.number, v->value.indirect.generation);
+
+	  return (v);
 	}
       }
     }

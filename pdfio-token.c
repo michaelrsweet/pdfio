@@ -109,6 +109,7 @@ _pdfioTokenFlush(_pdfio_token_t *tb)	// I - Token buffer/stack
     else
     {
       // Nothing left, reset pointers...
+      PDFIO_DEBUG("_pdfioTokenFlush: Resetting pointers.\n");
       tb->bufptr = tb->bufend = tb->buffer;
     }
   }

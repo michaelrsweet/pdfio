@@ -457,7 +457,7 @@ _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
     if (!_pdfioDictSetValue(dict, pdfioStringCreate(pdf, key + 1), &value))
       break;
 
-    PDFIO_DEBUG("_pdfioDictRead: Set %s.\n", key);
+//    PDFIO_DEBUG("_pdfioDictRead: Set %s.\n", key);
   }
 
   // Dictionary is invalid - pdfioFileClose will free the memory, return NULL

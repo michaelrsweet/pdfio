@@ -584,9 +584,9 @@ _pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
     if (!_pdfioValueRead(pdf, tb, &value))
       break;
 
-    PDFIO_DEBUG("_pdfioArrayRead(%p): Appending ", (void *)array);
-    PDFIO_DEBUG_VALUE(&value);
-    PDFIO_DEBUG("\n");
+//    PDFIO_DEBUG("_pdfioArrayRead(%p): Appending ", (void *)array);
+//    PDFIO_DEBUG_VALUE(&value);
+//    PDFIO_DEBUG("\n");
 
     append_value(array, &value);
   }
