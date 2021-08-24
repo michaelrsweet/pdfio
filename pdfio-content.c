@@ -364,7 +364,7 @@ pdfioArrayCreateColorFromPrimaries(
 //
 // 'pdfioArrayCreateColorFromStandard()' - Create a color array for a standard color space.
 //
-// This function creates a color array for a standard `PDFIO_CS_` enumerated constant.
+// This function creates a color array for a standard `PDFIO_CS_` enumerated color space.
 // The "num_colors" argument must be `1` for grayscale and `3` for RGB color.
 //
 
@@ -381,8 +381,15 @@ pdfioArrayCreateColorFromStandard(
 
 
   // Range check input...
-  if (!pdf || (num_colors != 1 && num_colors != 3) || cs < PDFIO_CS_ADOBE || cs > PDFIO_CS_SRGB)
+  if (!pdf)
+  {
     return (NULL);
+  }
+  else if (num_colors != 1 && num_colors != 3)
+  {
+    _pdfioFileError(pdf, "Unsupported number of colors %u.", (unsigned)num_colors);
+    return (NULL);
+  }
 
   switch (cs)
   {
@@ -392,6 +399,10 @@ pdfioArrayCreateColorFromStandard(
         return (pdfioArrayCreateColorFromMatrix(pdf, num_colors, 2.2, p3_d65_matrix, d65_white_point));
     case PDFIO_CS_SRGB :
         return (pdfioArrayCreateColorFromMatrix(pdf, num_colors, 2.2, srgb_matrix, d65_white_point));
+
+    default :
+        _pdfioFileError(pdf, "Unsupported color space number %d.", (int)cs);
+        return (NULL);
   }
 }
 
