@@ -1,0 +1,2 @@
+queries:
+  - exclude: cpp/toctou-race-condition
