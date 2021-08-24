@@ -992,8 +992,10 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
   char			buffer[32];	// Token
   size_t		cur_obj,	// Current object
 			num_objs = 0;	// Number of objects
-  pdfio_obj_t		*objs[1000];	// Objects
+  pdfio_obj_t		*objs[16384];	// Objects
 
+
+  PDFIO_DEBUG("load_obj_stream(obj=%p(%d))\n", obj, (int)obj->number);
 
   // Open the object stream...
   if ((st = pdfioObjOpenStream(obj, true)) == NULL)
@@ -1170,7 +1172,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       pdfio_stream_t	*st;		// Stream
       unsigned char	buffer[32];	// Read buffer
       size_t		num_sobjs = 0,	// Number of object streams
-			sobjs[1000];	// Object streams to load
+			sobjs[4096];	// Object streams to load
 
       if ((number = strtoimax(line, &ptr, 10)) < 1)
       {
@@ -1300,25 +1302,16 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
 	  if (w[0] > 0 && buffer[0] == 2)
 	  {
-	    // Object streams need to be loaded into memory...
-	    if ((obj = pdfioFileFindObj(pdf, (size_t)offset)) != NULL)
+	    // Object streams need to be loaded into memory, so add them
+	    // to the list of objects to load later as needed...
+	    for (i = 0; i < num_sobjs; i ++)
 	    {
-	      // Load it now...
-	      if (!load_obj_stream(obj))
-		return (false);
+	      if (sobjs[i] == (size_t)offset)
+		break;
 	    }
-	    else
-	    {
-	      // Add it to the list of objects to load later...
-	      for (i = 0; i < num_sobjs; i ++)
-	      {
-		if (sobjs[i] == (size_t)offset)
-		  break;
-	      }
 
-	      if (i >= num_sobjs && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
-		sobjs[num_sobjs ++] = (size_t)offset;
-	    }
+	    if (i >= num_sobjs && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
+	      sobjs[num_sobjs ++] = (size_t)offset;
 	  }
 	  else if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
 	    return (false);
