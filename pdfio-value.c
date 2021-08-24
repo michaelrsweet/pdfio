@@ -359,7 +359,18 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
       // Integer or object ref...
       unsigned char *tempptr;		// Pointer into buffer
 
-      PDFIO_DEBUG("_pdfioValueRead: %d bytes left in buffer.\n", (int)(tb->bufend - tb->bufptr));
+#ifdef DEBUG
+      PDFIO_DEBUG("_pdfioValueRead: %d bytes left in buffer: '", (int)(tb->bufend - tb->bufptr));
+      for (tempptr = tb->bufptr; tempptr < tb->bufend; tempptr ++)
+      {
+	if (*tempptr < ' ' || *tempptr == 0x7f)
+	  PDFIO_DEBUG("\\%03o", *tempptr);
+	else
+	  PDFIO_DEBUG("%c", *tempptr);
+      }
+      PDFIO_DEBUG("'.\n");
+#endif // DEBUG
+
       if ((tb->bufend - tb->bufptr) < 10)
       {
         // Fill up buffer...
@@ -370,20 +381,18 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
         if ((bytes = (tb->peek_cb)(tb->cb_data, tb->buffer, sizeof(tb->buffer))) > 0)
 	  tb->bufend = tb->buffer + bytes;
 
-	PDFIO_DEBUG("_pdfioValueRead: %d bytes now left in buffer.\n", (int)(tb->bufend - tb->bufptr));
-      }
-
 #ifdef DEBUG
-	  PDFIO_DEBUG("_pdfioValueRead: Bytes are '");
-	  for (tempptr = tb->bufptr; tempptr < tb->bufend; tempptr ++)
-	  {
-	    if (*tempptr < ' ' || *tempptr == 0x7f)
-	      PDFIO_DEBUG("\\%03o", *tempptr);
-	    else
-	      PDFIO_DEBUG("%c", *tempptr);
-	  }
-	  PDFIO_DEBUG("'.\n");
+	PDFIO_DEBUG("_pdfioValueRead: %d bytes now in buffer: '", (int)(tb->bufend - tb->bufptr));
+	for (tempptr = tb->bufptr; tempptr < tb->bufend; tempptr ++)
+	{
+	  if (*tempptr < ' ' || *tempptr == 0x7f)
+	    PDFIO_DEBUG("\\%03o", *tempptr);
+	  else
+	    PDFIO_DEBUG("%c", *tempptr);
+	}
+	PDFIO_DEBUG("'.\n");
 #endif // DEBUG
+      }
 
       tempptr = tb->bufptr;
 

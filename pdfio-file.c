@@ -1229,7 +1229,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       if ((index_array = pdfioDictGetArray(trailer.value.dict, "Index")) != NULL)
         index_count = index_array->num_values;
       else
-        index_count = 0;
+        index_count = 1;
 
       if ((w_array = pdfioDictGetArray(trailer.value.dict, "W")) == NULL)
       {

@@ -514,7 +514,7 @@ pdfioStreamPeek(pdfio_stream_t *st,	// I - Stream
     st->bufptr = st->buffer;
     st->bufend = st->buffer + remaining;
 
-    if ((rbytes = stream_read(st, st->bufptr, sizeof(st->buffer) - remaining)) > 0)
+    if ((rbytes = stream_read(st, st->bufend, sizeof(st->buffer) - remaining)) > 0)
     {
       st->bufend += rbytes;
       remaining  += (size_t)rbytes;
