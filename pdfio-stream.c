@@ -21,6 +21,7 @@
 static unsigned char	stream_paeth(unsigned char a, unsigned char b, unsigned char c);
 static ssize_t		stream_read(pdfio_stream_t *st, char *buffer, size_t bytes);
 static bool		stream_write(pdfio_stream_t *st, const void *buffer, size_t bytes);
+static const char	*zstrerror(int error);
 
 
 //
@@ -55,7 +56,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
       {
 	if (status < Z_OK && status != Z_BUF_ERROR)
 	{
-	  _pdfioFileError(st->pdf, "Flate compression failed (%d)", status);
+	  _pdfioFileError(st->pdf, "Flate compression failed: %s", zstrerror(status));
 	  ret = false;
 	  goto done;
 	}
@@ -165,6 +166,7 @@ _pdfioStreamCreate(
 					// Number of columns
     int predictor = (int)pdfioDictGetNumber(params, "Predictor");
 					// Predictory value, if any
+    int status;				// ZLIB status code
 
     PDFIO_DEBUG("_pdfioStreamCreate: FlateDecode - BitsPerComponent=%d, Colors=%d, Columns=%d, Predictor=%d\n", bpc, colors, columns, predictor);
 
@@ -231,9 +233,9 @@ _pdfioStreamCreate(
     st->flate.next_out  = (Bytef *)st->cbuffer;
     st->flate.avail_out = (uInt)sizeof(st->cbuffer);
 
-    if (deflateInit(&(st->flate), 9) != Z_OK)
+    if ((status = deflateInit(&(st->flate), 9)) != Z_OK)
     {
-      _pdfioFileError(st->pdf, "Unable to start Flate filter.");
+      _pdfioFileError(st->pdf, "Unable to start Flate filter: %s", zstrerror(status));
       free(st->prbuffer);
       free(st->psbuffer);
       free(st);
@@ -382,6 +384,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
 					// Number of columns
       int predictor = (int)pdfioDictGetNumber(params, "Predictor");
 					// Predictory value, if any
+      int status;			// ZLIB status
 
       PDFIO_DEBUG("_pdfioStreamOpen: FlateDecode - BitsPerComponent=%d, Colors=%d, Columns=%d, Predictor=%d\n", bpc, colors, columns, predictor);
 
@@ -452,9 +455,9 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
 
       PDFIO_DEBUG("_pdfioStreamOpen: avail_in=%u, cbuffer=<%02X%02X%02X%02X%02X%02X%02X%02X...>\n", st->flate.avail_in, st->cbuffer[0], st->cbuffer[1], st->cbuffer[2], st->cbuffer[3], st->cbuffer[4], st->cbuffer[5], st->cbuffer[6], st->cbuffer[7]);
 
-      if (inflateInit(&(st->flate)) != Z_OK)
+      if ((status = inflateInit(&(st->flate))) != Z_OK)
       {
-	_pdfioFileError(st->pdf, "Unable to start Flate filter.");
+	_pdfioFileError(st->pdf, "Unable to start Flate filter: %s", zstrerror(status));
 	free(st->prbuffer);
 	free(st->psbuffer);
 	free(st);
@@ -864,7 +867,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 
       if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
       {
-	_pdfioFileError(st->pdf, "Unable to decompress stream data: %d", status);
+	_pdfioFileError(st->pdf, "Unable to decompress stream data: %s", zstrerror(status));
 	return (-1);
       }
 
@@ -914,7 +917,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 
 	if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
 	{
-	  _pdfioFileError(st->pdf, "Unable to decompress stream data: %d", status);
+	  _pdfioFileError(st->pdf, "Unable to decompress stream data: %s", zstrerror(status));
 	  return (-1);
 	}
 	else if (status == Z_STREAM_END)
@@ -978,7 +981,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 
 	if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
 	{
-	  _pdfioFileError(st->pdf, "Unable to decompress stream data: %d", status);
+	  _pdfioFileError(st->pdf, "Unable to decompress stream data: %s", zstrerror(status));
 	  return (-1);
 	}
 	else if (status == Z_STREAM_END)
@@ -994,25 +997,30 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       switch (sptr[-1])
       {
         case 0 : // None
+        case 10 : // None (for buggy PDF writers)
             memcpy(buffer, sptr, remaining);
             break;
         case 1 : // Sub
+        case 11 : // Sub (for buggy PDF writers)
             for (; bufptr < bufsecond; remaining --, sptr ++)
               *bufptr++ = *sptr;
             for (; remaining > 0; remaining --, sptr ++, bufptr ++)
               *bufptr = *sptr + bufptr[-(int)pbpixel];
             break;
         case 2 : // Up
+        case 12 : // Up (for buggy PDF writers)
             for (; remaining > 0; remaining --, sptr ++, pptr ++)
               *bufptr++ = *sptr + *pptr;
             break;
         case 3 : // Average
+        case 13 : // Average (for buggy PDF writers)
 	    for (; bufptr < bufsecond; remaining --, sptr ++, pptr ++)
 	      *bufptr++ = *sptr + *pptr / 2;
 	    for (; remaining > 0; remaining --, sptr ++, pptr ++, bufptr ++)
 	      *bufptr = *sptr + (bufptr[-(int)pbpixel] + *pptr) / 2;
             break;
         case 4 : // Paeth
+        case 14 : // Paeth (for buggy PDF writers)
             for (; bufptr < bufsecond; remaining --, sptr ++, pptr ++)
               *bufptr++ = *sptr + stream_paeth(0, *pptr, 0);
             for (; remaining > 0; remaining --, sptr ++, pptr ++, bufptr ++)
@@ -1070,10 +1078,52 @@ stream_write(pdfio_stream_t *st,	// I - Stream
 
     if (status < Z_OK && status != Z_BUF_ERROR)
     {
-      _pdfioFileError(st->pdf, "Flate compression failed (%d)", status);
+      _pdfioFileError(st->pdf, "Flate compression failed: %s", zstrerror(status));
       return (false);
     }
   }
 
   return (true);
+}
+
+
+//
+// 'zstrerror()' - Return a string for a zlib error number.
+//
+
+static const char *			// O - Error string
+zstrerror(int error)			// I - Error number
+{
+  switch (error)
+  {
+    case Z_OK :
+        return ("No error.");
+
+    case Z_STREAM_END :
+        return ("End of stream.");
+
+    case Z_NEED_DICT :
+        return ("Need a huffman dictinary.");
+
+    case Z_ERRNO :
+        return (strerror(errno));
+
+    case Z_STREAM_ERROR :
+        return ("Stream error.");
+
+    case Z_DATA_ERROR :
+        return ("Data error.");
+
+    case Z_MEM_ERROR :
+        return ("Out of memory.");
+
+    case Z_BUF_ERROR :
+        return ("Out of buffers.");
+
+    case Z_VERSION_ERROR :
+        return ("Mismatched zlib library.");
+
+    default :
+        return ("Unknown error.");
+  }
 }
