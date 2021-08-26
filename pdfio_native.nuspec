@@ -8,7 +8,8 @@
         <owners>michaelrsweet</owners>
         <projectUrl>https://github.com/michaelrsweet/pappl</projectUrl>
         <license type="expression">Apache-2.0</license>
-        <icon>native/pdfio-128.png</icon>
+        <icon>build/native/pdfio-128.png</icon>
+        <readme>build/native/README.md</readme>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>PDFio Library for VS2019+</description>
         <summary>PDFio is a simple C library for reading and writing PDF files. PDFio is licensed under the Apache License Version 2.0 with an exception to allow linking against GNU GPL2-only software.</summary>
