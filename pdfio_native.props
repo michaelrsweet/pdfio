@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
   <ItemDefinitionGroup>
-    <ClCompile>   <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\include</AdditionalIncludeDirectories></ClCompile>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)\include</AdditionalIncludeDirectories>
+    </ClCompile>
     <Link>
       <AdditionalDependencies>$(MSBuildThisFileDirectory)\lib\$(Platform)\$(Configuration)\pdfio.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
