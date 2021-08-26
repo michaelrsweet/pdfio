@@ -128,7 +128,7 @@ do_test_file(const char *filename,	// I - PDF filename
 
   // Try opening the file...
   if (!objnum)
-    printf("pdfioFileOpen(\"%s\", ...): ", filename);
+    printf("%s: ", filename);
 
   if ((pdf = pdfioFileOpen(filename, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
