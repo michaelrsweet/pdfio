@@ -47,7 +47,7 @@ extern "C" {
 // Types and constants...
 //
 
-#  ifdef _WIN32
+#  if _WIN32
 typedef __int64 ssize_t;		// POSIX type not present on Windows... @private@
 #  endif // _WIN32
 
