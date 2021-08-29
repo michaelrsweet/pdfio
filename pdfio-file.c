@@ -990,7 +990,8 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
   pdfio_stream_t	*st;		// Stream
   _pdfio_token_t	tb;		// Token buffer/stack
   char			buffer[32];	// Token
-  size_t		cur_obj,	// Current object
+  size_t		number,		// Object number
+			cur_obj,	// Current object
 			num_objs = 0;	// Number of objects
   pdfio_obj_t		*objs[16384];	// Objects
 
@@ -1022,7 +1023,12 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
     }
 
     // Add the object in memory...
-    objs[num_objs ++] = add_obj(obj->pdf, (size_t)strtoimax(buffer, NULL, 10), 0, 0);
+    number = (size_t)strtoimax(buffer, NULL, 10);
+
+    if ((objs[num_objs] = pdfioFileFindObj(obj->pdf, number)) == NULL)
+      objs[num_objs] = add_obj(obj->pdf, number, 0, 0);
+
+    num_objs ++;
 
     // Skip offset
     _pdfioTokenGet(&tb, buffer, sizeof(buffer));
@@ -1173,6 +1179,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       unsigned char	buffer[32];	// Read buffer
       size_t		num_sobjs = 0,	// Number of object streams
 			sobjs[4096];	// Object streams to load
+      pdfio_obj_t	*current;	// Current object
 
       if ((number = strtoimax(line, &ptr, 10)) < 1)
       {
@@ -1264,7 +1271,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
 	while (pdfioStreamRead(st, buffer, w_total) > 0)
 	{
-	  PDFIO_DEBUG("load_xref: %02X%02X%02X%02X%02X\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+	  PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
 
 	  // Check whether this is an object definition...
 	  if (w[0] > 0)
@@ -1294,10 +1301,22 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	  }
 
 	  // Create a placeholder for the object in memory...
-	  if (pdfioFileFindObj(pdf, (size_t)number))
+	  if ((current = pdfioFileFindObj(pdf, (size_t)number)) != NULL)
 	  {
-	    number ++;
-	    continue;			// Don't replace newer object...
+	    PDFIO_DEBUG("load_xref: existing object, prev offset=%u\n", (unsigned)current->offset);
+
+            if (w[0] == 0 || buffer[0] == 1)
+            {
+              // Location of object...
+	      current->offset = offset;
+	    }
+	    else if (number != offset)
+	    {
+	      // Object is part of a stream, offset is the object number...
+	      current->offset = 0;
+	    }
+
+	    PDFIO_DEBUG("load_xref: new offset=%u\n", (unsigned)current->offset);
 	  }
 
 	  if (w[0] > 0 && buffer[0] == 2)
@@ -1313,8 +1332,12 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	    if (i >= num_sobjs && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
 	      sobjs[num_sobjs ++] = (size_t)offset;
 	  }
-	  else if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
-	    return (false);
+	  else if (!current)
+	  {
+	    // Add this object...
+	    if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
+	      return (false);
+	  }
 
 	  number ++;
 	}
