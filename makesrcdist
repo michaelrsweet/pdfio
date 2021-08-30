@@ -17,3 +17,7 @@ git push origin v$version
 echo Creating pdfio-$version.tar.gz...
 git archive --format tar --prefix=pdfio-$version/ HEAD | gzip -v9 >pdfio-$version.tar.gz
 gpg --detach-sign pdfio-$version.tar.gz
+
+echo Creating pdfio-$version.zip...
+git archive --format zip --prefix=pdfio-$version/ HEAD >pdfio-$version.zip
+gpg --detach-sign pdfio-$version.zip
