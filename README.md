@@ -39,8 +39,6 @@ IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
 Documentation
 -------------
 
-> Note: Documentation is under active development...
-
 See the man page (`pdfio.3`), frequently ask questions (`FAQ.md`), and full HTML
 documentation (`pdfio.html`) for information on using PDFio.
 
@@ -104,7 +102,8 @@ Visual Studio Project
 ---------------------
 
 The Visual Studio solution ("pdfio.sln") is provided for Windows developers and
-generates both a static library and DLL.
+generates both a static library and DLL.  You can also use NuGet to install the
+`pdfio_native` package.
 
 
 Xcode Project
