@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2021-07-26" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2021-08-30" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -412,6 +412,10 @@ pdfioArrayCreateColorFromPalette creates an indexed color array from an array of
 .PP
 pdfioArrayCreateColorFromPrimaries creates a color array using CIE XYZ primaries and a gamma value
 
+.IP \(bu 5
+.PP
+pdfioArrayCreateColorFromStandard creates a color array for a standard color space
+
 
 .PP
 You can embed an ICC color profile using the pdfioFileCreateICCObjFromFile function:
@@ -429,13 +433,13 @@ PDFio also includes predefined constants for creating a few standard color space
     pdfio_file_t *pdf = pdfioFileCreate(...);
     
     // Create an AdobeRGB color array
-    pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint);
+    pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_ADOBE);
     
     // Create an Display P3 color array
-    pdfio_array_t *display_p3 = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioDisplay P3Gamma, pdfioDisplay P3Matrix, pdfioDisplay P3WhitePoint);
+    pdfio_array_t *display_p3 = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_P3_D65);
     
     // Create an sRGB color array
-    pdfio_array_t *srgb = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint);
+    pdfio_array_t *srgb = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_SRGB);
 .fi
 .PP
 Font Object Functions
@@ -782,6 +786,20 @@ pdfioContentTextShowJustified draws an array of literal strings with offsets bet
 
 
 .SH ENUMERATIONS
+.SS pdfio_cs_e
+Standard color spaces
+.TP 5
+PDFIO_CS_ADOBE
+.br
+AdobeRGB 1998
+.TP 5
+PDFIO_CS_P3_D65
+.br
+Display P3
+.TP 5
+PDFIO_CS_SRGB
+.br
+sRGB
 .SS pdfio_filter_e
 Compression/decompression filters for streams
 .TP 5
@@ -1085,6 +1103,19 @@ pdfio_array_t * pdfioArrayCreateColorFromPrimaries (
     double by
 );
 .fi
+.SS pdfioArrayCreateColorFromStandard
+Create a color array for a standard color space.
+.PP
+.nf
+pdfio_array_t * pdfioArrayCreateColorFromStandard (
+    pdfio_file_t *pdf,
+    size_t num_colors,
+    pdfio_cs_t cs
+);
+.fi
+.PP
+This function creates a color array for a standard \fBPDFIO_CS_\fR enumerated color space.
+The "num_colors" argument must be \fB1\fR for grayscale and \fB3\fR for RGB color.
 .SS pdfioArrayGetArray
 Get an array value from an array.
 .PP
@@ -2612,6 +2643,12 @@ Array of PDF values
 .PP
 .nf
 typedef struct _pdfio_array_s pdfio_array_t;
+.fi
+.SS pdfio_cs_t
+Standard color spaces
+.PP
+.nf
+typedef enum pdfio_cs_e pdfio_cs_t;
 .fi
 .SS pdfio_dict_t
 Key/value dictionary

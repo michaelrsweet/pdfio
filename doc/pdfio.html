@@ -283,6 +283,7 @@ span.string {
 <li><a href="#pdfioArrayCreateColorFromMatrix">pdfioArrayCreateColorFromMatrix</a></li>
 <li><a href="#pdfioArrayCreateColorFromPalette">pdfioArrayCreateColorFromPalette</a></li>
 <li><a href="#pdfioArrayCreateColorFromPrimaries">pdfioArrayCreateColorFromPrimaries</a></li>
+<li><a href="#pdfioArrayCreateColorFromStandard">pdfioArrayCreateColorFromStandard</a></li>
 <li><a href="#pdfioArrayGetArray">pdfioArrayGetArray</a></li>
 <li><a href="#pdfioArrayGetBinary">pdfioArrayGetBinary</a></li>
 <li><a href="#pdfioArrayGetBoolean">pdfioArrayGetBoolean</a></li>
@@ -435,6 +436,7 @@ span.string {
 </ul></li>
 <li><a href="#TYPES">Data Types</a><ul class="subcontents">
 <li><a href="#pdfio_array_t">pdfio_array_t</a></li>
+<li><a href="#pdfio_cs_t">pdfio_cs_t</a></li>
 <li><a href="#pdfio_dict_t">pdfio_dict_t</a></li>
 <li><a href="#pdfio_error_cb_t">pdfio_error_cb_t</a></li>
 <li><a href="#pdfio_file_t">pdfio_file_t</a></li>
@@ -452,6 +454,7 @@ span.string {
 <li><a href="#pdfio_rect_s">pdfio_rect_s</a></li>
 </ul></li>
 <li><a href="#ENUMERATIONS">Enumerations</a><ul class="subcontents">
+<li><a href="#pdfio_cs_e">pdfio_cs_e</a></li>
 <li><a href="#pdfio_filter_e">pdfio_filter_e</a></li>
 <li><a href="#pdfio_linecap_e">pdfio_linecap_e</a></li>
 <li><a href="#pdfio_linejoin_e">pdfio_linejoin_e</a></li>
@@ -700,6 +703,8 @@ pdfio_stream_t *pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE);
 </li>
 <li><p><a href="#pdfioArrayCreateColorFromPrimaries"><code>pdfioArrayCreateColorFromPrimaries</code></a> creates a color array using CIE XYZ primaries and a gamma value</p>
 </li>
+<li><p><a href="#pdfioArrayCreateColorFromStandard"><code>pdfioArrayCreateColorFromStandard</code></a> creates a color array for a standard color space</p>
+</li>
 </ul>
 <p>You can embed an ICC color profile using the <a href="#pdfioFileCreateICCObjFromFile"><code>pdfioFileCreateICCObjFromFile</code></a> function:</p>
 <pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
@@ -710,13 +715,13 @@ pdfio_obj_t *icc = pdfioFileCreateICCObjFromFile(pdf, <span class="string">&quot
 <pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
 
 <span class="comment">// Create an AdobeRGB color array</span>
-pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromMatrix(pdf, <span class="number">3</span>, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint);
+pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromStandard(pdf, <span class="number">3</span>, PDFIO_CS_ADOBE);
 
 <span class="comment">// Create an Display P3 color array</span>
-pdfio_array_t *display_p3 = pdfioArrayCreateColorFromMatrix(pdf, <span class="number">3</span>, pdfioDisplay P3Gamma, pdfioDisplay P3Matrix, pdfioDisplay P3WhitePoint);
+pdfio_array_t *display_p3 = pdfioArrayCreateColorFromStandard(pdf, <span class="number">3</span>, PDFIO_CS_P3_D65);
 
 <span class="comment">// Create an sRGB color array</span>
-pdfio_array_t *srgb = pdfioArrayCreateColorFromMatrix(pdf, <span class="number">3</span>, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint);
+pdfio_array_t *srgb = pdfioArrayCreateColorFromStandard(pdf, <span class="number">3</span>, PDFIO_CS_SRGB);
 </code></pre>
 <h4 id="font-object-functions">Font Object Functions</h4>
 <p>PDF supports many kinds of fonts, including PostScript Type1, PDF Type3, TrueType/OpenType, and CID. PDFio provides two functions for creating font objects. The first is <a href="#pdfioFileCreateFontObjFromBase"><code>pdfioFileCreateFontObjFromBase</code></a> which creates a font object for one of the base PDF fonts:</p>
@@ -1122,6 +1127,24 @@ bool pdfioArrayAppendString(<a href="#pdfio_array_t">pdfio_array_t</a> *a, const
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Color space array</p>
+<h3 class="function"><a id="pdfioArrayCreateColorFromStandard">pdfioArrayCreateColorFromStandard</a></h3>
+<p class="description">Create a color array for a standard color space.</p>
+<p class="code">
+<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioArrayCreateColorFromStandard(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, size_t num_colors, <a href="#pdfio_cs_t">pdfio_cs_t</a> cs);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>num_colors</th>
+<td class="description">Number of colors (1 or 3)</td></tr>
+<tr><th>cs</th>
+<td class="description">Color space enumeration</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Color array</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function creates a color array for a standard <code>PDFIO_CS_</code> enumerated color space.
+The &quot;num_colors&quot; argument must be <code>1</code> for grayscale and <code>3</code> for RGB color.</p>
 <h3 class="function"><a id="pdfioArrayGetArray">pdfioArrayGetArray</a></h3>
 <p class="description">Get an array value from an array.</p>
 <p class="code">
@@ -3273,6 +3296,11 @@ char *pdfioStringCreatef(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const ch
 <p class="code">
 typedef struct _pdfio_array_s pdfio_array_t;
 </p>
+<h3 class="typedef"><a id="pdfio_cs_t">pdfio_cs_t</a></h3>
+<p class="description">Standard color spaces</p>
+<p class="code">
+typedef enum <a href="#pdfio_cs_e">pdfio_cs_e</a> pdfio_cs_t;
+</p>
 <h3 class="typedef"><a id="pdfio_dict_t">pdfio_dict_t</a></h3>
 <p class="description">Key/value dictionary</p>
 <p class="code">
@@ -3354,6 +3382,14 @@ typedef enum <a href="#pdfio_valtype_e">pdfio_valtype_e</a> pdfio_valtype_t;
 <td class="description">Upper-right Y coordinate</td></tr>
 </tbody></table>
 <h2 class="title"><a id="ENUMERATIONS">Constants</a></h2>
+<h3 class="enumeration"><a id="pdfio_cs_e">pdfio_cs_e</a></h3>
+<p class="description">Standard color spaces</p>
+<h4 class="constants">Constants</h4>
+<table class="list"><tbody>
+<tr><th>PDFIO_CS_ADOBE </th><td class="description">AdobeRGB 1998</td></tr>
+<tr><th>PDFIO_CS_P3_D65 </th><td class="description">Display P3</td></tr>
+<tr><th>PDFIO_CS_SRGB </th><td class="description">sRGB</td></tr>
+</tbody></table>
 <h3 class="enumeration"><a id="pdfio_filter_e">pdfio_filter_e</a></h3>
 <p class="description">Compression/decompression filters for streams</p>
 <h4 class="constants">Constants</h4>

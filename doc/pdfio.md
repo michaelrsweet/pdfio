@@ -351,6 +351,7 @@ creating color space arrays:
 - [`pdfioArrayCreateColorFromMatrix`](@@) creates a color array using a CIE XYZ color transform matrix, a gamma value, and a CIE XYZ white point
 - [`pdfioArrayCreateColorFromPalette`](@@) creates an indexed color array from an array of sRGB values
 - [`pdfioArrayCreateColorFromPrimaries`](@@) creates a color array using CIE XYZ primaries and a gamma value
+- [`pdfioArrayCreateColorFromStandard`](@@) creates a color array for a standard color space
 
 You can embed an ICC color profile using the
 [`pdfioFileCreateICCObjFromFile`](@@) function:
@@ -370,13 +371,13 @@ spaces:
 pdfio_file_t *pdf = pdfioFileCreate(...);
 
 // Create an AdobeRGB color array
-pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint);
+pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_ADOBE);
 
 // Create an Display P3 color array
-pdfio_array_t *display_p3 = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioDisplay P3Gamma, pdfioDisplay P3Matrix, pdfioDisplay P3WhitePoint);
+pdfio_array_t *display_p3 = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_P3_D65);
 
 // Create an sRGB color array
-pdfio_array_t *srgb = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioSRGBGamma, pdfioSRGBMatrix, pdfioSRGBWhitePoint);
+pdfio_array_t *srgb = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_SRGB);
 ```
 
 
