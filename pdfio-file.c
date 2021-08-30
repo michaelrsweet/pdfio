@@ -1166,7 +1166,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
     PDFIO_DEBUG("load_xref: xref_offset=%lu, line='%s'\n", (unsigned long)xref_offset, line);
 
-    if (isdigit(line[0] & 255) && strlen(line) > 4 && !strcmp(line + strlen(line) - 4, " obj"))
+    if (isdigit(line[0] & 255) && strlen(line) > 4 && (!strcmp(line + strlen(line) - 4, " obj") || ((ptr = strstr(line, " obj")) != NULL && ptr[4] == '<')))
     {
       // Cross-reference stream
       pdfio_obj_t	*obj;		// Object
@@ -1201,11 +1201,13 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       while (isspace(*ptr & 255))
 	ptr ++;
 
-      if (strcmp(ptr, "obj"))
+      if (strncmp(ptr, "obj", 3))
       {
 	_pdfioFileError(pdf, "Bad xref table header '%s'.", line);
 	return (false);
       }
+
+      _pdfioFileSeek(pdf, xref_offset + ptr + 3 - line, SEEK_SET);
 
       PDFIO_DEBUG("load_xref: Loading object %lu %u.\n", (unsigned long)number, (unsigned)generation);
 
@@ -1225,6 +1227,12 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       else if (trailer.type != PDFIO_VALTYPE_DICT)
       {
 	_pdfioFileError(pdf, "Cross-reference stream does not have a dictionary.");
+	return (false);
+      }
+      else if (_pdfioDictGetValue(pdf->trailer, "Encrypt"))
+      {
+	// Encryption not yet supported...
+	_pdfioFileError(pdf, "Sorry, PDFio currently does not support encrypted PDF files.");
 	return (false);
       }
 
@@ -1466,6 +1474,12 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       else if (trailer.type != PDFIO_VALTYPE_DICT)
       {
 	_pdfioFileError(pdf, "Trailer is not a dictionary.");
+	return (false);
+      }
+      else if (_pdfioDictGetValue(pdf->trailer, "Encrypt"))
+      {
+	// Encryption not yet supported...
+	_pdfioFileError(pdf, "Sorry, PDFio currently does not support encrypted PDF files.");
 	return (false);
       }
 
