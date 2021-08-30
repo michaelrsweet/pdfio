@@ -1154,11 +1154,15 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       return (false);
     }
 
-    if (!_pdfioFileGets(pdf, line, sizeof(line)))
+    do
     {
-      _pdfioFileError(pdf, "Unable to read start of xref table.");
-      return (false);
+      if (!_pdfioFileGets(pdf, line, sizeof(line)))
+      {
+	_pdfioFileError(pdf, "Unable to read start of xref table.");
+	return (false);
+      }
     }
+    while (!line[0]);
 
     PDFIO_DEBUG("load_xref: xref_offset=%lu, line='%s'\n", (unsigned long)xref_offset, line);
 
@@ -1169,7 +1173,8 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       size_t		i;		// Looping var
       pdfio_array_t	*index_array;	// Index array
       size_t		index_n,	// Current element in array
-			index_count;	// Number of values in index array
+			index_count,	// Number of values in index array
+			count;		// Number of objects in current pairing
       pdfio_array_t	*w_array;	// W array
       size_t		w[3];		// Size of each cross-reference field
       size_t		w_2,		// Offset to second field
@@ -1265,12 +1270,23 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	return (false);
       }
 
-      for (index_n = 0; index_n < index_count; index_n ++)
+      for (index_n = 0; index_n < index_count; index_n += 2)
       {
-        number = (intmax_t)pdfioArrayGetNumber(index_array, index_n);
-
-	while (pdfioStreamRead(st, buffer, w_total) > 0)
+        if (index_count == 1)
+        {
+          number = 0;
+          count  = 999999999;
+	}
+	else
 	{
+          number = (intmax_t)pdfioArrayGetNumber(index_array, index_n);
+          count  = (size_t)pdfioArrayGetNumber(index_array, index_n + 1);
+	}
+
+	while (count > 0 && pdfioStreamRead(st, buffer, w_total) > 0)
+	{
+	  count --;
+
 	  PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
 
 	  // Check whether this is an object definition...
@@ -1371,6 +1387,8 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       {
 	if (!strcmp(line, "trailer"))
 	  break;
+	else if (!line[0])
+	  continue;
 
 	if (sscanf(line, "%jd%jd", &number, &num_objects) != 2)
 	{

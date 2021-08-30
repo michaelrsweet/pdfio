@@ -80,6 +80,8 @@ _pdfioFileError(pdfio_file_t *pdf,	// I - PDF file
   vsnprintf(buffer, sizeof(buffer), format, ap);
   va_end(ap);
 
+  PDFIO_DEBUG("_pdfioFileError: %s\n", buffer);
+
   return ((pdf->error_cb)(pdf, buffer, pdf->error_data));
 }
 

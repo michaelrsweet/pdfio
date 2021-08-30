@@ -385,6 +385,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       int predictor = (int)pdfioDictGetNumber(params, "Predictor");
 					// Predictory value, if any
       int status;			// ZLIB status
+      ssize_t rbytes;			// Bytes read
 
       PDFIO_DEBUG("_pdfioStreamOpen: FlateDecode - BitsPerComponent=%d, Colors=%d, Columns=%d, Predictor=%d\n", bpc, colors, columns, predictor);
 
@@ -450,8 +451,28 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       else
         st->predictor = _PDFIO_PREDICTOR_NONE;
 
+      if (sizeof(st->cbuffer) > st->remaining)
+	rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->remaining);
+      else
+	rbytes = _pdfioFileRead(st->pdf, st->cbuffer, sizeof(st->cbuffer));
+
+      if (rbytes <= 0)
+      {
+	_pdfioFileError(st->pdf, "Unable to read bytes for stream.");
+	free(st->prbuffer);
+	free(st->psbuffer);
+	free(st);
+	return (NULL);
+      }
+
       st->flate.next_in  = (Bytef *)st->cbuffer;
-      st->flate.avail_in = (uInt)_pdfioFileRead(st->pdf, st->cbuffer, sizeof(st->cbuffer));
+      st->flate.avail_in = (uInt)rbytes;
+
+      if (st->cbuffer[0] == 0x0a)
+      {
+        st->flate.next_in ++;		// Skip newline
+        st->flate.avail_in --;
+      }
 
       PDFIO_DEBUG("_pdfioStreamOpen: avail_in=%u, cbuffer=<%02X%02X%02X%02X%02X%02X%02X%02X...>\n", st->flate.avail_in, st->cbuffer[0], st->cbuffer[1], st->cbuffer[2], st->cbuffer[3], st->cbuffer[4], st->cbuffer[5], st->cbuffer[6], st->cbuffer[7]);
 
@@ -989,7 +1010,11 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       }
 
       if (st->flate.avail_out > 0)
-        return (-1);			// Early end of stream
+      {
+	// Early end of stream
+        PDFIO_DEBUG("stream_read: Early EOF (remaining=%u, avail_in=%d, avail_out=%d, data_type=%d, next_in=<%02X%02X%02X%02X...>).\n", (unsigned)st->remaining, st->flate.avail_in, st->flate.avail_out, st->flate.data_type, st->flate.next_in[0], st->flate.next_in[1], st->flate.next_in[2], st->flate.next_in[3]);
+        return (-1);
+      }
 
       // Apply predictor for this line
       PDFIO_DEBUG("stream_read: Line %02X %02X %02X %02X %02X.\n", sptr[-1], sptr[0], sptr[0], sptr[2], sptr[3]);
