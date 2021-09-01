@@ -3,7 +3,7 @@
     <metadata>
         <id>pdfio_native</id>
         <title>PDFio Library for VS2019+</title>
-        <version>1.0.0-b2</version>
+        <version>1.0.0-b3</version>
         <authors>Michael R Sweet</authors>
         <owners>michaelrsweet</owners>
         <projectUrl>https://github.com/michaelrsweet/pappl</projectUrl>
@@ -22,7 +22,7 @@
         <file src="pdfio_native.props" target="build\native" />
         <file src="pdfio.h" target="build\native\include" />
         <file src="pdfio-content.h" target="build\native\include" />
-        <!--<file src="Win32\**\pdfio*.lib" target="build\native\lib\Win32" />-->
-        <file src="x64\**\pdfio.lib" target="build\native\lib\x64" />
+        <!--<file src="Win32\**\pdfio1.lib" target="build\native\lib\Win32" />-->
+        <file src="x64\**\pdfio1.lib" target="build\native\lib\x64" />
     </files>
 </package>
