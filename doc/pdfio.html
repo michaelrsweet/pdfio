@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<title>PDFio Programming Manual v1.0b1</title>
+<title>PDFio Programming Manual v1.0.0</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.7">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
 <meta name="copyright" content="Copyright © 2021 by Michael R Sweet">
-<meta name="version" content="1.0b1">
+<meta name="version" content="1.0.0">
 <style type="text/css"><!--
 body {
   background: white;
@@ -245,7 +245,7 @@ span.string {
 <body>
 <div class="header">
 <p><img class="title" src="pdfio-512.png"></p>
-<h1 class="title">PDFio Programming Manual v1.0b1</h1>
+<h1 class="title">PDFio Programming Manual v1.0.0</h1>
 <p>Michael R Sweet</p>
 <p>Copyright © 2021 by Michael R Sweet</p>
 </div>
@@ -381,6 +381,7 @@ span.string {
 <li><a href="#pdfioFileCreateImageObjFromData">pdfioFileCreateImageObjFromData</a></li>
 <li><a href="#pdfioFileCreateImageObjFromFile">pdfioFileCreateImageObjFromFile</a></li>
 <li><a href="#pdfioFileCreateObj">pdfioFileCreateObj</a></li>
+<li><a href="#pdfioFileCreateOutput">pdfioFileCreateOutput</a></li>
 <li><a href="#pdfioFileCreatePage">pdfioFileCreatePage</a></li>
 <li><a href="#pdfioFileFindObj">pdfioFileFindObj</a></li>
 <li><a href="#pdfioFileGetAuthor">pdfioFileGetAuthor</a></li>
@@ -445,6 +446,7 @@ span.string {
 <li><a href="#pdfio_linejoin_t">pdfio_linejoin_t</a></li>
 <li><a href="#pdfio_matrix_t[3][2]">pdfio_matrix_t[3][2]</a></li>
 <li><a href="#pdfio_obj_t">pdfio_obj_t</a></li>
+<li><a href="#pdfio_output_cb_t">pdfio_output_cb_t</a></li>
 <li><a href="#pdfio_rect_t">pdfio_rect_t</a></li>
 <li><a href="#pdfio_stream_t">pdfio_stream_t</a></li>
 <li><a href="#pdfio_textrendering_t">pdfio_textrendering_t</a></li>
@@ -557,7 +559,7 @@ fi
 <pre><code class="language-make">CFLAGS  +=      `pkg-config --cflags pdfio`
 LIBS    +=      `pkg-config --libs pdfio`
 </code></pre>
-<p>On Windows, you need to link to the <code>PDFIO.LIB</code> (static) or <code>PDFIO1.LIB</code> (DLL) libraries and include the &quot;zlib&quot; NuGet package dependency.</p>
+<p>On Windows, you need to link to the <code>PDFIO1.LIB</code> (DLL) library and include the <code>zlib_native</code> NuGet package dependency. You can also use the published <code>pdfio_native</code> NuGet package.</p>
 <h3 class="title" id="header-files">Header Files</h3>
 <p>PDFio provides a primary header file that is always used:</p>
 <pre><code class="language-c"><span class="directive">#include &lt;pdfio.h&gt;</span>
@@ -621,6 +623,12 @@ pdfio_rect_t crop_box = { <span class="number">36.0</span>, <span class="number"
 pdfio_file_t *pdf = pdfioFileCreate(<span class="string">&quot;myoutputfile.pdf&quot;</span>, <span class="string">&quot;2.0&quot;</span>, &amp;media_box, &amp;crop_box, error_cb, error_data);
 </code></pre>
 <p>where the six arguments to the function are the filename (&quot;myoutputfile.pdf&quot;), PDF version (&quot;2.0&quot;), media box (<code>media_box</code>), crop box (<code>crop_box</code>), an optional error callback function (<code>error_cb</code>), and an optional pointer value for the error callback function (<code>error_data</code>). The units for the media and crop boxes are points (1/72nd of an inch).</p>
+<p>Alternately you can stream a PDF file using the <a href="#pdfioFileCreateOutput"><code>pdfioFileCreateOutput</code></a> function:</p>
+<pre><code class="language-c">pdfio_rect_t media_box = { <span class="number">0.0</span>, <span class="number">0.0</span>, <span class="number">612.0</span>, <span class="number">792.0</span> };  <span class="comment">// US Letter</span>
+pdfio_rect_t crop_box = { <span class="number">36.0</span>, <span class="number">36.0</span>, <span class="number">576.0</span>, <span class="number">756.0</span> }; <span class="comment">// w/0.5&quot; margins</span>
+
+pdfio_file_t *pdf = pdfioFileCreateOutput(output_cb, output_ctx, <span class="string">&quot;2.0&quot;</span>, &amp;media_box, &amp;crop_box, error_cb, error_data);
+</code></pre>
 <p>Once the file is created, use the <a href="#pdfioFileCreateObj"><code>pdfioFileCreateObj</code></a>, <a href="#pdfioFileCreatePage"><code>pdfioFileCreatePage</code></a>, and <a href="#pdfioPageCopy"><code>pdfioPageCopy</code></a> functions to create objects and pages in the file.</p>
 <p>Finally, the <a href="#pdfioFileClose"><code>pdfioFileClose</code></a> function writes the PDF cross-reference and &quot;trailer&quot; information, closes the file, and frees all memory that was used for it.</p>
 <h3 class="title" id="pdf-objects">PDF Objects</h3>
@@ -2444,6 +2452,20 @@ bool pdfioFileClose(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">PDF file or <code>NULL</code> on error</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function creates a new PDF file.  The &quot;filename&quot; argument specifies the
+name of the PDF file to create.<br>
+<br>
+The &quot;version&quot; argument specifies the PDF version number for the file or
+<code>NULL</code> for the default (&quot;2.0&quot;).<br>
+<br>
+The &quot;media_box&quot; and &quot;crop_box&quot; arguments specify the default MediaBox and
+CropBox for pages in the PDF file - if <code>NULL</code> then a default &quot;Universal&quot; size
+of 8.27x11in (the intersection of US Letter and ISO A4) is used.<br>
+<br>
+The &quot;error_cb&quot; and &quot;error_data&quot; arguments specify an error handler callback
+and its data pointer - if not specified the default error handler is used
+that writes error messages to <code>stderr</code>.</p>
 <h3 class="function"><a id="pdfioFileCreateArrayObj">pdfioFileCreateArrayObj</a></h3>
 <p class="description">Create a new object in a PDF file containing an array.</p>
 <p class="code">
@@ -2621,6 +2643,57 @@ is supported.</blockquote>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">New object</p>
+<h3 class="function"><a id="pdfioFileCreateOutput">pdfioFileCreateOutput</a></h3>
+<p class="description">Create a PDF file through an output callback.</p>
+<p class="code">
+<a href="#pdfio_file_t">pdfio_file_t</a> *pdfioFileCreateOutput(<a href="#pdfio_output_cb_t">pdfio_output_cb_t</a> output_cb, void *output_ctx, const char *version, <a href="#pdfio_rect_t">pdfio_rect_t</a> *media_box, <a href="#pdfio_rect_t">pdfio_rect_t</a> *crop_box, <a href="#pdfio_error_cb_t">pdfio_error_cb_t</a> error_cb, void *error_data);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>output_cb</th>
+<td class="description">Output callback</td></tr>
+<tr><th>output_ctx</th>
+<td class="description">Output context</td></tr>
+<tr><th>version</th>
+<td class="description">PDF version number or <code>NULL</code> for default (2.0)</td></tr>
+<tr><th>media_box</th>
+<td class="description">Default MediaBox for pages</td></tr>
+<tr><th>crop_box</th>
+<td class="description">Default CropBox for pages</td></tr>
+<tr><th>error_cb</th>
+<td class="description">Error callback or <code>NULL</code> for default</td></tr>
+<tr><th>error_data</th>
+<td class="description">Error callback data, if any</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">PDF file or <code>NULL</code> on error</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function creates a new PDF file that is streamed though an output
+callback.  The &quot;output_cb&quot; and &quot;output_ctx&quot; arguments specify the output
+callback and its context pointer which is called whenever data needs to be
+written:
+
+<pre>
+ssize_t
+output_cb(void *output_ctx, const void *buffer, size_t bytes)
+{
+// Write buffer to output and return the number of bytes written
+}
+</pre>
+The &quot;version&quot; argument specifies the PDF version number for the file or
+<code>NULL</code> for the default (&quot;2.0&quot;).<br>
+<br>
+The &quot;media_box&quot; and &quot;crop_box&quot; arguments specify the default MediaBox and
+CropBox for pages in the PDF file - if <code>NULL</code> then a default &quot;Universal&quot; size
+of 8.27x11in (the intersection of US Letter and ISO A4) is used.<br>
+<br>
+The &quot;error_cb&quot; and &quot;error_data&quot; arguments specify an error handler callback
+and its data pointer - if not specified the default error handler is used
+that writes error messages to <code>stderr</code>.<br>
+<br>
+</p><blockquote>
+<em>Note</em>: Files created using this API are slightly larger than those
+created using the <a href="#pdfioFileCreate"><code>pdfioFileCreate</code></a> function since stream lengths are
+stored as indirect object references.</blockquote>
 <h3 class="function"><a id="pdfioFileCreatePage">pdfioFileCreatePage</a></h3>
 <p class="description">Create a page in a PDF file.</p>
 <p class="code">
@@ -2823,6 +2896,12 @@ const char *pdfioFileGetVersion(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);<
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">PDF file</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function opens an existing PDF file.  The &quot;filename&quot; argument specifies
+the name of the PDF file to create.  The &quot;error_cb&quot; and &quot;error_data&quot;
+arguments specify an error handler callback and its data pointer - if not
+specified the default error handler is used that writes error messages to
+<code>stderr</code>.</p>
 <h3 class="function"><a id="pdfioFileSetAuthor">pdfioFileSetAuthor</a></h3>
 <p class="description">Set the author for a PDF file.</p>
 <p class="code">
@@ -3340,6 +3419,11 @@ typedef double pdfio_matrix_t[3][2];
 <p class="description">Numbered object in PDF file</p>
 <p class="code">
 typedef struct _pdfio_obj_s pdfio_obj_t;
+</p>
+<h3 class="typedef"><a id="pdfio_output_cb_t">pdfio_output_cb_t</a></h3>
+<p class="description">Output callback for pdfioFileCreateOutput</p>
+<p class="code">
+typedef ssize_t (*pdfio_output_cb_t)(void *ctx const void *data size_t datalen);
 </p>
 <h3 class="typedef"><a id="pdfio_rect_t">pdfio_rect_t</a></h3>
 <p class="description">PDF rectangle</p>

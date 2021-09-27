@@ -166,6 +166,20 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
 //
 // 'pdfioFileCreate()' - Create a PDF file.
 //
+// This function creates a new PDF file.  The "filename" argument specifies the
+// name of the PDF file to create.
+//
+// The "version" argument specifies the PDF version number for the file or
+// `NULL` for the default ("2.0").
+//
+// The "media_box" and "crop_box" arguments specify the default MediaBox and
+// CropBox for pages in the PDF file - if `NULL` then a default "Universal" size
+// of 8.27x11in (the intersection of US Letter and ISO A4) is used.
+//
+// The "error_cb" and "error_data" arguments specify an error handler callback
+// and its data pointer - if not specified the default error handler is used
+// that writes error messages to `stderr`.
+//
 
 pdfio_file_t *				// O - PDF file or `NULL` on error
 pdfioFileCreate(
@@ -401,6 +415,34 @@ _pdfioFileCreateObj(
 
 //
 // 'pdfioFileCreateOutput()' - Create a PDF file through an output callback.
+//
+// This function creates a new PDF file that is streamed though an output
+// callback.  The "output_cb" and "output_ctx" arguments specify the output
+// callback and its context pointer which is called whenever data needs to be
+// written:
+//
+// ```
+// ssize_t
+// output_cb(void *output_ctx, const void *buffer, size_t bytes)
+// {
+//   // Write buffer to output and return the number of bytes written
+// }
+// ```
+//
+// The "version" argument specifies the PDF version number for the file or
+// `NULL` for the default ("2.0").
+//
+// The "media_box" and "crop_box" arguments specify the default MediaBox and
+// CropBox for pages in the PDF file - if `NULL` then a default "Universal" size
+// of 8.27x11in (the intersection of US Letter and ISO A4) is used.
+//
+// The "error_cb" and "error_data" arguments specify an error handler callback
+// and its data pointer - if not specified the default error handler is used
+// that writes error messages to `stderr`.
+//
+// > *Note*: Files created using this API are slightly larger than those
+// > created using the @link pdfioFileCreate@ function since stream lengths are
+// > stored as indirect object references.
 //
 
 pdfio_file_t *				// O - PDF file or `NULL` on error
@@ -819,6 +861,12 @@ pdfioFileGetVersion(
 
 //
 // 'pdfioFileOpen()' - Open a PDF file for reading.
+//
+// This function opens an existing PDF file.  The "filename" argument specifies
+// the name of the PDF file to create.  The "error_cb" and "error_data"
+// arguments specify an error handler callback and its data pointer - if not
+// specified the default error handler is used that writes error messages to
+// `stderr`.
 //
 
 pdfio_file_t *				// O - PDF file

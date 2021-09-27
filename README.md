@@ -102,8 +102,8 @@ Visual Studio Project
 ---------------------
 
 The Visual Studio solution ("pdfio.sln") is provided for Windows developers and
-generates both a static library and DLL.  You can also use NuGet to install the
-`pdfio_native` package.
+generates the PDFIO1 DLL.  You can also use NuGet to install the `pdfio_native`
+package.
 
 
 Xcode Project

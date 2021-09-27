@@ -122,8 +122,9 @@ CFLAGS  +=      `pkg-config --cflags pdfio`
 LIBS    +=      `pkg-config --libs pdfio`
 ```
 
-On Windows, you need to link to the `PDFIO.LIB` (static) or `PDFIO1.LIB` (DLL)
-libraries and include the "zlib" NuGet package dependency.
+On Windows, you need to link to the `PDFIO1.LIB` (DLL) library and include the
+`zlib_native` NuGet package dependency.  You can also use the published
+`pdfio_native` NuGet package.
 
 
 Header Files
@@ -234,6 +235,16 @@ PDF version ("2.0"), media box (`media_box`), crop box (`crop_box`), an optional
 error callback function (`error_cb`), and an optional pointer value for the
 error callback function (`error_data`).  The units for the media and crop boxes
 are points (1/72nd of an inch).
+
+Alternately you can stream a PDF file using the [`pdfioFileCreateOutput`](@@)
+function:
+
+```c
+pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
+pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // w/0.5" margins
+
+pdfio_file_t *pdf = pdfioFileCreateOutput(output_cb, output_ctx, "2.0", &media_box, &crop_box, error_cb, error_data);
+```
 
 Once the file is created, use the [`pdfioFileCreateObj`](@@),
 [`pdfioFileCreatePage`](@@), and [`pdfioPageCopy`](@@) functions to create

@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2021-08-30" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2021-09-27" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -171,7 +171,7 @@ In a makefile you can add the necessary compiler and linker options with:
     LIBS    +=      `pkg\-config \-\-libs pdfio`
 .fi
 .PP
-On Windows, you need to link to the PDFIO.LIB (static) or PDFIO1.LIB (DLL) libraries and include the "zlib" NuGet package dependency.
+On Windows, you need to link to the PDFIO1.LIB (DLL) library and include the zlib_native NuGet package dependency. You can also use the published pdfio_native NuGet package.
 .SS Header Files
 .PP
 PDFio provides a primary header file that is always used:
@@ -269,6 +269,15 @@ You create a new PDF file using the pdfioFileCreate function:
 .fi
 .PP
 where the six arguments to the function are the filename ("myoutputfile.pdf"), PDF version ("2.0"), media box (media_box), crop box (crop_box), an optional error callback function (error_cb), and an optional pointer value for the error callback function (error_data). The units for the media and crop boxes are points (1/72nd of an inch).
+.PP
+Alternately you can stream a PDF file using the pdfioFileCreateOutput function:
+.nf
+
+    pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
+    pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // w/0.5" margins
+    
+    pdfio_file_t *pdf = pdfioFileCreateOutput(output_cb, output_ctx, "2.0", &media_box, &crop_box, error_cb, error_data);
+.fi
 .PP
 Once the file is created, use the pdfioFileCreateObj, pdfioFileCreatePage, and pdfioPageCopy functions to create objects and pages in the file.
 .PP
@@ -1995,6 +2004,20 @@ pdfio_file_t * pdfioFileCreate (
     void *error_data
 );
 .fi
+.PP
+This function creates a new PDF file.  The "filename" argument specifies the
+name of the PDF file to create.
+.PP
+The "version" argument specifies the PDF version number for the file or
+\fBNULL\fR for the default ("2.0").
+.PP
+The "media_box" and "crop_box" arguments specify the default MediaBox and
+CropBox for pages in the PDF file - if \fBNULL\fR then a default "Universal" size
+of 8.27x11in (the intersection of US Letter and ISO A4) is used.
+.PP
+The "error_cb" and "error_data" arguments specify an error handler callback
+and its data pointer - if not specified the default error handler is used
+that writes error messages to \fBstderr\fR.
 .SS pdfioFileCreateArrayObj
 Create a new object in a PDF file containing an array.
 .PP
@@ -2137,6 +2160,51 @@ pdfio_obj_t * pdfioFileCreateObj (
     pdfio_dict_t *dict
 );
 .fi
+.SS pdfioFileCreateOutput
+Create a PDF file through an output callback.
+.PP
+.nf
+pdfio_file_t * pdfioFileCreateOutput (
+    pdfio_output_cb_t output_cb,
+    void *output_ctx,
+    const char *version,
+    pdfio_rect_t *media_box,
+    pdfio_rect_t *crop_box,
+    pdfio_error_cb_t error_cb,
+    void *error_data
+);
+.fi
+.PP
+This function creates a new PDF file that is streamed though an output
+callback.  The "output_cb" and "output_ctx" arguments specify the output
+callback and its context pointer which is called whenever data needs to be
+written:
+.PP
+.nf
+    ssize_t
+    output_cb(void *output_ctx, const void *buffer, size_t bytes)
+    {
+    // Write buffer to output and return the number of bytes written
+    }
+
+.fi
+The "version" argument specifies the PDF version number for the file or
+\fBNULL\fR for the default ("2.0").
+.PP
+The "media_box" and "crop_box" arguments specify the default MediaBox and
+CropBox for pages in the PDF file - if \fBNULL\fR then a default "Universal" size
+of 8.27x11in (the intersection of US Letter and ISO A4) is used.
+.PP
+The "error_cb" and "error_data" arguments specify an error handler callback
+and its data pointer - if not specified the default error handler is used
+that writes error messages to \fBstderr\fR.
+.PP
+.IP 5
+\fINote\fR: Files created using this API are slightly larger than those
+.IP 5
+created using the \fIpdfioFileCreate\fR function since stream lengths are
+.IP 5
+stored as indirect object references.
 .SS pdfioFileCreatePage
 Create a page in a PDF file.
 .PP
@@ -2282,6 +2350,12 @@ pdfio_file_t * pdfioFileOpen (
     void *error_data
 );
 .fi
+.PP
+This function opens an existing PDF file.  The "filename" argument specifies
+the name of the PDF file to create.  The "error_cb" and "error_data"
+arguments specify an error handler callback and its data pointer - if not
+specified the default error handler is used that writes error messages to
+\fBstderr\fR.
 .SS pdfioFileSetAuthor
 Set the author for a PDF file.
 .PP
@@ -2697,6 +2771,12 @@ Numbered object in PDF file
 .PP
 .nf
 typedef struct _pdfio_obj_s pdfio_obj_t;
+.fi
+.SS pdfio_output_cb_t
+Output callback for pdfioFileCreateOutput
+.PP
+.nf
+typedef ssize_t(*)(void *ctx const void *data size_t datalen) pdfio_output_cb_t;
 .fi
 .SS pdfio_rect_t
 PDF rectangle
