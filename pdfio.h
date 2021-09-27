@@ -76,6 +76,8 @@ typedef enum pdfio_filter_e		// Compression/decompression filters for streams
 typedef struct _pdfio_obj_s pdfio_obj_t;// Numbered object in PDF file
 typedef ssize_t (*pdfio_output_cb_t)(void *ctx, const void *data, size_t datalen);
 					// Output callback for pdfioFileCreateOutput
+typedef const char *(*pdfio_password_cb_t)(void *data, const char *filename);
+					// Password callback for pdfioFileOpen
 typedef struct pdfio_rect_s		// PDF rectangle
 {
   double	x1;			// Lower-left X coordinate
@@ -176,7 +178,7 @@ extern const char	*pdfioFileGetProducer(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetSubject(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetTitle(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetVersion(pdfio_file_t *pdf) _PDFIO_PUBLIC;
-extern pdfio_file_t	*pdfioFileOpen(const char *filename, pdfio_error_cb_t error_cb, void *error_data) _PDFIO_PUBLIC;
+extern pdfio_file_t	*pdfioFileOpen(const char *filename, pdfio_password_cb_t password_cb, void *password_data, pdfio_error_cb_t error_cb, void *error_data) _PDFIO_PUBLIC;
 extern void		pdfioFileSetAuthor(pdfio_file_t *pdf, const char *value) _PDFIO_PUBLIC;
 extern void		pdfioFileSetCreationDate(pdfio_file_t *pdf, time_t value) _PDFIO_PUBLIC;
 extern void		pdfioFileSetCreator(pdfio_file_t *pdf, const char *value) _PDFIO_PUBLIC;

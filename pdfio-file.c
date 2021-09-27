@@ -177,8 +177,8 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
 // of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 //
 // The "error_cb" and "error_data" arguments specify an error handler callback
-// and its data pointer - if not specified the default error handler is used
-// that writes error messages to `stderr`.
+// and its data pointer - if `NULL` the default error handler is used that
+// writes error messages to `stderr`.
 //
 
 pdfio_file_t *				// O - PDF file or `NULL` on error
@@ -437,8 +437,8 @@ _pdfioFileCreateObj(
 // of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 //
 // The "error_cb" and "error_data" arguments specify an error handler callback
-// and its data pointer - if not specified the default error handler is used
-// that writes error messages to `stderr`.
+// and its data pointer - if `NULL` the default error handler is used that
+// writes error messages to `stderr`.
 //
 // > *Note*: Files created using this API are slightly larger than those
 // > created using the @link pdfioFileCreate@ function since stream lengths are
@@ -863,23 +863,35 @@ pdfioFileGetVersion(
 // 'pdfioFileOpen()' - Open a PDF file for reading.
 //
 // This function opens an existing PDF file.  The "filename" argument specifies
-// the name of the PDF file to create.  The "error_cb" and "error_data"
-// arguments specify an error handler callback and its data pointer - if not
-// specified the default error handler is used that writes error messages to
-// `stderr`.
+// the name of the PDF file to create.
+//
+// The "password_cb" and "password_data" arguments specify a password callback
+// and its data pointer for PDF files that use one of the standard Adobe
+// "security" handlers.  The callback returns a password string or `NULL` to
+// cancel the open.  If `NULL` is specified for the callback function and the
+// PDF file requires a password, the open will always fail.
+//
+// The "error_cb" and "error_data" arguments specify an error handler callback
+// and its data pointer - if `NULL` the default error handler is used that
+// writes error messages to `stderr`.
 //
 
 pdfio_file_t *				// O - PDF file
 pdfioFileOpen(
-    const char       *filename,		// I - Filename
-    pdfio_error_cb_t error_cb,		// I - Error callback or `NULL` for default
-    void             *error_data)	// I - Error callback data, if any
+    const char          *filename,	// I - Filename
+    pdfio_password_cb_t password_cb,	// I - Password callback or `NULL` for none
+    void                *password_data,	// I - Password callback data, if any
+    pdfio_error_cb_t    error_cb,	// I - Error callback or `NULL` for default
+    void                *error_data)	// I - Error callback data, if any
 {
   pdfio_file_t	*pdf;			// PDF file
   char		line[1024],		// Line from file
 		*ptr;			// Pointer into line
   off_t		xref_offset;		// Offset to xref table
 
+
+  (void)password_cb;
+  (void)password_data;
 
   // Range check input...
   if (!filename)

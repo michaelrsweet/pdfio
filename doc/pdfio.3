@@ -2016,8 +2016,8 @@ CropBox for pages in the PDF file - if \fBNULL\fR then a default "Universal" siz
 of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 .PP
 The "error_cb" and "error_data" arguments specify an error handler callback
-and its data pointer - if not specified the default error handler is used
-that writes error messages to \fBstderr\fR.
+and its data pointer - if \fBNULL\fR the default error handler is used that
+writes error messages to \fBstderr\fR.
 .SS pdfioFileCreateArrayObj
 Create a new object in a PDF file containing an array.
 .PP
@@ -2196,8 +2196,8 @@ CropBox for pages in the PDF file - if \fBNULL\fR then a default "Universal" siz
 of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 .PP
 The "error_cb" and "error_data" arguments specify an error handler callback
-and its data pointer - if not specified the default error handler is used
-that writes error messages to \fBstderr\fR.
+and its data pointer - if \fBNULL\fR the default error handler is used that
+writes error messages to \fBstderr\fR.
 .PP
 .IP 5
 \fINote\fR: Files created using this API are slightly larger than those
@@ -2346,16 +2346,25 @@ Open a PDF file for reading.
 .nf
 pdfio_file_t * pdfioFileOpen (
     const char *filename,
+    pdfio_password_cb_t password_cb,
+    void *password_data,
     pdfio_error_cb_t error_cb,
     void *error_data
 );
 .fi
 .PP
 This function opens an existing PDF file.  The "filename" argument specifies
-the name of the PDF file to create.  The "error_cb" and "error_data"
-arguments specify an error handler callback and its data pointer - if not
-specified the default error handler is used that writes error messages to
-\fBstderr\fR.
+the name of the PDF file to create.
+.PP
+The "password_cb" and "password_data" arguments specify a password callback
+and its data pointer for PDF files that use one of the standard Adobe
+"security" handlers.  The callback returns a password string or \fBNULL\fR to
+cancel the open.  If \fBNULL\fR is specified for the callback function and the
+PDF file requires a password, the open will always fail.
+.PP
+The "error_cb" and "error_data" arguments specify an error handler callback
+and its data pointer - if \fBNULL\fR the default error handler is used that
+writes error messages to \fBstderr\fR.
 .SS pdfioFileSetAuthor
 Set the author for a PDF file.
 .PP
@@ -2777,6 +2786,12 @@ Output callback for pdfioFileCreateOutput
 .PP
 .nf
 typedef ssize_t(*)(void *ctx const void *data size_t datalen) pdfio_output_cb_t;
+.fi
+.SS pdfio_password_cb_t
+Password callback for pdfioFileOpen
+.PP
+.nf
+typedef const char *(*)(void *data const char *filename) pdfio_password_cb_t;
 .fi
 .SS pdfio_rect_t
 PDF rectangle

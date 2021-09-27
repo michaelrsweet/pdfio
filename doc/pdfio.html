@@ -447,6 +447,7 @@ span.string {
 <li><a href="#pdfio_matrix_t[3][2]">pdfio_matrix_t[3][2]</a></li>
 <li><a href="#pdfio_obj_t">pdfio_obj_t</a></li>
 <li><a href="#pdfio_output_cb_t">pdfio_output_cb_t</a></li>
+<li><a href="#pdfio_password_cb_t">pdfio_password_cb_t</a></li>
 <li><a href="#pdfio_rect_t">pdfio_rect_t</a></li>
 <li><a href="#pdfio_stream_t">pdfio_stream_t</a></li>
 <li><a href="#pdfio_textrendering_t">pdfio_textrendering_t</a></li>
@@ -2464,8 +2465,8 @@ CropBox for pages in the PDF file - if <code>NULL</code> then a default &quot;Un
 of 8.27x11in (the intersection of US Letter and ISO A4) is used.<br>
 <br>
 The &quot;error_cb&quot; and &quot;error_data&quot; arguments specify an error handler callback
-and its data pointer - if not specified the default error handler is used
-that writes error messages to <code>stderr</code>.</p>
+and its data pointer - if <code>NULL</code> the default error handler is used that
+writes error messages to <code>stderr</code>.</p>
 <h3 class="function"><a id="pdfioFileCreateArrayObj">pdfioFileCreateArrayObj</a></h3>
 <p class="description">Create a new object in a PDF file containing an array.</p>
 <p class="code">
@@ -2687,8 +2688,8 @@ CropBox for pages in the PDF file - if <code>NULL</code> then a default &quot;Un
 of 8.27x11in (the intersection of US Letter and ISO A4) is used.<br>
 <br>
 The &quot;error_cb&quot; and &quot;error_data&quot; arguments specify an error handler callback
-and its data pointer - if not specified the default error handler is used
-that writes error messages to <code>stderr</code>.<br>
+and its data pointer - if <code>NULL</code> the default error handler is used that
+writes error messages to <code>stderr</code>.<br>
 <br>
 </p><blockquote>
 <em>Note</em>: Files created using this API are slightly larger than those
@@ -2884,11 +2885,15 @@ const char *pdfioFileGetVersion(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);<
 <h3 class="function"><a id="pdfioFileOpen">pdfioFileOpen</a></h3>
 <p class="description">Open a PDF file for reading.</p>
 <p class="code">
-<a href="#pdfio_file_t">pdfio_file_t</a> *pdfioFileOpen(const char *filename, <a href="#pdfio_error_cb_t">pdfio_error_cb_t</a> error_cb, void *error_data);</p>
+<a href="#pdfio_file_t">pdfio_file_t</a> *pdfioFileOpen(const char *filename, <a href="#pdfio_password_cb_t">pdfio_password_cb_t</a> password_cb, void *password_data, <a href="#pdfio_error_cb_t">pdfio_error_cb_t</a> error_cb, void *error_data);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>filename</th>
 <td class="description">Filename</td></tr>
+<tr><th>password_cb</th>
+<td class="description">Password callback or <code>NULL</code> for none</td></tr>
+<tr><th>password_data</th>
+<td class="description">Password callback data, if any</td></tr>
 <tr><th>error_cb</th>
 <td class="description">Error callback or <code>NULL</code> for default</td></tr>
 <tr><th>error_data</th>
@@ -2898,10 +2903,17 @@ const char *pdfioFileGetVersion(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);<
 <p class="description">PDF file</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">This function opens an existing PDF file.  The &quot;filename&quot; argument specifies
-the name of the PDF file to create.  The &quot;error_cb&quot; and &quot;error_data&quot;
-arguments specify an error handler callback and its data pointer - if not
-specified the default error handler is used that writes error messages to
-<code>stderr</code>.</p>
+the name of the PDF file to create.<br>
+<br>
+The &quot;password_cb&quot; and &quot;password_data&quot; arguments specify a password callback
+and its data pointer for PDF files that use one of the standard Adobe
+&quot;security&quot; handlers.  The callback returns a password string or <code>NULL</code> to
+cancel the open.  If <code>NULL</code> is specified for the callback function and the
+PDF file requires a password, the open will always fail.<br>
+<br>
+The &quot;error_cb&quot; and &quot;error_data&quot; arguments specify an error handler callback
+and its data pointer - if <code>NULL</code> the default error handler is used that
+writes error messages to <code>stderr</code>.</p>
 <h3 class="function"><a id="pdfioFileSetAuthor">pdfioFileSetAuthor</a></h3>
 <p class="description">Set the author for a PDF file.</p>
 <p class="code">
@@ -3424,6 +3436,11 @@ typedef struct _pdfio_obj_s pdfio_obj_t;
 <p class="description">Output callback for pdfioFileCreateOutput</p>
 <p class="code">
 typedef ssize_t (*pdfio_output_cb_t)(void *ctx const void *data size_t datalen);
+</p>
+<h3 class="typedef"><a id="pdfio_password_cb_t">pdfio_password_cb_t</a></h3>
+<p class="description">Password callback for pdfioFileOpen</p>
+<p class="code">
+typedef const char *(*pdfio_password_cb_t)(void *data const char *filename);
 </p>
 <h3 class="typedef"><a id="pdfio_rect_t">pdfio_rect_t</a></h3>
 <p class="description">PDF rectangle</p>

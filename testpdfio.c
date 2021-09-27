@@ -136,7 +136,7 @@ do_test_file(const char *filename,	// I - PDF filename
     fflush(stdout);
   }
 
-  if ((pdf = pdfioFileOpen(filename, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((pdf = pdfioFileOpen(filename, /*password_cb*/NULL, /*password_data*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
     if (objnum)
     {
@@ -715,7 +715,7 @@ do_unit_tests(void)
 
   // First open the test PDF file...
   fputs("pdfioFileOpen(\"testfiles/testpdfio.pdf\"): ", stdout);
-  if ((inpdf = pdfioFileOpen("testfiles/testpdfio.pdf", (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((inpdf = pdfioFileOpen("testfiles/testpdfio.pdf", /*password_cb*/NULL, /*password_data*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -898,7 +898,7 @@ read_unit_file(const char *filename,	// I - File to read
 
   // Open the new PDF file to read it...
   printf("pdfioFileOpen(\"%s\", ...): ", filename);
-  if ((pdf = pdfioFileOpen(filename, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((pdf = pdfioFileOpen(filename, /*password_cb*/NULL, /*password_data*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
     puts("PASS");
   else
     return (1);
