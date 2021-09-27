@@ -117,6 +117,7 @@ pdfioFileCreateICCObjFromFile
 pdfioFileCreateImageObjFromData
 pdfioFileCreateImageObjFromFile
 pdfioFileCreateObj
+pdfioFileCreateOutput
 pdfioFileCreatePage
 pdfioFileFindObj
 pdfioFileGetAuthor
