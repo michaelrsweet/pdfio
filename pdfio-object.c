@@ -143,6 +143,9 @@ pdfioObjCreateStream(
     pdfio_obj_t    *obj,		// I - Object
     pdfio_filter_t filter)		// I - Type of compression to apply
 {
+  pdfio_obj_t	*length_obj = NULL;	// Length object, if any
+
+
   // Range check input
   if (!obj || obj->pdf->mode != _PDFIO_MODE_WRITE || obj->value.type != PDFIO_VALTYPE_DICT)
     return (NULL);
@@ -162,9 +165,23 @@ pdfioObjCreateStream(
   // Write the header...
   if (!_pdfioDictGetValue(obj->value.value.dict, "Length"))
   {
-    // Need a Length key for the stream, add a placeholder that we can fill in
-    // later...
-    pdfioDictSetNumber(obj->value.value.dict, "Length", 0.0);
+    if (obj->pdf->output_cb)
+    {
+      // Streaming via an output callback, so add a placeholder length object
+      _pdfio_value_t	length_value;	// Length value
+
+      length_value.type         = PDFIO_VALTYPE_NUMBER;
+      length_value.value.number = 0.0f;
+
+      length_obj = _pdfioFileCreateObj(obj->pdf, obj->pdf, &length_value);
+      pdfioDictSetObj(obj->value.value.dict, "Length", length_obj);
+    }
+    else
+    {
+      // Need a Length key for the stream, add a placeholder that we can fill in
+      // later...
+      pdfioDictSetNumber(obj->value.value.dict, "Length", 0.0);
+    }
   }
 
   if (!write_obj_header(obj))
@@ -176,7 +193,7 @@ pdfioObjCreateStream(
   obj->stream_offset = _pdfioFileTell(obj->pdf);
 
   // Return the new stream...
-  return (_pdfioStreamCreate(obj, filter));
+  return (_pdfioStreamCreate(obj, length_obj, filter));
 }
 
 

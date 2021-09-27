@@ -33,6 +33,8 @@ static int	do_test_file(const char *filename, int objnum, bool verbose);
 static int	do_unit_tests(void);
 static int	draw_image(pdfio_stream_t *st, const char *name, double x, double y, double w, double h, const char *label);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
+static ssize_t	output_cb(int *fd, const void *buffer, size_t bytes);
+static int	read_unit_file(const char *filename, size_t num_pages, size_t first_image, bool is_output);
 static ssize_t	token_consume_cb(const char **s, size_t bytes);
 static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
 static int	verify_image(pdfio_file_t *pdf, size_t number);
@@ -46,6 +48,7 @@ static int	write_images_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_jpeg_test(pdfio_file_t *pdf, const char *title, int number, pdfio_obj_t *font, pdfio_obj_t *image);
 static int	write_png_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_text_test(pdfio_file_t *pdf, int first_page, pdfio_obj_t *font, const char *filename);
+static int	write_unit_file(pdfio_file_t *inpdf, pdfio_file_t *outpdf, size_t *num_pages, size_t *first_image);
 
 
 //
@@ -249,17 +252,13 @@ do_test_file(const char *filename,	// I - PDF filename
 static int				// O - Exit status
 do_unit_tests(void)
 {
-  int			i;		// Looping var
-  pdfio_file_t		*pdf,		// Test PDF file
+  pdfio_file_t		*inpdf,		// Input PDF file
 			*outpdf;	// Output PDF file
+  int			outfd;		// Output file descriptor
   bool			error = false;	// Error callback data
   _pdfio_token_t	tb;		// Token buffer
   const char		*s;		// String buffer
   _pdfio_value_t	value;		// Value
-  pdfio_obj_t		*color_jpg,	// color.jpg image
-			*gray_jpg,	// gray.jpg image
-			*helvetica,	// Helvetica font
-			*page;		// Page from test PDF file
   size_t		first_image,	// First image object
 			num_pages;	// Number of pages written
   static const char	*complex_dict =	// Complex dictionary value
@@ -716,7 +715,7 @@ do_unit_tests(void)
 
   // First open the test PDF file...
   fputs("pdfioFileOpen(\"testfiles/testpdfio.pdf\"): ", stdout);
-  if ((pdf = pdfioFileOpen("testfiles/testpdfio.pdf", (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((inpdf = pdfioFileOpen("testfiles/testpdfio.pdf", (pdfio_error_cb_t)error_cb, &error)) != NULL)
     puts("PASS");
   else
     return (1);
@@ -726,8 +725,8 @@ do_unit_tests(void)
   // Test the value parsers for edge cases...
   fputs("_pdfioValueRead(complex_dict): ", stdout);
   s = complex_dict;
-  _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)token_consume_cb, (_pdfio_tpeek_cb_t)token_peek_cb, (void *)&s);
-  if (_pdfioValueRead(pdf, &tb, &value))
+  _pdfioTokenInit(&tb, inpdf, (_pdfio_tconsume_cb_t)token_consume_cb, (_pdfio_tpeek_cb_t)token_peek_cb, (void *)&s);
+  if (_pdfioValueRead(inpdf, &tb, &value))
   {
     // TODO: Check value...
     fputs("PASS: ", stdout);
@@ -740,8 +739,8 @@ do_unit_tests(void)
   // Test the value parsers for edge cases...
   fputs("_pdfioValueRead(cid_dict): ", stdout);
   s = cid_dict;
-  _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)token_consume_cb, (_pdfio_tpeek_cb_t)token_peek_cb, (void *)&s);
-  if (_pdfioValueRead(pdf, &tb, &value))
+  _pdfioTokenInit(&tb, inpdf, (_pdfio_tconsume_cb_t)token_consume_cb, (_pdfio_tpeek_cb_t)token_peek_cb, (void *)&s);
+  if (_pdfioValueRead(inpdf, &tb, &value))
   {
     // TODO: Check value...
     fputs("PASS: ", stdout);
@@ -758,230 +757,31 @@ do_unit_tests(void)
   else
     return (1);
 
-  // Set info values...
-  fputs("pdfioFileGet/SetAuthor: ", stdout);
-  pdfioFileSetAuthor(outpdf, "Michael R Sweet");
-  if ((s = pdfioFileGetAuthor(outpdf)) != NULL && !strcmp(s, "Michael R Sweet"))
-  {
-    puts("PASS");
-  }
-  else if (s)
-  {
-    printf("FAIL (got '%s', expected 'Michael R Sweet')\n", s);
+  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
     return (1);
-  }
-  else
+
+  if (read_unit_file("testpdfio-out.pdf", num_pages, first_image, false))
+    return (1);
+
+  // Create a new PDF file...
+  if ((outfd = open("testpdfio-out2.pdf", O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0666)) < 0)
   {
-    puts("FAIL (got NULL, expected 'Michael R Sweet')");
+    perror("Unable to open \"testpdfio-out2.pdf\"");
     return (1);
   }
 
-  fputs("pdfioFileGet/SetCreator: ", stdout);
-  pdfioFileSetCreator(outpdf, "testpdfio");
-  if ((s = pdfioFileGetCreator(outpdf)) != NULL && !strcmp(s, "testpdfio"))
-  {
-    puts("PASS");
-  }
-  else if (s)
-  {
-    printf("FAIL (got '%s', expected 'testpdfio')\n", s);
-    return (1);
-  }
-  else
-  {
-    puts("FAIL (got NULL, expected 'testpdfio')");
-    return (1);
-  }
-
-  fputs("pdfioFileGet/SetKeywords: ", stdout);
-  pdfioFileSetKeywords(outpdf, "one fish,two fish,red fish,blue fish");
-  if ((s = pdfioFileGetKeywords(outpdf)) != NULL && !strcmp(s, "one fish,two fish,red fish,blue fish"))
-  {
-    puts("PASS");
-  }
-  else if (s)
-  {
-    printf("FAIL (got '%s', expected 'one fish,two fish,red fish,blue fish')\n", s);
-    return (1);
-  }
-  else
-  {
-    puts("FAIL (got NULL, expected 'one fish,two fish,red fish,blue fish')");
-    return (1);
-  }
-
-  fputs("pdfioFileGet/SetSubject: ", stdout);
-  pdfioFileSetSubject(outpdf, "Unit test document");
-  if ((s = pdfioFileGetSubject(outpdf)) != NULL && !strcmp(s, "Unit test document"))
-  {
-    puts("PASS");
-  }
-  else if (s)
-  {
-    printf("FAIL (got '%s', expected 'Unit test document')\n", s);
-    return (1);
-  }
-  else
-  {
-    puts("FAIL (got NULL, expected 'Unit test document')");
-    return (1);
-  }
-
-  fputs("pdfioFileGet/SetTitle: ", stdout);
-  pdfioFileSetTitle(outpdf, "Test Document");
-  if ((s = pdfioFileGetTitle(outpdf)) != NULL && !strcmp(s, "Test Document"))
-  {
-    puts("PASS");
-  }
-  else if (s)
-  {
-    printf("FAIL (got '%s', expected 'Test Document')\n", s);
-    return (1);
-  }
-  else
-  {
-    puts("FAIL (got NULL, expected 'Test Document')");
-    return (1);
-  }
-
-  // Create some image objects...
-  fputs("pdfioFileCreateImageObjFromFile(\"testfiles/color.jpg\"): ", stdout);
-  if ((color_jpg = pdfioFileCreateImageObjFromFile(outpdf, "testfiles/color.jpg", true)) != NULL)
+  fputs("pdfioFileCreateOutput(...): ", stdout);
+  if ((outpdf = pdfioFileCreateOutput((pdfio_output_cb_t)output_cb, &outfd, NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
     puts("PASS");
   else
     return (1);
 
-  fputs("pdfioFileCreateImageObjFromFile(\"testfiles/gray.jpg\"): ", stdout);
-  if ((gray_jpg = pdfioFileCreateImageObjFromFile(outpdf, "testfiles/gray.jpg", true)) != NULL)
-    puts("PASS");
-  else
+  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
     return (1);
 
-  // Create fonts...
-  fputs("pdfioFileCreateFontObjFromBase(\"Helvetica\"): ", stdout);
-  if ((helvetica = pdfioFileCreateFontObjFromBase(outpdf, "Helvetica")) != NULL)
-    puts("PASS");
-  else
-    return (1);
+  close(outfd);
 
-  // Copy the first page from the test PDF file...
-  fputs("pdfioFileGetPage(0): ", stdout);
-  if ((page = pdfioFileGetPage(pdf, 0)) != NULL)
-    puts("PASS");
-  else
-    return (1);
-
-  fputs("pdfioPageCopy(first page): ", stdout);
-  if (pdfioPageCopy(outpdf, page))
-    puts("PASS");
-  else
-    return (1);
-
-  // Write a page with a color image...
-  if (write_jpeg_test(outpdf, "Color JPEG Test", 2, helvetica, color_jpg))
-    return (1);
-
-  // Copy the third page from the test PDF file...
-  fputs("pdfioFileGetPage(2): ", stdout);
-  if ((page = pdfioFileGetPage(pdf, 2)) != NULL)
-    puts("PASS");
-  else
-    return (1);
-
-  fputs("pdfioPageCopy(third page): ", stdout);
-  if (pdfioPageCopy(outpdf, page))
-    puts("PASS");
-  else
-    return (1);
-
-  // Write a page with a grayscale image...
-  if (write_jpeg_test(outpdf, "Grayscale JPEG Test", 4, helvetica, gray_jpg))
-    return (1);
-
-  // Write a page with PNG images...
-  if (write_png_test(outpdf, 5, helvetica))
-    return (1);
-
-  // Write a page that tests multiple color spaces...
-  if (write_color_test(outpdf, 6, helvetica))
-    return (1);
-
-  // Write a page with test images...
-  first_image = pdfioFileGetNumObjs(outpdf) + 1;
-  if (write_images_test(outpdf, 7, helvetica))
-    return (1);
-
-  // Write a page width alpha (soft masks)...
-  if (write_alpha_test(outpdf, 8, helvetica))
-    return (1);
-
-  // Test TrueType fonts...
-  if (write_font_test(outpdf, 9, helvetica, false))
-    return (1);
-
-  if (write_font_test(outpdf, 10, helvetica, true))
-    return (1);
-
-  // Print this text file...
-  if (write_text_test(outpdf, 11, helvetica, "README.md"))
-    return (1);
-
-  // Close the test PDF file...
-  fputs("pdfioFileClose(\"testfiles/testpdfio.pdf\"): ", stdout);
-  if (pdfioFileClose(pdf))
-    puts("PASS");
-  else
-    return (1);
-
-  fputs("pdfioFileGetNumPages: ", stdout);
-  if ((num_pages = pdfioFileGetNumPages(outpdf)) > 0)
-  {
-    printf("PASS (%lu)\n", (unsigned long)num_pages);
-  }
-  else
-  {
-    puts("FAIL");
-    return (1);
-  }
-
-  // Close the new PDF file...
-  fputs("pdfioFileClose(\"testpdfio-out.pdf\"): ", stdout);
-  if (pdfioFileClose(outpdf))
-    puts("PASS");
-  else
-    return (1);
-
-  // Open the new PDF file to read it...
-  fputs("pdfioFileOpen(\"testpdfio-out.pdf\", ...): ", stdout);
-  if ((pdf = pdfioFileOpen("testpdfio-out.pdf", (pdfio_error_cb_t)error_cb, &error)) != NULL)
-    puts("PASS");
-  else
-    return (1);
-
-  // Verify the number of pages is the same...
-  fputs("pdfioFileGetNumPages: ", stdout);
-  if (num_pages == pdfioFileGetNumPages(pdf))
-  {
-    puts("PASS");
-  }
-  else
-  {
-    printf("FAIL (%lu != %lu)\n", (unsigned long)num_pages, (unsigned long)pdfioFileGetNumPages(pdf));
-    return (1);
-  }
-
-  // Verify the images
-  for (i = 0; i < 7; i ++)
-  {
-    if (verify_image(pdf, first_image + (size_t)i))
-      return (1);
-  }
-
-  // Close the new PDF file...
-  fputs("pdfioFileClose(\"testpdfio-out.pdf\"): ", stdout);
-  if (pdfioFileClose(pdf))
-    puts("PASS");
-  else
+  if (read_unit_file("testpdfio-out2.pdf", num_pages, first_image, true))
     return (1);
 
   return (0);
@@ -1065,6 +865,76 @@ error_cb(pdfio_file_t *pdf,		// I  - PDF file
 
   // Continue to catch more errors...
   return (false);
+}
+
+
+//
+// 'output_cb()' - Write output to a file.
+//
+
+static ssize_t				// O - Number of bytes written
+output_cb(int        *fd,		// I - File descriptor
+          const void *buffer,		// I - Output buffer
+          size_t     bytes)		// I - Number of bytes to write
+{
+  return (write(*fd, buffer, bytes));
+}
+
+
+//
+// 'read_unit_file()' - Read back a unit test file and confirm its contents.
+//
+
+static int				// O - Exit status
+read_unit_file(const char *filename,	// I - File to read
+               size_t     num_pages,	// I - Expected number of pages
+	       size_t     first_image,	// I - First image object
+	       bool       is_output)	// I - File written with output callback?
+{
+  pdfio_file_t	*pdf;			// PDF file
+  size_t	i;			// Looping var
+  bool		error = false;		// Error callback data
+
+
+  // Open the new PDF file to read it...
+  printf("pdfioFileOpen(\"%s\", ...): ", filename);
+  if ((pdf = pdfioFileOpen(filename, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  // Verify the number of pages is the same...
+  fputs("pdfioFileGetNumPages: ", stdout);
+  if (num_pages == pdfioFileGetNumPages(pdf))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    printf("FAIL (%lu != %lu)\n", (unsigned long)num_pages, (unsigned long)pdfioFileGetNumPages(pdf));
+    return (1);
+  }
+
+  // Verify the images
+  for (i = 0; i < 7; i ++)
+  {
+    if (is_output)
+    {
+      if (verify_image(pdf, first_image + (size_t)i * 2))
+        return (1);
+    }
+    else if (verify_image(pdf, first_image + (size_t)i))
+      return (1);
+  }
+
+  // Close the new PDF file...
+  fputs("pdfioFileClose(\"testpdfio-out.pdf\"): ", stdout);
+  if (pdfioFileClose(pdf))
+    puts("PASS");
+  else
+    return (1);
+
+  return (0);
 }
 
 
@@ -2842,4 +2712,212 @@ write_text_test(pdfio_file_t *pdf,		// I - PDF file
   fclose(fp);
   pdfioStreamClose(st);
   return (1);
+}
+
+
+//
+// 'write_unit_file()' - Write a unit test file.
+//
+
+static int				// O - Exit status
+write_unit_file(
+    pdfio_file_t *inpdf,		// I - Input PDF file
+    pdfio_file_t *outpdf,		// I - Output PDF file
+    size_t       *num_pages,		// O - Number of pages
+    size_t       *first_image)		// O - First image object
+{
+  const char		*s;		// String buffer
+  pdfio_obj_t		*color_jpg,	// color.jpg image
+			*gray_jpg,	// gray.jpg image
+			*helvetica,	// Helvetica font
+			*page;		// Page from test PDF file
+
+
+  // Set info values...
+  fputs("pdfioFileGet/SetAuthor: ", stdout);
+  pdfioFileSetAuthor(outpdf, "Michael R Sweet");
+  if ((s = pdfioFileGetAuthor(outpdf)) != NULL && !strcmp(s, "Michael R Sweet"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'Michael R Sweet')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'Michael R Sweet')");
+    return (1);
+  }
+
+  fputs("pdfioFileGet/SetCreator: ", stdout);
+  pdfioFileSetCreator(outpdf, "testpdfio");
+  if ((s = pdfioFileGetCreator(outpdf)) != NULL && !strcmp(s, "testpdfio"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'testpdfio')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'testpdfio')");
+    return (1);
+  }
+
+  fputs("pdfioFileGet/SetKeywords: ", stdout);
+  pdfioFileSetKeywords(outpdf, "one fish,two fish,red fish,blue fish");
+  if ((s = pdfioFileGetKeywords(outpdf)) != NULL && !strcmp(s, "one fish,two fish,red fish,blue fish"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'one fish,two fish,red fish,blue fish')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'one fish,two fish,red fish,blue fish')");
+    return (1);
+  }
+
+  fputs("pdfioFileGet/SetSubject: ", stdout);
+  pdfioFileSetSubject(outpdf, "Unit test document");
+  if ((s = pdfioFileGetSubject(outpdf)) != NULL && !strcmp(s, "Unit test document"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'Unit test document')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'Unit test document')");
+    return (1);
+  }
+
+  fputs("pdfioFileGet/SetTitle: ", stdout);
+  pdfioFileSetTitle(outpdf, "Test Document");
+  if ((s = pdfioFileGetTitle(outpdf)) != NULL && !strcmp(s, "Test Document"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'Test Document')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'Test Document')");
+    return (1);
+  }
+
+  // Create some image objects...
+  fputs("pdfioFileCreateImageObjFromFile(\"testfiles/color.jpg\"): ", stdout);
+  if ((color_jpg = pdfioFileCreateImageObjFromFile(outpdf, "testfiles/color.jpg", true)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioFileCreateImageObjFromFile(\"testfiles/gray.jpg\"): ", stdout);
+  if ((gray_jpg = pdfioFileCreateImageObjFromFile(outpdf, "testfiles/gray.jpg", true)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  // Create fonts...
+  fputs("pdfioFileCreateFontObjFromBase(\"Helvetica\"): ", stdout);
+  if ((helvetica = pdfioFileCreateFontObjFromBase(outpdf, "Helvetica")) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  // Copy the first page from the test PDF file...
+  fputs("pdfioFileGetPage(0): ", stdout);
+  if ((page = pdfioFileGetPage(inpdf, 0)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageCopy(first page): ", stdout);
+  if (pdfioPageCopy(outpdf, page))
+    puts("PASS");
+  else
+    return (1);
+
+  // Write a page with a color image...
+  if (write_jpeg_test(outpdf, "Color JPEG Test", 2, helvetica, color_jpg))
+    return (1);
+
+  // Copy the third page from the test PDF file...
+  fputs("pdfioFileGetPage(2): ", stdout);
+  if ((page = pdfioFileGetPage(inpdf, 2)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioPageCopy(third page): ", stdout);
+  if (pdfioPageCopy(outpdf, page))
+    puts("PASS");
+  else
+    return (1);
+
+  // Write a page with a grayscale image...
+  if (write_jpeg_test(outpdf, "Grayscale JPEG Test", 4, helvetica, gray_jpg))
+    return (1);
+
+  // Write a page with PNG images...
+  if (write_png_test(outpdf, 5, helvetica))
+    return (1);
+
+  // Write a page that tests multiple color spaces...
+  if (write_color_test(outpdf, 6, helvetica))
+    return (1);
+
+  // Write a page with test images...
+  *first_image = pdfioFileGetNumObjs(outpdf) + 1;
+  if (write_images_test(outpdf, 7, helvetica))
+    return (1);
+
+  // Write a page width alpha (soft masks)...
+  if (write_alpha_test(outpdf, 8, helvetica))
+    return (1);
+
+  // Test TrueType fonts...
+  if (write_font_test(outpdf, 9, helvetica, false))
+    return (1);
+
+  if (write_font_test(outpdf, 10, helvetica, true))
+    return (1);
+
+  // Print this text file...
+  if (write_text_test(outpdf, 11, helvetica, "README.md"))
+    return (1);
+
+  fputs("pdfioFileGetNumPages: ", stdout);
+  if ((*num_pages = pdfioFileGetNumPages(outpdf)) > 0)
+  {
+    printf("PASS (%lu)\n", (unsigned long)*num_pages);
+  }
+  else
+  {
+    puts("FAIL");
+    return (1);
+  }
+
+  // Close the new PDF file...
+  fputs("pdfioFileClose(...): ", stdout);
+  if (pdfioFileClose(outpdf))
+    puts("PASS");
+  else
+    return (1);
+
+  return (0);
 }

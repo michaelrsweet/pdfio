@@ -210,6 +210,8 @@ struct _pdfio_file_s			// PDF file structure
   pdfio_rect_t	media_box,		// Default MediaBox value
 		crop_box;		// Default CropBox value
   _pdfio_mode_t	mode;			// Read/write mode
+  pdfio_output_cb_t output_cb;		// Output callback
+  void		*output_ctx;		// Context for output callback
   pdfio_error_cb_t error_cb;		// Error callback
   void		*error_data;		// Data for error callback
 
@@ -266,6 +268,7 @@ struct _pdfio_stream_s			// Stream
 {
   pdfio_file_t	*pdf;			// PDF file
   pdfio_obj_t	*obj;			// Object
+  pdfio_obj_t	*length_obj;		// Length object, if any
   pdfio_filter_t filter;		// Compression/decompression filter
   size_t	remaining;		// Remaining bytes in stream
   char		buffer[8192],		// Read/write buffer
@@ -319,7 +322,7 @@ extern bool		_pdfioFileWrite(pdfio_file_t *pdf, const void *buffer, size_t bytes
 extern void		_pdfioObjDelete(pdfio_obj_t *obj) _PDFIO_INTERNAL;
 extern bool		_pdfioObjLoad(pdfio_obj_t *obj) _PDFIO_INTERNAL;
 
-extern pdfio_stream_t	*_pdfioStreamCreate(pdfio_obj_t *obj, pdfio_filter_t compression) _PDFIO_INTERNAL;
+extern pdfio_stream_t	*_pdfioStreamCreate(pdfio_obj_t *obj, pdfio_obj_t *length_obj, pdfio_filter_t compression) _PDFIO_INTERNAL;
 extern pdfio_stream_t	*_pdfioStreamOpen(pdfio_obj_t *obj, bool decode) _PDFIO_INTERNAL;
 
 extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) _PDFIO_INTERNAL;

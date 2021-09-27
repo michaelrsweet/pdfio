@@ -93,7 +93,12 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
     }
 
     // Update the length as needed...
-    if (st->obj->length_offset)
+    if (st->length_obj)
+    {
+      st->length_obj->value.value.number = st->obj->stream_length;
+      pdfioObjClose(st->length_obj);
+    }
+    else if (st->obj->length_offset)
     {
       // Seek back to the "/Length 9999999999" we wrote...
       if (_pdfioFileSeek(st->pdf, st->obj->length_offset, SEEK_SET) < 0)
@@ -137,6 +142,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 pdfio_stream_t *			// O - Stream or `NULL` on error
 _pdfioStreamCreate(
     pdfio_obj_t    *obj,		// I - Object
+    pdfio_obj_t    *length_obj,		// I - Length object, if any
     pdfio_filter_t compression)		// I - Compression to apply
 {
   pdfio_stream_t	*st;		// Stream
@@ -149,9 +155,10 @@ _pdfioStreamCreate(
     return (NULL);
   }
 
-  st->pdf    = obj->pdf;
-  st->obj    = obj;
-  st->filter = compression;
+  st->pdf        = obj->pdf;
+  st->obj        = obj;
+  st->length_obj = length_obj;
+  st->filter     = compression;
 
   if (compression == PDFIO_FILTER_FLATE)
   {

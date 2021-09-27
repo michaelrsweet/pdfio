@@ -130,7 +130,7 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
 	    ret = _pdfioFileFlush(pdf);
   }
 
-  if (close(pdf->fd) < 0)
+  if (pdf->fd >= 0 && close(pdf->fd) < 0)
     ret = false;
 
   // Free all data...
@@ -396,6 +396,127 @@ _pdfioFileCreateObj(
 
   // Don't write anything just yet...
   return (obj);
+}
+
+
+//
+// 'pdfioFileCreateOutput()' - Create a PDF file through an output callback.
+//
+
+pdfio_file_t *				// O - PDF file or `NULL` on error
+pdfioFileCreateOutput(
+    pdfio_output_cb_t output_cb,	// I - Output callback
+    void              *output_ctx,	// I - Output context
+    const char        *version,		// I - PDF version number or `NULL` for default (2.0)
+    pdfio_rect_t      *media_box,	// I - Default MediaBox for pages
+    pdfio_rect_t      *crop_box,	// I - Default CropBox for pages
+    pdfio_error_cb_t  error_cb,		// I - Error callback or `NULL` for default
+    void              *error_data)	// I - Error callback data, if any
+{
+  pdfio_file_t	*pdf;			// PDF file
+  pdfio_dict_t	*dict;			// Dictionary for pages object
+  pdfio_dict_t	*info_dict;		// Dictionary for information object
+
+
+  // Range check input...
+  if (!output_cb)
+    return (NULL);
+
+  if (!version)
+    version = "2.0";
+
+  if (!error_cb)
+  {
+    error_cb   = _pdfioFileDefaultError;
+    error_data = NULL;
+  }
+
+  // Allocate a PDF file structure...
+  if ((pdf = (pdfio_file_t *)calloc(1, sizeof(pdfio_file_t))) == NULL)
+  {
+    pdfio_file_t temp;			// Dummy file
+    char	message[8192];		// Message string
+
+    temp.filename = (char *)"output.pdf";
+    snprintf(message, sizeof(message), "Unable to allocate memory for PDF file - %s", strerror(errno));
+    (error_cb)(&temp, message, error_data);
+    return (NULL);
+  }
+
+  pdf->filename   = strdup("output.pdf");
+  pdf->version    = strdup(version);
+  pdf->mode       = _PDFIO_MODE_WRITE;
+  pdf->error_cb   = error_cb;
+  pdf->error_data = error_data;
+  pdf->bufptr     = pdf->buffer;
+  pdf->bufend     = pdf->buffer + sizeof(pdf->buffer);
+
+  if (media_box)
+  {
+    pdf->media_box = *media_box;
+  }
+  else
+  {
+    // Default to "universal" size (intersection of A4 and US Letter)
+    pdf->media_box.x2 = 210.0 * 72.0f / 25.4f;
+    pdf->media_box.y2 = 11.0f * 72.0f;
+  }
+
+  if (crop_box)
+  {
+    pdf->crop_box = *crop_box;
+  }
+  else
+  {
+    // Default to "universal" size (intersection of A4 and US Letter)
+    pdf->crop_box.x2 = 210.0 * 72.0f / 25.4f;
+    pdf->crop_box.y2 = 11.0f * 72.0f;
+  }
+
+  // Save output callback...
+  pdf->fd         = -1;
+  pdf->output_cb  = output_cb;
+  pdf->output_ctx = output_ctx;
+
+  // Write a standard PDF header...
+  if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
+  {
+    pdfioFileClose(pdf);
+    return (NULL);
+  }
+
+  // Create the pages object...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+  {
+    pdfioFileClose(pdf);
+    return (NULL);
+  }
+
+  pdfioDictSetName(dict, "Type", "Pages");
+
+  if ((pdf->pages_root = pdfioFileCreateObj(pdf, dict)) == NULL)
+  {
+    pdfioFileClose(pdf);
+    return (NULL);
+  }
+
+  // Create the info object...
+  if ((info_dict = pdfioDictCreate(pdf)) == NULL)
+  {
+    pdfioFileClose(pdf);
+    return (NULL);
+  }
+
+  pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
+  pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
+
+  if ((pdf->info = pdfioFileCreateObj(pdf, info_dict)) == NULL)
+  {
+    pdfioFileClose(pdf);
+    return (NULL);
+  }
+
+  return (pdf);
 }
 
 

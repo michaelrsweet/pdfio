@@ -377,6 +377,11 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
     // No, reset the read buffer
     pdf->bufptr = pdf->bufend = NULL;
   }
+  else if (pdf->output_cb)
+  {
+    _pdfioFileError(pdf, "Unable to seek within output stream.");
+    return (-1);
+  }
   else
   {
     // Writing, make sure we write any buffered data...
@@ -530,25 +535,37 @@ write_buffer(pdfio_file_t *pdf,		// I - PDF file
   ssize_t	wbytes;			// Bytes written...
 
 
-  // Write to the file...
-  while (bytes > 0)
+  if (pdf->output_cb)
   {
-    while ((wbytes = write(pdf->fd, bufptr, bytes)) < 0)
+    // Write to a stream...
+    if ((pdf->output_cb)(pdf->output_ctx, buffer, bytes) < 0)
     {
-      // Stop if we have an error that shouldn't be retried...
-      if (errno != EINTR && errno != EAGAIN)
-	break;
-    }
-
-    if (wbytes < 0)
-    {
-      // Hard error...
-      _pdfioFileError(pdf, "Unable to write to file - %s", strerror(errno));
+      _pdfioFileError(pdf, "Unable to write to output callback.");
       return (false);
     }
+  }
+  else
+  {
+    // Write to the file...
+    while (bytes > 0)
+    {
+      while ((wbytes = write(pdf->fd, bufptr, bytes)) < 0)
+      {
+	// Stop if we have an error that shouldn't be retried...
+	if (errno != EINTR && errno != EAGAIN)
+	  break;
+      }
 
-    bufptr += wbytes;
-    bytes  -= (size_t)wbytes;
+      if (wbytes < 0)
+      {
+	// Hard error...
+	_pdfioFileError(pdf, "Unable to write to file - %s", strerror(errno));
+	return (false);
+      }
+
+      bufptr += wbytes;
+      bytes  -= (size_t)wbytes;
+    }
   }
 
   return (true);
