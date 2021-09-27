@@ -103,7 +103,7 @@ generates a static library that will be installed under "/usr/local" with:
 
 You can reproduce this with the makefile using:
 
-    sudo make 'COMMONFLAGS="-Os -mmacosx-version-min=10.14 -arch x86_64 -arch arm64"' install
+    sudo make COMMONFLAGS="-Os -mmacosx-version-min=10.14 -arch x86_64 -arch arm64" install
 
 
 Detecting PDFio
@@ -112,7 +112,7 @@ Detecting PDFio
 PDFio can be detected using the `pkg-config` command, for example:
 
     if pkg-config --exists pdfio; then
-        ... 
+        ...
     fi
 
 In a makefile you can add the necessary compiler and linker options with:

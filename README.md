@@ -116,7 +116,7 @@ generates a static library that will be installed under "/usr/local" with:
 
 You can reproduce this with the makefile using:
 
-    sudo make 'COMMONFLAGS="-Os -mmacosx-version-min=10.14 -arch x86_64 -arch arm64"' install
+    sudo make COMMONFLAGS="-Os -mmacosx-version-min=10.14 -arch x86_64 -arch arm64" install
 
 
 Legal Stuff
