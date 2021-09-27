@@ -4,6 +4,7 @@
 *.o
 *.so.1
 /.vs
+/doc/pdfio.epub
 /packages
 /pdfio.xcodeproj/xcshareddata
 /testpdfio

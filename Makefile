@@ -173,6 +173,7 @@ DOCFLAGS	=	\
 .PHONY: doc
 doc:
 	codedoc $(DOCFLAGS) --title "PDFio Programming Manual v$(VERSION)" $(PUBHEADERS) $(PUBOBJS:.o=.c) --body doc/pdfio.md --coverimage doc/pdfio-512.png pdfio.xml >doc/pdfio.html
+	codedoc $(DOCFLAGS) --title "PDFio Programming Manual v$(VERSION)" --body doc/pdfio.md --coverimage doc/pdfio-epub.png pdfio.xml --epub doc/pdfio.epub
 	codedoc $(DOCFLAGS) --title "pdf read/write library" --man pdfio --section 3 --body doc/pdfio.md pdfio.xml >doc/pdfio.3
 	rm -f pdfio.xml
 
