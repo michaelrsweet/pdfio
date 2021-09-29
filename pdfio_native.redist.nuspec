@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
-        <id>pdfio_native</id>
+        <id>pdfio_native.redist</id>
         <title>PDFio Library for VS2019+</title>
-        <version>1.0.0-b5</version>
+        <version>1.0.0-b6</version>
         <authors>Michael R Sweet</authors>
         <owners>michaelrsweet</owners>
         <projectUrl>https://github.com/michaelrsweet/pappl</projectUrl>
