@@ -2358,7 +2358,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
               PDFIO_DEBUG("copy_png: Adding %s ColorSpace value.\n", color_type == _PDFIO_PNG_TYPE_GRAY ? "CalGray" : "CalRGB");
 
 	      if (wx != 0.0)
-		pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPrimaries(dict->pdf, color_type == _PDFIO_PNG_TYPE_GRAY ? 1 : 3, gamma, wx, wy, rx, ry, bx, by, gx, gy));
+		pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPrimaries(dict->pdf, color_type == _PDFIO_PNG_TYPE_GRAY ? 1 : 3, gamma, wx, wy, rx, ry, gx, gy, bx, by));
               else
 		pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, color_type == _PDFIO_PNG_TYPE_GRAY ? 1 : 3, PDFIO_CS_SRGB));
             }
