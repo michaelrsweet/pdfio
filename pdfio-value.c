@@ -278,6 +278,8 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
     else
     {
       // Date value...
+      memset(&dateval, 0, sizeof(dateval));
+
       dateval.tm_year = (token[3] - '0') * 1000 + (token[4] - '0') * 100 + (token[5] - '0') * 10 + token[6] - '0' - 1900;
       dateval.tm_mon  = (token[7] - '0') * 10 + token[8] - '0' - 1;
       dateval.tm_mday = (token[9] - '0') * 10 + token[10] - '0';

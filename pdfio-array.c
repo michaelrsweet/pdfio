@@ -568,7 +568,8 @@ _pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
   PDFIO_DEBUG("_pdfioArrayRead(pdf=%p, tb=%p)\n", pdf, tb);
 
   // Create an array...
-  array = pdfioArrayCreate(pdf);
+  if ((array = pdfioArrayCreate(pdf)) == NULL)
+    return (NULL);
 
   // Read until we get "]" to end the array...
   while (_pdfioTokenGet(tb, token, sizeof(token)))

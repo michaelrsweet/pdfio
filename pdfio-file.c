@@ -1388,7 +1388,11 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	return (false);
       }
 
-      _pdfioFileSeek(pdf, xref_offset + ptr + 3 - line, SEEK_SET);
+      if (_pdfioFileSeek(pdf, xref_offset + ptr + 3 - line, SEEK_SET) < 0)
+      {
+        _pdfioFileError(pdf, "Unable to seek to xref object %lu %u.", (unsigned long)number, (unsigned)generation);
+        return (false);
+      }
 
       PDFIO_DEBUG("load_xref: Loading object %lu %u.\n", (unsigned long)number, (unsigned)generation);
 

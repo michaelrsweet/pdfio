@@ -513,7 +513,8 @@ ttfDelete(ttf_t *font)			// I - Font
     return;
 
   // Close the font file...
-  close(font->fd);
+  if (font->fd >= 0)
+    close(font->fd);
 
   // Free all memory used...
   free(font->copyright);
