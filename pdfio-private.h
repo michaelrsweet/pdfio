@@ -24,6 +24,7 @@
 
 #  include "pdfio.h"
 #  include <stdarg.h>
+#  include <stdint.h>
 #  include <string.h>
 #  include <errno.h>
 #  include <inttypes.h>
@@ -174,6 +175,28 @@ typedef struct _pdfio_value_s		// Value structure
   }		value;			// Value union
 } _pdfio_value_t;
 
+
+typedef struct _pdfio_aes_s		// AES encryption state
+{
+  size_t	round_size;		// Size of round key
+  uint8_t	round_key[240],		// Round key
+		iv[16];			// Initialization vector
+} _pdfio_aes_t;
+
+typedef struct _pdfio_md5_s		// MD5 hash state
+{
+  uint32_t	count[2];		// Message length in bits, lsw first
+  uint32_t	abcd[4];		// Digest buffer
+  uint8_t	buf[64];		// Accumulate block
+} _pdfio_md5_t;
+
+typedef struct _pdfio_rc4_s		// RC4 encryption state
+{
+  uint8_t	sbox[256];		// S boxes for encryption
+  uint8_t	i, j;			// Current indices into S boxes
+} _pdfio_rc4_t;
+
+
 struct _pdfio_array_s
 {
   pdfio_file_t	*pdf;			// PDF file
@@ -293,6 +316,15 @@ extern void		_pdfioArrayDelete(pdfio_array_t *a) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioArrayGetValue(pdfio_array_t *a, size_t n) _PDFIO_INTERNAL;
 extern pdfio_array_t	*_pdfioArrayRead(pdfio_file_t *pdf, _pdfio_token_t *ts) _PDFIO_INTERNAL;
 extern bool		_pdfioArrayWrite(pdfio_array_t *a) _PDFIO_INTERNAL;
+
+extern void		_pdfioCryptoAESInit(_pdfio_aes_t *ctx, const uint8_t *key, size_t keylen, const uint8_t *iv) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoAESDecrypt(_pdfio_aes_t *ctx, uint8_t *buffer, size_t len) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoAESEncrypt(_pdfio_aes_t *ctx, uint8_t *buffer, size_t len) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoMD5Append(_pdfio_md5_t *pms, const uint8_t *data, size_t nbytes) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoMD5Finish(_pdfio_md5_t *pms, uint8_t digest[16]) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoMD5Init(_pdfio_md5_t *pms) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoRC4Init(_pdfio_rc4_t *ctx, const uint8_t *key, size_t keylen) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoRC4Crypt(_pdfio_rc4_t *ctx, uint8_t *buffer, size_t len) _PDFIO_INTERNAL;
 
 extern void		_pdfioDictDebug(pdfio_dict_t *dict, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioDictDelete(pdfio_dict_t *dict) _PDFIO_INTERNAL;

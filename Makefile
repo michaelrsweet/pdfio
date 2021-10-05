@@ -43,10 +43,13 @@ PUBOBJS		=	\
 			pdfio-array.o \
 			pdfio-common.o \
 			pdfio-content.o \
+			pdfio-crypto.o \
 			pdfio-dict.o \
 			pdfio-file.o \
+			pdfio-md5.o \
 			pdfio-object.o \
 			pdfio-page.o \
+			pdfio-rc4.o \
 			pdfio-stream.o \
 			pdfio-string.o \
 			pdfio-token.o \
