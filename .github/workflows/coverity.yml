@@ -3,8 +3,9 @@ name: Coverity Scan
 on: workflow_dispatch
 
 jobs:
-  latest:
+  coverity-scan:
     runs-on: ubuntu-latest
+    environment: Coverity
     steps:
       - uses: actions/checkout@v2
       - name: update build environment
