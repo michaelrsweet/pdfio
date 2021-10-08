@@ -50,6 +50,7 @@ PUBOBJS		=	\
 			pdfio-object.o \
 			pdfio-page.o \
 			pdfio-rc4.o \
+			pdfio-sha256.o \
 			pdfio-stream.o \
 			pdfio-string.o \
 			pdfio-token.o \

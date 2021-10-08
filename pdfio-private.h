@@ -196,6 +196,16 @@ typedef struct _pdfio_rc4_s		// RC4 encryption state
   uint8_t	i, j;			// Current indices into S boxes
 } _pdfio_rc4_t;
 
+typedef struct _pdfio_sha265_s		// SHA-256 hash state
+{
+  uint32_t	Intermediate_Hash[8];	// Message Digest
+  uint32_t	Length_High;		// Message length in bits
+  uint32_t	Length_Low;		// Message length in bits
+  int		Message_Block_Index;	// Message_Block array index
+  uint8_t	Message_Block[64];	// 512-bit message blocks
+  int		Computed;		// Is the hash computed?
+  int		Corrupted;		// Cumulative corruption code
+} _pdfio_sha256_t;
 
 struct _pdfio_array_s
 {
@@ -325,6 +335,9 @@ extern void		_pdfioCryptoMD5Finish(_pdfio_md5_t *pms, uint8_t digest[16]) _PDFIO
 extern void		_pdfioCryptoMD5Init(_pdfio_md5_t *pms) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoRC4Init(_pdfio_rc4_t *ctx, const uint8_t *key, size_t keylen) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoRC4Crypt(_pdfio_rc4_t *ctx, uint8_t *buffer, size_t len) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoSHA256Append(_pdfio_sha256_t *, const uint8_t *bytes, size_t bytecount) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoSHA256Init(_pdfio_sha256_t *ctx) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoSHA256Finish(_pdfio_sha256_t *ctx, uint8_t *Message_Digest) _PDFIO_INTERNAL;
 
 extern void		_pdfioDictDebug(pdfio_dict_t *dict, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioDictDelete(pdfio_dict_t *dict) _PDFIO_INTERNAL;
