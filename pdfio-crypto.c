@@ -80,7 +80,7 @@ static const uint8_t Rcon[11] =		// Round constants
 // Local functions...
 //
 
-static void	AddRoundKey(uint8_t round, state_t *state, const uint8_t *RoundKey);
+static void	AddRoundKey(size_t round, state_t *state, const uint8_t *RoundKey);
 static void	SubBytes(state_t *state);
 static void	ShiftRows(state_t *state);
 static uint8_t	xtime(uint8_t x);
@@ -252,7 +252,7 @@ _pdfioCryptoAESEncrypt(
 // This function adds the round key to state.
 // The round key is added to the state by an XOR function.
 static void
-AddRoundKey(uint8_t round, state_t *state, const uint8_t *RoundKey)
+AddRoundKey(size_t round, state_t *state, const uint8_t *RoundKey)
 {
   unsigned	i;			// Looping var
   uint8_t	*sptr = (*state)[0];	// Pointer into state
@@ -314,7 +314,7 @@ ShiftRows(state_t *state)
 static uint8_t
 xtime(uint8_t x)
 {
-  return ((x << 1) ^ ((x >> 7) * 0x1b));
+  return ((uint8_t)((x << 1) ^ ((x >> 7) * 0x1b)));
 }
 
 
@@ -466,7 +466,7 @@ Cipher(state_t *state, const _pdfio_aes_t *ctx)
 static void
 InvCipher(state_t *state, const _pdfio_aes_t *ctx)
 {
-  uint8_t round = 0;
+  size_t round;
 
   // Add the First round key to the state before starting the rounds.
   AddRoundKey(ctx->round_size, state, ctx->round_key);

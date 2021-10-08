@@ -281,7 +281,7 @@ _pdfioCryptoMD5Append(_pdfio_md5_t *pms, const uint8_t *data, size_t nbytes)
 {
     const uint8_t *p = data;
     size_t left = nbytes;
-    int offset = (pms->count[0] >> 3) & 63;
+    size_t offset = (pms->count[0] >> 3) & 63;
     uint32_t nbits = (uint32_t)(nbytes << 3);
 
     if (nbytes == 0)
@@ -295,7 +295,7 @@ _pdfioCryptoMD5Append(_pdfio_md5_t *pms, const uint8_t *data, size_t nbytes)
 
     /* Process an initial partial block. */
     if (offset) {
-	int copy = (offset + nbytes > 64 ? 64 - offset : nbytes);
+	size_t copy = (offset + nbytes > 64 ? 64 - offset : nbytes);
 
 	memcpy(pms->buf + offset, p, copy);
 	if (offset + copy < 64)
