@@ -29,6 +29,7 @@
 		27F2F0602710BE92008ECD36 /* pdfio-md5.c in Sources */ = {isa = PBXBuildFile; fileRef = 27F2F05D2710BE92008ECD36 /* pdfio-md5.c */; };
 		27F2F0612710BE92008ECD36 /* pdfio-rc4.c in Sources */ = {isa = PBXBuildFile; fileRef = 27F2F05E2710BE92008ECD36 /* pdfio-rc4.c */; };
 		27F2F0622710BE92008ECD36 /* pdfio-crypto.c in Sources */ = {isa = PBXBuildFile; fileRef = 27F2F05F2710BE92008ECD36 /* pdfio-crypto.c */; };
+		27F2F0642711243D008ECD36 /* pdfio-sha256.c in Sources */ = {isa = PBXBuildFile; fileRef = 27F2F0632711243D008ECD36 /* pdfio-sha256.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,6 +86,7 @@
 		27F2F05D2710BE92008ECD36 /* pdfio-md5.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-md5.c"; sourceTree = "<group>"; };
 		27F2F05E2710BE92008ECD36 /* pdfio-rc4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-rc4.c"; sourceTree = "<group>"; };
 		27F2F05F2710BE92008ECD36 /* pdfio-crypto.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-crypto.c"; sourceTree = "<group>"; };
+		27F2F0632711243D008ECD36 /* pdfio-sha256.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-sha256.c"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -166,6 +168,7 @@
 				273440BC263D727800FBFD63 /* pdfio-object.c */,
 				273440C2263D727800FBFD63 /* pdfio-page.c */,
 				27F2F05E2710BE92008ECD36 /* pdfio-rc4.c */,
+				27F2F0632711243D008ECD36 /* pdfio-sha256.c */,
 				273440BF263D727800FBFD63 /* pdfio-stream.c */,
 				273440B9263D727800FBFD63 /* pdfio-string.c */,
 				273440E3263DD7EA00FBFD63 /* pdfio-token.c */,
@@ -291,6 +294,7 @@
 				273440CA263D727800FBFD63 /* pdfio-stream.c in Sources */,
 				273440CD263D727800FBFD63 /* pdfio-page.c in Sources */,
 				27F2F0622710BE92008ECD36 /* pdfio-crypto.c in Sources */,
+				27F2F0642711243D008ECD36 /* pdfio-sha256.c in Sources */,
 				273440C5263D727800FBFD63 /* pdfio-array.c in Sources */,
 				273440E4263DD7EA00FBFD63 /* pdfio-token.c in Sources */,
 				273440C7263D727800FBFD63 /* pdfio-object.c in Sources */,
