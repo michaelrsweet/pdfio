@@ -40,6 +40,7 @@ PUBHEADERS	=	\
 			pdfio.h \
 			pdfio-content.h
 PUBOBJS		=	\
+			pdfio-aes.o \
 			pdfio-array.o \
 			pdfio-common.o \
 			pdfio-content.o \

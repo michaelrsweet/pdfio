@@ -207,6 +207,13 @@ typedef struct _pdfio_sha265_s		// SHA-256 hash state
   int		Corrupted;		// Cumulative corruption code
 } _pdfio_sha256_t;
 
+typedef union _pdfio_crypto_ctx_u	// Cryptographic contexts
+{
+  _pdfio_aes_t	aes;			// AES-128/256 context
+  _pdfio_rc4_t	rc4;			// RC4-40/128 context
+} _pdfio_crypto_ctx_t;
+typedef void (*_pdfio_crypto_cb_t)(_pdfio_crypto_ctx_t *ctx, uint8_t *buffer, size_t len);
+
 struct _pdfio_array_s
 {
   pdfio_file_t	*pdf;			// PDF file
@@ -314,6 +321,8 @@ struct _pdfio_stream_s			// Stream
   unsigned char	cbuffer[4096],		// Compressed data buffer
 		*prbuffer,		// Raw buffer (previous line), as needed
 		*psbuffer;		// PNG filter buffer, as needed
+  _pdfio_crypto_cb_t crypto_cb;		// Encryption/descryption callback, if any
+  _pdfio_crypto_ctx_t crypto_ctx;	// Cryptographic context
 };
 
 
@@ -330,6 +339,8 @@ extern bool		_pdfioArrayWrite(pdfio_array_t *a) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoAESInit(_pdfio_aes_t *ctx, const uint8_t *key, size_t keylen, const uint8_t *iv) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoAESDecrypt(_pdfio_aes_t *ctx, uint8_t *buffer, size_t len) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoAESEncrypt(_pdfio_aes_t *ctx, uint8_t *buffer, size_t len) _PDFIO_INTERNAL;
+extern _pdfio_crypto_cb_t _pdfioCryptoMakeReader(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_crypto_ctx_t *ctx, uint8_t *iv, size_t *ivlen) _PDFIO_INTERNAL;
+extern _pdfio_crypto_cb_t _pdfioCryptoMakeWriter(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_crypto_ctx_t *ctx, uint8_t *iv, size_t *ivlen) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoMD5Append(_pdfio_md5_t *pms, const uint8_t *data, size_t nbytes) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoMD5Finish(_pdfio_md5_t *pms, uint8_t digest[16]) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoMD5Init(_pdfio_md5_t *pms) _PDFIO_INTERNAL;
