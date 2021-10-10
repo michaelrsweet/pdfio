@@ -339,6 +339,7 @@ extern bool		_pdfioArrayWrite(pdfio_array_t *a) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoAESInit(_pdfio_aes_t *ctx, const uint8_t *key, size_t keylen, const uint8_t *iv) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoAESDecrypt(_pdfio_aes_t *ctx, uint8_t *buffer, size_t len) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoAESEncrypt(_pdfio_aes_t *ctx, uint8_t *buffer, size_t len) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoMakeRandom(uint8_t *buffer, size_t bytes) _PDFIO_INTERNAL;
 extern _pdfio_crypto_cb_t _pdfioCryptoMakeReader(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_crypto_ctx_t *ctx, uint8_t *iv, size_t *ivlen) _PDFIO_INTERNAL;
 extern _pdfio_crypto_cb_t _pdfioCryptoMakeWriter(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_crypto_ctx_t *ctx, uint8_t *iv, size_t *ivlen) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoMD5Append(_pdfio_md5_t *pms, const uint8_t *data, size_t nbytes) _PDFIO_INTERNAL;
