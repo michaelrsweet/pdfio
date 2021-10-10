@@ -1770,7 +1770,6 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
   bool		ret = true;		// Return value
   off_t		xref_offset;		// Offset to xref table
   size_t	i;			// Looping var
-  int		fd;			// File for /dev/urandom
   unsigned char	id_values[2][16];	// ID array values
 
 
@@ -1805,17 +1804,13 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     goto done;
   }
 
-  if ((fd = open("/dev/urandom", O_RDONLY)) >= 0)
-  {
-    // Load ID array with random values from /dev/urandom...
-    if (read(fd, id_values[0], sizeof(id_values[0])) == (ssize_t)sizeof(id_values[0]) && read(fd, id_values[1], sizeof(id_values[1])) == (ssize_t)sizeof(id_values[1]))
-    {
-      pdf->id_array = pdfioArrayCreate(pdf);
-      pdfioArrayAppendBinary(pdf->id_array, id_values[0], sizeof(id_values[0]));
-      pdfioArrayAppendBinary(pdf->id_array, id_values[1], sizeof(id_values[1]));
-    }
+  _pdfioCryptoMakeRandom(id_values[0], sizeof(id_values[0]));
+  _pdfioCryptoMakeRandom(id_values[1], sizeof(id_values[1]));
 
-    close(fd);
+  if ((pdf->id_array = pdfioArrayCreate(pdf)) != NULL)
+  {
+    pdfioArrayAppendBinary(pdf->id_array, id_values[0], sizeof(id_values[0]));
+    pdfioArrayAppendBinary(pdf->id_array, id_values[1], sizeof(id_values[1]));
   }
 
   if ((pdf->trailer = pdfioDictCreate(pdf)) == NULL)
