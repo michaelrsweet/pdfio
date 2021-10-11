@@ -255,6 +255,12 @@ struct _pdfio_file_s			// PDF file structure
   pdfio_error_cb_t error_cb;		// Error callback
   void		*error_data;		// Data for error callback
 
+  pdfio_encryption_t encryption;	// Encryption mode
+  pdfio_permission_t permissions;	// Access permissions (encrypted PDF files)
+  uint8_t	encryption_key[16],	// Object encryption key
+		owner_key[32],		// Owner encryption key
+		user_key[32];		// User encryption key
+
   // Active file data
   int		fd;			// File descriptor
   char		buffer[8192],		// Read/write buffer
@@ -265,7 +271,7 @@ struct _pdfio_file_s			// PDF file structure
   pdfio_obj_t	*root;			// Root object/dictionary
   pdfio_obj_t	*info;			// Information object
   pdfio_obj_t	*pages_root;		// Root pages object
-  pdfio_obj_t	*encrypt;		// Encryption object/dictionary
+  pdfio_obj_t	*encrypt_obj;		// De/Encryption object/dictionary
   pdfio_obj_t	*cp1252_obj,		// CP1252 font encoding object
 		*unicode_obj;		// Unicode font encoding object
   pdfio_array_t	*id_array;		// ID array

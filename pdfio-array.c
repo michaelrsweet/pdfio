@@ -389,7 +389,7 @@ pdfioArrayGetBinary(
     size_t        n,			// I - Index
     size_t        *length)		// O - Length of string
 {
-  if (!a || n >= a->num_values || a->values[n].type != PDFIO_VALTYPE_BINARY || !length)
+  if (!a || n >= a->num_values || a->values[n].type != PDFIO_VALTYPE_BINARY)
   {
     if (length)
       *length = 0;
@@ -398,7 +398,9 @@ pdfioArrayGetBinary(
   }
   else
   {
-    *length = a->values[n].value.binary.datalen;
+    if (length)
+      *length = a->values[n].value.binary.datalen;
+
     return (a->values[n].value.binary.data);
   }
 }

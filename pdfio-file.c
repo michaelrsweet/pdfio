@@ -1035,12 +1035,218 @@ pdfioFileSetKeywords(
 
 
 //
+// 'pdfioFileSetPermissions()' - Set the PDF permissions, encryption mode, and passwords.
+//
+// This function sets the PDF usage permissions, encryption mode, and
+// passwords.
+//
+// > *Note*: This function must be called before creating or copying any
+// > objects.  Due to fundamental limitations in the PDF format, PDF encryption
+// > offers little protection from disclosure.  Permissions are not enforced in
+// > any meaningful way.
+//
+
+bool					// O - `true` on success, `false` otherwise
+pdfioFileSetPermissions(
+    pdfio_file_t       *pdf,		// I - PDF file
+    pdfio_permission_t permissions,	// I - Use permissions
+    pdfio_encryption_t encryption,	// I - Type of encryption to use
+    const char         *owner_password,	// I - Owner password, if any
+    const char         *user_password)	// I - User password, if any
+{
+  pdfio_dict_t	*dict;			// Encryption dictionary
+  size_t	i, j;			// Looping vars
+  _pdfio_md5_t	md5;			// MD5 context
+  uint8_t	digest[16];		// 128-bit MD5 digest
+  _pdfio_rc4_t	rc4;			// RC4 encryption context
+  size_t	len;			// Length of password
+  uint8_t	owner_pad[32],		// Padded owner password
+		user_pad[32],		// Padded user password
+		perm_bytes[4],		// Permissions bytes
+		*file_id;		// File ID bytes
+  size_t	file_id_len;		// Length of file ID
+  static uint8_t pad[32] =		// Padding for passwords
+  {
+    0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41,
+    0x64, 0x00, 0x4e, 0x56, 0xff, 0xfa, 0x01, 0x08,
+    0x2e, 0x2e, 0x00, 0xb6, 0xd0, 0x68, 0x3e, 0x80,
+    0x2f, 0x0c, 0xa9, 0xfe, 0x64, 0x53, 0x69, 0x7a
+  };
+
+
+  if (!pdf)
+    return (false);
+
+  if (pdf->num_objs > 0)
+  {
+    _pdfioFileError(pdf, "You must call pdfioFileSetPermissions before adding any objects.");
+    return (false);
+  }
+
+  if (encryption == PDFIO_ENCRYPTION_NONE)
+    return (true);
+
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+  {
+    _pdfioFileError(pdf, "Unable to create encryption dictionary.");
+    return (false);
+  }
+
+  pdfioDictSetName(dict, "Filter", "Standard");
+
+  switch (encryption)
+  {
+    case PDFIO_ENCRYPTION_RC4_128 :
+    case PDFIO_ENCRYPTION_AES_128 :
+        // Create the 128-bit encryption keys...
+        if (user_password)
+        {
+          // Copy the user password and pad it with the special PDF pad bytes
+          if ((len = strlen(user_password)) > sizeof(user_pad))
+            len = sizeof(user_pad);
+
+	  if (len > 0)
+	    memcpy(user_pad, user_password, len);
+	  if (len < sizeof(user_pad))
+	    memcpy(user_pad + len, pad, sizeof(user_pad) - len);
+        }
+        else
+	{
+	  // Use default (pad) password
+	  memcpy(user_pad, pad, sizeof(user_pad));
+	}
+
+        if (owner_password && *owner_password)
+        {
+          // Copy the owner password and pad it with the special PDF pad bytes
+          if ((len = strlen(owner_password)) > sizeof(owner_pad))
+            len = sizeof(owner_pad);
+
+	  if (len > 0)
+	    memcpy(owner_pad, owner_password, len);
+	  if (len < sizeof(owner_pad))
+	    memcpy(owner_pad + len, pad, sizeof(owner_pad) - len);
+	}
+	else
+	{
+	  // Generate a random owner password...
+	  _pdfioCryptoMakeRandom(owner_pad, sizeof(owner_pad));
+	}
+
+        // Compute the owner key...
+	_pdfioCryptoMD5Init(&md5);
+	_pdfioCryptoMD5Append(&md5, owner_pad, 32);
+	_pdfioCryptoMD5Finish(&md5, digest);
+
+	// MD5 the result 50 more times...
+	for (i = 0; i < 50; i ++)
+	{
+	  _pdfioCryptoMD5Init(&md5);
+	  _pdfioCryptoMD5Append(&md5, digest, 16);
+	  _pdfioCryptoMD5Finish(&md5, digest);
+	}
+
+	// Copy the padded user password...
+	memcpy(pdf->owner_key, user_pad, sizeof(pdf->owner_key));
+
+	// Encrypt the result 20 times...
+	for (i = 0; i < 20; i ++)
+	{
+	  uint8_t	encrypt_key[16];// RC4 encryption key
+
+	  // XOR each byte in the digest with the loop counter to make a key...
+	  for (j = 0; j < sizeof(encrypt_key); j ++)
+	    encrypt_key[j] = (uint8_t)(digest[j] ^ i);
+
+	  _pdfioCryptoRC4Init(&rc4, encrypt_key, sizeof(encrypt_key));
+	  _pdfioCryptoRC4Crypt(&rc4, pdf->owner_key, sizeof(pdf->owner_key));
+	}
+
+        // Generate the encryption key
+	perm_bytes[0] = (uint8_t)permissions;
+	perm_bytes[1] = (uint8_t)(permissions >> 8);
+	perm_bytes[2] = (uint8_t)(permissions >> 16);
+	perm_bytes[3] = (uint8_t)(permissions >> 24);
+
+        file_id = pdfioArrayGetBinary(pdf->id_array, 0, &file_id_len);
+
+	_pdfioCryptoMD5Init(&md5);
+	_pdfioCryptoMD5Append(&md5, user_pad, 32);
+	_pdfioCryptoMD5Append(&md5, pdf->owner_key, 32);
+
+	_pdfioCryptoMD5Append(&md5, perm_bytes, 4);
+	_pdfioCryptoMD5Append(&md5, file_id, file_id_len);
+	_pdfioCryptoMD5Finish(&md5, digest);
+
+	// MD5 the result 50 times..
+	for (i = 0; i < 50; i ++)
+	{
+	  _pdfioCryptoMD5Init(&md5);
+	  _pdfioCryptoMD5Append(&md5, digest, 16);
+	  _pdfioCryptoMD5Finish(&md5, digest);
+	}
+
+	memcpy(pdf->encryption_key, digest, 16);
+
+	// Generate the user key...
+        _pdfioCryptoMD5Init(&md5);
+        _pdfioCryptoMD5Append(&md5, pad, 32);
+        _pdfioCryptoMD5Append(&md5, file_id, file_id_len);
+        _pdfioCryptoMD5Finish(&md5, pdf->user_key);
+
+        memset(pdf->user_key + 16, 0, 16);
+
+        // Encrypt the result 20 times...
+        for (i = 0; i < 20; i ++)
+	{
+	  // XOR each byte in the key with the loop counter...
+	  for (j = 0; j < 16; j ++)
+	    digest[j] = (uint8_t)(pdf->encryption_key[j] ^ i);
+
+          _pdfioCryptoRC4Init(&rc4, digest, 16);
+          _pdfioCryptoRC4Crypt(&rc4, pdf->user_key, sizeof(pdf->user_key));
+	}
+
+	// Save everything in the dictionary...
+	pdfioDictSetNumber(dict, "Length", 128);
+	pdfioDictSetBinary(dict, "O", pdf->owner_key, sizeof(pdf->owner_key));
+	pdfioDictSetNumber(dict, "P", (int)permissions);
+	pdfioDictSetNumber(dict, "R", encryption == PDFIO_ENCRYPTION_RC4_128 ? 3 : 4);
+	pdfioDictSetNumber(dict, "V", encryption == PDFIO_ENCRYPTION_RC4_128 ? 3 : 4);
+	pdfioDictSetBinary(dict, "U", pdf->user_key, sizeof(pdf->user_key));
+	break;
+
+    case PDFIO_ENCRYPTION_AES_256 :
+        // TODO: Implement AES-256 (/V 6 /R 6)
+
+    default :
+        _pdfioFileError(pdf, "Encryption mode %d not supported for writing.", (int)encryption);
+	return (false);
+  }
+
+  if ((pdf->encrypt_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+  {
+    _pdfioFileError(pdf, "Unable to create encryption object.");
+    return (false);
+  }
+
+  pdfioObjClose(pdf->encrypt_obj);
+
+  pdf->encryption = encryption;
+  pdf->permissions = permissions;
+
+  return (true);
+}
+
+
+//
 // 'pdfioFileSetSubject()' - Set the subject for a PDF file.
 //
 
 void
-pdfioFileSetSubject(pdfio_file_t *pdf,	// I - PDF file
-                   const char    *value)// I - Value
+pdfioFileSetSubject(
+    pdfio_file_t *pdf,			// I - PDF file
+    const char   *value)		// I - Value
 {
   if (pdf && pdf->info)
     pdfioDictSetString(pdf->info->value.value.dict, "Subject", pdfioStringCreate(pdf, value));
@@ -1702,9 +1908,9 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
   PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root, (unsigned long)pdf->root->number);
 
-  pdf->info     = pdfioDictGetObj(pdf->trailer, "Info");
-  pdf->encrypt  = pdfioDictGetObj(pdf->trailer, "Encrypt");
-  pdf->id_array = pdfioDictGetArray(pdf->trailer, "ID");
+  pdf->info        = pdfioDictGetObj(pdf->trailer, "Info");
+  pdf->encrypt_obj = pdfioDictGetObj(pdf->trailer, "Encrypt");
+  pdf->id_array    = pdfioDictGetArray(pdf->trailer, "ID");
 
   return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root), "Pages")));
 }
@@ -1819,8 +2025,8 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     goto done;
   }
 
-  if (pdf->encrypt)
-    pdfioDictSetObj(pdf->trailer, "Encrypt", pdf->encrypt);
+  if (pdf->encrypt_obj)
+    pdfioDictSetObj(pdf->trailer, "Encrypt", pdf->encrypt_obj);
   if (pdf->id_array)
     pdfioDictSetArray(pdf->trailer, "ID", pdf->id_array);
   pdfioDictSetObj(pdf->trailer, "Info", pdf->info);

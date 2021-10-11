@@ -59,6 +59,14 @@ typedef struct _pdfio_file_s pdfio_file_t;
 					// PDF file
 typedef bool (*pdfio_error_cb_t)(pdfio_file_t *pdf, const char *message, void *data);
 					// Error callback
+typedef enum pdfio_encryption_e		// PDF encryption modes
+{
+  PDFIO_ENCRYPTION_NONE = 0,		// No encryption
+  PDFIO_ENCRYPTION_RC4_40,		// 40-bit RC4 encryption (PDF 1.3)
+  PDFIO_ENCRYPTION_RC4_128,		// 128-bit RC4 encryption (PDF 1.4)
+  PDFIO_ENCRYPTION_AES_128,		// 128-bit AES encryption (PDF 1.6)
+  PDFIO_ENCRYPTION_AES_256		// 256-bit AES encryption (PDF 2.0)
+} pdfio_encryption_t;
 typedef enum pdfio_filter_e		// Compression/decompression filters for streams
 {
   PDFIO_FILTER_NONE,			// No filter
@@ -78,6 +86,20 @@ typedef ssize_t (*pdfio_output_cb_t)(void *ctx, const void *data, size_t datalen
 					// Output callback for pdfioFileCreateOutput
 typedef const char *(*pdfio_password_cb_t)(void *data, const char *filename);
 					// Password callback for pdfioFileOpen
+enum pdfio_permission_e			// PDF permission bits
+{
+  PDFIO_PERMISSION_NONE = 0,		// No permissions
+  PDFIO_PERMISSION_PRINT = 0x0004,	// PDF allows printing
+  PDFIO_PERMISSION_MODIFY = 0x0008,	// PDF allows modification
+  PDFIO_PERMISSION_COPY = 0x0010,	// PDF allows copying
+  PDFIO_PERMISSION_ANNOTATE = 0x0020,	// PDF allows annotation
+  PDFIO_PERMISSION_FORMS = 0x0100,	// PDF allows filling in forms
+  PDFIO_PERMISSION_READING = 0x0200,	// PDF allows screen reading/accessibility (deprecated in PDF 2.0)
+  PDFIO_PERMISSION_ASSEMBLE = 0x0400,	// PDF allows assembly (insert, delete, or rotate pages, add document outlines and thumbnails)
+  PDFIO_PERMISSION_PRINT_HIGH = 0x0800,	// PDF allows high quality printing
+  PDFIO_PERMISSION_ALL = ~0		// All permissions
+};
+typedef unsigned pdfio_permission_t;	// PDF permission bitfield
 typedef struct pdfio_rect_s		// PDF rectangle
 {
   double	x1;			// Lower-left X coordinate
@@ -174,6 +196,7 @@ extern size_t		pdfioFileGetNumObjs(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern size_t		pdfioFileGetNumPages(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileGetObj(pdfio_file_t *pdf, size_t n) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileGetPage(pdfio_file_t *pdf, size_t n) _PDFIO_PUBLIC;
+extern pdfio_permission_t pdfioFileGetPermissions(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetProducer(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetSubject(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetTitle(pdfio_file_t *pdf) _PDFIO_PUBLIC;
@@ -183,6 +206,7 @@ extern void		pdfioFileSetAuthor(pdfio_file_t *pdf, const char *value) _PDFIO_PUB
 extern void		pdfioFileSetCreationDate(pdfio_file_t *pdf, time_t value) _PDFIO_PUBLIC;
 extern void		pdfioFileSetCreator(pdfio_file_t *pdf, const char *value) _PDFIO_PUBLIC;
 extern void		pdfioFileSetKeywords(pdfio_file_t *pdf, const char *value) _PDFIO_PUBLIC;
+extern bool		pdfioFileSetPermissions(pdfio_file_t *pdf, pdfio_permission_t permissions, pdfio_encryption_t encryption, const char *owner_password, const char *user_password) _PDFIO_PUBLIC;
 extern void		pdfioFileSetSubject(pdfio_file_t *pdf, const char *value) _PDFIO_PUBLIC;
 extern void		pdfioFileSetTitle(pdfio_file_t *pdf, const char *value) _PDFIO_PUBLIC;
 
