@@ -267,10 +267,10 @@ struct _pdfio_file_s			// PDF file structure
 		*bufptr,		// Pointer into buffer
 		*bufend;		// End of buffer
   off_t		bufpos;			// Position in file for start of buffer
-  pdfio_dict_t	*trailer;		// Trailer dictionary
-  pdfio_obj_t	*root;			// Root object/dictionary
-  pdfio_obj_t	*info;			// Information object
-  pdfio_obj_t	*pages_root;		// Root pages object
+  pdfio_dict_t	*trailer_dict;		// Trailer dictionary
+  pdfio_obj_t	*root_obj;		// Root object/dictionary
+  pdfio_obj_t	*info_obj;		// Information object
+  pdfio_obj_t	*pages_obj;		// Root pages object
   pdfio_obj_t	*encrypt_obj;		// De/Encryption object/dictionary
   pdfio_obj_t	*cp1252_obj,		// CP1252 font encoding object
 		*unicode_obj;		// Unicode font encoding object

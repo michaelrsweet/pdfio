@@ -123,7 +123,7 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
   {
     ret = false;
 
-    if (pdfioObjClose(pdf->info))
+    if (pdfioObjClose(pdf->info_obj))
       if (write_pages(pdf))
 	if (write_catalog(pdf))
 	  if (write_trailer(pdf))
@@ -278,7 +278,7 @@ pdfioFileCreate(
 
   pdfioDictSetName(dict, "Type", "Pages");
 
-  if ((pdf->pages_root = pdfioFileCreateObj(pdf, dict)) == NULL)
+  if ((pdf->pages_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
   {
     pdfioFileClose(pdf);
     unlink(filename);
@@ -296,7 +296,7 @@ pdfioFileCreate(
   pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
   pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
 
-  if ((pdf->info = pdfioFileCreateObj(pdf, info_dict)) == NULL)
+  if ((pdf->info_obj = pdfioFileCreateObj(pdf, info_dict)) == NULL)
   {
     pdfioFileClose(pdf);
     unlink(filename);
@@ -536,7 +536,7 @@ pdfioFileCreateOutput(
 
   pdfioDictSetName(dict, "Type", "Pages");
 
-  if ((pdf->pages_root = pdfioFileCreateObj(pdf, dict)) == NULL)
+  if ((pdf->pages_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
   {
     pdfioFileClose(pdf);
     return (NULL);
@@ -552,7 +552,7 @@ pdfioFileCreateOutput(
   pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
   pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
 
-  if ((pdf->info = pdfioFileCreateObj(pdf, info_dict)) == NULL)
+  if ((pdf->info_obj = pdfioFileCreateObj(pdf, info_dict)) == NULL)
   {
     pdfioFileClose(pdf);
     return (NULL);
@@ -595,7 +595,7 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
   if (!_pdfioDictGetValue(dict, "MediaBox"))
     pdfioDictSetRect(dict, "MediaBox", &pdf->media_box);
 
-  pdfioDictSetObj(dict, "Parent", pdf->pages_root);
+  pdfioDictSetObj(dict, "Parent", pdf->pages_obj);
 
   if (!_pdfioDictGetValue(dict, "Resources"))
     pdfioDictSetDict(dict, "Resources", pdfioDictCreate(pdf));
@@ -701,7 +701,7 @@ pdfioFileFindObj(
 const char *				// O - Author or `NULL` for none
 pdfioFileGetAuthor(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Author") : NULL);
+  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Author") : NULL);
 }
 
 
@@ -713,7 +713,7 @@ time_t					// O - Creation date or `0` for none
 pdfioFileGetCreationDate(
     pdfio_file_t *pdf)			// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetDate(pdf->info->value.value.dict, "CreationDate") : 0);
+  return (pdf && pdf->info_obj ? pdfioDictGetDate(pdf->info_obj->value.value.dict, "CreationDate") : 0);
 }
 
 
@@ -724,7 +724,7 @@ pdfioFileGetCreationDate(
 const char *				// O - Creator string or `NULL` for none
 pdfioFileGetCreator(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Creator") : NULL);
+  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Creator") : NULL);
 }
 
 
@@ -735,7 +735,7 @@ pdfioFileGetCreator(pdfio_file_t *pdf)	// I - PDF file
 pdfio_array_t *				// O - Array with binary strings
 pdfioFileGetID(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetArray(pdf->trailer, "ID") : NULL);
+  return (pdf ? pdf->id_array : NULL);
 }
 
 
@@ -746,7 +746,7 @@ pdfioFileGetID(pdfio_file_t *pdf)	// I - PDF file
 const char *				// O - Keywords string or `NULL` for none
 pdfioFileGetKeywords(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Keywords") : NULL);
+  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Keywords") : NULL);
 }
 
 
@@ -821,7 +821,7 @@ pdfioFileGetPage(pdfio_file_t *pdf,	// I - PDF file
 const char *				// O - Producer string or `NULL` for none
 pdfioFileGetProducer(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Producer") : NULL);
+  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Producer") : NULL);
 }
 
 
@@ -832,7 +832,7 @@ pdfioFileGetProducer(pdfio_file_t *pdf)	// I - PDF file
 const char *				// O - Subject or `NULL` for none
 pdfioFileGetSubject(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Subject") : NULL);
+  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Subject") : NULL);
 }
 
 
@@ -843,7 +843,7 @@ pdfioFileGetSubject(pdfio_file_t *pdf)	// I - PDF file
 const char *				// O - Title or `NULL` for none
 pdfioFileGetTitle(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Title") : NULL);
+  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Title") : NULL);
 }
 
 
@@ -988,8 +988,8 @@ void
 pdfioFileSetAuthor(pdfio_file_t *pdf,	// I - PDF file
                    const char   *value)	// I - Value
 {
-  if (pdf && pdf->info)
-    pdfioDictSetString(pdf->info->value.value.dict, "Author", pdfioStringCreate(pdf, value));
+  if (pdf && pdf->info_obj)
+    pdfioDictSetString(pdf->info_obj->value.value.dict, "Author", pdfioStringCreate(pdf, value));
 }
 
 
@@ -1002,8 +1002,8 @@ pdfioFileSetCreationDate(
     pdfio_file_t *pdf,			// I - PDF file
     time_t       value)			// I - Value
 {
-  if (pdf && pdf->info)
-    pdfioDictSetDate(pdf->info->value.value.dict, "CreationDate", value);
+  if (pdf && pdf->info_obj)
+    pdfioDictSetDate(pdf->info_obj->value.value.dict, "CreationDate", value);
 }
 
 
@@ -1015,8 +1015,8 @@ void
 pdfioFileSetCreator(pdfio_file_t *pdf,	// I - PDF file
                     const char   *value)// I - Value
 {
-  if (pdf && pdf->info)
-    pdfioDictSetString(pdf->info->value.value.dict, "Creator", pdfioStringCreate(pdf, value));
+  if (pdf && pdf->info_obj)
+    pdfioDictSetString(pdf->info_obj->value.value.dict, "Creator", pdfioStringCreate(pdf, value));
 }
 
 
@@ -1029,8 +1029,8 @@ pdfioFileSetKeywords(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *value)		// I - Value
 {
-  if (pdf && pdf->info)
-    pdfioDictSetString(pdf->info->value.value.dict, "Keywords", pdfioStringCreate(pdf, value));
+  if (pdf && pdf->info_obj)
+    pdfioDictSetString(pdf->info_obj->value.value.dict, "Keywords", pdfioStringCreate(pdf, value));
 }
 
 
@@ -1248,8 +1248,8 @@ pdfioFileSetSubject(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *value)		// I - Value
 {
-  if (pdf && pdf->info)
-    pdfioDictSetString(pdf->info->value.value.dict, "Subject", pdfioStringCreate(pdf, value));
+  if (pdf && pdf->info_obj)
+    pdfioDictSetString(pdf->info_obj->value.value.dict, "Subject", pdfioStringCreate(pdf, value));
 }
 
 
@@ -1261,8 +1261,8 @@ void
 pdfioFileSetTitle(pdfio_file_t *pdf,	// I - PDF file
                   const char   *value)	// I - Value
 {
-  if (pdf && pdf->info)
-    pdfioDictSetString(pdf->info->value.value.dict, "Title", pdfioStringCreate(pdf, value));
+  if (pdf && pdf->info_obj)
+    pdfioDictSetString(pdf->info_obj->value.value.dict, "Title", pdfioStringCreate(pdf, value));
 }
 
 
@@ -1620,8 +1620,9 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	_pdfioFileError(pdf, "Cross-reference stream does not have a dictionary.");
 	return (false);
       }
-      else if (_pdfioDictGetValue(pdf->trailer, "Encrypt"))
+      else if (_pdfioDictGetValue(pdf->trailer_dict, "Encrypt"))
       {
+        // TODO: Fix me
 	// Encryption not yet supported...
 	_pdfioFileError(pdf, "Sorry, PDFio currently does not support encrypted PDF files.");
 	return (false);
@@ -1867,7 +1868,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	_pdfioFileError(pdf, "Trailer is not a dictionary.");
 	return (false);
       }
-      else if (_pdfioDictGetValue(pdf->trailer, "Encrypt"))
+      else if (_pdfioDictGetValue(pdf->trailer_dict, "Encrypt"))
       {
 	// Encryption not yet supported...
 	_pdfioFileError(pdf, "Sorry, PDFio currently does not support encrypted PDF files.");
@@ -1887,11 +1888,11 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
     PDFIO_DEBUG_VALUE(&trailer);
     PDFIO_DEBUG("\n");
 
-    if (!pdf->trailer)
+    if (!pdf->trailer_dict)
     {
       // Save the trailer dictionary and grab the root (catalog) and info
       // objects...
-      pdf->trailer = trailer.value.dict;
+      pdf->trailer_dict = trailer.value.dict;
     }
 
     if ((xref_offset = (off_t)pdfioDictGetNumber(trailer.value.dict, "Prev")) <= 0)
@@ -1900,19 +1901,19 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
   // Once we have all of the xref tables loaded, get the important objects and
   // build the pages array...
-  if ((pdf->root = pdfioDictGetObj(pdf->trailer, "Root")) == NULL)
+  if ((pdf->root_obj = pdfioDictGetObj(pdf->trailer_dict, "Root")) == NULL)
   {
     _pdfioFileError(pdf, "Missing Root object.");
     return (false);
   }
 
-  PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root, (unsigned long)pdf->root->number);
+  PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
 
-  pdf->info        = pdfioDictGetObj(pdf->trailer, "Info");
-  pdf->encrypt_obj = pdfioDictGetObj(pdf->trailer, "Encrypt");
-  pdf->id_array    = pdfioDictGetArray(pdf->trailer, "ID");
+  pdf->info_obj    = pdfioDictGetObj(pdf->trailer_dict, "Info");
+  pdf->encrypt_obj = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
+  pdf->id_array    = pdfioDictGetArray(pdf->trailer_dict, "ID");
 
-  return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root), "Pages")));
+  return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages")));
 }
 
 
@@ -1930,13 +1931,13 @@ write_catalog(pdfio_file_t *pdf)	// I - PDF file
     return (false);
 
   pdfioDictSetName(dict, "Type", "Catalog");
-  pdfioDictSetObj(dict, "Pages", pdf->pages_root);
+  pdfioDictSetObj(dict, "Pages", pdf->pages_obj);
   // TODO: Add support for all of the root object dictionary keys
 
-  if ((pdf->root = pdfioFileCreateObj(pdf, dict)) == NULL)
+  if ((pdf->root_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
     return (false);
   else
-    return (pdfioObjClose(pdf->root));
+    return (pdfioObjClose(pdf->root_obj));
 }
 
 
@@ -1958,11 +1959,11 @@ write_pages(pdfio_file_t *pdf)		// I - PDF file
   for (i = 0; i < pdf->num_pages; i ++)
     pdfioArrayAppendObj(kids, pdf->pages[i]);
 
-  pdfioDictSetNumber(pdf->pages_root->value.value.dict, "Count", pdf->num_pages);
-  pdfioDictSetArray(pdf->pages_root->value.value.dict, "Kids", kids);
+  pdfioDictSetNumber(pdf->pages_obj->value.value.dict, "Count", pdf->num_pages);
+  pdfioDictSetArray(pdf->pages_obj->value.value.dict, "Kids", kids);
 
   // Write the Pages object...
-  return (pdfioObjClose(pdf->pages_root));
+  return (pdfioObjClose(pdf->pages_obj));
 }
 
 
@@ -2019,21 +2020,21 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     pdfioArrayAppendBinary(pdf->id_array, id_values[1], sizeof(id_values[1]));
   }
 
-  if ((pdf->trailer = pdfioDictCreate(pdf)) == NULL)
+  if ((pdf->trailer_dict = pdfioDictCreate(pdf)) == NULL)
   {
     ret = false;
     goto done;
   }
 
   if (pdf->encrypt_obj)
-    pdfioDictSetObj(pdf->trailer, "Encrypt", pdf->encrypt_obj);
+    pdfioDictSetObj(pdf->trailer_dict, "Encrypt", pdf->encrypt_obj);
   if (pdf->id_array)
-    pdfioDictSetArray(pdf->trailer, "ID", pdf->id_array);
-  pdfioDictSetObj(pdf->trailer, "Info", pdf->info);
-  pdfioDictSetObj(pdf->trailer, "Root", pdf->root);
-  pdfioDictSetNumber(pdf->trailer, "Size", pdf->num_objs + 1);
+    pdfioDictSetArray(pdf->trailer_dict, "ID", pdf->id_array);
+  pdfioDictSetObj(pdf->trailer_dict, "Info", pdf->info_obj);
+  pdfioDictSetObj(pdf->trailer_dict, "Root", pdf->root_obj);
+  pdfioDictSetNumber(pdf->trailer_dict, "Size", pdf->num_objs + 1);
 
-  if (!_pdfioDictWrite(pdf->trailer, NULL))
+  if (!_pdfioDictWrite(pdf->trailer_dict, NULL))
   {
     _pdfioFileError(pdf, "Unable to write trailer.");
     ret = false;
