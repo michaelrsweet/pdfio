@@ -2022,6 +2022,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
 
   if ((pdf->trailer_dict = pdfioDictCreate(pdf)) == NULL)
   {
+    _pdfioFileError(pdf, "Unable to create trailer.");
     ret = false;
     goto done;
   }

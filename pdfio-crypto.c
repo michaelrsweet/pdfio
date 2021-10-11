@@ -208,16 +208,52 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
      uint8_t             *iv,		// I  - Buffer for initialization vector
      size_t              *ivlen)	// IO - Size of initialization vector
 {
-  (void)pdf;
-  (void)obj;
-  (void)ctx;
-  (void)iv;
+  uint8_t	data[21];		/* Key data */
+  _pdfio_md5_t	md5;			/* MD5 state */
+  uint8_t	digest[16];		/* MD5 digest value */
 
 
-  // No decryption...
-  *ivlen = 0;
+  // Range check input...
+  if (!pdf)
+  {
+    *ivlen = 0;
+    return (NULL);
+  }
 
-  return (NULL);
+  switch (pdf->encryption)
+  {
+    default :
+        *ivlen = 0;
+        return (NULL);
+
+    case PDFIO_ENCRYPTION_RC4_128 :
+    case PDFIO_ENCRYPTION_AES_128 :
+	// Copy the key data for the MD5 hash.
+	memcpy(data, pdf->encryption_key, sizeof(pdf->encryption_key));
+	data[16] = (uint8_t)obj->number;
+	data[17] = (uint8_t)(obj->number >> 8);
+	data[18] = (uint8_t)(obj->number >> 16);
+	data[19] = (uint8_t)obj->generation;
+	data[20] = (uint8_t)(obj->generation >> 8);
+
+        // Hash it...
+        _pdfioCryptoMD5Init(&md5);
+	_pdfioCryptoMD5Append(&md5, data, sizeof(data));
+	_pdfioCryptoMD5Finish(&md5, digest);
+
+        // Initialize the RC4/AES context using the digest...
+        if (pdf->encryption == PDFIO_ENCRYPTION_RC4_128)
+        {
+          _pdfioCryptoRC4Init(&ctx->rc4, digest, sizeof(digest));
+          return ((_pdfio_crypto_cb_t)_pdfioCryptoRC4Crypt);
+	}
+	else
+	{
+	  *ivlen = 16;
+          _pdfioCryptoAESInit(&ctx->aes, digest, sizeof(digest), iv);
+          return ((_pdfio_crypto_cb_t)_pdfioCryptoAESDecrypt);
+	}
+  }
 }
 
 
@@ -233,14 +269,51 @@ _pdfio_crypto_cb_t			// O  - Encryption callback or `NULL` for none
      uint8_t             *iv,		// I  - Buffer for initialization vector
      size_t              *ivlen)	// IO - Size of initialization vector
 {
-  (void)pdf;
-  (void)obj;
-  (void)ctx;
-  (void)iv;
+  uint8_t	data[21];		/* Key data */
+  _pdfio_md5_t	md5;			/* MD5 state */
+  uint8_t	digest[16];		/* MD5 digest value */
 
 
-  // No encryption...
-  *ivlen = 0;
+  // Range check input...
+  if (!pdf)
+  {
+    *ivlen = 0;
+    return (NULL);
+  }
 
-  return (NULL);
+  switch (pdf->encryption)
+  {
+    default :
+        *ivlen = 0;
+        return (NULL);
+
+    case PDFIO_ENCRYPTION_RC4_128 :
+    case PDFIO_ENCRYPTION_AES_128 :
+	// Copy the key data for the MD5 hash.
+	memcpy(data, pdf->encryption_key, sizeof(pdf->encryption_key));
+	data[16] = (uint8_t)obj->number;
+	data[17] = (uint8_t)(obj->number >> 8);
+	data[18] = (uint8_t)(obj->number >> 16);
+	data[19] = (uint8_t)obj->generation;
+	data[20] = (uint8_t)(obj->generation >> 8);
+
+        // Hash it...
+        _pdfioCryptoMD5Init(&md5);
+	_pdfioCryptoMD5Append(&md5, data, sizeof(data));
+	_pdfioCryptoMD5Finish(&md5, digest);
+
+        // Initialize the RC4/AES context using the digest...
+        if (pdf->encryption == PDFIO_ENCRYPTION_RC4_128)
+        {
+          _pdfioCryptoRC4Init(&ctx->rc4, digest, sizeof(digest));
+          return ((_pdfio_crypto_cb_t)_pdfioCryptoRC4Crypt);
+	}
+	else
+	{
+	  *ivlen = 16;
+	  _pdfioCryptoMakeRandom(iv, *ivlen);
+          _pdfioCryptoAESInit(&ctx->aes, digest, sizeof(digest), iv);
+          return ((_pdfio_crypto_cb_t)_pdfioCryptoAESEncrypt);
+	}
+  }
 }
