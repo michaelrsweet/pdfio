@@ -61,6 +61,12 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 	  goto done;
 	}
 
+	if (st->crypto_cb)
+	{
+	  // Encrypt it first...
+	  (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out);
+	}
+
 	if (!_pdfioFileWrite(st->pdf, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out))
 	{
 	  ret = false;
@@ -74,6 +80,12 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
       if (st->flate.avail_out < (uInt)sizeof(st->cbuffer))
       {
         // Write any residuals...
+	if (st->crypto_cb)
+	{
+	  // Encrypt it first...
+	  (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out);
+	}
+
 	if (!_pdfioFileWrite(st->pdf, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out))
 	{
 	  ret = false;
@@ -159,6 +171,22 @@ _pdfioStreamCreate(
   st->obj        = obj;
   st->length_obj = length_obj;
   st->filter     = compression;
+
+  if (obj->pdf->encryption)
+  {
+    uint8_t	iv[64];			// Initialization vector
+    size_t	ivlen = sizeof(iv);	// Length of initialization vector, if any
+
+    if ((st->crypto_cb = _pdfioCryptoMakeWriter(st->pdf, obj, &st->crypto_ctx, iv, &ivlen)) == NULL)
+    {
+      // TODO: Add error message?
+      free(st);
+      return (NULL);
+    }
+
+    if (ivlen > 0)
+      _pdfioFileWrite(st->pdf, iv, ivlen);
+  }
 
   if (compression == PDFIO_FILTER_FLATE)
   {
@@ -592,7 +620,7 @@ pdfioStreamPrintf(
 
 
 //
-// '()' - Write a single character to a stream.
+// 'pdfioStreamPutChar()' - Write a single character to a stream.
 //
 
 bool					// O - `true` on success, `false` on failure
@@ -722,8 +750,35 @@ pdfioStreamWrite(
   // Write it...
   if (st->filter == PDFIO_FILTER_NONE)
   {
-    // No filtering so just write it...
-    return (_pdfioFileWrite(st->pdf, buffer, bytes));
+    // No filtering...
+    if (st->crypto_cb)
+    {
+      // Encrypt data before writing...
+      unsigned char	temp[8192];	// Temporary buffer
+      size_t		cbytes;		// Current bytes
+
+      bufptr = (const unsigned char *)buffer;
+
+      while (bytes > 0)
+      {
+        if ((cbytes = bytes) > sizeof(temp))
+          cbytes = sizeof(temp);
+
+        (st->crypto_cb)(&st->crypto_ctx, temp, bufptr, cbytes);
+        if (!_pdfioFileWrite(st->pdf, temp, cbytes))
+          return (false);
+
+        bytes -= cbytes;
+        bufptr += cbytes;
+      }
+
+      return (true);
+    }
+    else
+    {
+      // Write unencrypted...
+      return (_pdfioFileWrite(st->pdf, buffer, bytes));
+    }
   }
 
   pbline = st->pbsize - 1;
@@ -1098,6 +1153,12 @@ stream_write(pdfio_stream_t *st,	// I - Stream
     if (st->flate.avail_out < (sizeof(st->cbuffer) / 8))
     {
       // Flush the compression buffer...
+      if (st->crypto_cb)
+      {
+        // Encrypt it first...
+        (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out);
+      }
+
       if (!_pdfioFileWrite(st->pdf, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out))
         return (false);
 

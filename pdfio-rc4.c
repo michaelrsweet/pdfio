@@ -66,11 +66,14 @@ _pdfioCryptoRC4Init(
 //
 // '_pdfioCryptoRC4Crypt()' - De/encrypt the given buffer.
 //
+// "inbuffer" and "outbuffer" can point to the same memory.
+//
 
 void
 _pdfioCryptoRC4Crypt(
     _pdfio_rc4_t  *ctx,			// I - Context
-    uint8_t       *buffer,		// I - Buffer
+    uint8_t       *outbuffer,		// I - Output buffer
+    const uint8_t *inbuffer,		// I - Input buffer
     size_t        len)			// I - Size of buffers
 {
   uint8_t	tmp,			// Swap variable
@@ -97,7 +100,7 @@ _pdfioCryptoRC4Crypt(
     t = ctx->sbox[i] + ctx->sbox[j];
 
     // Encrypt using the S box...
-    *buffer++ ^= ctx->sbox[t];
+    *outbuffer++ = *inbuffer++ ^ ctx->sbox[t];
     len --;
   }
 

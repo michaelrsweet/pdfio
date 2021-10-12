@@ -763,7 +763,7 @@ do_unit_tests(void)
   if (read_unit_file("testpdfio-out.pdf", num_pages, first_image, false))
     return (1);
 
-  // Create a new PDF file...
+  // Stream a new PDF file...
   if ((outfd = open("testpdfio-out2.pdf", O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0666)) < 0)
   {
     perror("Unable to open \"testpdfio-out2.pdf\"");
@@ -783,6 +783,44 @@ do_unit_tests(void)
 
   if (read_unit_file("testpdfio-out2.pdf", num_pages, first_image, true))
     return (1);
+
+  // Create new encrypted PDF files...
+  fputs("pdfioFileCreate(\"testpdfio-rc4.pdf\", ...): ", stdout);
+  if ((outpdf = pdfioFileCreate("testpdfio-rc4.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioFileSetPermissions(all, RC4-128, no passwords): ", stdout);
+  if (pdfioFileSetPermissions(outpdf, PDFIO_PERMISSION_ALL, PDFIO_ENCRYPTION_RC4_128, NULL, NULL))
+    puts("PASS");
+  else
+    return (1);
+
+  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+    return (1);
+
+//  if (read_unit_file("testpdfio-rc4.pdf", num_pages, first_image, false))
+//    return (1);
+
+  fputs("pdfioFileCreate(\"testpdfio-aes.pdf\", ...): ", stdout);
+  if ((outpdf = pdfioFileCreate("testpdfio-aes.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioFileSetPermissions(no-print, AES-128, passwords='owner' and 'user'): ", stdout);
+  if (pdfioFileSetPermissions(outpdf, PDFIO_PERMISSION_ALL ^ PDFIO_PERMISSION_PRINT, PDFIO_ENCRYPTION_AES_128, "owner", "user"))
+    puts("PASS");
+  else
+    return (1);
+
+  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+    return (1);
+
+//  if (read_unit_file("testpdfio-aes.pdf", num_pages, first_image, false))
+//    return (1);
+
 
   return (0);
 }

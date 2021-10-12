@@ -1159,7 +1159,7 @@ pdfioFileSetPermissions(
 	    encrypt_key[j] = (uint8_t)(digest[j] ^ i);
 
 	  _pdfioCryptoRC4Init(&rc4, encrypt_key, sizeof(encrypt_key));
-	  _pdfioCryptoRC4Crypt(&rc4, pdf->owner_key, sizeof(pdf->owner_key));
+	  _pdfioCryptoRC4Crypt(&rc4, pdf->owner_key, pdf->owner_key, sizeof(pdf->owner_key));
 	}
 
         // Generate the encryption key
@@ -1204,7 +1204,7 @@ pdfioFileSetPermissions(
 	    digest[j] = (uint8_t)(pdf->encryption_key[j] ^ i);
 
           _pdfioCryptoRC4Init(&rc4, digest, 16);
-          _pdfioCryptoRC4Crypt(&rc4, pdf->user_key, sizeof(pdf->user_key));
+          _pdfioCryptoRC4Crypt(&rc4, pdf->user_key, pdf->user_key, sizeof(pdf->user_key));
 	}
 
 	// Save everything in the dictionary...

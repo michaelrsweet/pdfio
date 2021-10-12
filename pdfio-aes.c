@@ -170,23 +170,34 @@ _pdfioCryptoAESInit(
 //
 // '_pdfioCryptoAESDecrypt()' - Decrypt a block of bytes with AES.
 //
+// "inbuffer" and "outbuffer" can point to the same memory.
+//
 
 void
 _pdfioCryptoAESDecrypt(
     _pdfio_aes_t  *ctx,			// I - AES context
-    uint8_t       *buffer,		// I - Buffer
+    uint8_t       *outbuffer,		// I - Output buffer
+    const uint8_t *inbuffer,		// I - Input buffer
     size_t        len)			// I - Number of bytes to decrypt
 {
   uint8_t	next_iv[16];		// Next IV value
 
 
+  if (inbuffer != outbuffer)
+  {
+    // Not the most efficient, but we can optimize later - the sample AES code
+    // manipulates the data directly in memory and doesn't support separate
+    // input and output buffers...
+    memcpy(outbuffer, inbuffer, len);
+  }
+
   while (len > 15)
   {
-    memcpy(next_iv, buffer, 16);
-    InvCipher((state_t *)buffer, ctx);
-    XorWithIv(buffer, ctx->iv);
+    memcpy(next_iv, outbuffer, 16);
+    InvCipher((state_t *)outbuffer, ctx);
+    XorWithIv(outbuffer, ctx->iv);
     memcpy(ctx->iv, next_iv, 16);
-    buffer += 16;
+    outbuffer += 16;
     len -= 16;
   }
 
@@ -196,14 +207,14 @@ _pdfioCryptoAESDecrypt(
     uint8_t	temp[16];		// Temporary buffer
 
     memset(temp, 16 - len, sizeof(temp));
-    memcpy(temp, buffer, len);
+    memcpy(temp, outbuffer, len);
 
     memcpy(next_iv, temp, 16);
     InvCipher((state_t *)temp, ctx);
     XorWithIv(temp, ctx->iv);
     memcpy(ctx->iv, next_iv, 16);
 
-    memcpy(buffer, temp, len);
+    memcpy(outbuffer, temp, len);
   }
 }
 
@@ -211,23 +222,34 @@ _pdfioCryptoAESDecrypt(
 //
 // '_pdfioCryptoAESEncrypt()' - Encrypt a block of bytes with AES.
 //
+// "inbuffer" and "outbuffer" can point to the same memory.
+//
 
 void
 _pdfioCryptoAESEncrypt(
     _pdfio_aes_t  *ctx,			// I - AES context
-    uint8_t       *buffer,		// I - Buffer
+    uint8_t       *outbuffer,		// I - Output buffer
+    const uint8_t *inbuffer,		// I - Input buffer
     size_t        len)			// I - Number of bytes to decrypt
 {
   uint8_t	*iv = ctx->iv;		// Current IV for CBC
   uint8_t	temp[16];		// Temporary buffer
 
 
+  if (inbuffer != outbuffer)
+  {
+    // Not the most efficient, but we can optimize later - the sample AES code
+    // manipulates the data directly in memory and doesn't support separate
+    // input and output buffers...
+    memcpy(outbuffer, inbuffer, len);
+  }
+
   while (len > 15)
   {
-    XorWithIv(buffer, iv);
-    Cipher((state_t*)buffer, ctx);
-    iv = buffer;
-    buffer += 16;
+    XorWithIv(outbuffer, iv);
+    Cipher((state_t*)outbuffer, ctx);
+    iv = outbuffer;
+    outbuffer += 16;
     len -= 16;
   }
 
@@ -235,13 +257,13 @@ _pdfioCryptoAESEncrypt(
   {
     // Pad the final buffer with (16 - len)...
     memset(temp, 16 - len, sizeof(temp));
-    memcpy(temp, buffer, len);
+    memcpy(temp, outbuffer, len);
 
     XorWithIv(temp, iv);
     Cipher((state_t*)temp, ctx);
     iv = temp;
 
-    memcpy(buffer, temp, len);
+    memcpy(outbuffer, temp, len);
   }
 
   /* store Iv in ctx for next call */

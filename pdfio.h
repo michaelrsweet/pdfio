@@ -99,7 +99,7 @@ enum pdfio_permission_e			// PDF permission bits
   PDFIO_PERMISSION_PRINT_HIGH = 0x0800,	// PDF allows high quality printing
   PDFIO_PERMISSION_ALL = ~0		// All permissions
 };
-typedef unsigned pdfio_permission_t;	// PDF permission bitfield
+typedef int pdfio_permission_t;		// PDF permission bitfield
 typedef struct pdfio_rect_s		// PDF rectangle
 {
   double	x1;			// Lower-left X coordinate
