@@ -1077,7 +1077,7 @@ pdfioFileSetPermissions(
   if (!pdf)
     return (false);
 
-  if (pdf->num_objs > 0)
+  if (pdf->num_objs > 2)		// First two objects are pages and info
   {
     _pdfioFileError(pdf, "You must call pdfioFileSetPermissions before adding any objects.");
     return (false);
@@ -1099,7 +1099,7 @@ pdfioFileSetPermissions(
     case PDFIO_ENCRYPTION_RC4_128 :
     case PDFIO_ENCRYPTION_AES_128 :
         // Create the 128-bit encryption keys...
-        if (user_password)
+        if (user_password && *user_password)
         {
           // Copy the user password and pad it with the special PDF pad bytes
           if ((len = strlen(user_password)) > sizeof(user_pad))
@@ -1127,10 +1127,15 @@ pdfioFileSetPermissions(
 	  if (len < sizeof(owner_pad))
 	    memcpy(owner_pad + len, pad, sizeof(owner_pad) - len);
 	}
-	else
+	else if (user_password && *user_password)
 	{
 	  // Generate a random owner password...
 	  _pdfioCryptoMakeRandom(owner_pad, sizeof(owner_pad));
+	}
+	else
+	{
+	  // Use default (pad) password
+	  memcpy(owner_pad, pad, sizeof(owner_pad));
 	}
 
         // Compute the owner key...
@@ -1212,7 +1217,7 @@ pdfioFileSetPermissions(
 	pdfioDictSetBinary(dict, "O", pdf->owner_key, sizeof(pdf->owner_key));
 	pdfioDictSetNumber(dict, "P", (int)permissions);
 	pdfioDictSetNumber(dict, "R", encryption == PDFIO_ENCRYPTION_RC4_128 ? 3 : 4);
-	pdfioDictSetNumber(dict, "V", encryption == PDFIO_ENCRYPTION_RC4_128 ? 3 : 4);
+	pdfioDictSetNumber(dict, "V", encryption == PDFIO_ENCRYPTION_RC4_128 ? 2 : 4);
 	pdfioDictSetBinary(dict, "U", pdf->user_key, sizeof(pdf->user_key));
 	break;
 

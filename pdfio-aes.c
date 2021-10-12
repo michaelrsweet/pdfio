@@ -116,6 +116,7 @@ _pdfioCryptoAESInit(
 
   // Clear context
   memset(ctx, 0, sizeof(_pdfio_aes_t));
+  ctx->round_size = keylen / 4 + 6;
 
   // The first round key is the key itself.
   memcpy(ctx->round_key, key, keylen);
