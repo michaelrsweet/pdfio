@@ -69,8 +69,8 @@ all:		$(TARGETS)
 all-shared:
 	if test `uname` = Darwin; then \
 		$(MAKE) DSONAME="libpdfio.1.dylib" -$(MAKEFLAGS) all; \
-	else
-		$(MAKE) DSONAME="libpdfio.so.1" -$(MAKEFLAGS) all; \
+	else \
+		$(MAKE) COMMONFLAGS="-g -Os -fPIC" DSONAME="libpdfio.so.1" -$(MAKEFLAGS) all; \
 	fi
 
 debug:
