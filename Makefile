@@ -125,7 +125,7 @@ libpdfio.a:		$(LIBOBJS)
 	$(RANLIB) $@
 
 libpdfio.so.1:		$(LIBOBJS)
-	$(CC) $(DSOFLAGS) $(COMMONFLAGS) -shared -o $@ -Wl,soname,$@ $(LIBOBJS) $(LIBS)
+	$(CC) $(DSOFLAGS) $(COMMONFLAGS) -shared -o $@ -Wl,-soname,$@ $(LIBOBJS) $(LIBS)
 
 libpdfio.1.dylib:	$(LIBOBJS)
 	$(CC) $(DSOFLAGS) $(COMMONFLAGS) -dynamiclib -o $@ -install_name $(prefix)/lib/$@ -current_version $(VERSION) -compatibility_version 1.0 $(LIBOBJS) $(LIBS)
