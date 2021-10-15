@@ -126,6 +126,7 @@ _pdfioCryptoAESInit(
   {
     if ((i % nwords) == 0)
     {
+      // TODO: Optimize to shift and lookup S box in one step
       // Shifts word left once - [a0,a1,a2,a3] becomes [a1,a2,a3,a0]
       tempa[0] = rkptr[-3];
       tempa[1] = rkptr[-2];
@@ -150,12 +151,14 @@ _pdfioCryptoAESInit(
     }
     else
     {
+      // Use unshifted values without S-box...
       tempa[0] = rkptr[-4];
       tempa[1] = rkptr[-3];
       tempa[2] = rkptr[-2];
       tempa[3] = rkptr[-1];
     }
 
+    // TODO: Optimize to incorporate this into previous steps
     *rkptr++ = *rkptr0++ ^ tempa[0];
     *rkptr++ = *rkptr0++ ^ tempa[1];
     *rkptr++ = *rkptr0++ ^ tempa[2];
@@ -171,7 +174,8 @@ _pdfioCryptoAESInit(
 //
 // '_pdfioCryptoAESDecrypt()' - Decrypt a block of bytes with AES.
 //
-// "inbuffer" and "outbuffer" can point to the same memory.
+// "inbuffer" and "outbuffer" can point to the same memory.  Length must be a
+// multiple of 16 bytes (excess is not decrypted).
 //
 
 void
@@ -201,29 +205,14 @@ _pdfioCryptoAESDecrypt(
     outbuffer += 16;
     len -= 16;
   }
-
-  if (len > 0)
-  {
-    // Pad the final buffer with (16 - len)...
-    uint8_t	temp[16];		// Temporary buffer
-
-    memset(temp, 16 - len, sizeof(temp));
-    memcpy(temp, outbuffer, len);
-
-    memcpy(next_iv, temp, 16);
-    InvCipher((state_t *)temp, ctx);
-    XorWithIv(temp, ctx->iv);
-    memcpy(ctx->iv, next_iv, 16);
-
-    memcpy(outbuffer, temp, len);
-  }
 }
 
 
 //
 // '_pdfioCryptoAESEncrypt()' - Encrypt a block of bytes with AES.
 //
-// "inbuffer" and "outbuffer" can point to the same memory.
+// "inbuffer" and "outbuffer" can point to the same memory.  "outbuffer" must
+// be a multiple of 16 bytes.
 //
 
 void
@@ -234,7 +223,6 @@ _pdfioCryptoAESEncrypt(
     size_t        len)			// I - Number of bytes to decrypt
 {
   uint8_t	*iv = ctx->iv;		// Current IV for CBC
-  uint8_t	temp[16];		// Temporary buffer
 
 
   if (inbuffer != outbuffer)
@@ -257,14 +245,11 @@ _pdfioCryptoAESEncrypt(
   if (len > 0)
   {
     // Pad the final buffer with (16 - len)...
-    memset(temp, 16 - len, sizeof(temp));
-    memcpy(temp, outbuffer, len);
+    memset(outbuffer + len, 16 - len, 16 - len);
 
-    XorWithIv(temp, iv);
-    Cipher((state_t*)temp, ctx);
-    iv = temp;
-
-    memcpy(outbuffer, temp, len);
+    XorWithIv(outbuffer, iv);
+    Cipher((state_t*)outbuffer, ctx);
+    iv = outbuffer;
   }
 
   /* store Iv in ctx for next call */
