@@ -660,11 +660,11 @@ pdfioContentSave(pdfio_stream_t *st)	// I - Stream
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetDashPattern(
     pdfio_stream_t *st,			// I - Stream
-    int            phase,		// I - Phase (offset within pattern)
-    int            on,			// I - On length
-    int            off)			// I - Off length
+    double         phase,		// I - Phase (offset within pattern)
+    double         on,			// I - On length
+    double         off)			// I - Off length
 {
-  return (pdfioStreamPrintf(st, "[%d %d] %d d\n", on, off, phase));
+  return (pdfioStreamPrintf(st, "[%g %g] %g d\n", on, off, phase));
 }
 
 

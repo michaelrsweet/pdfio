@@ -96,7 +96,7 @@ extern bool		pdfioContentPathMoveTo(pdfio_stream_t *st, double x, double y) _PDF
 extern bool		pdfioContentPathRect(pdfio_stream_t *st, double x, double y, double width, double height) _PDFIO_PUBLIC;
 extern bool		pdfioContentRestore(pdfio_stream_t *st) _PDFIO_PUBLIC;
 extern bool		pdfioContentSave(pdfio_stream_t *st) _PDFIO_PUBLIC;
-extern bool		pdfioContentSetDashPattern(pdfio_stream_t *st, int phase, int on, int off) _PDFIO_PUBLIC;
+extern bool		pdfioContentSetDashPattern(pdfio_stream_t *st, double phase, double on, double off) _PDFIO_PUBLIC;
 extern bool		pdfioContentSetFillColorDeviceCMYK(pdfio_stream_t *st, double c, double m, double y, double k) _PDFIO_PUBLIC;
 extern bool		pdfioContentSetFillColorDeviceGray(pdfio_stream_t *st, double g) _PDFIO_PUBLIC;
 extern bool		pdfioContentSetFillColorDeviceRGB(pdfio_stream_t *st, double r, double g, double b) _PDFIO_PUBLIC;
