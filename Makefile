@@ -118,6 +118,9 @@ install-shared:
 test:	testpdfio
 	./testpdfio
 
+valgrind:	testpdfio
+	valgrind --leak-check=full ./testpdfio
+
 
 # pdfio library
 libpdfio.a:		$(LIBOBJS)

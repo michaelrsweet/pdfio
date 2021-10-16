@@ -734,7 +734,7 @@ do_unit_tests(void)
     puts("\n");
   }
   else
-    return (1);
+    goto fail;
 
   // Test the value parsers for edge cases...
   fputs("_pdfioValueRead(cid_dict): ", stdout);
@@ -748,43 +748,51 @@ do_unit_tests(void)
     puts("\n");
   }
   else
-    return (1);
+    goto fail;
 
   // Create a new PDF file...
   fputs("pdfioFileCreate(\"testpdfio-out.pdf\", ...): ", stdout);
   if ((outpdf = pdfioFileCreate("testpdfio-out.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
     puts("PASS");
   else
-    return (1);
+    goto fail;
 
   if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
-    return (1);
+    goto fail;
 
   if (read_unit_file("testpdfio-out.pdf", num_pages, first_image, false))
-    return (1);
+    goto fail;
 
   // Create a new PDF file...
   if ((outfd = open("testpdfio-out2.pdf", O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0666)) < 0)
   {
     perror("Unable to open \"testpdfio-out2.pdf\"");
-    return (1);
+    goto fail;
   }
 
   fputs("pdfioFileCreateOutput(...): ", stdout);
   if ((outpdf = pdfioFileCreateOutput((pdfio_output_cb_t)output_cb, &outfd, NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
     puts("PASS");
   else
-    return (1);
+    goto fail;
 
   if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
-    return (1);
+    goto fail;
 
   close(outfd);
 
   if (read_unit_file("testpdfio-out2.pdf", num_pages, first_image, true))
-    return (1);
+    goto fail;
+
+  pdfioFileClose(inpdf);
 
   return (0);
+
+  fail:
+
+  pdfioFileClose(inpdf);
+
+  return (1);
 }
 
 

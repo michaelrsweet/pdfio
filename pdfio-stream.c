@@ -80,6 +80,8 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 	  goto done;
 	}
       }
+
+      deflateEnd(&st->flate);
     }
 
     // Save the length of this stream...
