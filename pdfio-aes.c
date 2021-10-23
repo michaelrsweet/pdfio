@@ -170,7 +170,7 @@ _pdfioCryptoAESInit(
 // multiple of 16 bytes (excess is not decrypted).
 //
 
-void
+size_t					// O - Number of bytes in output buffer
 _pdfioCryptoAESDecrypt(
     _pdfio_aes_t  *ctx,			// I - AES context
     uint8_t       *outbuffer,		// I - Output buffer
@@ -178,6 +178,7 @@ _pdfioCryptoAESDecrypt(
     size_t        len)			// I - Number of bytes to decrypt
 {
   uint8_t	next_iv[16];		// Next IV value
+  size_t	outbytes = 0;		// Output bytes
 
 
   if (inbuffer != outbuffer)
@@ -196,7 +197,10 @@ _pdfioCryptoAESDecrypt(
     memcpy(ctx->iv, next_iv, 16);
     outbuffer += 16;
     len -= 16;
+    outbytes += 16;
   }
+
+  return (outbytes);
 }
 
 
@@ -207,7 +211,7 @@ _pdfioCryptoAESDecrypt(
 // be a multiple of 16 bytes.
 //
 
-void
+size_t					// O - Number of bytes in output buffer
 _pdfioCryptoAESEncrypt(
     _pdfio_aes_t  *ctx,			// I - AES context
     uint8_t       *outbuffer,		// I - Output buffer
@@ -215,6 +219,7 @@ _pdfioCryptoAESEncrypt(
     size_t        len)			// I - Number of bytes to decrypt
 {
   uint8_t	*iv = ctx->iv;		// Current IV for CBC
+  size_t	outbytes = 0;		// Output bytes
 
 
   if (inbuffer != outbuffer)
@@ -232,6 +237,7 @@ _pdfioCryptoAESEncrypt(
     iv = outbuffer;
     outbuffer += 16;
     len -= 16;
+    outbytes += 16;
   }
 
   if (len > 0)
@@ -242,10 +248,13 @@ _pdfioCryptoAESEncrypt(
     XorWithIv(outbuffer, iv);
     Cipher((state_t*)outbuffer, ctx);
     iv = outbuffer;
+    outbytes += 16;
   }
 
   /* store Iv in ctx for next call */
   memcpy(ctx->iv, iv, 16);
+
+  return (outbytes);
 }
 
 

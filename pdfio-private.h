@@ -211,7 +211,7 @@ typedef union _pdfio_crypto_ctx_u	// Cryptographic contexts
   _pdfio_aes_t	aes;			// AES-128/256 context
   _pdfio_rc4_t	rc4;			// RC4-40/128 context
 } _pdfio_crypto_ctx_t;
-typedef void (*_pdfio_crypto_cb_t)(_pdfio_crypto_ctx_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len);
+typedef size_t (*_pdfio_crypto_cb_t)(_pdfio_crypto_ctx_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len);
 
 struct _pdfio_array_s
 {
@@ -342,8 +342,8 @@ extern pdfio_array_t	*_pdfioArrayRead(pdfio_file_t *pdf, _pdfio_token_t *ts) _PD
 extern bool		_pdfioArrayWrite(pdfio_array_t *a) _PDFIO_INTERNAL;
 
 extern void		_pdfioCryptoAESInit(_pdfio_aes_t *ctx, const uint8_t *key, size_t keylen, const uint8_t *iv) _PDFIO_INTERNAL;
-extern void		_pdfioCryptoAESDecrypt(_pdfio_aes_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len) _PDFIO_INTERNAL;
-extern void		_pdfioCryptoAESEncrypt(_pdfio_aes_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len) _PDFIO_INTERNAL;
+extern size_t		_pdfioCryptoAESDecrypt(_pdfio_aes_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len) _PDFIO_INTERNAL;
+extern size_t		_pdfioCryptoAESEncrypt(_pdfio_aes_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoMakeRandom(uint8_t *buffer, size_t bytes) _PDFIO_INTERNAL;
 extern _pdfio_crypto_cb_t _pdfioCryptoMakeReader(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_crypto_ctx_t *ctx, uint8_t *iv, size_t *ivlen) _PDFIO_INTERNAL;
 extern _pdfio_crypto_cb_t _pdfioCryptoMakeWriter(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_crypto_ctx_t *ctx, uint8_t *iv, size_t *ivlen) _PDFIO_INTERNAL;
@@ -351,7 +351,7 @@ extern void		_pdfioCryptoMD5Append(_pdfio_md5_t *pms, const uint8_t *data, size_
 extern void		_pdfioCryptoMD5Finish(_pdfio_md5_t *pms, uint8_t digest[16]) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoMD5Init(_pdfio_md5_t *pms) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoRC4Init(_pdfio_rc4_t *ctx, const uint8_t *key, size_t keylen) _PDFIO_INTERNAL;
-extern void		_pdfioCryptoRC4Crypt(_pdfio_rc4_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len) _PDFIO_INTERNAL;
+extern size_t		_pdfioCryptoRC4Crypt(_pdfio_rc4_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoSHA256Append(_pdfio_sha256_t *, const uint8_t *bytes, size_t bytecount) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoSHA256Init(_pdfio_sha256_t *ctx) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoSHA256Finish(_pdfio_sha256_t *ctx, uint8_t *Message_Digest) _PDFIO_INTERNAL;

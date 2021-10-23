@@ -69,7 +69,7 @@ _pdfioCryptoRC4Init(
 // "inbuffer" and "outbuffer" can point to the same memory.
 //
 
-void
+size_t					// O - Number of output bytes
 _pdfioCryptoRC4Crypt(
     _pdfio_rc4_t  *ctx,			// I - Context
     uint8_t       *outbuffer,		// I - Output buffer
@@ -79,6 +79,7 @@ _pdfioCryptoRC4Crypt(
   uint8_t	tmp,			// Swap variable
 		i, j,			// Looping vars
 		t;			// Current S box
+  size_t	outbytes = len;		// Number of output bytes
 
 
   // Loop through the entire buffer...
@@ -107,4 +108,6 @@ _pdfioCryptoRC4Crypt(
   // Copy current S box indices back to context...
   ctx->i = i;
   ctx->j = j;
+
+  return (outbytes);
 }

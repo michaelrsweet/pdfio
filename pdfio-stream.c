@@ -54,6 +54,9 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 
       while ((status = deflate(&st->flate, Z_FINISH)) != Z_STREAM_END)
       {
+        size_t bytes = sizeof(st->cbuffer) - st->flate.avail_out;
+					// Bytes to write
+
 	if (status < Z_OK && status != Z_BUF_ERROR)
 	{
 	  _pdfioFileError(st->pdf, "Flate compression failed: %s", zstrerror(status));
@@ -64,10 +67,10 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 	if (st->crypto_cb)
 	{
 	  // Encrypt it first...
-	  (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out);
+	  bytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, bytes);
 	}
 
-	if (!_pdfioFileWrite(st->pdf, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out))
+	if (!_pdfioFileWrite(st->pdf, st->cbuffer, bytes))
 	{
 	  ret = false;
 	  goto done;
@@ -80,13 +83,16 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
       if (st->flate.avail_out < (uInt)sizeof(st->cbuffer))
       {
         // Write any residuals...
+        size_t bytes = sizeof(st->cbuffer) - st->flate.avail_out;
+					// Bytes to write
+
 	if (st->crypto_cb)
 	{
 	  // Encrypt it first...
-	  (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out);
+	  bytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, bytes);
 	}
 
-	if (!_pdfioFileWrite(st->pdf, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out))
+	if (!_pdfioFileWrite(st->pdf, st->cbuffer, bytes))
 	{
 	  ret = false;
 	  goto done;
@@ -755,7 +761,8 @@ pdfioStreamWrite(
     {
       // Encrypt data before writing...
       unsigned char	temp[8192];	// Temporary buffer
-      size_t		cbytes;		// Current bytes
+      size_t		cbytes,		// Current bytes
+			outbytes;	// Output bytes
 
       bufptr = (const unsigned char *)buffer;
 
@@ -764,8 +771,8 @@ pdfioStreamWrite(
         if ((cbytes = bytes) > sizeof(temp))
           cbytes = sizeof(temp);
 
-        (st->crypto_cb)(&st->crypto_ctx, temp, bufptr, cbytes);
-        if (!_pdfioFileWrite(st->pdf, temp, cbytes))
+        outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, bufptr, cbytes);
+        if (!_pdfioFileWrite(st->pdf, temp, outbytes))
           return (false);
 
         bytes -= cbytes;
@@ -1153,13 +1160,15 @@ stream_write(pdfio_stream_t *st,	// I - Stream
     if (st->flate.avail_out < (sizeof(st->cbuffer) / 8))
     {
       // Flush the compression buffer...
+      size_t	bytes = sizeof(st->cbuffer) - st->flate.avail_out;
+
       if (st->crypto_cb)
       {
         // Encrypt it first...
-        (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out);
+        bytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, bytes);
       }
 
-      if (!_pdfioFileWrite(st->pdf, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out))
+      if (!_pdfioFileWrite(st->pdf, st->cbuffer, bytes))
         return (false);
 
       st->flate.next_out  = (Bytef *)st->cbuffer;
