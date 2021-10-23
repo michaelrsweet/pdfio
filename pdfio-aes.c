@@ -110,7 +110,7 @@ _pdfioCryptoAESInit(
 		*rkptr,			// Current round_key values
 		*rkend,			// End of round_key values
 		tempa[4];		// Used for the column/row operations
-  size_t	roundlen = keylen + 24;	// Length of round_key
+//  size_t	roundlen = keylen + 24;	// Length of round_key
   size_t	nwords = keylen / 4;	// Number of 32-bit words in key
 
 
@@ -122,24 +122,16 @@ _pdfioCryptoAESInit(
   memcpy(ctx->round_key, key, keylen);
 
   // All other round keys are found from the previous round keys.
-  for (rkptr0 = ctx->round_key, rkptr = rkptr0 + keylen, rkend = rkptr + roundlen, i = nwords; rkptr < rkend; i ++)
+  for (rkptr0 = ctx->round_key, rkptr = rkptr0 + keylen, rkend = rkptr + 16 * ctx->round_size, i = nwords; rkptr < rkend; i ++)
   {
     if ((i % nwords) == 0)
     {
-      // TODO: Optimize to shift and lookup S box in one step
-      // Shifts word left once - [a0,a1,a2,a3] becomes [a1,a2,a3,a0]
-      tempa[0] = rkptr[-3];
-      tempa[1] = rkptr[-2];
-      tempa[2] = rkptr[-1];
-      tempa[3] = rkptr[-4];
-
-      // Apply the S-box to each of the four bytes to produce an output word.
-      tempa[0] = sbox[tempa[0]];
-      tempa[1] = sbox[tempa[1]];
-      tempa[2] = sbox[tempa[2]];
-      tempa[3] = sbox[tempa[3]];
-
-      tempa[0] = tempa[0] ^ Rcon[i / nwords];
+      // Shifts word left once - [a0,a1,a2,a3] becomes [a1,a2,a3,a0], then
+      // apply the S-box to each of the four bytes to produce an output word.
+      tempa[0] = sbox[rkptr[-3]] ^ Rcon[i / nwords];
+      tempa[1] = sbox[rkptr[-2]];
+      tempa[2] = sbox[rkptr[-1]];
+      tempa[3] = sbox[rkptr[-4]];
     }
     else if (keylen == 32 && (i % nwords) == 4)
     {
@@ -456,17 +448,16 @@ Cipher(state_t *state, const _pdfio_aes_t *ctx)
   // The first Nr-1 rounds are identical.
   // These Nr rounds are executed in the loop below.
   // Last one without MixColumns()
-  for (round = 1; ; ++round)
+  for (round = 1; round < ctx->round_size; round ++)
   {
     SubBytes(state);
     ShiftRows(state);
-    if (round == ctx->round_size)
-      break;
-
     MixColumns(state);
     AddRoundKey(round, state, ctx->round_key);
   }
   // Add round key to last round
+  SubBytes(state);
+  ShiftRows(state);
   AddRoundKey(ctx->round_size, state, ctx->round_key);
 }
 
