@@ -193,6 +193,7 @@ pdfioFileCreate(
   pdfio_file_t	*pdf;			// PDF file
   pdfio_dict_t	*dict;			// Dictionary for pages object
   pdfio_dict_t	*info_dict;		// Dictionary for information object
+  unsigned char	id_value[16];		// File ID value
 
 
   // Range check input...
@@ -301,6 +302,15 @@ pdfioFileCreate(
     pdfioFileClose(pdf);
     unlink(filename);
     return (NULL);
+  }
+
+  // Create random file ID values...
+  _pdfioCryptoMakeRandom(id_value, sizeof(id_value));
+
+  if ((pdf->id_array = pdfioArrayCreate(pdf)) != NULL)
+  {
+    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
+    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
   }
 
   return (pdf);
@@ -458,6 +468,7 @@ pdfioFileCreateOutput(
   pdfio_file_t	*pdf;			// PDF file
   pdfio_dict_t	*dict;			// Dictionary for pages object
   pdfio_dict_t	*info_dict;		// Dictionary for information object
+  unsigned char	id_value[16];		// File ID value
 
 
   // Range check input...
@@ -556,6 +567,15 @@ pdfioFileCreateOutput(
   {
     pdfioFileClose(pdf);
     return (NULL);
+  }
+
+  // Create random file ID values...
+  _pdfioCryptoMakeRandom(id_value, sizeof(id_value));
+
+  if ((pdf->id_array = pdfioArrayCreate(pdf)) != NULL)
+  {
+    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
+    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
   }
 
   return (pdf);
@@ -1099,51 +1119,51 @@ pdfioFileSetPermissions(
     case PDFIO_ENCRYPTION_RC4_128 :
     case PDFIO_ENCRYPTION_AES_128 :
         // Create the 128-bit encryption keys...
-        if (user_password && *user_password)
+        if (user_password)
         {
-          // Copy the user password and pad it with the special PDF pad bytes
+          // Use the specified user password
           if ((len = strlen(user_password)) > sizeof(user_pad))
             len = sizeof(user_pad);
-
-	  if (len > 0)
-	    memcpy(user_pad, user_password, len);
-	  if (len < sizeof(user_pad))
-	    memcpy(user_pad + len, pad, sizeof(user_pad) - len);
         }
         else
 	{
-	  // Use default (pad) password
-	  memcpy(user_pad, pad, sizeof(user_pad));
+	  // No user password
+	  len = 0;
 	}
 
-        if (owner_password && *owner_password)
+	if (len > 0)
+	  memcpy(user_pad, user_password, len);
+	if (len < sizeof(user_pad))
+	  memcpy(user_pad + len, pad, sizeof(user_pad) - len);
+
+        if (owner_password)
         {
-          // Copy the owner password and pad it with the special PDF pad bytes
+          // Use the specified owner password...
           if ((len = strlen(owner_password)) > sizeof(owner_pad))
             len = sizeof(owner_pad);
-
-	  if (len > 0)
-	    memcpy(owner_pad, owner_password, len);
-	  if (len < sizeof(owner_pad))
-	    memcpy(owner_pad + len, pad, sizeof(owner_pad) - len);
 	}
 	else if (user_password && *user_password)
 	{
 	  // Generate a random owner password...
 	  _pdfioCryptoMakeRandom(owner_pad, sizeof(owner_pad));
+	  len = sizeof(owner_pad);
 	}
 	else
 	{
-	  // Use default (pad) password
-	  memcpy(owner_pad, pad, sizeof(owner_pad));
+	  // No owner password
+	  len = 0;
 	}
+
+	if (len > 0)
+	  memcpy(owner_pad, owner_password, len);
+	if (len < sizeof(owner_pad))
+	  memcpy(owner_pad + len, pad, sizeof(owner_pad) - len);
 
         // Compute the owner key...
 	_pdfioCryptoMD5Init(&md5);
 	_pdfioCryptoMD5Append(&md5, owner_pad, 32);
 	_pdfioCryptoMD5Finish(&md5, digest);
 
-	// MD5 the result 50 more times...
 	for (i = 0; i < 50; i ++)
 	{
 	  _pdfioCryptoMD5Init(&md5);
@@ -1151,13 +1171,12 @@ pdfioFileSetPermissions(
 	  _pdfioCryptoMD5Finish(&md5, digest);
 	}
 
-	// Copy the padded user password...
+	// Copy and encrypt the padded user password...
 	memcpy(pdf->owner_key, user_pad, sizeof(pdf->owner_key));
 
-	// Encrypt the result 20 times...
 	for (i = 0; i < 20; i ++)
 	{
-	  uint8_t	encrypt_key[16];// RC4 encryption key
+	  uint8_t encrypt_key[16];	// RC4 encryption key
 
 	  // XOR each byte in the digest with the loop counter to make a key...
 	  for (j = 0; j < sizeof(encrypt_key); j ++)
@@ -1178,7 +1197,6 @@ pdfioFileSetPermissions(
 	_pdfioCryptoMD5Init(&md5);
 	_pdfioCryptoMD5Append(&md5, user_pad, 32);
 	_pdfioCryptoMD5Append(&md5, pdf->owner_key, 32);
-
 	_pdfioCryptoMD5Append(&md5, perm_bytes, 4);
 	_pdfioCryptoMD5Append(&md5, file_id, file_id_len);
 	_pdfioCryptoMD5Finish(&md5, digest);
@@ -1437,7 +1455,7 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
   // Read the objects themselves...
   for (cur_obj = 0; cur_obj < num_objs; cur_obj ++)
   {
-    if (!_pdfioValueRead(obj->pdf, &tb, &(objs[cur_obj]->value)))
+    if (!_pdfioValueRead(obj->pdf, obj, &tb, &(objs[cur_obj]->value)))
     {
       pdfioStreamClose(st);
       return (false);
@@ -1615,7 +1633,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
       _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
 
-      if (!_pdfioValueRead(pdf, &tb, &trailer))
+      if (!_pdfioValueRead(pdf, obj, &tb, &trailer))
       {
         _pdfioFileError(pdf, "Unable to read cross-reference stream dictionary.");
         return (false);
@@ -1863,7 +1881,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
       _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
 
-      if (!_pdfioValueRead(pdf, &tb, &trailer))
+      if (!_pdfioValueRead(pdf, NULL, &tb, &trailer))
       {
 	_pdfioFileError(pdf, "Unable to read trailer dictionary.");
 	return (false);
@@ -1982,7 +2000,6 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
   bool		ret = true;		// Return value
   off_t		xref_offset;		// Offset to xref table
   size_t	i;			// Looping var
-  unsigned char	id_values[2][16];	// ID array values
 
 
   // Write the xref table...
@@ -2016,15 +2033,6 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     goto done;
   }
 
-  _pdfioCryptoMakeRandom(id_values[0], sizeof(id_values[0]));
-  _pdfioCryptoMakeRandom(id_values[1], sizeof(id_values[1]));
-
-  if ((pdf->id_array = pdfioArrayCreate(pdf)) != NULL)
-  {
-    pdfioArrayAppendBinary(pdf->id_array, id_values[0], sizeof(id_values[0]));
-    pdfioArrayAppendBinary(pdf->id_array, id_values[1], sizeof(id_values[1]));
-  }
-
   if ((pdf->trailer_dict = pdfioDictCreate(pdf)) == NULL)
   {
     _pdfioFileError(pdf, "Unable to create trailer.");
@@ -2040,7 +2048,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
   pdfioDictSetObj(pdf->trailer_dict, "Root", pdf->root_obj);
   pdfioDictSetNumber(pdf->trailer_dict, "Size", pdf->num_objs + 1);
 
-  if (!_pdfioDictWrite(pdf->trailer_dict, NULL))
+  if (!_pdfioDictWrite(pdf->trailer_dict, NULL, NULL))
   {
     _pdfioFileError(pdf, "Unable to write trailer.");
     ret = false;

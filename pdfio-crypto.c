@@ -244,6 +244,7 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
         // Initialize the RC4/AES context using the digest...
         if (pdf->encryption == PDFIO_ENCRYPTION_RC4_128)
         {
+	  *ivlen = 0;
           _pdfioCryptoRC4Init(&ctx->rc4, digest, sizeof(digest));
           return ((_pdfio_crypto_cb_t)_pdfioCryptoRC4Crypt);
 	}
@@ -305,6 +306,7 @@ _pdfio_crypto_cb_t			// O  - Encryption callback or `NULL` for none
         // Initialize the RC4/AES context using the digest...
         if (pdf->encryption == PDFIO_ENCRYPTION_RC4_128)
         {
+	  *ivlen = 0;
           _pdfioCryptoRC4Init(&ctx->rc4, digest, sizeof(digest));
           return ((_pdfio_crypto_cb_t)_pdfioCryptoRC4Crypt);
 	}

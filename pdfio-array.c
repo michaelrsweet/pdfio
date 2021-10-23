@@ -560,6 +560,7 @@ _pdfioArrayGetValue(pdfio_array_t *a,	// I - Array
 
 pdfio_array_t *				// O - New array
 _pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
+		pdfio_obj_t    *obj,	// I - Object, if any
                 _pdfio_token_t *tb)	// I - Token buffer/stack
 {
   pdfio_array_t		*array;		// New array
@@ -584,7 +585,7 @@ _pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
 
     // Push the token and decode the value...
     _pdfioTokenPush(tb, token);
-    if (!_pdfioValueRead(pdf, tb, &value))
+    if (!_pdfioValueRead(pdf, obj, tb, &value))
       break;
 
 //    PDFIO_DEBUG("_pdfioArrayRead(%p): Appending ", (void *)array);
@@ -603,7 +604,8 @@ _pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
 //
 
 bool					// O - `true` on success, `false` otherwise
-_pdfioArrayWrite(pdfio_array_t *a)	// I - Array
+_pdfioArrayWrite(pdfio_array_t *a,	// I - Array
+		 pdfio_obj_t   *obj)	// I - Object, if any
 {
   pdfio_file_t	*pdf = a->pdf;		// PDF file
   size_t	i;			// Looping var
@@ -617,7 +619,7 @@ _pdfioArrayWrite(pdfio_array_t *a)	// I - Array
   // Write each value...
   for (i = a->num_values, v = a->values; i > 0; i --, v ++)
   {
-    if (!_pdfioValueWrite(pdf, v, NULL))
+    if (!_pdfioValueWrite(pdf, obj, v, NULL))
       return (false);
   }
 

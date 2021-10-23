@@ -970,7 +970,7 @@ do_unit_tests(void)
   fputs("_pdfioValueRead(complex_dict): ", stdout);
   s = complex_dict;
   _pdfioTokenInit(&tb, inpdf, (_pdfio_tconsume_cb_t)token_consume_cb, (_pdfio_tpeek_cb_t)token_peek_cb, (void *)&s);
-  if (_pdfioValueRead(inpdf, &tb, &value))
+  if (_pdfioValueRead(inpdf, NULL, &tb, &value))
   {
     // TODO: Check value...
     fputs("PASS: ", stdout);
@@ -984,7 +984,7 @@ do_unit_tests(void)
   fputs("_pdfioValueRead(cid_dict): ", stdout);
   s = cid_dict;
   _pdfioTokenInit(&tb, inpdf, (_pdfio_tconsume_cb_t)token_consume_cb, (_pdfio_tpeek_cb_t)token_peek_cb, (void *)&s);
-  if (_pdfioValueRead(inpdf, &tb, &value))
+  if (_pdfioValueRead(inpdf, NULL, &tb, &value))
   {
     // TODO: Check value...
     fputs("PASS: ", stdout);

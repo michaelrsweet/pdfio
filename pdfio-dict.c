@@ -420,6 +420,7 @@ _pdfioDictGetValue(pdfio_dict_t *dict,	// I - Dictionary
 
 pdfio_dict_t *				// O - New dictionary
 _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
+               pdfio_obj_t    *obj,	// I - Object, if any
                _pdfio_token_t *tb)	// I - Token buffer/stack
 {
   pdfio_dict_t		*dict;		// New dictionary
@@ -448,7 +449,7 @@ _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
     }
 
     // Then get the next value...
-    if (!_pdfioValueRead(pdf, tb, &value))
+    if (!_pdfioValueRead(pdf, obj, tb, &value))
     {
       _pdfioFileError(pdf, "Missing value for dictionary key.");
       break;
@@ -850,6 +851,7 @@ _pdfioDictSetValue(
 
 bool					// O - `true` on success, `false` on failure
 _pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
+		pdfio_obj_t  *obj,	// I - Object, if any
                 off_t        *length)	// I - Offset to length value
 {
   pdfio_file_t	*pdf = dict->pdf;	// PDF file
@@ -877,7 +879,7 @@ _pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
       if (!_pdfioFilePuts(pdf, " 9999999999"))
         return (false);
     }
-    else if (!_pdfioValueWrite(pdf, &pair->value, NULL))
+    else if (!_pdfioValueWrite(pdf, obj, &pair->value, NULL))
       return (false);
   }
 
