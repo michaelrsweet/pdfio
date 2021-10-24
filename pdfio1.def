@@ -130,6 +130,7 @@ pdfioFileGetNumObjs
 pdfioFileGetNumPages
 pdfioFileGetObj
 pdfioFileGetPage
+pdfioFileGetPermissions
 pdfioFileGetProducer
 pdfioFileGetSubject
 pdfioFileGetTitle
@@ -139,6 +140,7 @@ pdfioFileSetAuthor
 pdfioFileSetCreationDate
 pdfioFileSetCreator
 pdfioFileSetKeywords
+pdfioFileSetPermissions
 pdfioFileSetSubject
 pdfioFileSetTitle
 pdfioImageGetBytesPerLine
