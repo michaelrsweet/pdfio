@@ -13,7 +13,7 @@ goals of PDFio are:
 
 - Read and write any version of PDF file
 - Provide access to pages, objects, and streams within a PDF file
-- Support reading of encrypted PDF files
+- Support reading and writing of encrypted PDF files
 - Extract or embed useful metadata (author, creator, page information, etc.)
 - "Filter" PDF files, for example to extract a range of pages or to embed fonts
   that are missing from a PDF
