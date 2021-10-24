@@ -239,6 +239,8 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
         // Hash it...
         _pdfioCryptoMD5Init(&md5);
 	_pdfioCryptoMD5Append(&md5, data, sizeof(data));
+	if (pdf->encryption == PDFIO_ENCRYPTION_AES_128)
+	  _pdfioCryptoMD5Append(&md5, (const uint8_t *)"sAlT", 4);
 	_pdfioCryptoMD5Finish(&md5, digest);
 
         // Initialize the RC4/AES context using the digest...
@@ -301,6 +303,8 @@ _pdfio_crypto_cb_t			// O  - Encryption callback or `NULL` for none
         // Hash it...
         _pdfioCryptoMD5Init(&md5);
 	_pdfioCryptoMD5Append(&md5, data, sizeof(data));
+	if (pdf->encryption == PDFIO_ENCRYPTION_AES_128)
+	  _pdfioCryptoMD5Append(&md5, (const uint8_t *)"sAlT", 4);
 	_pdfioCryptoMD5Finish(&md5, digest);
 
         // Initialize the RC4/AES context using the digest...

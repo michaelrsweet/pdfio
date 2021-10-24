@@ -1085,6 +1085,8 @@ pdfioFileSetPermissions(
 		perm_bytes[4],		// Permissions bytes
 		*file_id;		// File ID bytes
   size_t	file_id_len;		// Length of file ID
+  pdfio_dict_t	*cf_dict,		// CF dictionary
+		*filter_dict;		// CryptFilter dictionary
   static uint8_t pad[32] =		// Padding for passwords
   {
     0x28, 0xbf, 0x4e, 0x5e, 0x4e, 0x75, 0x8a, 0x41,
@@ -1237,6 +1239,29 @@ pdfioFileSetPermissions(
 	pdfioDictSetNumber(dict, "R", encryption == PDFIO_ENCRYPTION_RC4_128 ? 3 : 4);
 	pdfioDictSetNumber(dict, "V", encryption == PDFIO_ENCRYPTION_RC4_128 ? 2 : 4);
 	pdfioDictSetBinary(dict, "U", pdf->user_key, sizeof(pdf->user_key));
+	
+        if (encryption == PDFIO_ENCRYPTION_AES_128)
+        {
+	  if ((cf_dict = pdfioDictCreate(pdf)) == NULL)
+	  {
+	    _pdfioFileError(pdf, "Unable to create Encryption CF dictionary.");
+	    return (false);
+	  }
+
+	  if ((filter_dict = pdfioDictCreate(pdf)) == NULL)
+	  {
+	    _pdfioFileError(pdf, "Unable to create Encryption CryptFilter dictionary.");
+	    return (false);
+	  }
+
+	  pdfioDictSetName(filter_dict, "Type", "CryptFilter");
+	  pdfioDictSetName(filter_dict, "CFM", encryption == PDFIO_ENCRYPTION_RC4_128 ? "V2" : "AESV2");
+	  pdfioDictSetDict(cf_dict, "PDFio", filter_dict);
+	  pdfioDictSetDict(dict, "CF", cf_dict);
+	  pdfioDictSetName(dict, "StmF", "PDFio");
+	  pdfioDictSetName(dict, "StrF", "PDFio");
+	  pdfioDictSetBoolean(dict, "EncryptMetadata", true);
+	}
 	break;
 
     case PDFIO_ENCRYPTION_AES_256 :
