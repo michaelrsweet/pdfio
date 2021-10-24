@@ -196,7 +196,7 @@ extern size_t		pdfioFileGetNumObjs(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern size_t		pdfioFileGetNumPages(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileGetObj(pdfio_file_t *pdf, size_t n) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileGetPage(pdfio_file_t *pdf, size_t n) _PDFIO_PUBLIC;
-extern pdfio_permission_t pdfioFileGetPermissions(pdfio_file_t *pdf) _PDFIO_PUBLIC;
+extern pdfio_permission_t pdfioFileGetPermissions(pdfio_file_t *pdf, pdfio_encryption_t *encryption) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetProducer(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetSubject(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetTitle(pdfio_file_t *pdf) _PDFIO_PUBLIC;
