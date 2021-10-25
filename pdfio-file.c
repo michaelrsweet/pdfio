@@ -1637,9 +1637,19 @@ load_xref(
 
       pdfioStreamClose(st);
 
-      // If the trailer contains an Encrypt key, try unlocking the file...
-      if ((pdf->encrypt_obj = pdfioDictGetObj(pdf->trailer_dict, "Encrypt")) != NULL && !_pdfioCryptoUnlock(pdf, password_cb, password_data))
-        return (false);
+      if (!pdf->trailer_dict)
+      {
+	// Save the trailer dictionary and grab the root (catalog) and info
+	// objects...
+	pdf->trailer_dict = trailer.value.dict;
+	pdf->info_obj     = pdfioDictGetObj(pdf->trailer_dict, "Info");
+	pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
+	pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
+
+	// If the trailer contains an Encrypt key, try unlocking the file...
+	if (pdf->encrypt_obj && !_pdfioCryptoUnlock(pdf, password_cb, password_data))
+	  return (false);
+      }
 
       // Load any object streams that are left...
       PDFIO_DEBUG("load_xref: %lu compressed object streams to load.\n", (unsigned long)num_sobjs);
@@ -1750,6 +1760,20 @@ load_xref(
       }
 
       _pdfioTokenFlush(&tb);
+
+      if (!pdf->trailer_dict)
+      {
+	// Save the trailer dictionary and grab the root (catalog) and info
+	// objects...
+	pdf->trailer_dict = trailer.value.dict;
+	pdf->info_obj     = pdfioDictGetObj(pdf->trailer_dict, "Info");
+	pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
+	pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
+
+	// If the trailer contains an Encrypt key, try unlocking the file...
+	if (pdf->encrypt_obj && !_pdfioCryptoUnlock(pdf, password_cb, password_data))
+	  return (false);
+      }
     }
     else
     {
@@ -1761,17 +1785,6 @@ load_xref(
     PDFIO_DEBUG("load_xref: ");
     PDFIO_DEBUG_VALUE(&trailer);
     PDFIO_DEBUG("\n");
-
-    if (!pdf->trailer_dict)
-    {
-      // Save the trailer dictionary and grab the root (catalog) and info
-      // objects...
-      pdf->trailer_dict = trailer.value.dict;
-
-      // If the trailer contains an Encrypt key, try unlocking the file...
-      if ((pdf->encrypt_obj = pdfioDictGetObj(pdf->trailer_dict, "Encrypt")) != NULL && !_pdfioCryptoUnlock(pdf, password_cb, password_data))
-        return (false);
-    }
 
     if ((xref_offset = (off_t)pdfioDictGetNumber(trailer.value.dict, "Prev")) <= 0)
       done = true;
@@ -1786,10 +1799,6 @@ load_xref(
   }
 
   PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
-
-  pdf->info_obj    = pdfioDictGetObj(pdf->trailer_dict, "Info");
-  pdf->encrypt_obj = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
-  pdf->id_array    = pdfioDictGetArray(pdf->trailer_dict, "ID");
 
   return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages")));
 }

@@ -35,6 +35,7 @@ static int	do_unit_tests(void);
 static int	draw_image(pdfio_stream_t *st, const char *name, double x, double y, double w, double h, const char *label);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
 static ssize_t	output_cb(int *fd, const void *buffer, size_t bytes);
+static const char *password_cb(void *data, const char *filename);
 static int	read_unit_file(const char *filename, size_t num_pages, size_t first_image, bool is_output);
 static ssize_t	token_consume_cb(const char **s, size_t bytes);
 static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
@@ -1048,8 +1049,8 @@ do_unit_tests(void)
   if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
     return (1);
 
-//  if (read_unit_file("testpdfio-rc4.pdf", num_pages, first_image, false))
-//    return (1);
+  if (read_unit_file("testpdfio-rc4.pdf", num_pages, first_image, false))
+    return (1);
 
   // Create new encrypted PDF files...
   fputs("pdfioFileCreate(\"testpdfio-rc4p.pdf\", ...): ", stdout);
@@ -1067,8 +1068,8 @@ do_unit_tests(void)
   if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
     return (1);
 
-//  if (read_unit_file("testpdfio-rc4p.pdf", num_pages, first_image, false))
-//    return (1);
+  if (read_unit_file("testpdfio-rc4p.pdf", num_pages, first_image, false))
+    return (1);
 
   fputs("pdfioFileCreate(\"testpdfio-aes.pdf\", ...): ", stdout);
   if ((outpdf = pdfioFileCreate("testpdfio-aes.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
@@ -1085,8 +1086,8 @@ do_unit_tests(void)
   if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
     return (1);
 
-//  if (read_unit_file("testpdfio-aes.pdf", num_pages, first_image, false))
-//    return (1);
+  if (read_unit_file("testpdfio-aes.pdf", num_pages, first_image, false))
+    return (1);
 
   fputs("pdfioFileCreate(\"testpdfio-aesp.pdf\", ...): ", stdout);
   if ((outpdf = pdfioFileCreate("testpdfio-aesp.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
@@ -1103,8 +1104,8 @@ do_unit_tests(void)
   if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
     return (1);
 
-//  if (read_unit_file("testpdfio-aesp.pdf", num_pages, first_image, false))
-//    return (1);
+  if (read_unit_file("testpdfio-aesp.pdf", num_pages, first_image, false))
+    return (1);
 
   return (0);
 }
@@ -1204,6 +1205,20 @@ output_cb(int        *fd,		// I - File descriptor
 
 
 //
+// 'password_cb()' - Password callback for PDF file.
+//
+
+static const char *			// O - Password string
+password_cb(void       *data,		// I - Callback data
+            const char *filename)	// I - Filename (not used)
+{
+  (void)filename;
+
+  return ((const char *)data);
+}
+
+
+//
 // 'read_unit_file()' - Read back a unit test file and confirm its contents.
 //
 
@@ -1220,7 +1235,7 @@ read_unit_file(const char *filename,	// I - File to read
 
   // Open the new PDF file to read it...
   printf("pdfioFileOpen(\"%s\", ...): ", filename);
-  if ((pdf = pdfioFileOpen(filename, /*password_cb*/NULL, /*password_data*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((pdf = pdfioFileOpen(filename, password_cb, (void *)"user", (pdfio_error_cb_t)error_cb, &error)) != NULL)
     puts("PASS");
   else
     return (1);
