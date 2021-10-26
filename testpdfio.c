@@ -1033,8 +1033,6 @@ do_unit_tests(void)
   if (read_unit_file("testpdfio-out2.pdf", num_pages, first_image, true))
     goto fail;
 
-  pdfioFileClose(inpdf);
-
   // Create new encrypted PDF files...
   fputs("pdfioFileCreate(\"testpdfio-rc4.pdf\", ...): ", stdout);
   if ((outpdf = pdfioFileCreate("testpdfio-rc4.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
@@ -1108,6 +1106,8 @@ do_unit_tests(void)
 
   if (read_unit_file("testpdfio-aesp.pdf", num_pages, first_image, false))
     return (1);
+
+  pdfioFileClose(inpdf);
 
   return (0);
 
