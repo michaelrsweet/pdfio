@@ -361,6 +361,7 @@ extern void		_pdfioCryptoSHA256Init(_pdfio_sha256_t *ctx) _PDFIO_INTERNAL;
 extern void		_pdfioCryptoSHA256Finish(_pdfio_sha256_t *ctx, uint8_t *Message_Digest) _PDFIO_INTERNAL;
 extern bool		_pdfioCryptoUnlock(pdfio_file_t *pdf, pdfio_password_cb_t password_cb, void *password_data) _PDFIO_INTERNAL;
 
+extern void		_pdfioDictClear(pdfio_dict_t *dict, const char *key) _PDFIO_INTERNAL;
 extern void		_pdfioDictDebug(pdfio_dict_t *dict, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioDictDelete(pdfio_dict_t *dict) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioDictGetValue(pdfio_dict_t *dict, const char *key) _PDFIO_INTERNAL;

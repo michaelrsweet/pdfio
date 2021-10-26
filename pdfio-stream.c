@@ -1266,7 +1266,9 @@ stream_write(pdfio_stream_t *st,	// I - Stream
         outbytes = bytes;
       }
 
-      if (!_pdfioFileWrite(st->pdf, st->cbuffer, bytes))
+//      fprintf(stderr, "stream_write: bytes=%u, outbytes=%u\n", (unsigned)bytes, (unsigned)outbytes);
+
+      if (!_pdfioFileWrite(st->pdf, st->cbuffer, outbytes))
         return (false);
 
       if (bytes > outbytes)

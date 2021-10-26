@@ -22,6 +22,39 @@ static int	compare_pairs(_pdfio_pair_t *a, _pdfio_pair_t *b);
 
 
 //
+// '_pdfioDictClear()' - Remove a key/value pair from a dictionary.
+//
+
+void
+_pdfioDictClear(pdfio_dict_t *dict,	// I - Dictionary
+                const char   *key)	// I - Key
+{
+  size_t	idx;			// Index into pairs
+  _pdfio_pair_t	*pair,			// Current pair
+		pkey;			// Search key
+
+
+  PDFIO_DEBUG("_pdfioDictClear(dict=%p, key=\"%s\")\n", dict, key);
+
+  // See if the key is already set...
+  if (dict->num_pairs > 0)
+  {
+    pkey.key = key;
+
+    if ((pair = (_pdfio_pair_t *)bsearch(&pkey, dict->pairs, dict->num_pairs, sizeof(_pdfio_pair_t), (int (*)(const void *, const void *))compare_pairs)) != NULL)
+    {
+      // Yes, remove it...
+      idx = (size_t)(pair - dict->pairs);
+      dict->num_pairs --;
+
+      if (idx < dict->num_pairs)
+        memmove(pair, pair + 1, (dict->num_pairs - idx) * sizeof(_pdfio_pair_t));
+    }
+  }
+}
+
+
+//
 // 'pdfioDictCopy()' - Copy a dictionary to a PDF file.
 //
 
