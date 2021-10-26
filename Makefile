@@ -16,7 +16,8 @@ ARFLAGS		=	cr
 CC		=	cc
 CFLAGS		=
 CODESIGN_IDENTITY =	Developer ID
-COMMONFLAGS	=	-Os -g
+#COMMONFLAGS	=	-Os -g
+COMMONFLAGS	=	-O0 -g
 CPPFLAGS	=	'-DPDFIO_VERSION="$(VERSION)"'
 DESTDIR		=	$(DSTROOT)
 DSO		=	cc
@@ -40,13 +41,18 @@ PUBHEADERS	=	\
 			pdfio.h \
 			pdfio-content.h
 PUBOBJS		=	\
+			pdfio-aes.o \
 			pdfio-array.o \
 			pdfio-common.o \
 			pdfio-content.o \
+			pdfio-crypto.o \
 			pdfio-dict.o \
 			pdfio-file.o \
+			pdfio-md5.o \
 			pdfio-object.o \
 			pdfio-page.o \
+			pdfio-rc4.o \
+			pdfio-sha256.o \
 			pdfio-stream.o \
 			pdfio-string.o \
 			pdfio-token.o \
@@ -144,16 +150,8 @@ pdfio1.def: $(LIBOBJS) Makefile
 	echo "LIBRARY pdfio1" >$@
 	echo "VERSION 1.0" >>$@
 	echo "EXPORTS" >>$@
-	(nm $(LIBOBJS) 2>/dev/null | grep "T _" | awk '{print $$3}' | \
-		grep -v '^_ttf' | grep -v '^__' | sed -e '1,$$s/^_//'; \
-		echo pdfioAdobeRGBGamma; echo pdfioAdobeRGBMatrix; \
-		echo pdfioAdobeRGBWhitePoint; \
-		echo pdfioDisplayP3Gamma; echo pdfioDisplayP3Matrix; \
-		echo pdfioDisplayP3WhitePoint; \
-		echo pdfioSRGBGamma; echo pdfioSRGBMatrix; \
-		echo pdfioSRGBWhitePoint; \
-		echo _pdfioTokenInit; \
-		echo _pdfioValueDebug; echo _pdfioValueRead) | sort >>$@
+	nm $(LIBOBJS) 2>/dev/null | grep "T _" | awk '{print $$3}' | \
+		grep -v '^_ttf' | sed -e '1,$$s/^_//' | sort >>$@
 
 
 # pdfio test program

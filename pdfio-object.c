@@ -96,6 +96,9 @@ pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
   if (!_pdfioValueCopy(pdf, &dstobj->value, srcobj->pdf, &srcobj->value))
     return (NULL);
 
+  if (dstobj->value.type == PDFIO_VALTYPE_DICT)
+    _pdfioDictClear(dstobj->value.value.dict, "Length");
+
   if (srcobj->stream_offset)
   {
     // Copy stream data...
@@ -409,7 +412,7 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   // Then grab the object value...
   _pdfioTokenInit(&tb, obj->pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, obj->pdf);
 
-  if (!_pdfioValueRead(obj->pdf, &tb, &obj->value))
+  if (!_pdfioValueRead(obj->pdf, obj, &tb, &obj->value))
   {
     _pdfioFileError(obj->pdf, "Unable to read value for object %lu.", (unsigned long)obj->number);
     return (false);
@@ -479,7 +482,7 @@ write_obj_header(pdfio_obj_t *obj)	// I - Object
   if (!_pdfioFilePrintf(obj->pdf, "%lu %u obj\n", (unsigned long)obj->number, obj->generation))
     return (false);
 
-  if (!_pdfioValueWrite(obj->pdf, &obj->value, &obj->length_offset))
+  if (!_pdfioValueWrite(obj->pdf, obj, &obj->value, &obj->length_offset))
     return (false);
 
   return (_pdfioFilePuts(obj->pdf, "\n"));

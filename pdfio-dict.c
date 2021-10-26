@@ -22,6 +22,39 @@ static int	compare_pairs(_pdfio_pair_t *a, _pdfio_pair_t *b);
 
 
 //
+// '_pdfioDictClear()' - Remove a key/value pair from a dictionary.
+//
+
+void
+_pdfioDictClear(pdfio_dict_t *dict,	// I - Dictionary
+                const char   *key)	// I - Key
+{
+  size_t	idx;			// Index into pairs
+  _pdfio_pair_t	*pair,			// Current pair
+		pkey;			// Search key
+
+
+  PDFIO_DEBUG("_pdfioDictClear(dict=%p, key=\"%s\")\n", dict, key);
+
+  // See if the key is already set...
+  if (dict->num_pairs > 0)
+  {
+    pkey.key = key;
+
+    if ((pair = (_pdfio_pair_t *)bsearch(&pkey, dict->pairs, dict->num_pairs, sizeof(_pdfio_pair_t), (int (*)(const void *, const void *))compare_pairs)) != NULL)
+    {
+      // Yes, remove it...
+      idx = (size_t)(pair - dict->pairs);
+      dict->num_pairs --;
+
+      if (idx < dict->num_pairs)
+        memmove(pair, pair + 1, (dict->num_pairs - idx) * sizeof(_pdfio_pair_t));
+    }
+  }
+}
+
+
+//
 // 'pdfioDictCopy()' - Copy a dictionary to a PDF file.
 //
 
@@ -420,6 +453,7 @@ _pdfioDictGetValue(pdfio_dict_t *dict,	// I - Dictionary
 
 pdfio_dict_t *				// O - New dictionary
 _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
+               pdfio_obj_t    *obj,	// I - Object, if any
                _pdfio_token_t *tb)	// I - Token buffer/stack
 {
   pdfio_dict_t		*dict;		// New dictionary
@@ -448,7 +482,7 @@ _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
     }
 
     // Then get the next value...
-    if (!_pdfioValueRead(pdf, tb, &value))
+    if (!_pdfioValueRead(pdf, obj, tb, &value))
     {
       _pdfioFileError(pdf, "Missing value for dictionary key.");
       break;
@@ -850,6 +884,7 @@ _pdfioDictSetValue(
 
 bool					// O - `true` on success, `false` on failure
 _pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
+		pdfio_obj_t  *obj,	// I - Object, if any
                 off_t        *length)	// I - Offset to length value
 {
   pdfio_file_t	*pdf = dict->pdf;	// PDF file
@@ -877,7 +912,7 @@ _pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
       if (!_pdfioFilePuts(pdf, " 9999999999"))
         return (false);
     }
-    else if (!_pdfioValueWrite(pdf, &pair->value, NULL))
+    else if (!_pdfioValueWrite(pdf, obj, &pair->value, NULL))
       return (false);
   }
 

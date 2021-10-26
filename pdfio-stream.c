@@ -54,6 +54,10 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 
       while ((status = deflate(&st->flate, Z_FINISH)) != Z_STREAM_END)
       {
+        size_t	bytes = sizeof(st->cbuffer) - st->flate.avail_out,
+					// Bytes to write
+		outbytes;		// Actual bytes written
+
 	if (status < Z_OK && status != Z_BUF_ERROR)
 	{
 	  _pdfioFileError(st->pdf, "Flate compression failed: %s", zstrerror(status));
@@ -61,20 +65,50 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 	  goto done;
 	}
 
-	if (!_pdfioFileWrite(st->pdf, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out))
+	if (st->crypto_cb)
+	{
+	  // Encrypt it first...
+	  outbytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, bytes & ~15);
+	}
+	else
+	{
+	  // No encryption
+	  outbytes = bytes;
+	}
+
+	if (!_pdfioFileWrite(st->pdf, st->cbuffer, outbytes))
 	{
 	  ret = false;
 	  goto done;
 	}
 
-	st->flate.next_out  = (Bytef *)st->cbuffer;
-	st->flate.avail_out = (uInt)sizeof(st->cbuffer);
+        if (bytes > outbytes)
+        {
+          bytes -= outbytes;
+          memmove(st->cbuffer, st->cbuffer + outbytes, bytes);
+        }
+        else
+        {
+          bytes = 0;
+        }
+
+	st->flate.next_out  = (Bytef *)st->cbuffer + bytes;
+	st->flate.avail_out = (uInt)sizeof(st->cbuffer) - bytes;
       }
 
       if (st->flate.avail_out < (uInt)sizeof(st->cbuffer))
       {
         // Write any residuals...
-	if (!_pdfioFileWrite(st->pdf, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out))
+        size_t bytes = sizeof(st->cbuffer) - st->flate.avail_out;
+					// Bytes to write
+
+	if (st->crypto_cb)
+	{
+	  // Encrypt it first...
+	  bytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, bytes);
+	}
+
+	if (!_pdfioFileWrite(st->pdf, st->cbuffer, bytes))
 	{
 	  ret = false;
 	  goto done;
@@ -82,6 +116,19 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
       }
 
       deflateEnd(&st->flate);
+    }
+    else if (st->crypto_cb && st->bufptr > st->buffer)
+    {
+      // Encrypt and flush
+      uint8_t	temp[8192];		// Temporary buffer
+      size_t	outbytes;		// Output bytes
+
+      outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, (uint8_t *)st->buffer, (size_t)(st->bufptr - st->buffer));
+      if (!_pdfioFileWrite(st->pdf, temp, outbytes))
+      {
+        ret = false;
+        goto done;
+      }
     }
 
     // Save the length of this stream...
@@ -161,6 +208,24 @@ _pdfioStreamCreate(
   st->obj        = obj;
   st->length_obj = length_obj;
   st->filter     = compression;
+  st->bufptr     = st->buffer;
+  st->bufend     = st->buffer + sizeof(st->buffer);
+
+  if (obj->pdf->encryption)
+  {
+    uint8_t	iv[64];			// Initialization vector
+    size_t	ivlen = sizeof(iv);	// Length of initialization vector, if any
+
+    if ((st->crypto_cb = _pdfioCryptoMakeWriter(st->pdf, obj, &st->crypto_ctx, iv, &ivlen)) == NULL)
+    {
+      // TODO: Add error message?
+      free(st);
+      return (NULL);
+    }
+
+    if (ivlen > 0)
+      _pdfioFileWrite(st->pdf, iv, ivlen);
+  }
 
   if (compression == PDFIO_FILTER_FLATE)
   {
@@ -360,6 +425,24 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
     return (NULL);
   }
 
+  if (obj->pdf->encryption)
+  {
+    uint8_t	iv[64];			// Initialization vector
+    size_t	ivlen;			// Length of initialization vector, if any
+
+    ivlen = _pdfioFilePeek(st->pdf, iv, sizeof(iv));
+
+    if ((st->crypto_cb = _pdfioCryptoMakeReader(st->pdf, obj, &st->crypto_ctx, iv, &ivlen)) == NULL)
+    {
+      // TODO: Add error message?
+      free(st);
+      return (NULL);
+    }
+
+    if (ivlen > 0)
+      _pdfioFileConsume(st->pdf, ivlen);
+  }
+
   if (decode)
   {
     // Try to decode/decompress the contents of this object...
@@ -473,6 +556,9 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
 	free(st);
 	return (NULL);
       }
+
+      if (st->crypto_cb)
+        rbytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, rbytes);
 
       st->flate.next_in  = (Bytef *)st->cbuffer;
       st->flate.avail_in = (uInt)rbytes;
@@ -594,7 +680,7 @@ pdfioStreamPrintf(
 
 
 //
-// '()' - Write a single character to a stream.
+// 'pdfioStreamPutChar()' - Write a single character to a stream.
 //
 
 bool					// O - `true` on success, `false` on failure
@@ -724,8 +810,63 @@ pdfioStreamWrite(
   // Write it...
   if (st->filter == PDFIO_FILTER_NONE)
   {
-    // No filtering so just write it...
-    return (_pdfioFileWrite(st->pdf, buffer, bytes));
+    // No filtering...
+    if (st->crypto_cb)
+    {
+      // Encrypt data before writing...
+      uint8_t	temp[8192];		// Temporary buffer
+      size_t	cbytes,			// Current bytes
+		outbytes;		// Output bytes
+
+      bufptr = (const unsigned char *)buffer;
+
+      while (bytes > 0)
+      {
+        if (st->bufptr > st->buffer || bytes < 16)
+        {
+          // Write through the stream's buffer...
+          if ((cbytes = bytes) > (st->bufend - st->bufptr))
+            cbytes = st->bufend - st->bufptr;
+
+          memcpy(st->bufptr, bufptr, cbytes);
+          st->bufptr += cbytes;
+          if (st->bufptr >= st->bufend)
+          {
+            // Encrypt and flush
+	    outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, (uint8_t *)st->buffer, sizeof(st->buffer));
+	    if (!_pdfioFileWrite(st->pdf, temp, outbytes))
+	      return (false);
+
+	    st->bufptr = st->buffer;
+          }
+        }
+        else
+        {
+          // Write directly up to sizeof(temp) bytes...
+          if ((cbytes = bytes) > sizeof(temp))
+            cbytes = sizeof(temp);
+          if (cbytes & 15)
+          {
+            // AES has a 16-byte block size, so save the last few bytes...
+            cbytes &= ~15;
+          }
+
+	  outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, bufptr, cbytes);
+	  if (!_pdfioFileWrite(st->pdf, temp, outbytes))
+	    return (false);
+        }
+
+        bytes -= cbytes;
+        bufptr += cbytes;
+      }
+
+      return (true);
+    }
+    else
+    {
+      // Write unencrypted...
+      return (_pdfioFileWrite(st->pdf, buffer, bytes));
+    }
   }
 
   pbline = st->pbsize - 1;
@@ -862,7 +1003,12 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       rbytes = _pdfioFileRead(st->pdf, buffer, bytes);
 
     if (rbytes > 0)
+    {
       st->remaining -= (size_t)rbytes;
+
+      if (st->crypto_cb)
+        (st->crypto_cb)(&st->crypto_ctx, (uint8_t *)buffer, (uint8_t *)buffer, rbytes);
+    }
 
     return (rbytes);
   }
@@ -886,6 +1032,9 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 
 	if (rbytes <= 0)
 	  return (-1);			// End of file...
+
+	if (st->crypto_cb)
+	  rbytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, rbytes);
 
 	st->remaining      -= (size_t)rbytes;
 	st->flate.next_in  = (Bytef *)st->cbuffer;
@@ -939,6 +1088,9 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 
 	  if (rbytes <= 0)
 	    return (-1);		// End of file...
+
+	  if (st->crypto_cb)
+	    rbytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, rbytes);
 
 	  st->remaining      -= (size_t)rbytes;
 	  st->flate.next_in  = (Bytef *)st->cbuffer;
@@ -1003,6 +1155,9 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 
 	  if (rbytes <= 0)
 	    return (-1);		// End of file...
+
+	  if (st->crypto_cb)
+	    rbytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, rbytes);
 
 	  st->remaining      -= (size_t)rbytes;
 	  st->flate.next_in  = (Bytef *)st->cbuffer;
@@ -1100,11 +1255,36 @@ stream_write(pdfio_stream_t *st,	// I - Stream
     if (st->flate.avail_out < (sizeof(st->cbuffer) / 8))
     {
       // Flush the compression buffer...
-      if (!_pdfioFileWrite(st->pdf, st->cbuffer, sizeof(st->cbuffer) - st->flate.avail_out))
+      size_t	cbytes = sizeof(st->cbuffer) - st->flate.avail_out,
+		outbytes;
+
+      if (st->crypto_cb)
+      {
+        // Encrypt it first...
+        outbytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, cbytes & ~15);
+      }
+      else
+      {
+        outbytes = cbytes;
+      }
+
+//      fprintf(stderr, "stream_write: bytes=%u, outbytes=%u\n", (unsigned)bytes, (unsigned)outbytes);
+
+      if (!_pdfioFileWrite(st->pdf, st->cbuffer, outbytes))
         return (false);
 
-      st->flate.next_out  = (Bytef *)st->cbuffer;
-      st->flate.avail_out = sizeof(st->cbuffer);
+      if (cbytes > outbytes)
+      {
+        cbytes -= outbytes;
+        memmove(st->cbuffer, st->cbuffer + outbytes, cbytes);
+      }
+      else
+      {
+        cbytes = 0;
+      }
+
+      st->flate.next_out  = (Bytef *)st->cbuffer + cbytes;
+      st->flate.avail_out = sizeof(st->cbuffer) - cbytes;
     }
 
     // Deflate what we can this time...

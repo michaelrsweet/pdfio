@@ -454,7 +454,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  return (false);
 	}
 
-	while ((ch = get_char(tb)) != EOF && ch != '>')
+        do
 	{
 	  if (isxdigit(ch))
 	  {
@@ -476,6 +476,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	    return (false);
 	  }
 	}
+	while ((ch = get_char(tb)) != EOF && ch != '>');
 
 	if (ch == EOF)
 	{

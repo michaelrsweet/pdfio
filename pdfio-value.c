@@ -194,6 +194,7 @@ _pdfioValueDelete(_pdfio_value_t *v)	// I - Value
 
 _pdfio_value_t *			// O - Value or `NULL` on error/EOF
 _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
+                pdfio_obj_t    *obj,	// I - Object, if any
                 _pdfio_token_t *tb,	// I - Token buffer/stack
                 _pdfio_value_t *v)	// I - Value
 {
@@ -216,7 +217,8 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 #endif // DEBUG
 
 
-  PDFIO_DEBUG("_pdfioValueRead(pdf=%p, v=%p)\n", pdf, v);
+  PDFIO_DEBUG("_pdfioValueRead(pdf=%p, obj=%p, v=%p)\n", pdf, obj, v);
+  (void)obj; // TODO: Implement decryption
 
   if (!_pdfioTokenGet(tb, token, sizeof(token)))
     return (NULL);
@@ -225,14 +227,14 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
   {
     // Start of array
     v->type = PDFIO_VALTYPE_ARRAY;
-    if ((v->value.array = _pdfioArrayRead(pdf, tb)) == NULL)
+    if ((v->value.array = _pdfioArrayRead(pdf, obj, tb)) == NULL)
       return (NULL);
   }
   else if (!strcmp(token, "<<"))
   {
     // Start of dictionary
     v->type = PDFIO_VALTYPE_DICT;
-    if ((v->value.dict = _pdfioDictRead(pdf, tb)) == NULL)
+    if ((v->value.dict = _pdfioDictRead(pdf, obj, tb)) == NULL)
       return (NULL);
   }
   else if (!strncmp(token, "(D:", 3))
@@ -474,6 +476,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 
 bool					// O - `true` on success, `false` on failure
 _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
+                 pdfio_obj_t    *obj,	// I - Object, if any
                  _pdfio_value_t *v,	// I - Value
                  off_t          *length)// O - Offset to /Length value, if any
 {
@@ -483,23 +486,47 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
         return (false);
 
     case PDFIO_VALTYPE_ARRAY :
-        return (_pdfioArrayWrite(v->value.array));
+        return (_pdfioArrayWrite(v->value.array, obj));
 
     case PDFIO_VALTYPE_BINARY :
         {
-          size_t	i;		// Looping var
-          unsigned char	*dataptr;	// Pointer into data
+          size_t	databytes;	// Bytes to write
+          uint8_t	temp[32768],	// Temporary buffer for encryption
+			*dataptr;	// Pointer into data
+
+          if (obj && pdf->encryption)
+          {
+	    // Write encrypted string...
+	    _pdfio_crypto_ctx_t ctx;	// Encryption context
+	    _pdfio_crypto_cb_t cb;	// Encryption callback
+	    size_t	ivlen;		// Number of initialization vector bytes
+
+            if (v->value.binary.datalen > (sizeof(temp) - 32))
+            {
+	      _pdfioFileError(pdf, "Unable to write encrypted binary string - too long.");
+	      return (false);
+            }
+
+	    cb        = _pdfioCryptoMakeWriter(pdf, obj, &ctx, temp, &ivlen);
+	    databytes = (cb)(&ctx, temp + ivlen, v->value.binary.data, v->value.binary.datalen) + ivlen;
+	    dataptr   = temp;
+          }
+          else
+          {
+            dataptr   = v->value.binary.data;
+            databytes = v->value.binary.datalen;
+          }
 
           if (!_pdfioFilePuts(pdf, "<"))
             return (false);
 
-          for (i = v->value.binary.datalen, dataptr = v->value.binary.data; i > 1; i -= 2, dataptr += 2)
+          for (; databytes > 1; databytes -= 2, dataptr += 2)
           {
             if (!_pdfioFilePrintf(pdf, "%02X%02X", dataptr[0], dataptr[1]))
               return (false);
           }
 
-          if (i > 0)
+          if (databytes > 0)
             return (_pdfioFilePrintf(pdf, "%02X>", dataptr[0]));
           else
             return (_pdfioFilePuts(pdf, ">"));
@@ -514,6 +541,7 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
     case PDFIO_VALTYPE_DATE :
         {
           struct tm	date;		// Date values
+          char		datestr[32];	// Formatted date value
 
 #ifdef _WIN32
           gmtime_s(&date, &v->value.date);
@@ -521,11 +549,45 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
 	  gmtime_r(&v->value.date, &date);
 #endif // _WIN32
 
-          return (_pdfioFilePrintf(pdf, "(D:%04d%02d%02d%02d%02d%02dZ)", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec));
+	  snprintf(datestr, sizeof(datestr), "D:%04d%02d%02d%02d%02d%02dZ", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
+
+	  if (obj && pdf->encryption)
+	  {
+	    // Write encrypted string...
+	    uint8_t	temp[32768],	// Encrypted bytes
+			*tempptr;	// Pointer into encrypted bytes
+	    _pdfio_crypto_ctx_t ctx;	// Encryption context
+	    _pdfio_crypto_cb_t cb;	// Encryption callback
+	    size_t	len = strlen(datestr),
+					  // Length of value
+			ivlen,		// Number of initialization vector bytes
+			tempbytes;	// Number of output bytes
+
+	    cb        = _pdfioCryptoMakeWriter(pdf, obj, &ctx, temp, &ivlen);
+	    tempbytes = (cb)(&ctx, temp + ivlen, (const uint8_t *)datestr, len) + ivlen;
+
+	    if (!_pdfioFilePuts(pdf, "<"))
+	      return (false);
+
+	    for (tempptr = temp; tempbytes > 1; tempbytes -= 2, tempptr += 2)
+	    {
+	      if (!_pdfioFilePrintf(pdf, "%02X%02X", tempptr[0], tempptr[1]))
+		return (false);
+	    }
+
+            if (tempbytes > 0)
+              return (_pdfioFilePrintf(pdf, "%02X>", *tempptr));
+            else
+	      return (_pdfioFilePuts(pdf, ">"));
+	  }
+	  else
+	  {
+	    return (_pdfioFilePrintf(pdf, "(%s)", datestr));
+	  }
         }
 
     case PDFIO_VALTYPE_DICT :
-        return (_pdfioDictWrite(v->value.dict, length));
+        return (_pdfioDictWrite(v->value.dict, obj, length));
 
     case PDFIO_VALTYPE_INDIRECT :
         return (_pdfioFilePrintf(pdf, " %lu %u R", (unsigned long)v->value.indirect.number, v->value.indirect.generation));
@@ -540,7 +602,44 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
         return (_pdfioFilePrintf(pdf, " %g", v->value.number));
 
     case PDFIO_VALTYPE_STRING :
+        if (obj && pdf->encryption)
         {
+          // Write encrypted string...
+          uint8_t	temp[32768],	// Encrypted bytes
+			*tempptr;	// Pointer into encrypted bytes
+          _pdfio_crypto_ctx_t ctx;	// Encryption context
+          _pdfio_crypto_cb_t cb;	// Encryption callback
+          size_t	len = strlen(v->value.string),
+					// Length of value
+			ivlen,		// Number of initialization vector bytes
+			tempbytes;	// Number of output bytes
+
+          if (len > (sizeof(temp) - 32))
+          {
+            _pdfioFileError(pdf, "Unable to write encrypted string - too long.");
+            return (false);
+          }
+
+          cb        = _pdfioCryptoMakeWriter(pdf, obj, &ctx, temp, &ivlen);
+          tempbytes = (cb)(&ctx, temp + ivlen, (const uint8_t *)v->value.string, len) + ivlen;
+
+          if (!_pdfioFilePuts(pdf, "<"))
+            return (false);
+
+          for (tempptr = temp; tempbytes > 1; tempbytes -= 2, tempptr += 2)
+          {
+            if (!_pdfioFilePrintf(pdf, "%02X%02X", tempptr[0], tempptr[1]))
+              return (false);
+          }
+
+          if (tempbytes > 0)
+            return (_pdfioFilePrintf(pdf, "%02X>", *tempptr));
+          else
+	    return (_pdfioFilePuts(pdf, ">"));
+        }
+        else
+        {
+          // Write unencrypted string...
           const char *start,		// Start of fragment
 		     *end;		// End of fragment
 

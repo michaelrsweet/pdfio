@@ -29,11 +29,13 @@
 // Local functions...
 //
 
+static int	do_crypto_tests(void);
 static int	do_test_file(const char *filename, int objnum, bool verbose);
 static int	do_unit_tests(void);
 static int	draw_image(pdfio_stream_t *st, const char *name, double x, double y, double w, double h, const char *label);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
 static ssize_t	output_cb(int *fd, const void *buffer, size_t bytes);
+static const char *password_cb(void *data, const char *filename);
 static int	read_unit_file(const char *filename, size_t num_pages, size_t first_image, bool is_output);
 static ssize_t	token_consume_cb(const char **s, size_t bytes);
 static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
@@ -105,6 +107,249 @@ main(int  argc,				// I - Number of command-line arguments
 #endif // _WIN32
 
     ret = do_unit_tests();
+  }
+
+  return (ret);
+}
+
+
+//
+// 'do_crypto_tests()' - Test the various cryptographic functions in PDFio.
+//
+
+static int				// O - Exit status
+do_crypto_tests(void)
+{
+  int		ret = 0;		// Return value
+  size_t	i;			// Looping var
+  _pdfio_aes_t	aes;			// AES context
+  _pdfio_md5_t	md5;			// MD5 context
+  _pdfio_rc4_t	rc4;			// RC4 context
+  _pdfio_sha256_t sha256;		// SHA256 context
+  uint8_t	key[32],		// Encryption/decryption key
+	        iv[32],			// Initialization vector
+	        buffer[256],		// Output buffer
+	        buffer2[256];		// Second output buffer
+  const char	*prefix, *suffix;	// Prefix/suffix strings
+  static const char *text = "Hello, World! Now is the time for all good men to come to the aid of their country.\n";
+					// Test text
+  static uint8_t aes128key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+  static uint8_t aes128rounds[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c, 0xa0, 0xfa, 0xfe, 0x17, 0x88, 0x54, 0x2c, 0xb1, 0x23, 0xa3, 0x39, 0x39, 0x2a, 0x6c, 0x76, 0x05, 0xf2, 0xc2, 0x95, 0xf2, 0x7a, 0x96, 0xb9, 0x43, 0x59, 0x35, 0x80, 0x7a, 0x73, 0x59, 0xf6, 0x7f, 0x3d, 0x80, 0x47, 0x7d, 0x47, 0x16, 0xfe, 0x3e, 0x1e, 0x23, 0x7e, 0x44, 0x6d, 0x7a, 0x88, 0x3b, 0xef, 0x44, 0xa5, 0x41, 0xa8, 0x52, 0x5b, 0x7f, 0xb6, 0x71, 0x25, 0x3b, 0xdb, 0x0b, 0xad, 0x00, 0xd4, 0xd1, 0xc6, 0xf8, 0x7c, 0x83, 0x9d, 0x87, 0xca, 0xf2, 0xb8, 0xbc, 0x11, 0xf9, 0x15, 0xbc, 0x6d, 0x88, 0xa3, 0x7a, 0x11, 0x0b, 0x3e, 0xfd, 0xdb, 0xf9, 0x86, 0x41, 0xca, 0x00, 0x93, 0xfd, 0x4e, 0x54, 0xf7, 0x0e, 0x5f, 0x5f, 0xc9, 0xf3, 0x84, 0xa6, 0x4f, 0xb2, 0x4e, 0xa6, 0xdc, 0x4f, 0xea, 0xd2, 0x73, 0x21, 0xb5, 0x8d, 0xba, 0xd2, 0x31, 0x2b, 0xf5, 0x60, 0x7f, 0x8d, 0x29, 0x2f, 0xac, 0x77, 0x66, 0xf3, 0x19, 0xfa, 0xdc, 0x21, 0x28, 0xd1, 0x29, 0x41, 0x57, 0x5c, 0x00, 0x6e, 0xd0, 0x14, 0xf9, 0xa8, 0xc9, 0xee, 0x25, 0x89, 0xe1, 0x3f, 0x0c, 0xc8, 0xb6, 0x63, 0x0c, 0xa6 };
+					// FIPS-197 example key expansion
+  static uint8_t aes128text[] =  { 0xfb, 0x77, 0xac, 0xce, 0x3c, 0x95, 0x40, 0xcf, 0xca, 0xc8, 0x26, 0xbf, 0xc0, 0x69, 0x73, 0x3c, 0x01, 0xfd, 0x72, 0x01, 0xeb, 0x4d, 0x6f, 0xf7, 0xb4, 0x72, 0x6d, 0x84, 0x69, 0x9f, 0x89, 0xab, 0xe6, 0x2b, 0x9a, 0x9a, 0x6e, 0xc1, 0x61, 0xd7, 0x9d, 0x83, 0x2d, 0x58, 0x55, 0xa7, 0x58, 0x50, 0x00, 0xad, 0x19, 0x7b, 0xee, 0x6a, 0x36, 0x6f, 0xd1, 0xa7, 0xa4, 0x6b, 0xc5, 0x78, 0x9a, 0x18, 0x05, 0xf0, 0x2c, 0xd4, 0x60, 0x25, 0xe0, 0xa7, 0xb1, 0x36, 0xdb, 0x18, 0xd3, 0xf7, 0x59, 0x29, 0x22, 0xec, 0x25, 0x77, 0x0d, 0x9e, 0x5a, 0x01, 0xcc, 0xf6, 0x29, 0xc2, 0x08, 0xc2, 0xfc, 0x4f };
+					// Expected AES-128 CBC result
+  static uint8_t aes256text[] =  { 0x2b, 0x94, 0x45, 0x9e, 0xed, 0xa0, 0x89, 0x7b, 0x35, 0x4e, 0xde, 0x06, 0x00, 0x4d, 0xda, 0x6b, 0x61, 0x2f, 0xb9, 0x06, 0xd5, 0x0f, 0x22, 0xed, 0xd2, 0xe3, 0x6b, 0x39, 0x5a, 0xa1, 0xe3, 0x7d, 0xa1, 0xcc, 0xd4, 0x0b, 0x6b, 0xa4, 0xff, 0xe9, 0x9c, 0x89, 0x0c, 0xc7, 0x95, 0x47, 0x19, 0x9b, 0x06, 0xdc, 0xc8, 0x7c, 0x5c, 0x5d, 0x56, 0x99, 0x1e, 0x90, 0x7d, 0x99, 0xc5, 0x7b, 0xc4, 0xe4, 0xfb, 0x02, 0x15, 0x50, 0x23, 0x2a, 0xe4, 0xc1, 0x20, 0xfd, 0xf4, 0x03, 0xfe, 0x6f, 0x15, 0x48, 0xd8, 0x62, 0x36, 0x98, 0x2a, 0x62, 0xf5, 0x2c, 0xa6, 0xfa, 0x7a, 0x43, 0x53, 0xcd, 0xad, 0x18 };
+					// Expected AES-256 CBC result
+  static uint8_t md5text[16] = { 0x74, 0x0c, 0x2c, 0xea, 0xe1, 0xab, 0x06, 0x7c, 0xdb, 0x1d, 0x49, 0x1d, 0x2d, 0x66, 0xf2, 0x93 };
+					// Expected MD5 hash result
+  static uint8_t rc4text[] = { 0xd2, 0xa2, 0xa0, 0xf6, 0x0f, 0xb1, 0x3e, 0xa0, 0xdd, 0xe1, 0x44, 0xfd, 0xec, 0xc4, 0x55, 0xf8, 0x25, 0x68, 0xad, 0xe6, 0xb0, 0x60, 0x7a, 0x0f, 0x4e, 0xfe, 0xed, 0x9c, 0x78, 0x3a, 0xf8, 0x73, 0x79, 0xbd, 0x82, 0x88, 0x39, 0x01, 0xc7, 0xd0, 0x34, 0xfe, 0x40, 0x16, 0x93, 0x5a, 0xec, 0x81, 0xda, 0x34, 0xdf, 0x5b, 0xd1, 0x47, 0x2c, 0xfa, 0xe0, 0x13, 0xc5, 0xe2, 0xb0, 0x57, 0x5c, 0x17, 0x62, 0xaa, 0x83, 0x1c, 0x4f, 0xa0, 0x0a, 0xed, 0x6c, 0x42, 0x41, 0x8a, 0x45, 0x03, 0xb8, 0x72, 0xa8, 0x99, 0xd7, 0x06 };
+					// Expected RC4 result
+  static uint8_t sha256text[32] = { 0x19, 0x71, 0x9b, 0xf0, 0xc6, 0xd8, 0x34, 0xc9, 0x6e, 0x8a, 0x56, 0xcc, 0x34, 0x45, 0xb7, 0x1d, 0x5b, 0x74, 0x9c, 0x52, 0x40, 0xcd, 0x30, 0xa2, 0xc2, 0x84, 0x53, 0x83, 0x16, 0xf8, 0x1a, 0xbb };
+					// Expected SHA-256 hash result
+
+
+  fputs("_pdfioAESInit(128-bit sample key): ", stdout);
+  _pdfioCryptoAESInit(&aes, aes128key, sizeof(aes128key), NULL);
+  if (!memcmp(aes128rounds, aes.round_key, sizeof(aes128rounds)))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    for (i = 0; i < (sizeof(aes128rounds) - 4); i ++)
+    {
+      if (aes.round_key[i] != aes128rounds[i])
+        break;
+    }
+
+    prefix = i > 0 ? "..." : "";
+    suffix = i < (sizeof(aes128rounds) - 4) ? "..." : "";
+
+    printf("FAIL (got '%s%02X%02X%02X%02X%s', expected '%s%02X%02X%02X%02X%s')\n", prefix, aes.round_key[i], aes.round_key[i + 1], aes.round_key[i + 2], aes.round_key[i + 3], suffix, prefix, aes128rounds[i], aes128rounds[i + 1], aes128rounds[i + 2], aes128rounds[i + 3], suffix);
+    ret = 1;
+  }
+
+  fputs("_pdfioAESInit/Encrypt(128-bit CBC): ", stdout);
+  for (i = 0; i < 16; i ++)
+  {
+    key[i] = (uint8_t)i + 1;
+    iv[i]  = (uint8_t)(0xff - i);
+  }
+
+  _pdfioCryptoAESInit(&aes, key, 16, iv);
+  _pdfioCryptoAESEncrypt(&aes, buffer, (uint8_t *)text, strlen(text));
+
+  if (!memcmp(aes128text, buffer, sizeof(aes128text)))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    for (i = 0; i < (sizeof(aes128text) - 4); i ++)
+    {
+      if (buffer[i] != aes128text[i])
+        break;
+    }
+
+    prefix = i > 0 ? "..." : "";
+    suffix = i < (sizeof(aes128text) - 4) ? "..." : "";
+
+    printf("FAIL (got '%s%02X%02X%02X%02X%s', expected '%s%02X%02X%02X%02X%s')\n", prefix, buffer[i], buffer[i + 1], buffer[i + 2], buffer[i + 3], suffix, prefix, aes128text[i], aes128text[i + 1], aes128text[i + 2], aes128text[i + 3], suffix);
+    ret = 1;
+  }
+
+  fputs("_pdfioAESInit/Decrypt(128-bit CBC): ", stdout);
+  _pdfioCryptoAESInit(&aes, key, 16, iv);
+  _pdfioCryptoAESDecrypt(&aes, buffer2, buffer, sizeof(aes128text));
+
+  if (!memcmp(buffer2, text, strlen(text)))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    for (i = 0; text[i + 4]; i ++)
+    {
+      if (buffer2[i] != text[i])
+        break;
+    }
+
+    prefix = i > 0 ? "..." : "";
+    suffix = text[i + 4] ? "..." : "";
+
+    printf("FAIL (got '%s%02X%02X%02X%02X%s', expected '%s%02X%02X%02X%02X%s')\n", prefix, buffer2[i], buffer2[i + 1], buffer2[i + 2], buffer2[i + 3], suffix, prefix, text[i], text[i + 1], text[i + 2], text[i + 3], suffix);
+    ret = 1;
+  }
+
+  fputs("_pdfioAESInit/Encrypt(256-bit CBC): ", stdout);
+  for (i = 0; i < 32; i ++)
+  {
+    key[i] = (uint8_t)i + 1;
+    iv[i]  = (uint8_t)(0xff - i);
+  }
+
+  _pdfioCryptoAESInit(&aes, key, 32, iv);
+  _pdfioCryptoAESEncrypt(&aes, buffer, (uint8_t *)text, strlen(text));
+
+  if (!memcmp(aes256text, buffer, sizeof(aes256text)))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    for (i = 0; i < (sizeof(aes256text) - 4); i ++)
+    {
+      if (buffer[i] != aes256text[i])
+        break;
+    }
+
+    prefix = i > 0 ? "..." : "";
+    suffix = i < (sizeof(aes256text) - 4) ? "..." : "";
+
+    printf("FAIL (got '%s%02X%02X%02X%02X%s', expected '%s%02X%02X%02X%02X%s')\n", prefix, buffer[i], buffer[i + 1], buffer[i + 2], buffer[i + 3], suffix, prefix, aes256text[i], aes256text[i + 1], aes256text[i + 2], aes256text[i + 3], suffix);
+    ret = 1;
+  }
+
+  fputs("_pdfioAESInit/Decrypt(256-bit CBC): ", stdout);
+  _pdfioCryptoAESInit(&aes, key, 32, iv);
+  _pdfioCryptoAESDecrypt(&aes, buffer2, buffer, sizeof(aes256text));
+
+  if (!memcmp(buffer2, text, strlen(text)))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    for (i = 0; text[i + 4]; i ++)
+    {
+      if (buffer2[i] != text[i])
+        break;
+    }
+
+    prefix = i > 0 ? "..." : "";
+    suffix = text[i + 4] ? "..." : "";
+
+    printf("FAIL (got '%s%02X%02X%02X%02X%s', expected '%s%02X%02X%02X%02X%s')\n", prefix, buffer2[i], buffer2[i + 1], buffer2[i + 2], buffer2[i + 3], suffix, prefix, text[i], text[i + 1], text[i + 2], text[i + 3], suffix);
+    ret = 1;
+  }
+
+  fputs("_pdfioMD5Init/Append/Finish: ", stdout);
+  _pdfioCryptoMD5Init(&md5);
+  _pdfioCryptoMD5Append(&md5, (uint8_t *)text, strlen(text));
+  _pdfioCryptoMD5Finish(&md5, buffer);
+
+  if (!memcmp(md5text, buffer, sizeof(md5text)))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    printf("FAIL (got '%02X%02X%02X%02X...%02X%02X%02X%02X', expected '%02X%02X%02X%02X...%02X%02X%02X%02X')\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[12], buffer[13], buffer[14], buffer[15], md5text[0], md5text[1], md5text[2], md5text[3], md5text[12], md5text[13], md5text[14], md5text[15]);
+    ret = 1;
+  }
+
+  fputs("_pdfioRC4Init/Encrypt(128-bit): ", stdout);
+  for (i = 0; i < 16; i ++)
+    key[i] = (uint8_t)i + 1;
+
+  _pdfioCryptoRC4Init(&rc4, key, 16);
+  _pdfioCryptoRC4Crypt(&rc4, buffer, (uint8_t *)text, strlen(text));
+
+  if (!memcmp(rc4text, buffer, sizeof(rc4text)))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    for (i = 0; i < (sizeof(rc4text) - 4); i ++)
+    {
+      if (buffer[i] != rc4text[i])
+        break;
+    }
+
+    prefix = i > 0 ? "..." : "";
+    suffix = i < (sizeof(rc4text) - 4) ? "..." : "";
+
+    printf("FAIL (got '%s%02X%02X%02X%02X%s', expected '%s%02X%02X%02X%02X%s')\n", prefix, buffer[i], buffer[i + 1], buffer[i + 2], buffer[i + 3], suffix, prefix, rc4text[i], rc4text[i + 1], rc4text[i + 2], rc4text[i + 3], suffix);
+    ret = 1;
+  }
+
+  fputs("_pdfioRC4Init/Decrypt(128-bit): ", stdout);
+  _pdfioCryptoRC4Init(&rc4, key, 16);
+  _pdfioCryptoRC4Crypt(&rc4, buffer2, buffer, strlen(text));
+
+  if (!memcmp(buffer2, text, strlen(text)))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    for (i = 0; text[i + 4]; i ++)
+    {
+      if (buffer2[i] != text[i])
+        break;
+    }
+
+    prefix = i > 0 ? "..." : "";
+    suffix = text[i + 4] ? "..." : "";
+
+    printf("FAIL (got '%s%02X%02X%02X%02X%s', expected '%s%02X%02X%02X%02X%s')\n", prefix, buffer2[i], buffer2[i + 1], buffer2[i + 2], buffer2[i + 3], suffix, prefix, text[i], text[i + 1], text[i + 2], text[i + 3], suffix);
+    ret = 1;
+  }
+
+  fputs("_pdfioSHA256Init/Append/Finish: ", stdout);
+  _pdfioCryptoSHA256Init(&sha256);
+  _pdfioCryptoSHA256Append(&sha256, (uint8_t *)text, strlen(text));
+  _pdfioCryptoSHA256Finish(&sha256, buffer);
+
+  if (!memcmp(sha256text, buffer, sizeof(sha256text)))
+  {
+    puts("PASS");
+  }
+  else
+  {
+    printf("FAIL (got '%02X%02X%02X%02X...%02X%02X%02X%02X', expected '%02X%02X%02X%02X...%02X%02X%02X%02X')\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[28], buffer[29], buffer[30], buffer[31], sha256text[0], sha256text[1], sha256text[2], sha256text[3], sha256text[28], sha256text[29], sha256text[30], sha256text[31]);
+    ret = 1;
   }
 
   return (ret);
@@ -726,7 +971,7 @@ do_unit_tests(void)
   fputs("_pdfioValueRead(complex_dict): ", stdout);
   s = complex_dict;
   _pdfioTokenInit(&tb, inpdf, (_pdfio_tconsume_cb_t)token_consume_cb, (_pdfio_tpeek_cb_t)token_peek_cb, (void *)&s);
-  if (_pdfioValueRead(inpdf, &tb, &value))
+  if (_pdfioValueRead(inpdf, NULL, &tb, &value))
   {
     // TODO: Check value...
     fputs("PASS: ", stdout);
@@ -740,7 +985,7 @@ do_unit_tests(void)
   fputs("_pdfioValueRead(cid_dict): ", stdout);
   s = cid_dict;
   _pdfioTokenInit(&tb, inpdf, (_pdfio_tconsume_cb_t)token_consume_cb, (_pdfio_tpeek_cb_t)token_peek_cb, (void *)&s);
-  if (_pdfioValueRead(inpdf, &tb, &value))
+  if (_pdfioValueRead(inpdf, NULL, &tb, &value))
   {
     // TODO: Check value...
     fputs("PASS: ", stdout);
@@ -749,6 +994,10 @@ do_unit_tests(void)
   }
   else
     goto fail;
+
+  // Do crypto tests...
+  if (do_crypto_tests())
+    return (1);
 
   // Create a new PDF file...
   fputs("pdfioFileCreate(\"testpdfio-out.pdf\", ...): ", stdout);
@@ -763,7 +1012,7 @@ do_unit_tests(void)
   if (read_unit_file("testpdfio-out.pdf", num_pages, first_image, false))
     goto fail;
 
-  // Create a new PDF file...
+  // Stream a new PDF file...
   if ((outfd = open("testpdfio-out2.pdf", O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0666)) < 0)
   {
     perror("Unable to open \"testpdfio-out2.pdf\"");
@@ -783,6 +1032,80 @@ do_unit_tests(void)
 
   if (read_unit_file("testpdfio-out2.pdf", num_pages, first_image, true))
     goto fail;
+
+  // Create new encrypted PDF files...
+  fputs("pdfioFileCreate(\"testpdfio-rc4.pdf\", ...): ", stdout);
+  if ((outpdf = pdfioFileCreate("testpdfio-rc4.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioFileSetPermissions(all, RC4-128, no passwords): ", stdout);
+  if (pdfioFileSetPermissions(outpdf, PDFIO_PERMISSION_ALL, PDFIO_ENCRYPTION_RC4_128, NULL, NULL))
+    puts("PASS");
+  else
+    return (1);
+
+  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+    return (1);
+
+  if (read_unit_file("testpdfio-rc4.pdf", num_pages, first_image, false))
+    return (1);
+
+  // Create new encrypted PDF files...
+  fputs("pdfioFileCreate(\"testpdfio-rc4p.pdf\", ...): ", stdout);
+  if ((outpdf = pdfioFileCreate("testpdfio-rc4p.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioFileSetPermissions(no-print, RC4-128, passwords='owner' and 'user'): ", stdout);
+  if (pdfioFileSetPermissions(outpdf, PDFIO_PERMISSION_ALL ^ PDFIO_PERMISSION_PRINT, PDFIO_ENCRYPTION_RC4_128, "owner", "user"))
+    puts("PASS");
+  else
+    return (1);
+
+  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+    return (1);
+
+  if (read_unit_file("testpdfio-rc4p.pdf", num_pages, first_image, false))
+    return (1);
+
+  fputs("pdfioFileCreate(\"testpdfio-aes.pdf\", ...): ", stdout);
+  if ((outpdf = pdfioFileCreate("testpdfio-aes.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioFileSetPermissions(all, AES-128, no passwords): ", stdout);
+  if (pdfioFileSetPermissions(outpdf, PDFIO_PERMISSION_ALL, PDFIO_ENCRYPTION_AES_128, NULL, NULL))
+    puts("PASS");
+  else
+    return (1);
+
+  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+    return (1);
+
+  if (read_unit_file("testpdfio-aes.pdf", num_pages, first_image, false))
+    return (1);
+
+  fputs("pdfioFileCreate(\"testpdfio-aesp.pdf\", ...): ", stdout);
+  if ((outpdf = pdfioFileCreate("testpdfio-aesp.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  fputs("pdfioFileSetPermissions(no-print, AES-128, passwords='owner' and 'user'): ", stdout);
+  if (pdfioFileSetPermissions(outpdf, PDFIO_PERMISSION_ALL ^ PDFIO_PERMISSION_PRINT, PDFIO_ENCRYPTION_AES_128, "owner", "user"))
+    puts("PASS");
+  else
+    return (1);
+
+  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+    return (1);
+
+  if (read_unit_file("testpdfio-aesp.pdf", num_pages, first_image, false))
+    return (1);
 
   pdfioFileClose(inpdf);
 
@@ -890,6 +1213,20 @@ output_cb(int        *fd,		// I - File descriptor
 
 
 //
+// 'password_cb()' - Password callback for PDF file.
+//
+
+static const char *			// O - Password string
+password_cb(void       *data,		// I - Callback data
+            const char *filename)	// I - Filename (not used)
+{
+  (void)filename;
+
+  return ((const char *)data);
+}
+
+
+//
 // 'read_unit_file()' - Read back a unit test file and confirm its contents.
 //
 
@@ -906,7 +1243,7 @@ read_unit_file(const char *filename,	// I - File to read
 
   // Open the new PDF file to read it...
   printf("pdfioFileOpen(\"%s\", ...): ", filename);
-  if ((pdf = pdfioFileOpen(filename, /*password_cb*/NULL, /*password_data*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((pdf = pdfioFileOpen(filename, password_cb, (void *)"user", (pdfio_error_cb_t)error_cb, &error)) != NULL)
     puts("PASS");
   else
     return (1);

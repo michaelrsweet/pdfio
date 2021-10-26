@@ -24,6 +24,7 @@
 
 #  include "pdfio.h"
 #  include <stdarg.h>
+#  include <stdint.h>
 #  include <string.h>
 #  include <errno.h>
 #  include <inttypes.h>
@@ -174,6 +175,44 @@ typedef struct _pdfio_value_s		// Value structure
   }		value;			// Value union
 } _pdfio_value_t;
 
+typedef struct _pdfio_aes_s		// AES encryption state
+{
+  size_t	round_size;		// Size of round key
+  uint8_t	round_key[240],		// Round key
+		iv[16];			// Initialization vector
+} _pdfio_aes_t;
+
+typedef struct _pdfio_md5_s		// MD5 hash state
+{
+  uint32_t	count[2];		// Message length in bits, lsw first
+  uint32_t	abcd[4];		// Digest buffer
+  uint8_t	buf[64];		// Accumulate block
+} _pdfio_md5_t;
+
+typedef struct _pdfio_rc4_s		// RC4 encryption state
+{
+  uint8_t	sbox[256];		// S boxes for encryption
+  uint8_t	i, j;			// Current indices into S boxes
+} _pdfio_rc4_t;
+
+typedef struct _pdfio_sha265_s		// SHA-256 hash state
+{
+  uint32_t	Intermediate_Hash[8];	// Message Digest
+  uint32_t	Length_High;		// Message length in bits
+  uint32_t	Length_Low;		// Message length in bits
+  int		Message_Block_Index;	// Message_Block array index
+  uint8_t	Message_Block[64];	// 512-bit message blocks
+  int		Computed;		// Is the hash computed?
+  int		Corrupted;		// Cumulative corruption code
+} _pdfio_sha256_t;
+
+typedef union _pdfio_crypto_ctx_u	// Cryptographic contexts
+{
+  _pdfio_aes_t	aes;			// AES-128/256 context
+  _pdfio_rc4_t	rc4;			// RC4-40/128 context
+} _pdfio_crypto_ctx_t;
+typedef size_t (*_pdfio_crypto_cb_t)(_pdfio_crypto_ctx_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len);
+
 struct _pdfio_array_s
 {
   pdfio_file_t	*pdf;			// PDF file
@@ -215,17 +254,26 @@ struct _pdfio_file_s			// PDF file structure
   pdfio_error_cb_t error_cb;		// Error callback
   void		*error_data;		// Data for error callback
 
+  pdfio_encryption_t encryption;	// Encryption mode
+  pdfio_permission_t permissions;	// Access permissions (encrypted PDF files)
+  uint8_t	file_key[16],		// File encryption key
+		owner_key[32],		// Owner encryption key
+		user_key[32];		// User encryption key
+  size_t	file_keylen,		// Length of file encryption key
+		owner_keylen,		// Length of owner encryption key
+		user_keylen;		// Length of user encryption key
+
   // Active file data
   int		fd;			// File descriptor
   char		buffer[8192],		// Read/write buffer
 		*bufptr,		// Pointer into buffer
 		*bufend;		// End of buffer
   off_t		bufpos;			// Position in file for start of buffer
-  pdfio_dict_t	*trailer;		// Trailer dictionary
-  pdfio_obj_t	*root;			// Root object/dictionary
-  pdfio_obj_t	*info;			// Information object
-  pdfio_obj_t	*pages_root;		// Root pages object
-  pdfio_obj_t	*encrypt;		// Encryption object/dictionary
+  pdfio_dict_t	*trailer_dict;		// Trailer dictionary
+  pdfio_obj_t	*root_obj;		// Root object/dictionary
+  pdfio_obj_t	*info_obj;		// Information object
+  pdfio_obj_t	*pages_obj;		// Root pages object
+  pdfio_obj_t	*encrypt_obj;		// De/Encryption object/dictionary
   pdfio_obj_t	*cp1252_obj,		// CP1252 font encoding object
 		*unicode_obj;		// Unicode font encoding object
   pdfio_array_t	*id_array;		// ID array
@@ -281,6 +329,8 @@ struct _pdfio_stream_s			// Stream
   unsigned char	cbuffer[4096],		// Compressed data buffer
 		*prbuffer,		// Raw buffer (previous line), as needed
 		*psbuffer;		// PNG filter buffer, as needed
+  _pdfio_crypto_cb_t crypto_cb;		// Encryption/descryption callback, if any
+  _pdfio_crypto_ctx_t crypto_ctx;	// Cryptographic context
 };
 
 
@@ -291,15 +341,33 @@ struct _pdfio_stream_s			// Stream
 extern void		_pdfioArrayDebug(pdfio_array_t *a, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioArrayDelete(pdfio_array_t *a) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioArrayGetValue(pdfio_array_t *a, size_t n) _PDFIO_INTERNAL;
-extern pdfio_array_t	*_pdfioArrayRead(pdfio_file_t *pdf, _pdfio_token_t *ts) _PDFIO_INTERNAL;
-extern bool		_pdfioArrayWrite(pdfio_array_t *a) _PDFIO_INTERNAL;
+extern pdfio_array_t	*_pdfioArrayRead(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_token_t *ts) _PDFIO_INTERNAL;
+extern bool		_pdfioArrayWrite(pdfio_array_t *a, pdfio_obj_t *obj) _PDFIO_INTERNAL;
 
+extern void		_pdfioCryptoAESInit(_pdfio_aes_t *ctx, const uint8_t *key, size_t keylen, const uint8_t *iv) _PDFIO_INTERNAL;
+extern size_t		_pdfioCryptoAESDecrypt(_pdfio_aes_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len) _PDFIO_INTERNAL;
+extern size_t		_pdfioCryptoAESEncrypt(_pdfio_aes_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len) _PDFIO_INTERNAL;
+extern bool		_pdfioCryptoLock(pdfio_file_t *pdf, pdfio_permission_t permissions, pdfio_encryption_t encryption, const char *owner_password, const char *user_password) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoMakeRandom(uint8_t *buffer, size_t bytes) _PDFIO_INTERNAL;
+extern _pdfio_crypto_cb_t _pdfioCryptoMakeReader(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_crypto_ctx_t *ctx, uint8_t *iv, size_t *ivlen) _PDFIO_INTERNAL;
+extern _pdfio_crypto_cb_t _pdfioCryptoMakeWriter(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_crypto_ctx_t *ctx, uint8_t *iv, size_t *ivlen) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoMD5Append(_pdfio_md5_t *pms, const uint8_t *data, size_t nbytes) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoMD5Finish(_pdfio_md5_t *pms, uint8_t digest[16]) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoMD5Init(_pdfio_md5_t *pms) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoRC4Init(_pdfio_rc4_t *ctx, const uint8_t *key, size_t keylen) _PDFIO_INTERNAL;
+extern size_t		_pdfioCryptoRC4Crypt(_pdfio_rc4_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoSHA256Append(_pdfio_sha256_t *, const uint8_t *bytes, size_t bytecount) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoSHA256Init(_pdfio_sha256_t *ctx) _PDFIO_INTERNAL;
+extern void		_pdfioCryptoSHA256Finish(_pdfio_sha256_t *ctx, uint8_t *Message_Digest) _PDFIO_INTERNAL;
+extern bool		_pdfioCryptoUnlock(pdfio_file_t *pdf, pdfio_password_cb_t password_cb, void *password_data) _PDFIO_INTERNAL;
+
+extern void		_pdfioDictClear(pdfio_dict_t *dict, const char *key) _PDFIO_INTERNAL;
 extern void		_pdfioDictDebug(pdfio_dict_t *dict, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioDictDelete(pdfio_dict_t *dict) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioDictGetValue(pdfio_dict_t *dict, const char *key) _PDFIO_INTERNAL;
-extern pdfio_dict_t	*_pdfioDictRead(pdfio_file_t *pdf, _pdfio_token_t *ts) _PDFIO_INTERNAL;
+extern pdfio_dict_t	*_pdfioDictRead(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_token_t *ts) _PDFIO_INTERNAL;
 extern bool		_pdfioDictSetValue(pdfio_dict_t *dict, const char *key, _pdfio_value_t *value) _PDFIO_INTERNAL;
-extern bool		_pdfioDictWrite(pdfio_dict_t *dict, off_t *length) _PDFIO_INTERNAL;
+extern bool		_pdfioDictWrite(pdfio_dict_t *dict, pdfio_obj_t *obj, off_t *length) _PDFIO_INTERNAL;
 
 extern bool		_pdfioFileAddMappedObj(pdfio_file_t *pdf, pdfio_obj_t *dst_obj, pdfio_obj_t *src_obj) _PDFIO_INTERNAL;
 extern bool		_pdfioFileAddPage(pdfio_file_t *pdf, pdfio_obj_t *obj) _PDFIO_INTERNAL;
@@ -337,7 +405,7 @@ extern bool		_pdfioTokenRead(_pdfio_token_t *tb, char *buffer, size_t bufsize);
 extern _pdfio_value_t	*_pdfioValueCopy(pdfio_file_t *pdfdst, _pdfio_value_t *vdst, pdfio_file_t *pdfsrc, _pdfio_value_t *vsrc) _PDFIO_INTERNAL;
 extern void		_pdfioValueDebug(_pdfio_value_t *v, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioValueDelete(_pdfio_value_t *v) _PDFIO_INTERNAL;
-extern _pdfio_value_t	*_pdfioValueRead(pdfio_file_t *pdf, _pdfio_token_t *ts, _pdfio_value_t *v) _PDFIO_INTERNAL;
-extern bool		_pdfioValueWrite(pdfio_file_t *pdf, _pdfio_value_t *v, off_t *length) _PDFIO_INTERNAL;
+extern _pdfio_value_t	*_pdfioValueRead(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_token_t *ts, _pdfio_value_t *v) _PDFIO_INTERNAL;
+extern bool		_pdfioValueWrite(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_value_t *v, off_t *length) _PDFIO_INTERNAL;
 
 #endif // !PDFIO_PRIVATE_H

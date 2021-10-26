@@ -26,7 +26,7 @@ static int		compare_objmaps(_pdfio_objmap_t *a, _pdfio_objmap_t *b);
 static int		compare_objs(pdfio_obj_t **a, pdfio_obj_t **b);
 static bool		load_obj_stream(pdfio_obj_t *obj);
 static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj);
-static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset);
+static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset, pdfio_password_cb_t password_cb, void *password_data);
 static bool		write_catalog(pdfio_file_t *pdf);
 static bool		write_pages(pdfio_file_t *pdf);
 static bool		write_trailer(pdfio_file_t *pdf);
@@ -123,7 +123,7 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
   {
     ret = false;
 
-    if (pdfioObjClose(pdf->info))
+    if (pdfioObjClose(pdf->info_obj))
       if (write_pages(pdf))
 	if (write_catalog(pdf))
 	  if (write_trailer(pdf))
@@ -193,6 +193,7 @@ pdfioFileCreate(
   pdfio_file_t	*pdf;			// PDF file
   pdfio_dict_t	*dict;			// Dictionary for pages object
   pdfio_dict_t	*info_dict;		// Dictionary for information object
+  unsigned char	id_value[16];		// File ID value
 
 
   // Range check input...
@@ -220,13 +221,14 @@ pdfioFileCreate(
     return (NULL);
   }
 
-  pdf->filename   = strdup(filename);
-  pdf->version    = strdup(version);
-  pdf->mode       = _PDFIO_MODE_WRITE;
-  pdf->error_cb   = error_cb;
-  pdf->error_data = error_data;
-  pdf->bufptr     = pdf->buffer;
-  pdf->bufend     = pdf->buffer + sizeof(pdf->buffer);
+  pdf->filename    = strdup(filename);
+  pdf->version     = strdup(version);
+  pdf->mode        = _PDFIO_MODE_WRITE;
+  pdf->error_cb    = error_cb;
+  pdf->error_data  = error_data;
+  pdf->permissions = PDFIO_PERMISSION_ALL;
+  pdf->bufptr      = pdf->buffer;
+  pdf->bufend      = pdf->buffer + sizeof(pdf->buffer);
 
   if (media_box)
   {
@@ -278,7 +280,7 @@ pdfioFileCreate(
 
   pdfioDictSetName(dict, "Type", "Pages");
 
-  if ((pdf->pages_root = pdfioFileCreateObj(pdf, dict)) == NULL)
+  if ((pdf->pages_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
   {
     pdfioFileClose(pdf);
     unlink(filename);
@@ -296,11 +298,20 @@ pdfioFileCreate(
   pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
   pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
 
-  if ((pdf->info = pdfioFileCreateObj(pdf, info_dict)) == NULL)
+  if ((pdf->info_obj = pdfioFileCreateObj(pdf, info_dict)) == NULL)
   {
     pdfioFileClose(pdf);
     unlink(filename);
     return (NULL);
+  }
+
+  // Create random file ID values...
+  _pdfioCryptoMakeRandom(id_value, sizeof(id_value));
+
+  if ((pdf->id_array = pdfioArrayCreate(pdf)) != NULL)
+  {
+    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
+    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
   }
 
   return (pdf);
@@ -458,6 +469,7 @@ pdfioFileCreateOutput(
   pdfio_file_t	*pdf;			// PDF file
   pdfio_dict_t	*dict;			// Dictionary for pages object
   pdfio_dict_t	*info_dict;		// Dictionary for information object
+  unsigned char	id_value[16];		// File ID value
 
 
   // Range check input...
@@ -485,13 +497,14 @@ pdfioFileCreateOutput(
     return (NULL);
   }
 
-  pdf->filename   = strdup("output.pdf");
-  pdf->version    = strdup(version);
-  pdf->mode       = _PDFIO_MODE_WRITE;
-  pdf->error_cb   = error_cb;
-  pdf->error_data = error_data;
-  pdf->bufptr     = pdf->buffer;
-  pdf->bufend     = pdf->buffer + sizeof(pdf->buffer);
+  pdf->filename    = strdup("output.pdf");
+  pdf->version     = strdup(version);
+  pdf->mode        = _PDFIO_MODE_WRITE;
+  pdf->error_cb    = error_cb;
+  pdf->error_data  = error_data;
+  pdf->permissions = PDFIO_PERMISSION_ALL;
+  pdf->bufptr      = pdf->buffer;
+  pdf->bufend      = pdf->buffer + sizeof(pdf->buffer);
 
   if (media_box)
   {
@@ -536,7 +549,7 @@ pdfioFileCreateOutput(
 
   pdfioDictSetName(dict, "Type", "Pages");
 
-  if ((pdf->pages_root = pdfioFileCreateObj(pdf, dict)) == NULL)
+  if ((pdf->pages_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
   {
     pdfioFileClose(pdf);
     return (NULL);
@@ -552,10 +565,19 @@ pdfioFileCreateOutput(
   pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
   pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
 
-  if ((pdf->info = pdfioFileCreateObj(pdf, info_dict)) == NULL)
+  if ((pdf->info_obj = pdfioFileCreateObj(pdf, info_dict)) == NULL)
   {
     pdfioFileClose(pdf);
     return (NULL);
+  }
+
+  // Create random file ID values...
+  _pdfioCryptoMakeRandom(id_value, sizeof(id_value));
+
+  if ((pdf->id_array = pdfioArrayCreate(pdf)) != NULL)
+  {
+    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
+    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
   }
 
   return (pdf);
@@ -595,7 +617,7 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
   if (!_pdfioDictGetValue(dict, "MediaBox"))
     pdfioDictSetRect(dict, "MediaBox", &pdf->media_box);
 
-  pdfioDictSetObj(dict, "Parent", pdf->pages_root);
+  pdfioDictSetObj(dict, "Parent", pdf->pages_obj);
 
   if (!_pdfioDictGetValue(dict, "Resources"))
     pdfioDictSetDict(dict, "Resources", pdfioDictCreate(pdf));
@@ -701,7 +723,7 @@ pdfioFileFindObj(
 const char *				// O - Author or `NULL` for none
 pdfioFileGetAuthor(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Author") : NULL);
+  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Author") : NULL);
 }
 
 
@@ -713,7 +735,7 @@ time_t					// O - Creation date or `0` for none
 pdfioFileGetCreationDate(
     pdfio_file_t *pdf)			// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetDate(pdf->info->value.value.dict, "CreationDate") : 0);
+  return (pdf && pdf->info_obj ? pdfioDictGetDate(pdf->info_obj->value.value.dict, "CreationDate") : 0);
 }
 
 
@@ -724,7 +746,7 @@ pdfioFileGetCreationDate(
 const char *				// O - Creator string or `NULL` for none
 pdfioFileGetCreator(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Creator") : NULL);
+  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Creator") : NULL);
 }
 
 
@@ -735,7 +757,7 @@ pdfioFileGetCreator(pdfio_file_t *pdf)	// I - PDF file
 pdfio_array_t *				// O - Array with binary strings
 pdfioFileGetID(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetArray(pdf->trailer, "ID") : NULL);
+  return (pdf ? pdf->id_array : NULL);
 }
 
 
@@ -746,7 +768,7 @@ pdfioFileGetID(pdfio_file_t *pdf)	// I - PDF file
 const char *				// O - Keywords string or `NULL` for none
 pdfioFileGetKeywords(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Keywords") : NULL);
+  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Keywords") : NULL);
 }
 
 
@@ -815,13 +837,42 @@ pdfioFileGetPage(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
+// 'pdfioFileGetPermissions()' - Get the access permissions of a PDF file.
+//
+// This function returns the access permissions of a PDF file and (optionally)
+// the type of encryption that has been used.
+//
+
+pdfio_permission_t			// O - Permission bits
+pdfioFileGetPermissions(
+    pdfio_file_t       *pdf,		// I - PDF file
+    pdfio_encryption_t *encryption)	// O - Type of encryption used or `NULL` to ignore
+{
+  // Range check input...
+  if (!pdf)
+  {
+    if (encryption)
+      *encryption = PDFIO_ENCRYPTION_NONE;
+
+    return (PDFIO_PERMISSION_ALL);
+  }
+
+  // Return values...
+  if (encryption)
+    *encryption = pdf->encryption;
+
+  return (pdf->permissions);
+}
+
+
+//
 // 'pdfioFileGetProducer()' - Get the producer string for a PDF file.
 //
 
 const char *				// O - Producer string or `NULL` for none
 pdfioFileGetProducer(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Producer") : NULL);
+  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Producer") : NULL);
 }
 
 
@@ -832,7 +883,7 @@ pdfioFileGetProducer(pdfio_file_t *pdf)	// I - PDF file
 const char *				// O - Subject or `NULL` for none
 pdfioFileGetSubject(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Subject") : NULL);
+  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Subject") : NULL);
 }
 
 
@@ -843,7 +894,7 @@ pdfioFileGetSubject(pdfio_file_t *pdf)	// I - PDF file
 const char *				// O - Title or `NULL` for none
 pdfioFileGetTitle(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info ? pdfioDictGetString(pdf->info->value.value.dict, "Title") : NULL);
+  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Title") : NULL);
 }
 
 
@@ -890,9 +941,6 @@ pdfioFileOpen(
   off_t		xref_offset;		// Offset to xref table
 
 
-  (void)password_cb;
-  (void)password_data;
-
   // Range check input...
   if (!filename)
     return (NULL);
@@ -915,10 +963,11 @@ pdfioFileOpen(
     return (NULL);
   }
 
-  pdf->filename   = strdup(filename);
-  pdf->mode       = _PDFIO_MODE_READ;
-  pdf->error_cb   = error_cb;
-  pdf->error_data = error_data;
+  pdf->filename    = strdup(filename);
+  pdf->mode        = _PDFIO_MODE_READ;
+  pdf->error_cb    = error_cb;
+  pdf->error_data  = error_data;
+  pdf->permissions = PDFIO_PERMISSION_ALL;
 
   // Open the file...
   if ((pdf->fd = open(filename, O_RDONLY | O_BINARY)) < 0)
@@ -965,7 +1014,7 @@ pdfioFileOpen(
 
   xref_offset = (off_t)strtol(ptr + 9, NULL, 10);
 
-  if (!load_xref(pdf, xref_offset))
+  if (!load_xref(pdf, xref_offset, password_cb, password_data))
     goto error;
 
   return (pdf);
@@ -988,8 +1037,8 @@ void
 pdfioFileSetAuthor(pdfio_file_t *pdf,	// I - PDF file
                    const char   *value)	// I - Value
 {
-  if (pdf && pdf->info)
-    pdfioDictSetString(pdf->info->value.value.dict, "Author", pdfioStringCreate(pdf, value));
+  if (pdf && pdf->info_obj)
+    pdfioDictSetString(pdf->info_obj->value.value.dict, "Author", pdfioStringCreate(pdf, value));
 }
 
 
@@ -1002,8 +1051,8 @@ pdfioFileSetCreationDate(
     pdfio_file_t *pdf,			// I - PDF file
     time_t       value)			// I - Value
 {
-  if (pdf && pdf->info)
-    pdfioDictSetDate(pdf->info->value.value.dict, "CreationDate", value);
+  if (pdf && pdf->info_obj)
+    pdfioDictSetDate(pdf->info_obj->value.value.dict, "CreationDate", value);
 }
 
 
@@ -1015,8 +1064,8 @@ void
 pdfioFileSetCreator(pdfio_file_t *pdf,	// I - PDF file
                     const char   *value)// I - Value
 {
-  if (pdf && pdf->info)
-    pdfioDictSetString(pdf->info->value.value.dict, "Creator", pdfioStringCreate(pdf, value));
+  if (pdf && pdf->info_obj)
+    pdfioDictSetString(pdf->info_obj->value.value.dict, "Creator", pdfioStringCreate(pdf, value));
 }
 
 
@@ -1029,8 +1078,44 @@ pdfioFileSetKeywords(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *value)		// I - Value
 {
-  if (pdf && pdf->info)
-    pdfioDictSetString(pdf->info->value.value.dict, "Keywords", pdfioStringCreate(pdf, value));
+  if (pdf && pdf->info_obj)
+    pdfioDictSetString(pdf->info_obj->value.value.dict, "Keywords", pdfioStringCreate(pdf, value));
+}
+
+
+//
+// 'pdfioFileSetPermissions()' - Set the PDF permissions, encryption mode, and passwords.
+//
+// This function sets the PDF usage permissions, encryption mode, and
+// passwords.
+//
+// > *Note*: This function must be called before creating or copying any
+// > objects.  Due to fundamental limitations in the PDF format, PDF encryption
+// > offers little protection from disclosure.  Permissions are not enforced in
+// > any meaningful way.
+//
+
+bool					// O - `true` on success, `false` otherwise
+pdfioFileSetPermissions(
+    pdfio_file_t       *pdf,		// I - PDF file
+    pdfio_permission_t permissions,	// I - Use permissions
+    pdfio_encryption_t encryption,	// I - Type of encryption to use
+    const char         *owner_password,	// I - Owner password, if any
+    const char         *user_password)	// I - User password, if any
+{
+  if (!pdf)
+    return (false);
+
+  if (pdf->num_objs > 2)		// First two objects are pages and info
+  {
+    _pdfioFileError(pdf, "You must call pdfioFileSetPermissions before adding any objects.");
+    return (false);
+  }
+
+  if (encryption == PDFIO_ENCRYPTION_NONE)
+    return (true);
+
+  return (_pdfioCryptoLock(pdf, permissions, encryption, owner_password, user_password));
 }
 
 
@@ -1039,11 +1124,12 @@ pdfioFileSetKeywords(
 //
 
 void
-pdfioFileSetSubject(pdfio_file_t *pdf,	// I - PDF file
-                   const char    *value)// I - Value
+pdfioFileSetSubject(
+    pdfio_file_t *pdf,			// I - PDF file
+    const char   *value)		// I - Value
 {
-  if (pdf && pdf->info)
-    pdfioDictSetString(pdf->info->value.value.dict, "Subject", pdfioStringCreate(pdf, value));
+  if (pdf && pdf->info_obj)
+    pdfioDictSetString(pdf->info_obj->value.value.dict, "Subject", pdfioStringCreate(pdf, value));
 }
 
 
@@ -1055,8 +1141,8 @@ void
 pdfioFileSetTitle(pdfio_file_t *pdf,	// I - PDF file
                   const char   *value)	// I - Value
 {
-  if (pdf && pdf->info)
-    pdfioDictSetString(pdf->info->value.value.dict, "Title", pdfioStringCreate(pdf, value));
+  if (pdf && pdf->info_obj)
+    pdfioDictSetString(pdf->info_obj->value.value.dict, "Title", pdfioStringCreate(pdf, value));
 }
 
 
@@ -1226,7 +1312,7 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
   // Read the objects themselves...
   for (cur_obj = 0; cur_obj < num_objs; cur_obj ++)
   {
-    if (!_pdfioValueRead(obj->pdf, &tb, &(objs[cur_obj]->value)))
+    if (!_pdfioValueRead(obj->pdf, obj, &tb, &(objs[cur_obj]->value)))
     {
       pdfioStreamClose(st);
       return (false);
@@ -1313,8 +1399,11 @@ load_pages(pdfio_file_t *pdf,		// I - PDF file
 //
 
 static bool				// O - `true` on success, `false` on failure
-load_xref(pdfio_file_t *pdf,		// I - PDF file
-          off_t        xref_offset)	// I - Offset to xref
+load_xref(
+    pdfio_file_t        *pdf,		// I - PDF file
+    off_t               xref_offset,	// I - Offset to xref
+    pdfio_password_cb_t password_cb,	// I - Password callback or `NULL` for none
+    void                *password_data)	// I - Password callback data, if any
 {
   bool		done = false;		// Are we done?
   char		line[1024],		// Line from file
@@ -1404,7 +1493,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
       _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
 
-      if (!_pdfioValueRead(pdf, &tb, &trailer))
+      if (!_pdfioValueRead(pdf, obj, &tb, &trailer))
       {
         _pdfioFileError(pdf, "Unable to read cross-reference stream dictionary.");
         return (false);
@@ -1412,12 +1501,6 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
       else if (trailer.type != PDFIO_VALTYPE_DICT)
       {
 	_pdfioFileError(pdf, "Cross-reference stream does not have a dictionary.");
-	return (false);
-      }
-      else if (_pdfioDictGetValue(pdf->trailer, "Encrypt"))
-      {
-	// Encryption not yet supported...
-	_pdfioFileError(pdf, "Sorry, PDFio currently does not support encrypted PDF files.");
 	return (false);
       }
 
@@ -1554,6 +1637,20 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
       pdfioStreamClose(st);
 
+      if (!pdf->trailer_dict)
+      {
+	// Save the trailer dictionary and grab the root (catalog) and info
+	// objects...
+	pdf->trailer_dict = trailer.value.dict;
+	pdf->info_obj     = pdfioDictGetObj(pdf->trailer_dict, "Info");
+	pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
+	pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
+
+	// If the trailer contains an Encrypt key, try unlocking the file...
+	if (pdf->encrypt_obj && !_pdfioCryptoUnlock(pdf, password_cb, password_data))
+	  return (false);
+      }
+
       // Load any object streams that are left...
       PDFIO_DEBUG("load_xref: %lu compressed object streams to load.\n", (unsigned long)num_sobjs);
 
@@ -1651,7 +1748,7 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 
       _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
 
-      if (!_pdfioValueRead(pdf, &tb, &trailer))
+      if (!_pdfioValueRead(pdf, NULL, &tb, &trailer))
       {
 	_pdfioFileError(pdf, "Unable to read trailer dictionary.");
 	return (false);
@@ -1661,14 +1758,22 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
 	_pdfioFileError(pdf, "Trailer is not a dictionary.");
 	return (false);
       }
-      else if (_pdfioDictGetValue(pdf->trailer, "Encrypt"))
-      {
-	// Encryption not yet supported...
-	_pdfioFileError(pdf, "Sorry, PDFio currently does not support encrypted PDF files.");
-	return (false);
-      }
 
       _pdfioTokenFlush(&tb);
+
+      if (!pdf->trailer_dict)
+      {
+	// Save the trailer dictionary and grab the root (catalog) and info
+	// objects...
+	pdf->trailer_dict = trailer.value.dict;
+	pdf->info_obj     = pdfioDictGetObj(pdf->trailer_dict, "Info");
+	pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
+	pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
+
+	// If the trailer contains an Encrypt key, try unlocking the file...
+	if (pdf->encrypt_obj && !_pdfioCryptoUnlock(pdf, password_cb, password_data))
+	  return (false);
+      }
     }
     else
     {
@@ -1681,32 +1786,21 @@ load_xref(pdfio_file_t *pdf,		// I - PDF file
     PDFIO_DEBUG_VALUE(&trailer);
     PDFIO_DEBUG("\n");
 
-    if (!pdf->trailer)
-    {
-      // Save the trailer dictionary and grab the root (catalog) and info
-      // objects...
-      pdf->trailer = trailer.value.dict;
-    }
-
     if ((xref_offset = (off_t)pdfioDictGetNumber(trailer.value.dict, "Prev")) <= 0)
       done = true;
   }
 
   // Once we have all of the xref tables loaded, get the important objects and
   // build the pages array...
-  if ((pdf->root = pdfioDictGetObj(pdf->trailer, "Root")) == NULL)
+  if ((pdf->root_obj = pdfioDictGetObj(pdf->trailer_dict, "Root")) == NULL)
   {
     _pdfioFileError(pdf, "Missing Root object.");
     return (false);
   }
 
-  PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root, (unsigned long)pdf->root->number);
+  PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
 
-  pdf->info     = pdfioDictGetObj(pdf->trailer, "Info");
-  pdf->encrypt  = pdfioDictGetObj(pdf->trailer, "Encrypt");
-  pdf->id_array = pdfioDictGetArray(pdf->trailer, "ID");
-
-  return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root), "Pages")));
+  return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages")));
 }
 
 
@@ -1724,13 +1818,13 @@ write_catalog(pdfio_file_t *pdf)	// I - PDF file
     return (false);
 
   pdfioDictSetName(dict, "Type", "Catalog");
-  pdfioDictSetObj(dict, "Pages", pdf->pages_root);
+  pdfioDictSetObj(dict, "Pages", pdf->pages_obj);
   // TODO: Add support for all of the root object dictionary keys
 
-  if ((pdf->root = pdfioFileCreateObj(pdf, dict)) == NULL)
+  if ((pdf->root_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
     return (false);
   else
-    return (pdfioObjClose(pdf->root));
+    return (pdfioObjClose(pdf->root_obj));
 }
 
 
@@ -1752,11 +1846,11 @@ write_pages(pdfio_file_t *pdf)		// I - PDF file
   for (i = 0; i < pdf->num_pages; i ++)
     pdfioArrayAppendObj(kids, pdf->pages[i]);
 
-  pdfioDictSetNumber(pdf->pages_root->value.value.dict, "Count", pdf->num_pages);
-  pdfioDictSetArray(pdf->pages_root->value.value.dict, "Kids", kids);
+  pdfioDictSetNumber(pdf->pages_obj->value.value.dict, "Count", pdf->num_pages);
+  pdfioDictSetArray(pdf->pages_obj->value.value.dict, "Kids", kids);
 
   // Write the Pages object...
-  return (pdfioObjClose(pdf->pages_root));
+  return (pdfioObjClose(pdf->pages_obj));
 }
 
 
@@ -1770,8 +1864,6 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
   bool		ret = true;		// Return value
   off_t		xref_offset;		// Offset to xref table
   size_t	i;			// Looping var
-  int		fd;			// File for /dev/urandom
-  unsigned char	id_values[2][16];	// ID array values
 
 
   // Write the xref table...
@@ -1805,34 +1897,22 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     goto done;
   }
 
-  if ((fd = open("/dev/urandom", O_RDONLY)) >= 0)
+  if ((pdf->trailer_dict = pdfioDictCreate(pdf)) == NULL)
   {
-    // Load ID array with random values from /dev/urandom...
-    if (read(fd, id_values[0], sizeof(id_values[0])) == (ssize_t)sizeof(id_values[0]) && read(fd, id_values[1], sizeof(id_values[1])) == (ssize_t)sizeof(id_values[1]))
-    {
-      pdf->id_array = pdfioArrayCreate(pdf);
-      pdfioArrayAppendBinary(pdf->id_array, id_values[0], sizeof(id_values[0]));
-      pdfioArrayAppendBinary(pdf->id_array, id_values[1], sizeof(id_values[1]));
-    }
-
-    close(fd);
-  }
-
-  if ((pdf->trailer = pdfioDictCreate(pdf)) == NULL)
-  {
+    _pdfioFileError(pdf, "Unable to create trailer.");
     ret = false;
     goto done;
   }
 
-  if (pdf->encrypt)
-    pdfioDictSetObj(pdf->trailer, "Encrypt", pdf->encrypt);
+  if (pdf->encrypt_obj)
+    pdfioDictSetObj(pdf->trailer_dict, "Encrypt", pdf->encrypt_obj);
   if (pdf->id_array)
-    pdfioDictSetArray(pdf->trailer, "ID", pdf->id_array);
-  pdfioDictSetObj(pdf->trailer, "Info", pdf->info);
-  pdfioDictSetObj(pdf->trailer, "Root", pdf->root);
-  pdfioDictSetNumber(pdf->trailer, "Size", pdf->num_objs + 1);
+    pdfioDictSetArray(pdf->trailer_dict, "ID", pdf->id_array);
+  pdfioDictSetObj(pdf->trailer_dict, "Info", pdf->info_obj);
+  pdfioDictSetObj(pdf->trailer_dict, "Root", pdf->root_obj);
+  pdfioDictSetNumber(pdf->trailer_dict, "Size", pdf->num_objs + 1);
 
-  if (!_pdfioDictWrite(pdf->trailer, NULL))
+  if (!_pdfioDictWrite(pdf->trailer_dict, NULL, NULL))
   {
     _pdfioFileError(pdf, "Unable to write trailer.");
     ret = false;
