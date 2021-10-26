@@ -65,6 +65,21 @@
     <ClCompile Include="ttf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="pdfio-aes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pdfio-crypto.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pdfio-md5.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pdfio-rc4.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pdfio-sha256.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

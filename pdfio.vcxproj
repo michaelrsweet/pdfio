@@ -148,13 +148,18 @@
     <ClInclude Include="ttf.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="pdfio-aes.c" />
     <ClCompile Include="pdfio-array.c" />
     <ClCompile Include="pdfio-common.c" />
     <ClCompile Include="pdfio-content.c" />
+    <ClCompile Include="pdfio-crypto.c" />
     <ClCompile Include="pdfio-dict.c" />
     <ClCompile Include="pdfio-file.c" />
+    <ClCompile Include="pdfio-md5.c" />
     <ClCompile Include="pdfio-object.c" />
     <ClCompile Include="pdfio-page.c" />
+    <ClCompile Include="pdfio-rc4.c" />
+    <ClCompile Include="pdfio-sha256.c" />
     <ClCompile Include="pdfio-stream.c" />
     <ClCompile Include="pdfio-string.c" />
     <ClCompile Include="pdfio-token.c" />

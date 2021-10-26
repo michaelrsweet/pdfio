@@ -12,9 +12,14 @@
 //
 
 #include "pdfio-private.h"
-#if !_WIN32
+#if _WIN32
+#  include <windows.h>
+#  include <bcrypt.h>
+#  include <sys/types.h>
+#  include <sys/timeb.h>
+#else
 #  include <sys/time.h>
-#endif // !_WIN32
+#endif // _WIN32
 #ifdef __has_include
 #  if __has_include(<sys/random.h>)
 #    define HAVE_GETRANDOM 1
@@ -116,14 +121,8 @@ _pdfioCryptoLock(
     const char         *user_password)	// I - User password, if any
 {
   pdfio_dict_t	*dict;			// Encryption dictionary
-  size_t	i, j;			// Looping vars
-  _pdfio_md5_t	md5;			// MD5 context
-  uint8_t	digest[16];		// 128-bit MD5 digest
-  _pdfio_rc4_t	rc4;			// RC4 encryption context
-  size_t	len;			// Length of password
   uint8_t	owner_pad[32],		// Padded owner password
 		user_pad[32],		// Padded user password
-		perm_bytes[4],		// Permissions bytes
 		*file_id;		// File ID bytes
   size_t	file_idlen;		// Length of file ID
   pdfio_dict_t	*cf_dict,		// CF dictionary
@@ -567,9 +566,9 @@ _pdfioCryptoUnlock(
   }
 
   handler       = pdfioDictGetName(encrypt_dict, "Filter");
-  version       = pdfioDictGetNumber(encrypt_dict, "V");
-  revision      = pdfioDictGetNumber(encrypt_dict, "R");
-  length        = pdfioDictGetNumber(encrypt_dict, "Length");
+  version       = (int)pdfioDictGetNumber(encrypt_dict, "V");
+  revision      = (int)pdfioDictGetNumber(encrypt_dict, "R");
+  length        = (int)pdfioDictGetNumber(encrypt_dict, "Length");
   stream_filter = pdfioDictGetName(encrypt_dict, "StmF");
   string_filter = pdfioDictGetName(encrypt_dict, "StrF");
   cf_dict       = pdfioDictGetDict(encrypt_dict, "CF");
@@ -625,7 +624,7 @@ _pdfioCryptoUnlock(
 
   // Grab the remaining values we need to unlock the PDF...
   pdf->file_keylen = length / 8;
-  pdf->permissions = pdfioDictGetNumber(encrypt_dict, "P");
+  pdf->permissions = (pdfio_permission_t)pdfioDictGetNumber(encrypt_dict, "P");
 
   owner_key = pdfioDictGetBinary(encrypt_dict, "O", &owner_keylen);
   user_key  = pdfioDictGetBinary(encrypt_dict, "U", &user_keylen);
@@ -667,7 +666,6 @@ _pdfioCryptoUnlock(
     {
       uint8_t	pad[32],		// Padded password
 		file_key[16],		// File key
-		owner_key[32],		// Owner key
 		user_pad[32],		// Padded user password
 		user_key[32],		// User key
 		pdf_user_key[32];	// Decrypted user key
@@ -832,11 +830,10 @@ make_file_key(
     const uint8_t       *owner_key,	// I - Owner key
     uint8_t             file_key[16])	// O - Encryption key
 {
-  size_t	i, j;			// Looping vars
+  size_t	i;			// Looping var
   uint8_t	perm_bytes[4];		// Permissions bytes
   _pdfio_md5_t	md5;			// MD5 context
   uint8_t	digest[16];		// 128-bit MD5 digest
-  _pdfio_rc4_t	rc4;			// RC4 encryption context
 
 
   perm_bytes[0] = (uint8_t)permissions;
@@ -937,7 +934,6 @@ make_user_key(
     uint8_t             user_key[32])	// O - User key
 {
   _pdfio_md5_t	md5;			// MD5 context
-  uint8_t	digest[16];		// 128-bit MD5 digest
 
 
   // Generate a base hash from known values...
