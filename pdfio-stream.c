@@ -114,6 +114,8 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 	  goto done;
 	}
       }
+
+      deflateEnd(&st->flate);
     }
     else if (st->crypto_cb && st->bufptr > st->buffer)
     {

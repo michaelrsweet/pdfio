@@ -357,6 +357,15 @@ _pdfioArrayDebug(pdfio_array_t *a,	// I - Array
 void
 _pdfioArrayDelete(pdfio_array_t *a)	// I - Array
 {
+  size_t	i;			// Looping var
+
+
+  for (i = 0; i < a->num_values; i ++)
+  {
+    if (a->values[i].type == PDFIO_VALTYPE_BINARY)
+      free(a->values[i].value.binary.data);
+  }
+
   if (a)
     free(a->values);
 

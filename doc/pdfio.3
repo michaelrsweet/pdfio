@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2021-09-27" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2021-10-18" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -152,7 +152,7 @@ There is also an Xcode project ("pdfio.xcodeproj") you can use on macOS which ge
 You can reproduce this with the makefile using:
 .nf
 
-    sudo make 'COMMONFLAGS="\-Os \-mmacosx\-version\-min=10.14 \-arch x86_64 \-arch arm64"' install
+    sudo make COMMONFLAGS="\-Os \-mmacosx\-version\-min=10.14 \-arch x86_64 \-arch arm64" install
 .fi
 .SS Detecting PDFio
 .PP
@@ -160,7 +160,7 @@ PDFio can be detected using the pkg\-config command, for example:
 .nf
 
     if pkg\-config \-\-exists pdfio; then
-        ... 
+        ...
     fi
 .fi
 .PP
@@ -1406,9 +1406,9 @@ Set the stroke pattern.
 .nf
 bool  pdfioContentSetDashPattern (
     pdfio_stream_t *st,
-    int phase,
-    int on,
-    int off
+    double phase,
+    double on,
+    double off
 );
 .fi
 .SS pdfioContentSetFillColorDeviceCMYK

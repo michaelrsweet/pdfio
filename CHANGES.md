@@ -7,6 +7,9 @@ v1.0.0 (TBD)
 
 - Added `pdfioFileCreateOutput` API to support streaming output of PDF
   (Issue #21)
+- Fixed `all-shared` target (Issue #22)
+- Fixed memory leaks (Issue #23)
+- Updated `pdfioContentSetDashPattern` to accept `double` values (Issue #25)
 - Fixed some issues identified by a Coverity scan.
 
 

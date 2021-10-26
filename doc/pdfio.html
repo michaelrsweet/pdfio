@@ -548,12 +548,12 @@ make install-shared
 <pre><code>sudo xcodebuild install
 </code></pre>
 <p>You can reproduce this with the makefile using:</p>
-<pre><code>sudo make 'COMMONFLAGS=&quot;-Os -mmacosx-version-min=10.14 -arch x86_64 -arch arm64&quot;' install
+<pre><code>sudo make COMMONFLAGS=&quot;-Os -mmacosx-version-min=10.14 -arch x86_64 -arch arm64&quot; install
 </code></pre>
 <h3 class="title" id="detecting-pdfio">Detecting PDFio</h3>
 <p>PDFio can be detected using the <code>pkg-config</code> command, for example:</p>
 <pre><code>if pkg-config --exists pdfio; then
-    ... 
+    ...
 fi
 </code></pre>
 <p>In a makefile you can add the necessary compiler and linker options with:</p>
@@ -1563,7 +1563,7 @@ bool pdfioContentSave(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
 <h3 class="function"><a id="pdfioContentSetDashPattern">pdfioContentSetDashPattern</a></h3>
 <p class="description">Set the stroke pattern.</p>
 <p class="code">
-bool pdfioContentSetDashPattern(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, int phase, int on, int off);</p>
+bool pdfioContentSetDashPattern(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, double phase, double on, double off);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>

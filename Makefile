@@ -75,8 +75,8 @@ all:		$(TARGETS)
 all-shared:
 	if test `uname` = Darwin; then \
 		$(MAKE) DSONAME="libpdfio.1.dylib" -$(MAKEFLAGS) all; \
-	else
-		$(MAKE) DSONAME="libpdfio.so.1" -$(MAKEFLAGS) all; \
+	else \
+		$(MAKE) COMMONFLAGS="-g -Os -fPIC" DSONAME="libpdfio.so.1" -$(MAKEFLAGS) all; \
 	fi
 
 debug:
@@ -124,6 +124,9 @@ install-shared:
 test:	testpdfio
 	./testpdfio
 
+valgrind:	testpdfio
+	valgrind --leak-check=full ./testpdfio
+
 
 # pdfio library
 libpdfio.a:		$(LIBOBJS)
@@ -131,7 +134,7 @@ libpdfio.a:		$(LIBOBJS)
 	$(RANLIB) $@
 
 libpdfio.so.1:		$(LIBOBJS)
-	$(CC) $(DSOFLAGS) $(COMMONFLAGS) -shared -o $@ -Wl,soname,$@ $(LIBOBJS) $(LIBS)
+	$(CC) $(DSOFLAGS) $(COMMONFLAGS) -shared -o $@ -Wl,-soname,$@ $(LIBOBJS) $(LIBS)
 
 libpdfio.1.dylib:	$(LIBOBJS)
 	$(CC) $(DSOFLAGS) $(COMMONFLAGS) -dynamiclib -o $@ -install_name $(prefix)/lib/$@ -current_version $(VERSION) -compatibility_version 1.0 $(LIBOBJS) $(LIBS)
