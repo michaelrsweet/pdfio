@@ -150,10 +150,8 @@ pdfio1.def: $(LIBOBJS) Makefile
 	echo "LIBRARY pdfio1" >$@
 	echo "VERSION 1.0" >>$@
 	echo "EXPORTS" >>$@
-	(nm $(LIBOBJS) 2>/dev/null | grep "T _" | awk '{print $$3}' | \
-		grep -v '^_ttf' | grep -v '^__' | sed -e '1,$$s/^_//'; \
-		echo _pdfioTokenInit; \
-		echo _pdfioValueDebug; echo _pdfioValueRead) | sort >>$@
+	nm $(LIBOBJS) 2>/dev/null | grep "T _" | awk '{print $$3}' | \
+		grep -v '^_ttf' | sed -e '1,$$s/^_//' | sort >>$@
 
 
 # pdfio test program
