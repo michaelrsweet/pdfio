@@ -394,6 +394,7 @@ span.string {
 <li><a href="#pdfioFileGetNumPages">pdfioFileGetNumPages</a></li>
 <li><a href="#pdfioFileGetObj">pdfioFileGetObj</a></li>
 <li><a href="#pdfioFileGetPage">pdfioFileGetPage</a></li>
+<li><a href="#pdfioFileGetPermissions">pdfioFileGetPermissions</a></li>
 <li><a href="#pdfioFileGetProducer">pdfioFileGetProducer</a></li>
 <li><a href="#pdfioFileGetSubject">pdfioFileGetSubject</a></li>
 <li><a href="#pdfioFileGetTitle">pdfioFileGetTitle</a></li>
@@ -403,6 +404,7 @@ span.string {
 <li><a href="#pdfioFileSetCreationDate">pdfioFileSetCreationDate</a></li>
 <li><a href="#pdfioFileSetCreator">pdfioFileSetCreator</a></li>
 <li><a href="#pdfioFileSetKeywords">pdfioFileSetKeywords</a></li>
+<li><a href="#pdfioFileSetPermissions">pdfioFileSetPermissions</a></li>
 <li><a href="#pdfioFileSetSubject">pdfioFileSetSubject</a></li>
 <li><a href="#pdfioFileSetTitle">pdfioFileSetTitle</a></li>
 <li><a href="#pdfioImageGetBytesPerLine">pdfioImageGetBytesPerLine</a></li>
@@ -439,6 +441,7 @@ span.string {
 <li><a href="#pdfio_array_t">pdfio_array_t</a></li>
 <li><a href="#pdfio_cs_t">pdfio_cs_t</a></li>
 <li><a href="#pdfio_dict_t">pdfio_dict_t</a></li>
+<li><a href="#pdfio_encryption_t">pdfio_encryption_t</a></li>
 <li><a href="#pdfio_error_cb_t">pdfio_error_cb_t</a></li>
 <li><a href="#pdfio_file_t">pdfio_file_t</a></li>
 <li><a href="#pdfio_filter_t">pdfio_filter_t</a></li>
@@ -448,19 +451,23 @@ span.string {
 <li><a href="#pdfio_obj_t">pdfio_obj_t</a></li>
 <li><a href="#pdfio_output_cb_t">pdfio_output_cb_t</a></li>
 <li><a href="#pdfio_password_cb_t">pdfio_password_cb_t</a></li>
+<li><a href="#pdfio_permission_t">pdfio_permission_t</a></li>
 <li><a href="#pdfio_rect_t">pdfio_rect_t</a></li>
 <li><a href="#pdfio_stream_t">pdfio_stream_t</a></li>
 <li><a href="#pdfio_textrendering_t">pdfio_textrendering_t</a></li>
 <li><a href="#pdfio_valtype_t">pdfio_valtype_t</a></li>
+<li><a href="#state_t[4][4]">state_t[4][4]</a></li>
 </ul></li>
 <li><a href="#STRUCTURES">Structures</a><ul class="subcontents">
 <li><a href="#pdfio_rect_s">pdfio_rect_s</a></li>
 </ul></li>
 <li><a href="#ENUMERATIONS">Enumerations</a><ul class="subcontents">
 <li><a href="#pdfio_cs_e">pdfio_cs_e</a></li>
+<li><a href="#pdfio_encryption_e">pdfio_encryption_e</a></li>
 <li><a href="#pdfio_filter_e">pdfio_filter_e</a></li>
 <li><a href="#pdfio_linecap_e">pdfio_linecap_e</a></li>
 <li><a href="#pdfio_linejoin_e">pdfio_linejoin_e</a></li>
+<li><a href="#pdfio_permission_e">pdfio_permission_e</a></li>
 <li><a href="#pdfio_textrendering_e">pdfio_textrendering_e</a></li>
 <li><a href="#pdfio_valtype_e">pdfio_valtype_e</a></li>
 </ul></li>
@@ -470,9 +477,11 @@ span.string {
 <h2 class="title" id="introduction">Introduction</h2>
 <p>PDFio is a simple C library for reading and writing PDF files. The primary goals of pdfio are:</p>
 <ul>
-<li><p>Read any PDF file with or without encryption or linearization</p>
+<li><p>Read and write any version of PDF file</p>
 </li>
-<li><p>Write PDF files without encryption or linearization</p>
+<li><p>Provide access to pages, objects, and streams within a PDF file</p>
+</li>
+<li><p>Support reading and writing of encrypted PDF files</p>
 </li>
 <li><p>Extract or embed useful metadata (author, creator, page information, etc.)</p>
 </li>
@@ -2838,6 +2847,22 @@ size_t pdfioFileGetNumPages(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Object</p>
+<h3 class="function"><a id="pdfioFileGetPermissions">pdfioFileGetPermissions</a></h3>
+<p class="description">Get the access permissions of a PDF file.</p>
+<p class="code">
+<a href="#pdfio_permission_t">pdfio_permission_t</a> pdfioFileGetPermissions(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <a href="#pdfio_encryption_t">pdfio_encryption_t</a> *encryption);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>encryption</th>
+<td class="description">Type of encryption used or <code>NULL</code> to ignore</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Permission bits</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function returns the access permissions of a PDF file and (optionally)
+the type of encryption that has been used.</p>
 <h3 class="function"><a id="pdfioFileGetProducer">pdfioFileGetProducer</a></h3>
 <p class="description">Get the producer string for a PDF file.</p>
 <p class="code">
@@ -2958,6 +2983,34 @@ void pdfioFileSetKeywords(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const c
 <tr><th>value</th>
 <td class="description">Value</td></tr>
 </tbody></table>
+<h3 class="function"><a id="pdfioFileSetPermissions">pdfioFileSetPermissions</a></h3>
+<p class="description">Set the PDF permissions, encryption mode, and passwords.</p>
+<p class="code">
+bool pdfioFileSetPermissions(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <a href="#pdfio_permission_t">pdfio_permission_t</a> permissions, <a href="#pdfio_encryption_t">pdfio_encryption_t</a> encryption, const char *owner_password, const char *user_password);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>permissions</th>
+<td class="description">Use permissions</td></tr>
+<tr><th>encryption</th>
+<td class="description">Type of encryption to use</td></tr>
+<tr><th>owner_password</th>
+<td class="description">Owner password, if any</td></tr>
+<tr><th>user_password</th>
+<td class="description">User password, if any</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> on success, <code>false</code> otherwise</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function sets the PDF usage permissions, encryption mode, and
+passwords.<br>
+<br>
+</p><blockquote>
+<em>Note</em>: This function must be called before creating or copying any
+objects.  Due to fundamental limitations in the PDF format, PDF encryption
+offers little protection from disclosure.  Permissions are not enforced in
+any meaningful way.</blockquote>
 <h3 class="function"><a id="pdfioFileSetSubject">pdfioFileSetSubject</a></h3>
 <p class="description">Set the subject for a PDF file.</p>
 <p class="code">
@@ -3397,6 +3450,11 @@ typedef enum <a href="#pdfio_cs_e">pdfio_cs_e</a> pdfio_cs_t;
 <p class="code">
 typedef struct _pdfio_dict_s pdfio_dict_t;
 </p>
+<h3 class="typedef"><a id="pdfio_encryption_t">pdfio_encryption_t</a></h3>
+<p class="description">PDF encryption modes</p>
+<p class="code">
+typedef enum <a href="#pdfio_encryption_e">pdfio_encryption_e</a> pdfio_encryption_t;
+</p>
 <h3 class="typedef"><a id="pdfio_error_cb_t">pdfio_error_cb_t</a></h3>
 <p class="description">Error callback</p>
 <p class="code">
@@ -3442,6 +3500,11 @@ typedef ssize_t (*pdfio_output_cb_t)(void *ctx const void *data size_t datalen);
 <p class="code">
 typedef const char *(*pdfio_password_cb_t)(void *data const char *filename);
 </p>
+<h3 class="typedef"><a id="pdfio_permission_t">pdfio_permission_t</a></h3>
+<p class="description">PDF permission bitfield</p>
+<p class="code">
+typedef int pdfio_permission_t;
+</p>
 <h3 class="typedef"><a id="pdfio_rect_t">pdfio_rect_t</a></h3>
 <p class="description">PDF rectangle</p>
 <p class="code">
@@ -3461,6 +3524,11 @@ typedef enum <a href="#pdfio_textrendering_e">pdfio_textrendering_e</a> pdfio_te
 <p class="description">PDF value types</p>
 <p class="code">
 typedef enum <a href="#pdfio_valtype_e">pdfio_valtype_e</a> pdfio_valtype_t;
+</p>
+<h3 class="typedef"><a id="state_t[4][4]">state_t[4][4]</a></h3>
+<p class="description">4x4 AES state table</p>
+<p class="code">
+typedef uint8_t state_t[4][4];
 </p>
 <h2 class="title"><a id="STRUCTURES">Structures</a></h2>
 <h3 class="struct"><a id="pdfio_rect_s">pdfio_rect_s</a></h3>
@@ -3490,6 +3558,16 @@ typedef enum <a href="#pdfio_valtype_e">pdfio_valtype_e</a> pdfio_valtype_t;
 <tr><th>PDFIO_CS_ADOBE </th><td class="description">AdobeRGB 1998</td></tr>
 <tr><th>PDFIO_CS_P3_D65 </th><td class="description">Display P3</td></tr>
 <tr><th>PDFIO_CS_SRGB </th><td class="description">sRGB</td></tr>
+</tbody></table>
+<h3 class="enumeration"><a id="pdfio_encryption_e">pdfio_encryption_e</a></h3>
+<p class="description">PDF encryption modes</p>
+<h4 class="constants">Constants</h4>
+<table class="list"><tbody>
+<tr><th>PDFIO_ENCRYPTION_AES_128 </th><td class="description">128-bit AES encryption (PDF 1.6)</td></tr>
+<tr><th>PDFIO_ENCRYPTION_AES_256 </th><td class="description">256-bit AES encryption (PDF 2.0)</td></tr>
+<tr><th>PDFIO_ENCRYPTION_NONE </th><td class="description">No encryption</td></tr>
+<tr><th>PDFIO_ENCRYPTION_RC4_128 </th><td class="description">128-bit RC4 encryption (PDF 1.4)</td></tr>
+<tr><th>PDFIO_ENCRYPTION_RC4_40 </th><td class="description">40-bit RC4 encryption (PDF 1.3)</td></tr>
 </tbody></table>
 <h3 class="enumeration"><a id="pdfio_filter_e">pdfio_filter_e</a></h3>
 <p class="description">Compression/decompression filters for streams</p>
@@ -3522,6 +3600,21 @@ typedef enum <a href="#pdfio_valtype_e">pdfio_valtype_e</a> pdfio_valtype_t;
 <tr><th>PDFIO_LINEJOIN_BEVEL </th><td class="description">Bevel joint</td></tr>
 <tr><th>PDFIO_LINEJOIN_MITER </th><td class="description">Miter joint</td></tr>
 <tr><th>PDFIO_LINEJOIN_ROUND </th><td class="description">Round joint</td></tr>
+</tbody></table>
+<h3 class="enumeration"><a id="pdfio_permission_e">pdfio_permission_e</a></h3>
+<p class="description">PDF permission bits</p>
+<h4 class="constants">Constants</h4>
+<table class="list"><tbody>
+<tr><th>PDFIO_PERMISSION_ANNOTATE </th><td class="description">PDF allows annotation</td></tr>
+<tr><th>PDFIO_PERMISSION_ASSEMBLE </th><td class="description">PDF allows assembly (insert, delete, or rotate pages, add document outlines and thumbnails)</td></tr>
+<tr><th>PDFIO_PERMISSION_COPY </th><td class="description">PDF allows copying</td></tr>
+<tr><th>PDFIO_PERMISSION_FORMS </th><td class="description">PDF allows filling in forms</td></tr>
+<tr><th>PDFIO_PERMISSION_MODIFY </th><td class="description">PDF allows modification</td></tr>
+<tr><th>PDFIO_PERMISSION_NONE </th><td class="description">No permissions</td></tr>
+<tr><th>PDFIO_PERMISSION_PRINT </th><td class="description">PDF allows printing</td></tr>
+<tr><th>PDFIO_PERMISSION_PRINT_HIGH </th><td class="description">PDF allows high quality printing</td></tr>
+<tr><th>PDFIO_PERMISSION_READING </th><td class="description">PDF allows screen reading/accessibility (deprecated in PDF 2.0)</td></tr>
+<tr><th>~0 </th><td class="description">All permissions</td></tr>
 </tbody></table>
 <h3 class="enumeration"><a id="pdfio_textrendering_e">pdfio_textrendering_e</a></h3>
 <p class="description">Text rendering modes</p>

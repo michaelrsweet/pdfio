@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2021-10-18" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2021-10-25" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -6,11 +6,15 @@ pdfio \- pdf read/write library
 PDFio is a simple C library for reading and writing PDF files. The primary goals of pdfio are:
 .IP \(bu 5
 .PP
-Read any PDF file with or without encryption or linearization
+Read and write any version of PDF file
 
 .IP \(bu 5
 .PP
-Write PDF files without encryption or linearization
+Provide access to pages, objects, and streams within a PDF file
+
+.IP \(bu 5
+.PP
+Support reading and writing of encrypted PDF files
 
 .IP \(bu 5
 .PP
@@ -809,6 +813,28 @@ Display P3
 PDFIO_CS_SRGB
 .br
 sRGB
+.SS pdfio_encryption_e
+PDF encryption modes
+.TP 5
+PDFIO_ENCRYPTION_AES_128
+.br
+128-bit AES encryption (PDF 1.6)
+.TP 5
+PDFIO_ENCRYPTION_AES_256
+.br
+256-bit AES encryption (PDF 2.0)
+.TP 5
+PDFIO_ENCRYPTION_NONE
+.br
+No encryption
+.TP 5
+PDFIO_ENCRYPTION_RC4_128
+.br
+128-bit RC4 encryption (PDF 1.4)
+.TP 5
+PDFIO_ENCRYPTION_RC4_40
+.br
+40-bit RC4 encryption (PDF 1.3)
 .SS pdfio_filter_e
 Compression/decompression filters for streams
 .TP 5
@@ -883,6 +909,51 @@ Miter joint
 PDFIO_LINEJOIN_ROUND
 .br
 Round joint
+.SS pdfio_permission_e
+PDF permission bits
+.TP 5
+PDFIO_PERMISSION_ALL
+.br
+.TP 5
+PDFIO_PERMISSION_ANNOTATE
+.br
+PDF allows annotation
+.TP 5
+PDFIO_PERMISSION_ASSEMBLE
+.br
+PDF allows assembly (insert, delete, or rotate pages, add document outlines and thumbnails)
+.TP 5
+PDFIO_PERMISSION_COPY
+.br
+PDF allows copying
+.TP 5
+PDFIO_PERMISSION_FORMS
+.br
+PDF allows filling in forms
+.TP 5
+PDFIO_PERMISSION_MODIFY
+.br
+PDF allows modification
+.TP 5
+PDFIO_PERMISSION_NONE
+.br
+No permissions
+.TP 5
+PDFIO_PERMISSION_PRINT
+.br
+PDF allows printing
+.TP 5
+PDFIO_PERMISSION_PRINT_HIGH
+.br
+PDF allows high quality printing
+.TP 5
+PDFIO_PERMISSION_READING
+.br
+PDF allows screen reading/accessibility (deprecated in PDF 2.0)
+.TP 5
+~0
+.br
+All permissions
 .SS pdfio_textrendering_e
 Text rendering modes
 .TP 5
@@ -2308,6 +2379,18 @@ pdfio_obj_t * pdfioFileGetPage (
     size_t n
 );
 .fi
+.SS pdfioFileGetPermissions
+Get the access permissions of a PDF file.
+.PP
+.nf
+pdfio_permission_t  pdfioFileGetPermissions (
+    pdfio_file_t *pdf,
+    pdfio_encryption_t *encryption
+);
+.fi
+.PP
+This function returns the access permissions of a PDF file and (optionally)
+the type of encryption that has been used.
 .SS pdfioFileGetProducer
 Get the producer string for a PDF file.
 .PP
@@ -2401,6 +2484,30 @@ void pdfioFileSetKeywords (
     const char *value
 );
 .fi
+.SS pdfioFileSetPermissions
+Set the PDF permissions, encryption mode, and passwords.
+.PP
+.nf
+bool  pdfioFileSetPermissions (
+    pdfio_file_t *pdf,
+    pdfio_permission_t permissions,
+    pdfio_encryption_t encryption,
+    const char *owner_password,
+    const char *user_password
+);
+.fi
+.PP
+This function sets the PDF usage permissions, encryption mode, and
+passwords.
+.PP
+.IP 5
+\fINote\fR: This function must be called before creating or copying any
+.IP 5
+objects.  Due to fundamental limitations in the PDF format, PDF encryption
+.IP 5
+offers little protection from disclosure.  Permissions are not enforced in
+.IP 5
+any meaningful way.
 .SS pdfioFileSetSubject
 Set the subject for a PDF file.
 .PP
@@ -2739,6 +2846,12 @@ Key/value dictionary
 .nf
 typedef struct _pdfio_dict_s pdfio_dict_t;
 .fi
+.SS pdfio_encryption_t
+PDF encryption modes
+.PP
+.nf
+typedef enum pdfio_encryption_e pdfio_encryption_t;
+.fi
 .SS pdfio_error_cb_t
 Error callback
 .PP
@@ -2793,6 +2906,12 @@ Password callback for pdfioFileOpen
 .nf
 typedef const char *(*)(void *data const char *filename) pdfio_password_cb_t;
 .fi
+.SS pdfio_permission_t
+PDF permission bitfield
+.PP
+.nf
+typedef int pdfio_permission_t;
+.fi
 .SS pdfio_rect_t
 PDF rectangle
 .PP
@@ -2816,6 +2935,12 @@ PDF value types
 .PP
 .nf
 typedef enum pdfio_valtype_e pdfio_valtype_t;
+.fi
+.SS state_t[4][4]
+4x4 AES state table
+.PP
+.nf
+typedef uint8_t state_t[4][4];
 .fi
 .SH AUTHOR
 .PP
