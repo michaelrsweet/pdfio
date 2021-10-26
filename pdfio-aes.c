@@ -448,7 +448,7 @@ InvShiftRows(state_t *state)
 static void
 Cipher(state_t *state, const _pdfio_aes_t *ctx)
 {
-  uint8_t round = 0;
+  size_t round = 0;
 
   // Add the First round key to the state before starting the rounds.
   AddRoundKey(0, state, ctx->round_key);
