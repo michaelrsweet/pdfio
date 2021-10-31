@@ -44,6 +44,9 @@ _pdfioDictClear(pdfio_dict_t *dict,	// I - Dictionary
     if ((pair = (_pdfio_pair_t *)bsearch(&pkey, dict->pairs, dict->num_pairs, sizeof(_pdfio_pair_t), (int (*)(const void *, const void *))compare_pairs)) != NULL)
     {
       // Yes, remove it...
+      if (pair->value.type == PDFIO_VALTYPE_BINARY)
+        free(pair->value.value.binary.data);
+
       idx = (size_t)(pair - dict->pairs);
       dict->num_pairs --;
 
@@ -187,7 +190,18 @@ void
 _pdfioDictDelete(pdfio_dict_t *dict)	// I - Dictionary
 {
   if (dict)
+  {
+    size_t	i;			// Looping var
+    _pdfio_pair_t *pair;		// Current pair
+
+    for (i = dict->num_pairs, pair = dict->pairs; i > 0; i --, pair ++)
+    {
+      if (pair->value.type == PDFIO_VALTYPE_BINARY)
+        free(pair->value.value.binary.data);
+    }
+
     free(dict->pairs);
+  }
 
   free(dict);
 }
@@ -836,6 +850,8 @@ _pdfioDictSetValue(
     {
       // Yes, replace the value...
       PDFIO_DEBUG("_pdfioDictSetValue: Replacing existing value.\n");
+      if (pair->value.type == PDFIO_VALTYPE_BINARY)
+        free(pair->value.value.binary.data);
       pair->value = *value;
       return (true);
     }
