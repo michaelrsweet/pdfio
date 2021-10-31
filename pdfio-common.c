@@ -329,6 +329,11 @@ _pdfioFileRead(pdfio_file_t *pdf,	// I - PDF file
 	pdf->bufpos += rbytes;
 	continue;
       }
+      else if (rbytes < 0 && (errno == EINTR || errno == EAGAIN))
+      {
+        rbytes = 0;
+        continue;
+      }
       else
         break;
     }

@@ -498,9 +498,6 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	break;
   }
 
-  while (tb->bufptr < tb->bufend && isspace(*(tb->bufptr)))
-    tb->bufptr ++;
-
   *bufptr = '\0';
 
   PDFIO_DEBUG("_pdfioTokenRead: Read '%s'.\n", buffer);
