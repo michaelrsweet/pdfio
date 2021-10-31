@@ -366,9 +366,7 @@ _pdfioArrayDelete(pdfio_array_t *a)	// I - Array
       free(a->values[i].value.binary.data);
   }
 
-  if (a)
-    free(a->values);
-
+  free(a->values);
   free(a);
 }
 

@@ -68,7 +68,7 @@ static const uint8_t rsbox[256] =	// Reverse S-box lookup table
   0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
 };
 
-// The round constant word array, Rcon[i], contains the values given by 
+// The round constant word array, Rcon[i], contains the values given by
 // x to the power (i-1) being powers of x (x is denoted as {02}) in the field GF(2^8)
 static const uint8_t Rcon[11] =		// Round constants
 {
@@ -222,6 +222,9 @@ _pdfioCryptoAESEncrypt(
   size_t	outbytes = 0;		// Output bytes
 
 
+  if (len == 0)
+    return (0);
+
   if (inbuffer != outbuffer)
   {
     // Not the most efficient, but we can optimize later - the sample AES code
@@ -295,14 +298,14 @@ ShiftRows(state_t *state)
   uint8_t	temp;			// Temporary value
 
 
-  // Rotate first row 1 columns to left  
+  // Rotate first row 1 columns to left
   temp     = sptr[1];
   sptr[1]  = sptr[5];
   sptr[5]  = sptr[9];
   sptr[9]  = sptr[13];
   sptr[13] = temp;
 
-  // Rotate second row 2 columns to left  
+  // Rotate second row 2 columns to left
   temp     = sptr[2];
   sptr[2]  = sptr[10];
   sptr[10] = temp;
@@ -336,7 +339,7 @@ MixColumns(state_t *state)
   uint8_t	Tmp, Tm, t;		// Temporary values
 
   for (i = 4; i > 0; i --, sptr += 4)
-  {  
+  {
     t       = sptr[0];
     Tmp     = sptr[0] ^ sptr[1] ^ sptr[2] ^ sptr[3];
     Tm      = sptr[0] ^ sptr[1];
@@ -384,7 +387,7 @@ InvMixColumns(state_t *state)
 
 
   for (i = 4; i > 0; i --)
-  { 
+  {
     a = sptr[0];
     b = sptr[1];
     c = sptr[2];
@@ -419,14 +422,14 @@ InvShiftRows(state_t *state)
   uint8_t	temp;			// Temporary value
 
 
-  // Rotate first row 1 columns to right  
+  // Rotate first row 1 columns to right
   temp     = sptr[13];
   sptr[13] = sptr[9];
   sptr[9]  = sptr[5];
   sptr[5]  = sptr[1];
   sptr[1]  = temp;
 
-  // Rotate second row 2 columns to right 
+  // Rotate second row 2 columns to right
   temp     = sptr[2];
   sptr[2]  = sptr[10];
   sptr[10] = temp;

@@ -81,7 +81,7 @@
 // V6+R6 handler:
 //
 //   TODO: document V6+R6 handler
-//   
+//
 
 //
 // Local globals...
@@ -177,7 +177,7 @@ _pdfioCryptoLock(
 	pdfioDictSetNumber(dict, "R", encryption == PDFIO_ENCRYPTION_RC4_128 ? 3 : 4);
 	pdfioDictSetNumber(dict, "V", encryption == PDFIO_ENCRYPTION_RC4_128 ? 2 : 4);
 	pdfioDictSetBinary(dict, "U", pdf->user_key, sizeof(pdf->user_key));
-	
+
         if (encryption == PDFIO_ENCRYPTION_AES_128)
         {
 	  if ((cf_dict = pdfioDictCreate(pdf)) == NULL)
@@ -193,7 +193,7 @@ _pdfioCryptoLock(
 	  }
 
 	  pdfioDictSetName(filter_dict, "Type", "CryptFilter");
-	  pdfioDictSetName(filter_dict, "CFM", encryption == PDFIO_ENCRYPTION_RC4_128 ? "V2" : "AESV2");
+	  pdfioDictSetName(filter_dict, "CFM", "AESV2");
 	  pdfioDictSetDict(cf_dict, "PDFio", filter_dict);
 	  pdfioDictSetDict(dict, "CF", cf_dict);
 	  pdfioDictSetName(dict, "StmF", "PDFio");
@@ -658,7 +658,7 @@ _pdfioCryptoUnlock(
   _pdfioCryptoMD5Append(&md5, pdf_passpad, 32);
   _pdfioCryptoMD5Append(&md5, file_id, file_idlen);
   _pdfioCryptoMD5Finish(&md5, file_digest);
-  
+
   // Now try to unlock the PDF...
   for (tries = 0; tries < 4; tries ++)
   {
