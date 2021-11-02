@@ -782,7 +782,7 @@ _pdfioCryptoUnlock(
       PDFIO_DEBUG("_pdfioCryptoUnlock: Uuse=%02X%02X%02X%02X...%02X%02X%02X%02X\n", user_key[0], user_key[1], user_key[2], user_key[3], user_key[28], user_key[29], user_key[30], user_key[31]);
       PDFIO_DEBUG("_pdfioCryptoUnlock: Updf=%02X%02X%02X%02X...%02X%02X%02X%02X\n", pdf_user_key[0], pdf_user_key[1], pdf_user_key[2], pdf_user_key[3], pdf_user_key[28], pdf_user_key[29], pdf_user_key[30], pdf_user_key[31]);
 
-      if (!memcmp(pad, pdf_user_key, 32) || !memcmp(own_user_key, user_key, 32) || !memcmp(user_key, pdf_user_key, 16))
+      if (!memcmp(pad, pdf_user_key, 32) || !memcmp(user_key, pdf_user_key, 16))
       {
         // Matches!
         memcpy(pdf->file_key, file_key, sizeof(pdf->file_key));
