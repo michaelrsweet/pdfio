@@ -284,7 +284,9 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 		    int tch = get_char(tb);	// Next char
 
 		    if (tch >= '0' && tch <= '7')
+		    {
 		      ch = (char)((ch << 3) | (tch - '0'));
+		    }
 		    else
 		    {
 		      tb->bufptr --;
@@ -377,8 +379,10 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  *buffer = '<';
 	  for (litptr = bufptr - 1, hexptr = buffer + 2 * bytes - 1; litptr > buffer; litptr --, hexptr -= 2)
 	  {
-	    hexptr[0] = hexchars[(*litptr >> 4) & 15];
-	    hexptr[1] = hexchars[*litptr & 15];
+	    int litch = *litptr;	// Grab the character
+
+	    hexptr[0] = hexchars[(litch >> 4) & 15];
+	    hexptr[1] = hexchars[litch & 15];
 	  }
 	  bufptr = buffer + 2 * bytes + 1;
 	}

@@ -640,17 +640,13 @@ _pdfioCryptoUnlock(
     }
     else
     {
+      if (length < 40 || length > 128)
+	length = 128;			// Default to 128 bits
+
       if (!strcmp(cfm, "V2"))
-      {
         pdf->encryption = PDFIO_ENCRYPTION_RC4_128;
-	if (length < 40 || length > 128)
-	  length = 128;
-      }
-      if (!strcmp(cfm, "AESV2"))
-      {
+      else if (!strcmp(cfm, "AESV2"))
         pdf->encryption = PDFIO_ENCRYPTION_AES_128;
-        length = 128;
-      }
     }
   }
   else if (version == 1 || version == 2)

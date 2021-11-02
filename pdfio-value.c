@@ -400,6 +400,9 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 
       tempptr = tb->bufptr;
 
+      while (tempptr < tb->bufend && isspace(*tempptr & 255))
+        tempptr ++;			// Skip whitespace as needed...
+
       if (tempptr < tb->bufend && isdigit(*tempptr & 255))
       {
         // Integer...
@@ -412,7 +415,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
         }
 
 	while (tempptr < tb->bufend && isspace(*tempptr & 255))
-	  tempptr ++;
+	  tempptr ++;			// Skip whitespace
 
 	if (tempptr < tb->bufend && *tempptr == 'R')
 	{
