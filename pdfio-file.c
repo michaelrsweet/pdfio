@@ -1414,6 +1414,7 @@ load_xref(
 		offset;			// Offset in file
   int		generation;		// Generation number
   _pdfio_token_t tb;			// Token buffer/stack
+  off_t		line_offset;		// Offset to start of line
 
 
   while (!done)
@@ -1426,6 +1427,8 @@ load_xref(
 
     do
     {
+      line_offset = _pdfioFileTell(pdf);
+
       if (!_pdfioFileGets(pdf, line, sizeof(line)))
       {
 	_pdfioFileError(pdf, "Unable to read start of xref table.");
@@ -1434,7 +1437,7 @@ load_xref(
     }
     while (!line[0]);
 
-    PDFIO_DEBUG("load_xref: xref_offset=%lu, line='%s'\n", (unsigned long)xref_offset, line);
+    PDFIO_DEBUG("load_xref: line_offset=%lu, line='%s'\n", (unsigned long)line_offset, line);
 
     if (isdigit(line[0] & 255) && strlen(line) > 4 && (!strcmp(line + strlen(line) - 4, " obj") || ((ptr = strstr(line, " obj")) != NULL && ptr[4] == '<')))
     {
@@ -1477,7 +1480,7 @@ load_xref(
 	return (false);
       }
 
-      if (_pdfioFileSeek(pdf, xref_offset + ptr + 3 - line, SEEK_SET) < 0)
+      if (_pdfioFileSeek(pdf, line_offset + ptr + 3 - line, SEEK_SET) < 0)
       {
         _pdfioFileError(pdf, "Unable to seek to xref object %lu %u.", (unsigned long)number, (unsigned)generation);
         return (false);

@@ -200,6 +200,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
   char	*bufptr,			// Pointer into buffer
 	*bufend,			// End of buffer
 	state = '\0';			// Current state
+  bool	saw_nul = false;		// Did we see a nul character?
 
 
   //
@@ -260,6 +261,9 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
     case '(' : // Literal string
 	while ((ch = get_char(tb)) != EOF)
 	{
+	  if (ch == 0)
+	    saw_nul = true;
+
 	  if (ch == '\\')
 	  {
 	    // Quoted character...
@@ -349,6 +353,34 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	{
 	  _pdfioFileError(tb->pdf, "Unterminated string literal.");
 	  return (false);
+	}
+
+	if (saw_nul)
+	{
+	  // Convert to a hex (binary) string...
+	  char	*litptr,		// Pointer to literal character
+		*hexptr;		// Pointer to hex character
+	  size_t bytes = (size_t)(bufptr - buffer - 1);
+					// Bytes of data...
+          static const char *hexchars = "0123456789ABCDEF";
+					// Hex digits
+
+          PDFIO_DEBUG("_pdfioTokenRead: Converting nul-containing string to binary.\n");
+
+          if ((2 * (bytes + 1)) > bufsize)
+          {
+	    // Out of space...
+	    _pdfioFileError(tb->pdf, "Token too large.");
+	    return (false);
+          }
+
+	  *buffer = '<';
+	  for (litptr = bufptr - 1, hexptr = buffer + 2 * bytes - 1; litptr > buffer; litptr --, hexptr -= 2)
+	  {
+	    hexptr[0] = hexchars[(*litptr >> 4) & 15];
+	    hexptr[1] = hexchars[*litptr & 15];
+	  }
+	  bufptr = buffer + 2 * bytes + 1;
 	}
 	break;
 

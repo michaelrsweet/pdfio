@@ -245,6 +245,11 @@ pdfioDictGetBinary(pdfio_dict_t *dict,	// I - Dictionary
     *length = value->value.binary.datalen;
     return (value->value.binary.data);
   }
+  else if (value && value->type == PDFIO_VALTYPE_STRING)
+  {
+    *length = strlen(value->value.string);
+    return ((unsigned char *)value->value.string);
+  }
   else
   {
     *length = 0;
