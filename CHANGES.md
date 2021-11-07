@@ -10,6 +10,7 @@ v1.0b2 (November 7, 2021)
 - Fixed `all-shared` target (Issue #22)
 - Fixed memory leaks (Issue #23)
 - Updated `pdfioContentSetDashPattern` to accept `double` values (Issue #25)
+- Added support for reading and writing encrypted PDFs (Issue #26)
 - Fixed some issues identified by a Coverity scan.
 
 
