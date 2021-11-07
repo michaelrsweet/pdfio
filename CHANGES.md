@@ -2,8 +2,8 @@ Changes in PDFio
 ================
 
 
-v1.0.0 (TBD)
-------------
+v1.0b2 (November 7, 2021)
+-------------------------
 
 - Added `pdfioFileCreateOutput` API to support streaming output of PDF
   (Issue #21)
