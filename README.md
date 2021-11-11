@@ -3,7 +3,7 @@ pdfio - PDF Read/Write Library
 
 ![Version](https://img.shields.io/github/v/release/michaelrsweet/pdfio?include_prereleases)
 ![Apache 2.0](https://img.shields.io/github/license/michaelrsweet/pdfio)
-![Build](https://github.com/michaelrsweet/pdfio/workflows/Build/badge.svg)
+[![Build](https://github.com/michaelrsweet/pdfio/workflows/Build/badge.svg)](https://github.com/michaelrsweet/pdfio/actions/workflows/build.yml)
 [![Coverity Scan Status](https://img.shields.io/coverity/scan/22385.svg)](https://scan.coverity.com/projects/michaelrsweet-pdfio)
 [![LGTM Grade](https://img.shields.io/lgtm/grade/cpp/github/michaelrsweet/pdfio)](https://lgtm.com/projects/g/michaelrsweet/pdfio/context:cpp)
 [![LGTM Alerts](https://img.shields.io/lgtm/alerts/github/michaelrsweet/pdfio)](https://lgtm.com/projects/g/michaelrsweet/pdfio/)
