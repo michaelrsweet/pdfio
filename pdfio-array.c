@@ -575,7 +575,8 @@ _pdfioArrayGetValue(pdfio_array_t *a,	// I - Array
 pdfio_array_t *				// O - New array
 _pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
 		pdfio_obj_t    *obj,	// I - Object, if any
-                _pdfio_token_t *tb)	// I - Token buffer/stack
+                _pdfio_token_t *tb,	// I - Token buffer/stack
+                size_t         depth)	// I - Depth of array
 {
   pdfio_array_t		*array;		// New array
   char			token[8192];	// Token from file
@@ -599,7 +600,7 @@ _pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
 
     // Push the token and decode the value...
     _pdfioTokenPush(tb, token);
-    if (!_pdfioValueRead(pdf, obj, tb, &value))
+    if (!_pdfioValueRead(pdf, obj, tb, &value, depth))
       break;
 
 //    PDFIO_DEBUG("_pdfioArrayRead(%p): Appending ", (void *)array);

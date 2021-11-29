@@ -473,7 +473,8 @@ _pdfioDictGetValue(pdfio_dict_t *dict,	// I - Dictionary
 pdfio_dict_t *				// O - New dictionary
 _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
                pdfio_obj_t    *obj,	// I - Object, if any
-               _pdfio_token_t *tb)	// I - Token buffer/stack
+               _pdfio_token_t *tb,	// I - Token buffer/stack
+               size_t         depth)	// I - Depth of dictionary
 {
   pdfio_dict_t		*dict;		// New dictionary
   char			key[256];	// Dictionary key
@@ -501,7 +502,7 @@ _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
     }
 
     // Then get the next value...
-    if (!_pdfioValueRead(pdf, obj, tb, &value))
+    if (!_pdfioValueRead(pdf, obj, tb, &value, depth))
     {
       _pdfioFileError(pdf, "Missing value for dictionary key.");
       break;

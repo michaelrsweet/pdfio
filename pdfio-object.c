@@ -412,7 +412,7 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   // Then grab the object value...
   _pdfioTokenInit(&tb, obj->pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, obj->pdf);
 
-  if (!_pdfioValueRead(obj->pdf, obj, &tb, &obj->value))
+  if (!_pdfioValueRead(obj->pdf, obj, &tb, &obj->value, 0))
   {
     _pdfioFileError(obj->pdf, "Unable to read value for object %lu.", (unsigned long)obj->number);
     return (false);

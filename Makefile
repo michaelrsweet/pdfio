@@ -17,7 +17,7 @@ CC		=	cc
 CFLAGS		=
 CODESIGN_IDENTITY =	Developer ID
 #COMMONFLAGS	=	-Os -g
-COMMONFLAGS	=	-O0 -g
+COMMONFLAGS	=	-O0 -g -fsanitize=address
 CPPFLAGS	=	'-DPDFIO_VERSION="$(VERSION)"'
 DESTDIR		=	$(DSTROOT)
 DSO		=	cc

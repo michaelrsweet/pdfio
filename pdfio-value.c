@@ -196,7 +196,8 @@ _pdfio_value_t *			// O - Value or `NULL` on error/EOF
 _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
                 pdfio_obj_t    *obj,	// I - Object, if any
                 _pdfio_token_t *tb,	// I - Token buffer/stack
-                _pdfio_value_t *v)	// I - Value
+                _pdfio_value_t *v,	// I - Value
+                size_t         depth)	// I - Depth of value
 {
   char		token[32768];		// Token buffer
 #ifdef DEBUG
@@ -226,15 +227,27 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
   if (!strcmp(token, "["))
   {
     // Start of array
+    if (depth >= PDFIO_MAX_DEPTH)
+    {
+      _pdfioFileError(pdf, "Too many nested arrays.");
+      return (NULL);
+    }
+
     v->type = PDFIO_VALTYPE_ARRAY;
-    if ((v->value.array = _pdfioArrayRead(pdf, obj, tb)) == NULL)
+    if ((v->value.array = _pdfioArrayRead(pdf, obj, tb, depth + 1)) == NULL)
       return (NULL);
   }
   else if (!strcmp(token, "<<"))
   {
     // Start of dictionary
+    if (depth >= PDFIO_MAX_DEPTH)
+    {
+      _pdfioFileError(pdf, "Too many nested dictionaries.");
+      return (NULL);
+    }
+
     v->type = PDFIO_VALTYPE_DICT;
-    if ((v->value.dict = _pdfioDictRead(pdf, obj, tb)) == NULL)
+    if ((v->value.dict = _pdfioDictRead(pdf, obj, tb, depth + 1)) == NULL)
       return (NULL);
   }
   else if (!strncmp(token, "(D:", 3))

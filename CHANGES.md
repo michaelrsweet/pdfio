@@ -2,6 +2,12 @@ Changes in PDFio
 ================
 
 
+v1.0rc1 (Month DD, YYYY)
+------------------------
+
+- Fixed a few stack/buffer overflow bugs discovered via fuzzing.
+
+
 v1.0b2 (November 7, 2021)
 -------------------------
 

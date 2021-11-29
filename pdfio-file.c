@@ -25,7 +25,7 @@ static pdfio_obj_t	*add_obj(pdfio_file_t *pdf, size_t number, unsigned short gen
 static int		compare_objmaps(_pdfio_objmap_t *a, _pdfio_objmap_t *b);
 static int		compare_objs(pdfio_obj_t **a, pdfio_obj_t **b);
 static bool		load_obj_stream(pdfio_obj_t *obj);
-static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj);
+static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj, size_t depth);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset, pdfio_password_cb_t password_cb, void *password_data);
 static bool		write_catalog(pdfio_file_t *pdf);
 static bool		write_pages(pdfio_file_t *pdf);
@@ -1312,7 +1312,7 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
   // Read the objects themselves...
   for (cur_obj = 0; cur_obj < num_objs; cur_obj ++)
   {
-    if (!_pdfioValueRead(obj->pdf, obj, &tb, &(objs[cur_obj]->value)))
+    if (!_pdfioValueRead(obj->pdf, obj, &tb, &(objs[cur_obj]->value), 0))
     {
       pdfioStreamClose(st);
       return (false);
@@ -1332,7 +1332,8 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
 
 static bool				// O - `true` on success, `false` on error
 load_pages(pdfio_file_t *pdf,		// I - PDF file
-           pdfio_obj_t  *obj)		// I - Page object
+           pdfio_obj_t  *obj,		// I - Page object
+           size_t       depth)		// I - Depth of page tree
 {
   pdfio_dict_t	*dict;			// Page object dictionary
   const char	*type;			// Node type
@@ -1364,9 +1365,15 @@ load_pages(pdfio_file_t *pdf,		// I - PDF file
     size_t	i,			// Looping var
 		num_kids;		// Number of elements in array
 
+    if (depth >= PDFIO_MAX_DEPTH)
+    {
+      _pdfioFileError(pdf, "Depth of pages objects too great to load.");
+      return (false);
+    }
+
     for (i = 0, num_kids = pdfioArrayGetSize(kids); i < num_kids; i ++)
     {
-      if (!load_pages(pdf, pdfioArrayGetObj(kids, i)))
+      if (!load_pages(pdf, pdfioArrayGetObj(kids, i), depth + 1))
         return (false);
     }
   }
@@ -1496,7 +1503,7 @@ load_xref(
 
       _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
 
-      if (!_pdfioValueRead(pdf, obj, &tb, &trailer))
+      if (!_pdfioValueRead(pdf, obj, &tb, &trailer, 0))
       {
         _pdfioFileError(pdf, "Unable to read cross-reference stream dictionary.");
         return (false);
@@ -1537,7 +1544,7 @@ load_xref(
       w_2     = w[0];
       w_3     = w[0] + w[1];
 
-      if (w[1] == 0 || w[2] > 2 || w_total > sizeof(buffer))
+      if (w[1] == 0 || w[2] > 2 || w[0] > sizeof(buffer) || w[1] > sizeof(buffer) || w[2] > sizeof(buffer) || w_total > sizeof(buffer))
       {
 	_pdfioFileError(pdf, "Cross-reference stream has invalid W key.");
 	return (false);
@@ -1751,7 +1758,7 @@ load_xref(
 
       _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
 
-      if (!_pdfioValueRead(pdf, NULL, &tb, &trailer))
+      if (!_pdfioValueRead(pdf, NULL, &tb, &trailer, 0))
       {
 	_pdfioFileError(pdf, "Unable to read trailer dictionary.");
 	return (false);
@@ -1803,7 +1810,7 @@ load_xref(
 
   PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
 
-  return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages")));
+  return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages"), 0));
 }
 
 
