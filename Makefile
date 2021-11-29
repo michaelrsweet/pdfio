@@ -16,8 +16,8 @@ ARFLAGS		=	cr
 CC		=	cc
 CFLAGS		=
 CODESIGN_IDENTITY =	Developer ID
-#COMMONFLAGS	=	-Os -g
-COMMONFLAGS	=	-O0 -g -fsanitize=address
+COMMONFLAGS	=	-Os -g
+#COMMONFLAGS	=	-O0 -g -fsanitize=address
 CPPFLAGS	=	'-DPDFIO_VERSION="$(VERSION)"'
 DESTDIR		=	$(DSTROOT)
 DSO		=	cc
@@ -160,8 +160,7 @@ testpdfio:		testpdfio.o libpdfio.a
 
 
 # Dependencies
-$(OBJS):		pdfio.h Makefile
-$(LIBOBJS):		pdfio-private.h
+$(OBJS):		pdfio.h pdfio-private.h Makefile
 pdfio-content.o:	pdfio-content.h ttf.h
 ttf.o:			ttf.h
 
