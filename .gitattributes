@@ -1,2 +1,4 @@
 .git* export-ignore
+afl-pdf.dict export-ignore
+afl-input export-ignore
 makesrcdist export-ignore
