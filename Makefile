@@ -181,7 +181,8 @@ doc:
 # Fuzz-test the library <>
 .PHONY: afl
 afl:
-	$(MAKE) -$(MAKEFLAGS) CC="afl-clang" COMMONFLAGS="-g -fsanitize=address" clean all
+	$(MAKE) -$(MAKEFLAGS) CC="afl-clang-fast" COMMONFLAGS="-g" clean all
+	test afl-output || rm -rf afl-output
 	afl-fuzz -x afl-pdf.dict -i afl-input -o afl-output -V 600 -e pdf -t 5000 ./testpdfio @@
 
 

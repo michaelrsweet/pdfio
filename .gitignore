@@ -4,6 +4,7 @@
 *.o
 *.so.1
 /.vs
+/afl-output
 /doc/pdfio.epub
 /packages
 /pdfio.xcodeproj/xcshareddata
