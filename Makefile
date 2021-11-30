@@ -178,6 +178,13 @@ doc:
 	rm -f pdfio.xml
 
 
+# Fuzz-test the library <>
+.PHONY: afl
+afl:
+	$(MAKE) -$(MAKEFLAGS) CC="afl-clang" COMMONFLAGS="-g -fsanitize=address" clean all
+	afl-fuzz -x afl-pdf.dict -i afl-input -o afl-output -V 600 -e pdf -t 5000 ./testpdfio @@
+
+
 # Analyze code with the Clang static analyzer <https://clang-analyzer.llvm.org>
 clang:
 	clang $(CPPFLAGS) --analyze $(OBJS:.o=.c) 2>clang.log
