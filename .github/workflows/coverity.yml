@@ -13,7 +13,7 @@ jobs:
       - name: install prerequisites
         run: sudo apt-get install -y zlib1g-dev
       - name: Download current Entrust root cert chain...
-        run: wget -q https://abnf.msweet.org/entrust.epm -O entrust.pem
+        run: wget -q https://abnf.msweet.org/entrust.pem -O entrust.pem
       - name: Download Coverity Build Tool
         run: |
           wget -q --ca-certificate=entrust.pem https://scan.coverity.com/download/linux64 --post-data token="$TOKEN&project=$GITHUB_REPOSITORY" -O cov-analysis-linux64.tar.gz
