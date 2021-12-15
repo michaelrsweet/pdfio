@@ -663,7 +663,12 @@ _pdfioCryptoUnlock(
         length = 128;
     }
   }
-  // TODO: Implement AES-256 - V6 R6
+  else if (version == 6 && revision == 6)
+  {
+    // TODO: Implement AES-256 - V6 R6
+    pdf->encryption = PDFIO_ENCRYPTION_AES_256;
+    length          = 256;
+  }
 
   PDFIO_DEBUG("_pdfioCryptoUnlock: encryption=%d, length=%d\n", pdf->encryption, length);
 
@@ -788,6 +793,8 @@ _pdfioCryptoUnlock(
     else
     {
       // TODO: Implement AES-256 security handler
+      _pdfioFileError(pdf, "Unable to unlock AES-256 encrypted file at this time.");
+      return (false);
     }
 
     // If we get here we need to try another password...
