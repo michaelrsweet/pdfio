@@ -1,7 +1,7 @@
 #
 # Makefile for PDFio.
 #
-# Copyright © 2021 by Michael R Sweet.
+# Copyright © 2021-2022 by Michael R Sweet.
 #
 # Licensed under Apache License v2.0.  See the file "LICENSE" for more
 # information.
@@ -26,7 +26,7 @@ DSONAME		=
 LDFLAGS		=
 LIBS		=	-lm -lz
 RANLIB		=	ranlib
-VERSION		=	1.0.0
+VERSION		=	1.0.1
 prefix		=	/usr/local
 
 
@@ -62,10 +62,12 @@ LIBOBJS		=	\
 			ttf.o
 OBJS		=	\
 			$(LIBOBJS) \
+			pdfiototext.o \
 			testpdfio.o
 TARGETS		=	\
 			$(DSONAME) \
 			libpdfio.a \
+			pdfiototext \
 			testpdfio
 
 
@@ -154,6 +156,11 @@ pdfio1.def: $(LIBOBJS) Makefile
 		grep -v '^_ttf' | sed -e '1,$$s/^_//' | sort >>$@
 
 
+# pdfio text extraction demo
+pdfiototext:		pdfiototext.o libpdfio.a
+	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o $@ pdfiototext.o libpdfio.a $(LIBS)
+
+
 # pdfio test program
 testpdfio:		testpdfio.o libpdfio.a
 	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o $@ testpdfio.o libpdfio.a $(LIBS)
@@ -167,7 +174,7 @@ ttf.o:			ttf.h
 # Make documentation using Codedoc <https://www.msweet.org/codedoc>
 DOCFLAGS	=	\
 			--author "Michael R Sweet" \
-			--copyright "Copyright (c) 2021 by Michael R Sweet" \
+			--copyright "Copyright (c) 2021-2022 by Michael R Sweet" \
 			--docversion $(VERSION)
 
 .PHONY: doc
