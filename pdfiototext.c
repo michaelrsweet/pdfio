@@ -12,6 +12,7 @@
 //
 
 #include "pdfio.h"
+#include <string.h>
 
 
 //
@@ -43,7 +44,7 @@ main(int  argc,				// I - Number of command-line arguments
   if ((file = pdfioFileOpen(argv[1], NULL, NULL, NULL, NULL)) == NULL)
     return (1);
 
-  printf("%s: %u pages\n", argv[1], (unsigned)pdfioFileGetNumPages(file));
+//  printf("%s: %u pages\n", argv[1], (unsigned)pdfioFileGetNumPages(file));
 
   // Try grabbing content from all of the pages...
   for (i = 0, num_pages = pdfioFileGetNumPages(file); i < num_pages; i ++)
@@ -53,14 +54,14 @@ main(int  argc,				// I - Number of command-line arguments
 
     num_streams = pdfioPageGetNumStreams(obj);
 
-    printf("%s: page%u=%p, num_streams=%u\n", argv[1], (unsigned)i, obj, (unsigned)num_streams);
+//    printf("%s: page%u=%p, num_streams=%u\n", argv[1], (unsigned)i, obj, (unsigned)num_streams);
 
     for (j = 0; j < num_streams; j ++)
     {
       if ((st = pdfioPageOpenStream(obj, j, true)) == NULL)
 	continue;
 
-      printf("%s: page%u st%u=%p\n", argv[1], (unsigned)i, (unsigned)j, st);
+//      printf("%s: page%u st%u=%p\n", argv[1], (unsigned)i, (unsigned)j, st);
 
       first = true;
       while (pdfioStreamGetToken(st, buffer, sizeof(buffer)))
@@ -68,12 +69,16 @@ main(int  argc,				// I - Number of command-line arguments
 	if (buffer[0] == '(')
 	{
 	  if (first)
-	  {
-	    putchar(' ');
 	    first = false;
-	  }
+	  else
+	    putchar(' ');
 
 	  fputs(buffer + 1, stdout);
+	}
+	else if (!strcmp(buffer, "Td") || !strcmp(buffer, "TD") || !strcmp(buffer, "T*") || !strcmp(buffer, "\'") || !strcmp(buffer, "\""))
+	{
+	  putchar('\n');
+	  first = true;
 	}
       }
 

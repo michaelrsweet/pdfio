@@ -6,7 +6,8 @@ v1.0.1 (Month DD, YYYY)
 -----------------------
 
 - Added missing `pdfioPageGetNumStreams` and `pdfioPageOpenStream` functions.
-- Added pdfiototext demo utility.
+- Added demo pdfiototext utility.
+- Fixed bug in `pdfioStreamGetToken`.
 
 
 v1.0.0 (December 14, 2021)

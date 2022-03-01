@@ -1,7 +1,7 @@
 //
 // PDF stream functions for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2022 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -372,6 +372,7 @@ pdfioStreamGetToken(
     size_t         bufsize)		// I - Size of string buffer
 {
   _pdfio_token_t	tb;		// Token buffer/stack
+  bool			ret;		// Return value
 
 
   // Range check input...
@@ -381,7 +382,10 @@ pdfioStreamGetToken(
   // Read using the token engine...
   _pdfioTokenInit(&tb, st->pdf, (_pdfio_tconsume_cb_t)pdfioStreamConsume, (_pdfio_tpeek_cb_t)pdfioStreamPeek, st);
 
-  return (_pdfioTokenRead(&tb, buffer, bufsize));
+  ret = _pdfioTokenRead(&tb, buffer, bufsize);
+  _pdfioTokenFlush(&tb);
+
+  return (ret);
 }
 
 
