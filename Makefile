@@ -84,6 +84,9 @@ all-shared:
 debug:
 	$(MAKE) -$(MAKEFLAGS) COMMONFLAGS="-g -fsanitize=address -DDEBUG=1" clean all
 
+macos:
+	$(MAKE) -$(MAKEFLAGS) COMMONFLAGS="-Os -mmacosx-version-min=10.14 -arch x86_64 -arch arm64" clean all
+
 
 # Clean everything
 clean:
@@ -156,7 +159,7 @@ pdfio1.def: $(LIBOBJS) Makefile
 		grep -v '^_ttf' | sed -e '1,$$s/^_//' | sort >>$@
 
 
-# pdfio text extraction demo
+# pdfio text extraction (demo, doesn't handle a lot of things yet)
 pdfiototext:		pdfiototext.o libpdfio.a
 	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o $@ pdfiototext.o libpdfio.a $(LIBS)
 

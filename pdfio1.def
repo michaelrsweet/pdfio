@@ -219,6 +219,8 @@ pdfioPageCopy
 pdfioPageDictAddColorSpace
 pdfioPageDictAddFont
 pdfioPageDictAddImage
+pdfioPageGetNumStreams
+pdfioPageOpenStream
 pdfioStreamClose
 pdfioStreamConsume
 pdfioStreamGetToken

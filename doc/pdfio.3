@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2021-12-14" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2022-03-02" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -34,7 +34,7 @@ PDFio is
 .I not
  concerned with rendering or viewing a PDF file, although a PDF RIP or viewer could be written using it.
 .PP
-PDFio is Copyright \[co] 2021 by Michael R Sweet and is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GPL2/LGPL2 software. See the files "LICENSE" and "NOTICE" for more information.
+PDFio is Copyright \[co] 2021\-2022 by Michael R Sweet and is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GPL2/LGPL2 software. See the files "LICENSE" and "NOTICE" for more information.
 .SS Requirements
 .PP
 PDFio requires the following to build the software:
@@ -156,7 +156,7 @@ There is also an Xcode project ("pdfio.xcodeproj") you can use on macOS which ge
 You can reproduce this with the makefile using:
 .nf
 
-    sudo make COMMONFLAGS="\-Os \-mmacosx\-version\-min=10.14 \-arch x86_64 \-arch arm64" install
+    sudo make macos install
 .fi
 .SS Detecting PDFio
 .PP
@@ -228,9 +228,9 @@ where the three arguments to the function are the filename ("myinputfile.pdf"), 
     error_cb(pdfio_file_t *pdf, const char *message, void *data)
     {
       (void)data; // This callback does not use the data pointer
-
+    
       fprintf(stderr, "%s: %s\\n", pdfioFileGetName(pdf), message);
-
+    
       // Return false to treat warnings as errors
       return (false);
     }
@@ -245,7 +245,7 @@ Each PDF file contains one or more pages. The pdfioFileGetNumPages function retu
     size_t       i;      // Looping var
     size_t       count;  // Number of pages
     pdfio_obj_t  *page;  // Current page
-
+    
     // Iterate the pages in the PDF file
     for (i = 0, count = pdfioFileGetNumPages(pdf); i < count; i ++)
     {
@@ -254,7 +254,7 @@ Each PDF file contains one or more pages. The pdfioFileGetNumPages function retu
     }
 .fi
 .PP
-Each page is represented by a "page tree" object (what pdfioFileGetPage returns) that specifies information about the page and one or more "content" objects that contain the images, fonts, text, and graphics that appear on the page.
+Each page is represented by a "page tree" object (what pdfioFileGetPage returns) that specifies information about the page and one or more "content" objects that contain the images, fonts, text, and graphics that appear on the page. Use the pdfioPageGetNumStreams and pdfioPageOpenStream functions to access the content streams for each page.
 .PP
 The pdfioFileClose function closes a PDF file and frees all memory that was used for it:
 .nf
@@ -268,7 +268,7 @@ You create a new PDF file using the pdfioFileCreate function:
 
     pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
     pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // w/0.5" margins
-
+    
     pdfio_file_t *pdf = pdfioFileCreate("myoutputfile.pdf", "2.0", &media_box, &crop_box, error_cb, error_data);
 .fi
 .PP
@@ -279,7 +279,7 @@ Alternately you can stream a PDF file using the pdfioFileCreateOutput function:
 
     pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
     pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // w/0.5" margins
-
+    
     pdfio_file_t *pdf = pdfioFileCreateOutput(output_cb, output_ctx, "2.0", &media_box, &crop_box, error_cb, error_data);
 .fi
 .PP
@@ -324,6 +324,14 @@ Some PDF objects have an associated data stream, such as for pages, images, ICC 
 .PP
 The first argument is the object pointer. The second argument is a boolean value that specifies whether you want to decode (typically decompress) the stream data or return it as\-is.
 .PP
+When reading a page stream you'll use the pdfioPageOpenStream function instead:
+.nf
+
+    pdfio_file_t *pdf = pdfioFileOpen(...);
+    pdfio_obj_t *obj = pdfioFileGetPage(pdf, number);
+    pdfio_stream_t *st = pdfioPageOpenStream(obj, 0, true);
+.fi
+.PP
 Once you have the stream open, you can use one of several functions to read from it:
 .IP \(bu 5
 .PP
@@ -353,11 +361,20 @@ To create a stream for a new object, call the pdfioObjCreateStream function:
 .nf
 
     pdfio_file_t *pdf = pdfioFileCreate(...);
-    pdfio_obj_t *pdfioFileCreateObj(pdf, ...);
-    pdfio_stream_t *pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE);
+    pdfio_obj_t *obj = pdfioFileCreateObj(pdf, ...);
+    pdfio_stream_t *st = pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE);
 .fi
 .PP
 The first argument is the newly created object. The second argument is either PDFIO_FILTER_NONE to specify that any encoding is done by your program or PDFIO_FILTER_FLATE to specify that PDFio should Flate compress the stream.
+.PP
+To create a page content stream call the pdfioFileCreatePage function:
+.nf
+
+    pdfio_file_t *pdf = pdfioFileCreate(...);
+    pdfio_dict_t *dict = pdfioDictCreate(pdf);
+    \... set page dictionary keys and values ...
+    pdfio_stream_t *st = pdfioFileCreatePage(pdf, dict);
+.fi
 .PP
 Once you have created the stream, use any of the following functions to write to the stream:
 .IP \(bu 5
@@ -444,13 +461,13 @@ PDFio also includes predefined constants for creating a few standard color space
 .nf
 
     pdfio_file_t *pdf = pdfioFileCreate(...);
-
+    
     // Create an AdobeRGB color array
     pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_ADOBE);
-
+    
     // Create an Display P3 color array
     pdfio_array_t *display_p3 = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_P3_D65);
-
+    
     // Create an sRGB color array
     pdfio_array_t *srgb = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_SRGB);
 .fi
@@ -550,10 +567,10 @@ will create an object for a 1024x1024 RGBA image in memory, using the default co
 .nf
 
     pdfio_file_t *pdf = pdfioFileCreate(...);
-
+    
     // Create an AdobeRGB color array
     pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint);
-
+    
     // Create a 1024x1024 RGBA image using AdobeRGB
     unsigned char data[1024 * 1024 * 4]; // 1024x1024 RGBA image data
     pdfio_obj_t *img = pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024, /*height*/1024, /*num_colors*/3, /*color_data*/adobe_rgb, /*alpha*/true, /*interpolate*/false);
@@ -2693,6 +2710,24 @@ bool  pdfioPageDictAddImage (
     pdfio_obj_t *obj
 );
 .fi
+.SS pdfioPageGetNumStreams
+Get the number of content streams for a page object.
+.PP
+.nf
+size_t  pdfioPageGetNumStreams (
+    pdfio_obj_t *page
+);
+.fi
+.SS pdfioPageOpenStream
+Open a content stream for a page.
+.PP
+.nf
+pdfio_stream_t * pdfioPageOpenStream (
+    pdfio_obj_t *page,
+    size_t n,
+    bool decode
+);
+.fi
 .SS pdfioStreamClose
 Close a (data) stream in a PDF file.
 .PP
@@ -2947,4 +2982,4 @@ typedef uint8_t state_t[4][4];
 Michael R Sweet
 .SH COPYRIGHT
 .PP
-Copyright (c) 2021 by Michael R Sweet
+Copyright (c) 2021-2022 by Michael R Sweet

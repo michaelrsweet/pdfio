@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<title>PDFio Programming Manual v1.0rc1</title>
+<title>PDFio Programming Manual v1.0.1</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.7">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
-<meta name="copyright" content="Copyright © 2021 by Michael R Sweet">
-<meta name="version" content="1.0rc1">
+<meta name="copyright" content="Copyright © 2021-2022 by Michael R Sweet">
+<meta name="version" content="1.0.1">
 <style type="text/css"><!--
 body {
   background: white;
@@ -245,9 +245,9 @@ span.string {
 <body>
 <div class="header">
 <p><img class="title" src="pdfio-512.png"></p>
-<h1 class="title">PDFio Programming Manual v1.0rc1</h1>
+<h1 class="title">PDFio Programming Manual v1.0.1</h1>
 <p>Michael R Sweet</p>
-<p>Copyright © 2021 by Michael R Sweet</p>
+<p>Copyright © 2021-2022 by Michael R Sweet</p>
 </div>
 <div class="contents">
 <h2 class="title">Contents</h2>
@@ -425,6 +425,8 @@ span.string {
 <li><a href="#pdfioPageDictAddColorSpace">pdfioPageDictAddColorSpace</a></li>
 <li><a href="#pdfioPageDictAddFont">pdfioPageDictAddFont</a></li>
 <li><a href="#pdfioPageDictAddImage">pdfioPageDictAddImage</a></li>
+<li><a href="#pdfioPageGetNumStreams">pdfioPageGetNumStreams</a></li>
+<li><a href="#pdfioPageOpenStream">pdfioPageOpenStream</a></li>
 <li><a href="#pdfioStreamClose">pdfioStreamClose</a></li>
 <li><a href="#pdfioStreamConsume">pdfioStreamConsume</a></li>
 <li><a href="#pdfioStreamGetToken">pdfioStreamGetToken</a></li>
@@ -491,7 +493,7 @@ span.string {
 </li>
 </ul>
 <p>PDFio is <em>not</em> concerned with rendering or viewing a PDF file, although a PDF RIP or viewer could be written using it.</p>
-<p>PDFio is Copyright © 2021 by Michael R Sweet and is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GPL2/LGPL2 software. See the files &quot;LICENSE&quot; and &quot;NOTICE&quot; for more information.</p>
+<p>PDFio is Copyright © 2021-2022 by Michael R Sweet and is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GPL2/LGPL2 software. See the files &quot;LICENSE&quot; and &quot;NOTICE&quot; for more information.</p>
 <h3 class="title" id="requirements">Requirements</h3>
 <p>PDFio requires the following to build the software:</p>
 <ul>
@@ -557,7 +559,7 @@ make install-shared
 <pre><code>sudo xcodebuild install
 </code></pre>
 <p>You can reproduce this with the makefile using:</p>
-<pre><code>sudo make COMMONFLAGS=&quot;-Os -mmacosx-version-min=10.14 -arch x86_64 -arch arm64&quot; install
+<pre><code>sudo make macos install
 </code></pre>
 <h3 class="title" id="detecting-pdfio">Detecting PDFio</h3>
 <p>PDFio can be detected using the <code>pkg-config</code> command, for example:</p>
@@ -621,7 +623,7 @@ pdfio_obj_t  *page;  <span class="comment">// Current page</span>
   <span class="comment">// do something with page</span>
 }
 </code></pre>
-<p>Each page is represented by a &quot;page tree&quot; object (what <a href="#pdfioFileGetPage"><code>pdfioFileGetPage</code></a> returns) that specifies information about the page and one or more &quot;content&quot; objects that contain the images, fonts, text, and graphics that appear on the page.</p>
+<p>Each page is represented by a &quot;page tree&quot; object (what <a href="#pdfioFileGetPage"><code>pdfioFileGetPage</code></a> returns) that specifies information about the page and one or more &quot;content&quot; objects that contain the images, fonts, text, and graphics that appear on the page. Use the <a href="#pdfioPageGetNumStreams"><code>pdfioPageGetNumStreams</code></a> and <a href="#pdfioPageOpenStream"><code>pdfioPageOpenStream</code></a> functions to access the content streams for each page.</p>
 <p>The <a href="#pdfioFileClose"><code>pdfioFileClose</code></a> function closes a PDF file and frees all memory that was used for it:</p>
 <pre><code class="language-c">pdfioFileClose(pdf);
 </code></pre>
@@ -663,6 +665,11 @@ pdfio_obj_t *obj = pdfioFileFindObj(pdf, number);
 pdfio_stream_t *st = pdfioObjOpenStream(obj, <span class="reserved">true</span>);
 </code></pre>
 <p>The first argument is the object pointer. The second argument is a boolean value that specifies whether you want to decode (typically decompress) the stream data or return it as-is.</p>
+<p>When reading a page stream you'll use the <a href="#pdfioPageOpenStream"><code>pdfioPageOpenStream</code></a> function instead:</p>
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileOpen(...);
+pdfio_obj_t *obj = pdfioFileGetPage(pdf, number);
+pdfio_stream_t *st = pdfioPageOpenStream(obj, <span class="number">0</span>, <span class="reserved">true</span>);
+</code></pre>
 <p>Once you have the stream open, you can use one of several functions to read from it:</p>
 <ul>
 <li><p><a href="#pdfioStreamConsume"><code>pdfioStreamConsume</code></a> reads and discards a number of bytes in the stream</p>
@@ -679,10 +686,16 @@ pdfio_stream_t *st = pdfioObjOpenStream(obj, <span class="reserved">true</span>)
 </code></pre>
 <p>To create a stream for a new object, call the <a href="#pdfioObjCreateStream"><code>pdfioObjCreateStream</code></a> function:</p>
 <pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
-pdfio_obj_t *pdfioFileCreateObj(pdf, ...);
-pdfio_stream_t *pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE);
+pdfio_obj_t *obj = pdfioFileCreateObj(pdf, ...);
+pdfio_stream_t *st = pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE);
 </code></pre>
 <p>The first argument is the newly created object. The second argument is either <code>PDFIO_FILTER_NONE</code> to specify that any encoding is done by your program or <code>PDFIO_FILTER_FLATE</code> to specify that PDFio should Flate compress the stream.</p>
+<p>To create a page content stream call the <a href="#pdfioFileCreatePage"><code>pdfioFileCreatePage</code></a> function:</p>
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
+pdfio_dict_t *dict = pdfioDictCreate(pdf);
+... set page dictionary keys <span class="reserved">and</span> values ...
+pdfio_stream_t *st = pdfioFileCreatePage(pdf, dict);
+</code></pre>
 <p>Once you have created the stream, use any of the following functions to write to the stream:</p>
 <ul>
 <li><p><a href="#pdfioStreamPrintf"><code>pdfioStreamPrintf</code></a> writes a formatted string to the stream</p>
@@ -3264,6 +3277,32 @@ bool pdfioPageDictAddImage(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h3 class="function"><a id="pdfioPageGetNumStreams">pdfioPageGetNumStreams</a></h3>
+<p class="description">Get the number of content streams for a page object.</p>
+<p class="code">
+size_t pdfioPageGetNumStreams(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>page</th>
+<td class="description">Page object</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Number of streams</p>
+<h3 class="function"><a id="pdfioPageOpenStream">pdfioPageOpenStream</a></h3>
+<p class="description">Open a content stream for a page.</p>
+<p class="code">
+<a href="#pdfio_stream_t">pdfio_stream_t</a> *pdfioPageOpenStream(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, size_t n, bool decode);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>page</th>
+<td class="description">Page object</td></tr>
+<tr><th>n</th>
+<td class="description">Stream index (0-based)</td></tr>
+<tr><th>decode</th>
+<td class="description"><code>true</code> to decode/decompress stream</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Stream</p>
 <h3 class="function"><a id="pdfioStreamClose">pdfioStreamClose</a></h3>
 <p class="description">Close a (data) stream in a PDF file.</p>
 <p class="code">

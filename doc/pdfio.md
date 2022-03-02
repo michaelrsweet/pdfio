@@ -15,8 +15,8 @@ goals of pdfio are:
 PDFio is *not* concerned with rendering or viewing a PDF file, although a PDF
 RIP or viewer could be written using it.
 
-PDFio is Copyright © 2021 by Michael R Sweet and is licensed under the Apache
-License Version 2.0 with an (optional) exception to allow linking against
+PDFio is Copyright © 2021-2022 by Michael R Sweet and is licensed under the
+Apache License Version 2.0 with an (optional) exception to allow linking against
 GPL2/LGPL2 software.  See the files "LICENSE" and "NOTICE" for more information.
 
 
@@ -104,7 +104,7 @@ generates a static library that will be installed under "/usr/local" with:
 
 You can reproduce this with the makefile using:
 
-    sudo make COMMONFLAGS="-Os -mmacosx-version-min=10.14 -arch x86_64 -arch arm64" install
+    sudo make macos install
 
 
 Detecting PDFio
@@ -209,7 +209,8 @@ for (i = 0, count = pdfioFileGetNumPages(pdf); i < count; i ++)
 Each page is represented by a "page tree" object (what [`pdfioFileGetPage`](@@)
 returns) that specifies information about the page and one or more "content"
 objects that contain the images, fonts, text, and graphics that appear on the
-page.
+page.  Use the [`pdfioPageGetNumStreams`](@@) and [`pdfioPageOpenStream`](@@)
+functions to access the content streams for each page.
 
 The [`pdfioFileClose`](@@) function closes a PDF file and frees all memory that
 was used for it:
@@ -294,6 +295,15 @@ The first argument is the object pointer.  The second argument is a boolean
 value that specifies whether you want to decode (typically decompress) the
 stream data or return it as-is.
 
+When reading a page stream you'll use the [`pdfioPageOpenStream`](@@) function
+instead:
+
+```c
+pdfio_file_t *pdf = pdfioFileOpen(...);
+pdfio_obj_t *obj = pdfioFileGetPage(pdf, number);
+pdfio_stream_t *st = pdfioPageOpenStream(obj, 0, true);
+```
+
 Once you have the stream open, you can use one of several functions to read
 from it:
 
@@ -315,13 +325,22 @@ function:
 
 ```c
 pdfio_file_t *pdf = pdfioFileCreate(...);
-pdfio_obj_t *pdfioFileCreateObj(pdf, ...);
-pdfio_stream_t *pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE);
+pdfio_obj_t *obj = pdfioFileCreateObj(pdf, ...);
+pdfio_stream_t *st = pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE);
 ```
 
 The first argument is the newly created object.  The second argument is either
 `PDFIO_FILTER_NONE` to specify that any encoding is done by your program or
 `PDFIO_FILTER_FLATE` to specify that PDFio should Flate compress the stream.
+
+To create a page content stream call the [`pdfioFileCreatePage`](@@) function:
+
+```c
+pdfio_file_t *pdf = pdfioFileCreate(...);
+pdfio_dict_t *dict = pdfioDictCreate(pdf);
+... set page dictionary keys and values ...
+pdfio_stream_t *st = pdfioFileCreatePage(pdf, dict);
+```
 
 Once you have created the stream, use any of the following functions to write
 to the stream:
