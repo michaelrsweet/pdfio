@@ -2,8 +2,8 @@ Changes in PDFio
 ================
 
 
-v1.0.1 (Month DD, YYYY)
------------------------
+v1.0.1 (March 2, 2022)
+----------------------
 
 - Added missing `pdfioPageGetNumStreams` and `pdfioPageOpenStream` functions.
 - Added demo pdfiototext utility.
