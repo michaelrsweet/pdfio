@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<title>PDFio Programming Manual v1.0.1</title>
+<title>PDFio Programming Manual v1.1</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.7">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
 <meta name="copyright" content="Copyright © 2021-2022 by Michael R Sweet">
-<meta name="version" content="1.0.1">
+<meta name="version" content="1.1">
 <style type="text/css"><!--
 body {
   background: white;
@@ -245,7 +245,7 @@ span.string {
 <body>
 <div class="header">
 <p><img class="title" src="pdfio-512.png"></p>
-<h1 class="title">PDFio Programming Manual v1.0.1</h1>
+<h1 class="title">PDFio Programming Manual v1.1</h1>
 <p>Michael R Sweet</p>
 <p>Copyright © 2021-2022 by Michael R Sweet</p>
 </div>
@@ -383,6 +383,7 @@ span.string {
 <li><a href="#pdfioFileCreateObj">pdfioFileCreateObj</a></li>
 <li><a href="#pdfioFileCreateOutput">pdfioFileCreateOutput</a></li>
 <li><a href="#pdfioFileCreatePage">pdfioFileCreatePage</a></li>
+<li><a href="#pdfioFileCreateTemporary">pdfioFileCreateTemporary</a></li>
 <li><a href="#pdfioFileFindObj">pdfioFileFindObj</a></li>
 <li><a href="#pdfioFileGetAuthor">pdfioFileGetAuthor</a></li>
 <li><a href="#pdfioFileGetCreationDate">pdfioFileGetCreationDate</a></li>
@@ -2730,6 +2731,35 @@ stored as indirect object references.</blockquote>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Contents stream</p>
+<h3 class="function"><a id="pdfioFileCreateTemporary">pdfioFileCreateTemporary</a></h3>
+<p class="description"></p>
+<p class="code">
+<a href="#pdfio_file_t">pdfio_file_t</a> *pdfioFileCreateTemporary(char *buffer, size_t bufsize, const char *version, <a href="#pdfio_rect_t">pdfio_rect_t</a> *media_box, <a href="#pdfio_rect_t">pdfio_rect_t</a> *crop_box, <a href="#pdfio_error_cb_t">pdfio_error_cb_t</a> error_cb, void *error_data);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>buffer</th>
+<td class="description">Filename buffer</td></tr>
+<tr><th>bufsize</th>
+<td class="description">Size of filename buffer</td></tr>
+<tr><th>version</th>
+<td class="description">PDF version number or <code>NULL</code> for default (2.0)</td></tr>
+<tr><th>media_box</th>
+<td class="description">Default MediaBox for pages</td></tr>
+<tr><th>crop_box</th>
+<td class="description">Default CropBox for pages</td></tr>
+<tr><th>error_cb</th>
+<td class="description">Error callback or <code>NULL</code> for default</td></tr>
+<tr><th>error_data</th>
+<td class="description">Error callback data, if any</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Create a temporary PDF file.</p>
+<p class="discussion">This function creates a PDF file with a unique filename in the current
+temporary directory.  The temporary file is stored in the string &quot;buffer&quot; an
+will have a &quot;.pdf&quot; extension.  Otherwise, this function works the same as
+the <a href="#pdfioFileCreate"><code>pdfioFileCreate</code></a> function.
+
+</p>
 <h3 class="function"><a id="pdfioFileFindObj">pdfioFileFindObj</a></h3>
 <p class="description">Find an object using its object number.</p>
 <p class="code">

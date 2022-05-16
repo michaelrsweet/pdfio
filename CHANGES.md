@@ -2,6 +2,12 @@ Changes in PDFio
 ================
 
 
+v1.1.0 (Month DD, YYYY)
+-----------------------
+
+- Added `pdfioFileCreateTemporary` function (Issue #29)
+
+
 v1.0.1 (March 2, 2022)
 ----------------------
 

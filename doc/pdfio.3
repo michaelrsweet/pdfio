@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2022-03-02" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2022-05-15" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -2300,6 +2300,20 @@ Create a page in a PDF file.
 pdfio_stream_t * pdfioFileCreatePage (
     pdfio_file_t *pdf,
     pdfio_dict_t *dict
+);
+.fi
+.SS pdfioFileCreateTemporary
+
+.PP
+.nf
+pdfio_file_t * pdfioFileCreateTemporary (
+    char *buffer,
+    size_t bufsize,
+    const char *version,
+    pdfio_rect_t *media_box,
+    pdfio_rect_t *crop_box,
+    pdfio_error_cb_t error_cb,
+    void *error_data
 );
 .fi
 .SS pdfioFileFindObj

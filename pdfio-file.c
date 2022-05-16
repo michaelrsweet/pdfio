@@ -1,7 +1,7 @@
 //
 // PDF file functions for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2022 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -264,46 +264,26 @@ pdfioFileCreate(
 
   // Write a standard PDF header...
   if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
-  {
-    pdfioFileClose(pdf);
-    unlink(filename);
-    return (NULL);
-  }
+    goto error;
 
   // Create the pages object...
   if ((dict = pdfioDictCreate(pdf)) == NULL)
-  {
-    pdfioFileClose(pdf);
-    unlink(filename);
-    return (NULL);
-  }
+    goto error;
 
   pdfioDictSetName(dict, "Type", "Pages");
 
   if ((pdf->pages_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
-  {
-    pdfioFileClose(pdf);
-    unlink(filename);
-    return (NULL);
-  }
+    goto error;
 
   // Create the info object...
   if ((info_dict = pdfioDictCreate(pdf)) == NULL)
-  {
-    pdfioFileClose(pdf);
-    unlink(filename);
-    return (NULL);
-  }
+    goto error;
 
   pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
   pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
 
   if ((pdf->info_obj = pdfioFileCreateObj(pdf, info_dict)) == NULL)
-  {
-    pdfioFileClose(pdf);
-    unlink(filename);
-    return (NULL);
-  }
+    goto error;
 
   // Create random file ID values...
   _pdfioCryptoMakeRandom(id_value, sizeof(id_value));
@@ -315,6 +295,15 @@ pdfioFileCreate(
   }
 
   return (pdf);
+
+  // Common error handling code...
+  error:
+
+  pdfioFileClose(pdf);
+
+  unlink(filename);
+
+  return (NULL);
 }
 
 
@@ -535,41 +524,26 @@ pdfioFileCreateOutput(
 
   // Write a standard PDF header...
   if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
-  {
-    pdfioFileClose(pdf);
-    return (NULL);
-  }
+    goto error;
 
   // Create the pages object...
   if ((dict = pdfioDictCreate(pdf)) == NULL)
-  {
-    pdfioFileClose(pdf);
-    return (NULL);
-  }
+    goto error;
 
   pdfioDictSetName(dict, "Type", "Pages");
 
   if ((pdf->pages_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
-  {
-    pdfioFileClose(pdf);
-    return (NULL);
-  }
+    goto error;
 
   // Create the info object...
   if ((info_dict = pdfioDictCreate(pdf)) == NULL)
-  {
-    pdfioFileClose(pdf);
-    return (NULL);
-  }
+    goto error;
 
   pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
   pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
 
   if ((pdf->info_obj = pdfioFileCreateObj(pdf, info_dict)) == NULL)
-  {
-    pdfioFileClose(pdf);
-    return (NULL);
-  }
+    goto error;
 
   // Create random file ID values...
   _pdfioCryptoMakeRandom(id_value, sizeof(id_value));
@@ -581,6 +555,13 @@ pdfioFileCreateOutput(
   }
 
   return (pdf);
+
+  // Common error handling code...
+  error:
+
+  pdfioFileClose(pdf);
+
+  return (NULL);
 }
 
 
@@ -654,6 +635,194 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
 #else
   return (pdfioObjCreateStream(contents, PDFIO_FILTER_FLATE));
 #endif // DEBUG
+}
+
+
+//
+// 'pdfioFileCreateTemporary()' - Create a temporary PDF file.
+//
+// This function creates a PDF file with a unique filename in the current
+// temporary directory.  The temporary file is stored in the string "buffer" an
+// will have a ".pdf" extension.  Otherwise, this function works the same as
+// the @link pdfioFileCreate@ function.
+//
+// @since PDFio v1.1@
+//
+
+pdfio_file_t *
+pdfioFileCreateTemporary(
+    char             *buffer,		// I - Filename buffer
+    size_t           bufsize,		// I - Size of filename buffer
+    const char       *version,		// I - PDF version number or `NULL` for default (2.0)
+    pdfio_rect_t     *media_box,	// I - Default MediaBox for pages
+    pdfio_rect_t     *crop_box,		// I - Default CropBox for pages
+    pdfio_error_cb_t error_cb,		// I - Error callback or `NULL` for default
+    void             *error_data)	// I - Error callback data, if any
+{
+  pdfio_file_t	*pdf;			// PDF file
+  pdfio_dict_t	*dict;			// Dictionary for pages object
+  pdfio_dict_t	*info_dict;		// Dictionary for information object
+  unsigned char	id_value[16];		// File ID value
+  int		i;			// Looping var
+  const char	*tmpdir;		// Temporary directory
+#if _WIN32 || defined(__APPLE__)
+  char		tmppath[256];		// Temporary directory path
+#endif // _WIN32 || __APPLE__
+  unsigned	tmpnum;			// Temporary filename number
+
+
+  // Range check input...
+  if (!buffer || bufsize < 32)
+  {
+    if (buffer)
+      *buffer = '\0';
+    return (NULL);
+  }
+
+  if (!version)
+    version = "2.0";
+
+  if (!error_cb)
+  {
+    error_cb   = _pdfioFileDefaultError;
+    error_data = NULL;
+  }
+
+  // Allocate a PDF file structure...
+  if ((pdf = (pdfio_file_t *)calloc(1, sizeof(pdfio_file_t))) == NULL)
+  {
+    pdfio_file_t temp;			// Dummy file
+    char	message[8192];		// Message string
+
+    temp.filename = (char *)"temporary.pdf";
+    snprintf(message, sizeof(message), "Unable to allocate memory for PDF file - %s", strerror(errno));
+    (error_cb)(&temp, message, error_data);
+
+    *buffer = '\0';
+
+    return (NULL);
+  }
+
+  // Create the file...
+#if _WIN32
+  if ((tmpdir = getenv("TEMP")) == NULL)
+  {
+    GetTempPathA(sizeof(tmppath), tmppath);
+    tmpdir = tmppath;
+  }
+
+#elif defined(__APPLE__)
+  if ((tmpdir = getenv("TMPDIR")) != NULL && access(tmpdir, W_OK))
+    tmpdir = NULL;
+
+  if (!tmpdir)
+  {
+    // Grab the per-process temporary directory for sandboxed apps...
+#  ifdef _CS_DARWIN_USER_TEMP_DIR
+    if (confstr(_CS_DARWIN_USER_TEMP_DIR, tmppath, sizeof(tmppath)))
+      tmpdir = tmppath;
+    else
+#  endif // _CS_DARWIN_USER_TEMP_DIR
+      tmpdir = "/private/tmp";
+  }
+
+#else
+  if ((tmpdir = getenv("TMPDIR")) == NULL || access(tmpdir, W_OK))
+    tmpdir = "/tmp";
+#endif // _WIN32
+
+  for (i = 0; i < 1000; i ++)
+  {
+    _pdfioCryptoMakeRandom((uint8_t *)&tmpnum, sizeof(tmpnum));
+    snprintf(buffer, bufsize, "%s/%08x.pdf", tmpdir, tmpnum);
+    if ((pdf->fd = open(buffer, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC | O_EXCL, 0666)) >= 0)
+      break;
+  }
+
+  pdf->filename = strdup(buffer);
+
+  if (i >= 1000)
+  {
+    _pdfioFileError(pdf, "Unable to create file - %s", strerror(errno));
+    free(pdf->filename);
+    free(pdf);
+    *buffer = '\0';
+    return (NULL);
+  }
+
+  pdf->version     = strdup(version);
+  pdf->mode        = _PDFIO_MODE_WRITE;
+  pdf->error_cb    = error_cb;
+  pdf->error_data  = error_data;
+  pdf->permissions = PDFIO_PERMISSION_ALL;
+  pdf->bufptr      = pdf->buffer;
+  pdf->bufend      = pdf->buffer + sizeof(pdf->buffer);
+
+  if (media_box)
+  {
+    pdf->media_box = *media_box;
+  }
+  else
+  {
+    // Default to "universal" size (intersection of A4 and US Letter)
+    pdf->media_box.x2 = 210.0 * 72.0f / 25.4f;
+    pdf->media_box.y2 = 11.0f * 72.0f;
+  }
+
+  if (crop_box)
+  {
+    pdf->crop_box = *crop_box;
+  }
+  else
+  {
+    // Default to "universal" size (intersection of A4 and US Letter)
+    pdf->crop_box.x2 = 210.0 * 72.0f / 25.4f;
+    pdf->crop_box.y2 = 11.0f * 72.0f;
+  }
+
+  // Write a standard PDF header...
+  if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
+    goto error;
+
+  // Create the pages object...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+    goto error;
+
+  pdfioDictSetName(dict, "Type", "Pages");
+
+  if ((pdf->pages_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+    goto error;
+
+  // Create the info object...
+  if ((info_dict = pdfioDictCreate(pdf)) == NULL)
+    goto error;
+
+  pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
+  pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
+
+  if ((pdf->info_obj = pdfioFileCreateObj(pdf, info_dict)) == NULL)
+    goto error;
+
+  // Create random file ID values...
+  _pdfioCryptoMakeRandom(id_value, sizeof(id_value));
+
+  if ((pdf->id_array = pdfioArrayCreate(pdf)) != NULL)
+  {
+    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
+    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
+  }
+
+  return (pdf);
+
+  // Common error handling code...
+  error:
+
+  pdfioFileClose(pdf);
+
+  unlink(buffer);
+  *buffer = '\0';
+
+  return (NULL);
 }
 
 

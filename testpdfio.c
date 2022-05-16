@@ -506,6 +506,7 @@ do_unit_tests(void)
   _pdfio_value_t	value;		// Value
   size_t		first_image,	// First image object
 			num_pages;	// Number of pages written
+  char			temppdf[1024];	// Temporary PDF file
   static const char	*complex_dict =	// Complex dictionary value
     "<</Annots 5457 0 R/Contents 5469 0 R/CropBox[0 0 595.4 842]/Group 725 0 R"
     "/MediaBox[0 0 595.4 842]/Parent 23513 0 R/Resources<</ColorSpace<<"
@@ -1105,6 +1106,18 @@ do_unit_tests(void)
     return (1);
 
   if (read_unit_file("testpdfio-aesp.pdf", num_pages, first_image, false))
+    return (1);
+
+  fputs("pdfioFileCreateTemporary: ", stdout);
+  if ((outpdf = pdfioFileCreateTemporary(temppdf, sizeof(temppdf), NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+    printf("PASS (%s)\n", temppdf);
+  else
+    return (1);
+
+  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+    return (1);
+
+  if (read_unit_file(temppdf, num_pages, first_image, false))
     return (1);
 
   pdfioFileClose(inpdf);
