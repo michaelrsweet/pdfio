@@ -177,6 +177,7 @@ pdfioFileCreateImageObjFromFile
 pdfioFileCreateObj
 pdfioFileCreateOutput
 pdfioFileCreatePage
+pdfioFileCreateTemporary
 pdfioFileFindObj
 pdfioFileGetAuthor
 pdfioFileGetCreationDate
