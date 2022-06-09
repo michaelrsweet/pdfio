@@ -120,7 +120,7 @@ install:	$(TARGETS)
 install-shared:
 	if test `uname` = Darwin; then \
 		$(MAKE) DSONAME="libpdfio.1.dylib" -$(MAKEFLAGS) install; \
-	else
+	else \
 		$(MAKE) DSONAME="libpdfio.so.1" -$(MAKEFLAGS) install; \
 	fi
 
