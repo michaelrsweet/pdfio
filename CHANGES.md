@@ -6,6 +6,7 @@ v1.1.0 (Month DD, YYYY)
 -----------------------
 
 - Added `pdfioFileCreateTemporary` function (Issue #29)
+- Added `pdfioDictIterateKeys` function (Issue #31)
 
 
 v1.0.1 (March 2, 2022)

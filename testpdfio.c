@@ -34,6 +34,7 @@ static int	do_test_file(const char *filename, int objnum, bool verbose);
 static int	do_unit_tests(void);
 static int	draw_image(pdfio_stream_t *st, const char *name, double x, double y, double w, double h, const char *label);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
+static bool	iterate_cb(pdfio_dict_t *dict, const char *key, void *cb_data);
 static ssize_t	output_cb(int *fd, const void *buffer, size_t bytes);
 static const char *password_cb(void *data, const char *filename);
 static int	read_unit_file(const char *filename, size_t num_pages, size_t first_image, bool is_output);
@@ -507,6 +508,8 @@ do_unit_tests(void)
   size_t		first_image,	// First image object
 			num_pages;	// Number of pages written
   char			temppdf[1024];	// Temporary PDF file
+  pdfio_dict_t		*dict;		// Test dictionary
+  int			count = 0;	// Number of key/value pairs
   static const char	*complex_dict =	// Complex dictionary value
     "<</Annots 5457 0 R/Contents 5469 0 R/CropBox[0 0 595.4 842]/Group 725 0 R"
     "/MediaBox[0 0 595.4 842]/Parent 23513 0 R/Resources<</ColorSpace<<"
@@ -968,6 +971,41 @@ do_unit_tests(void)
 
   // TODO: Test for known values in this test file.
 
+  // Test dictionary APIs
+  fputs("pdfioDictCreate: ", stdout);
+  if ((dict = pdfioDictCreate(inpdf)) != NULL)
+  {
+    puts("PASS");
+
+    fputs("pdfioDictSet*: ", stdout);
+    if (pdfioDictSetBoolean(dict, "Boolean", true) && pdfioDictSetName(dict, "Name", "Name") && pdfioDictSetNumber(dict, "Number", 42.0) && pdfioDictSetString(dict, "String", "String"))
+    {
+      puts("PASS");
+    }
+    else
+    {
+      puts("FAIL");
+      return (1);
+    }
+
+    fputs("pdfioDictIterateKeys: ", stdout);
+    pdfioDictIterateKeys(dict, iterate_cb, &count);
+    if (count == 4)
+    {
+      puts("PASS");
+    }
+    else
+    {
+      printf("FAIL (got %d, expected 4)\n", count);
+      return (1);
+    }
+  }
+  else
+  {
+    puts("FAIL");
+    return (1);
+  }
+
   // Test the value parsers for edge cases...
   fputs("_pdfioValueRead(complex_dict): ", stdout);
   s = complex_dict;
@@ -1209,6 +1247,27 @@ error_cb(pdfio_file_t *pdf,		// I  - PDF file
 
   // Continue to catch more errors...
   return (false);
+}
+
+
+//
+// 'iterate_cb()' - Test pdfioDictIterateKeys function.
+//
+
+static bool				// O - `true` to continue, `false` to stop
+iterate_cb(pdfio_dict_t *dict,		// I - Dictionary
+           const char   *key,		// I - Key
+           void         *cb_data)	// I - Callback data
+{
+  int	*count = (int *)cb_data;	// Pointer to counter
+
+
+  if (!dict || !key || !cb_data)
+    return (false);
+
+  (*count)++;
+
+  return (true);
 }
 
 

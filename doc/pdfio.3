@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2022-05-15" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2022-06-27" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -1950,6 +1950,31 @@ pdfio_valtype_t  pdfioDictGetType (
     const char *key
 );
 .fi
+.SS pdfioDictIterateKeys
+Iterate the keys in a dictionary.
+.PP
+.nf
+void pdfioDictIterateKeys (
+    pdfio_dict_t *dict,
+    pdfio_dict_cb_t cb,
+    void *cb_data
+);
+.fi
+.PP
+This function iterates the keys in a dictionary, calling the supplied
+function "cb":
+.PP
+.nf
+    bool
+    my_dict_cb(pdfio_dict_t *dict, const char *key, void *cb_data)
+    {
+    ... "key" contains the dictionary key ...
+    ... return true to continue or false to stop ...
+    }
+
+.fi
+The iteration continues as long as the callback returns \fBtrue\fR or all keys
+have been iterated.
 .SS pdfioDictSetArray
 Set a key array in a dictionary.
 .PP
@@ -2888,6 +2913,12 @@ Standard color spaces
 .PP
 .nf
 typedef enum pdfio_cs_e pdfio_cs_t;
+.fi
+.SS pdfio_dict_cb_t
+Dictionary iterator callback
+.PP
+.nf
+typedef bool(*)(pdfio_dict_t *dict, const char *key, void *cb_data) pdfio_dict_cb_t;
 .fi
 .SS pdfio_dict_t
 Key/value dictionary

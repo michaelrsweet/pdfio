@@ -55,6 +55,8 @@ typedef struct _pdfio_array_s pdfio_array_t;
 					// Array of PDF values
 typedef struct _pdfio_dict_s pdfio_dict_t;
 					// Key/value dictionary
+typedef bool (*pdfio_dict_cb_t)(pdfio_dict_t *dict, const char *key, void *cb_data);
+					// Dictionary iterator callback
 typedef struct _pdfio_file_s pdfio_file_t;
 					// PDF file
 typedef bool (*pdfio_error_cb_t)(pdfio_file_t *pdf, const char *message, void *data);
@@ -165,6 +167,7 @@ extern pdfio_obj_t	*pdfioDictGetObj(pdfio_dict_t *dict, const char *key) _PDFIO_
 extern pdfio_rect_t	*pdfioDictGetRect(pdfio_dict_t *dict, const char *key, pdfio_rect_t *rect) _PDFIO_PUBLIC;
 extern const char	*pdfioDictGetString(pdfio_dict_t *dict, const char *key) _PDFIO_PUBLIC;
 extern pdfio_valtype_t	pdfioDictGetType(pdfio_dict_t *dict, const char *key) _PDFIO_PUBLIC;
+extern void		pdfioDictIterateKeys(pdfio_dict_t *dict, pdfio_dict_cb_t cb, void *cb_data) _PDFIO_PUBLIC;
 extern bool		pdfioDictSetArray(pdfio_dict_t *dict, const char *key, pdfio_array_t *value) _PDFIO_PUBLIC;
 extern bool		pdfioDictSetBinary(pdfio_dict_t *dict, const char *key, const unsigned char *value, size_t valuelen) _PDFIO_PUBLIC;
 extern bool		pdfioDictSetBoolean(pdfio_dict_t *dict, const char *key, bool value) _PDFIO_PUBLIC;

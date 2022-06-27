@@ -360,6 +360,7 @@ span.string {
 <li><a href="#pdfioDictGetRect">pdfioDictGetRect</a></li>
 <li><a href="#pdfioDictGetString">pdfioDictGetString</a></li>
 <li><a href="#pdfioDictGetType">pdfioDictGetType</a></li>
+<li><a href="#pdfioDictIterateKeys">pdfioDictIterateKeys</a></li>
 <li><a href="#pdfioDictSetArray">pdfioDictSetArray</a></li>
 <li><a href="#pdfioDictSetBinary">pdfioDictSetBinary</a></li>
 <li><a href="#pdfioDictSetBoolean">pdfioDictSetBoolean</a></li>
@@ -443,6 +444,7 @@ span.string {
 <li><a href="#TYPES">Data Types</a><ul class="subcontents">
 <li><a href="#pdfio_array_t">pdfio_array_t</a></li>
 <li><a href="#pdfio_cs_t">pdfio_cs_t</a></li>
+<li><a href="#pdfio_dict_cb_t">pdfio_dict_cb_t</a></li>
 <li><a href="#pdfio_dict_t">pdfio_dict_t</a></li>
 <li><a href="#pdfio_encryption_t">pdfio_encryption_t</a></li>
 <li><a href="#pdfio_error_cb_t">pdfio_error_cb_t</a></li>
@@ -2262,6 +2264,33 @@ const char *pdfioDictGetString(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, c
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Value type</p>
+<h3 class="function"><a id="pdfioDictIterateKeys">pdfioDictIterateKeys</a></h3>
+<p class="description">Iterate the keys in a dictionary.</p>
+<p class="code">
+void pdfioDictIterateKeys(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, <a href="#pdfio_dict_cb_t">pdfio_dict_cb_t</a> cb, void *cb_data);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>dict</th>
+<td class="description">Dictionary</td></tr>
+<tr><th>cb</th>
+<td class="description">Callback function</td></tr>
+<tr><th>cb_data</th>
+<td class="description">Callback data</td></tr>
+</tbody></table>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function iterates the keys in a dictionary, calling the supplied
+function &quot;cb&quot;:
+
+<pre>
+bool
+my_dict_cb(pdfio_dict_t *dict, const char *key, void *cb_data)
+{
+... &quot;key&quot; contains the dictionary key ...
+... return true to continue or false to stop ...
+}
+</pre>
+The iteration continues as long as the callback returns <code>true</code> or all keys
+have been iterated.</p>
 <h3 class="function"><a id="pdfioDictSetArray">pdfioDictSetArray</a></h3>
 <p class="description">Set a key array in a dictionary.</p>
 <p class="code">
@@ -3513,6 +3542,11 @@ typedef struct _pdfio_array_s pdfio_array_t;
 <p class="description">Standard color spaces</p>
 <p class="code">
 typedef enum <a href="#pdfio_cs_e">pdfio_cs_e</a> pdfio_cs_t;
+</p>
+<h3 class="typedef"><a id="pdfio_dict_cb_t">pdfio_dict_cb_t</a></h3>
+<p class="description">Dictionary iterator callback</p>
+<p class="code">
+typedef bool (*pdfio_dict_cb_t)(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, const char *key, void *cb_data);
 </p>
 <h3 class="typedef"><a id="pdfio_dict_t">pdfio_dict_t</a></h3>
 <p class="description">Key/value dictionary</p>

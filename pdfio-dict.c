@@ -465,6 +465,47 @@ _pdfioDictGetValue(pdfio_dict_t *dict,	// I - Dictionary
 
 
 //
+// 'pdfioDictIterateKeys()' - Iterate the keys in a dictionary.
+//
+// This function iterates the keys in a dictionary, calling the supplied
+// function "cb":
+//
+// ```
+// bool
+// my_dict_cb(pdfio_dict_t *dict, const char *key, void *cb_data)
+// {
+// ... "key" contains the dictionary key ...
+// ... return true to continue or false to stop ...
+// }
+// ```
+//
+// The iteration continues as long as the callback returns `true` or all keys
+// have been iterated.
+//
+
+void
+pdfioDictIterateKeys(
+    pdfio_dict_t    *dict,		// I - Dictionary
+    pdfio_dict_cb_t cb,			// I - Callback function
+    void            *cb_data)		// I - Callback data
+{
+  size_t	i;			// Looping var
+  _pdfio_pair_t	*pair;			// Current pair
+
+
+  // Range check input...
+  if (!dict || !cb)
+    return;
+
+  for (i = dict->num_pairs, pair = dict->pairs; i > 0; i --, pair ++)
+  {
+    if (!(cb)(dict, pair->key, cb_data))
+      break;
+  }
+}
+
+
+//
 // '_pdfioDictRead()' - Read a dictionary from a PDF file.
 //
 // At this point we've seen the initial "<<"...
