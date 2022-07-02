@@ -8,6 +8,7 @@ v1.1.0 (Month DD, YYYY)
 - Added `pdfioFileCreateTemporary` function (Issue #29)
 - Added `pdfioDictIterateKeys` function (Issue #31)
 - Fixed "install-shared" target (Issue #32)
+- Fixed `pdfioContentMatrixRotate` function.
 
 
 v1.0.1 (March 2, 2022)

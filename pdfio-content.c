@@ -489,8 +489,11 @@ pdfioContentMatrixRotate(
     pdfio_stream_t *st,			// I - Stream
     double         degrees)		// I - Rotation angle in degrees counter-clockwise
 {
-  double dcos = cos(degrees / M_PI);	// Cosine
-  double dsin = sin(degrees / M_PI);	// Sine
+  double dcos = cos(M_PI * degrees / 180.0);
+					// Cosine
+  double dsin = sin(M_PI * degrees / 180.0);
+					// Sine
+
 
   return (pdfioStreamPrintf(st, "%g %g %g %g 0 0 cm\n", dcos, -dsin, dsin, dcos));
 }
