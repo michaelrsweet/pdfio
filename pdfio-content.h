@@ -91,6 +91,7 @@ extern bool		pdfioContentPathClose(pdfio_stream_t *st) _PDFIO_PUBLIC;
 extern bool		pdfioContentPathCurve(pdfio_stream_t *st, double x1, double y1, double x2, double y2, double x3, double y3) _PDFIO_PUBLIC;
 extern bool		pdfioContentPathCurve13(pdfio_stream_t *st, double x1, double y1, double x3, double y3) _PDFIO_PUBLIC;
 extern bool		pdfioContentPathCurve23(pdfio_stream_t *st, double x2, double y2, double x3, double y3) _PDFIO_PUBLIC;
+extern bool		pdfioContentPathEnd(pdfio_stream_t *st) _PDFIO_PUBLIC;
 extern bool		pdfioContentPathLineTo(pdfio_stream_t *st, double x, double y) _PDFIO_PUBLIC;
 extern bool		pdfioContentPathMoveTo(pdfio_stream_t *st, double x, double y) _PDFIO_PUBLIC;
 extern bool		pdfioContentPathRect(pdfio_stream_t *st, double x, double y, double width, double height) _PDFIO_PUBLIC;

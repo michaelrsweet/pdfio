@@ -590,6 +590,17 @@ pdfioContentPathCurve23(
 
 
 //
+// 'pdfioContentPathEnd()' - Clear the current path.
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioContentPathEnd(pdfio_stream_t *st)	// I - Stream
+{
+  return (pdfioStreamPuts(st, "n\n"));
+}
+
+
+//
 // 'pdfioContentPathLineTo()' - Add a straight line to the current path.
 //
 
