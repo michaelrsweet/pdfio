@@ -307,6 +307,7 @@ span.string {
 <li><a href="#pdfioContentPathCurve">pdfioContentPathCurve</a></li>
 <li><a href="#pdfioContentPathCurve13">pdfioContentPathCurve13</a></li>
 <li><a href="#pdfioContentPathCurve23">pdfioContentPathCurve23</a></li>
+<li><a href="#pdfioContentPathEnd">pdfioContentPathEnd</a></li>
 <li><a href="#pdfioContentPathLineTo">pdfioContentPathLineTo</a></li>
 <li><a href="#pdfioContentPathMoveTo">pdfioContentPathMoveTo</a></li>
 <li><a href="#pdfioContentPathRect">pdfioContentPathRect</a></li>
@@ -1511,6 +1512,17 @@ bool pdfioContentPathCurve23(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, d
 <td class="description">X position 3</td></tr>
 <tr><th>y3</th>
 <td class="description">Y position 3</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h3 class="function"><a id="pdfioContentPathEnd">pdfioContentPathEnd</a></h3>
+<p class="description">Clear the current path.</p>
+<p class="code">
+bool pdfioContentPathEnd(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>st</th>
+<td class="description">Stream</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>

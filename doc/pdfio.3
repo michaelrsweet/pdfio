@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2022-06-27" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2022-07-03" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -1438,6 +1438,14 @@ bool  pdfioContentPathCurve23 (
     double y2,
     double x3,
     double y3
+);
+.fi
+.SS pdfioContentPathEnd
+Clear the current path.
+.PP
+.nf
+bool  pdfioContentPathEnd (
+    pdfio_stream_t *st
 );
 .fi
 .SS pdfioContentPathLineTo
