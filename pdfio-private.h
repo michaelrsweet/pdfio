@@ -1,7 +1,7 @@
 //
 // Private header file for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2022 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -289,7 +289,8 @@ struct _pdfio_file_s			// PDF file structure
   pdfio_dict_t	**dicts;		// Dictionaries
   size_t	num_objs,		// Number of objects
 		alloc_objs;		// Allocated objects
-  pdfio_obj_t	**objs;			// Objects
+  pdfio_obj_t	**objs,			// Objects
+		*current_obj;		// Current object being written/read
   size_t	num_objmaps,		// Number of object maps
 		alloc_objmaps;		// Allocated object maps
   _pdfio_objmap_t *objmaps;		// Object maps

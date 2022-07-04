@@ -1,7 +1,7 @@
 //
 // PDF object functions for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2022 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -33,8 +33,14 @@ pdfioObjClose(pdfio_obj_t *obj)		// I - Object
   if (!obj)
     return (false);
 
+  // Clear the current object pointer...
+  obj->pdf->current_obj = NULL;
+
   if (obj->pdf->mode != _PDFIO_MODE_WRITE)
-    return (true);			// Nothing to do when reading
+  {
+    // Nothing to do when reading
+    return (true);
+  }
 
   // Write what remains for the object...
   if (!obj->offset)
@@ -165,6 +171,12 @@ pdfioObjCreateStream(
     return (NULL);
   }
 
+  if (obj->pdf->current_obj)
+  {
+    _pdfioFileError(obj->pdf, "Another object (%u) is already open.", (unsigned)obj->pdf->current_obj->number);
+    return (NULL);
+  }
+
   // Write the header...
   if (!_pdfioDictGetValue(obj->value.value.dict, "Length"))
   {
@@ -193,7 +205,8 @@ pdfioObjCreateStream(
   if (!_pdfioFilePuts(obj->pdf, "stream\n"))
     return (NULL);
 
-  obj->stream_offset = _pdfioFileTell(obj->pdf);
+  obj->stream_offset    = _pdfioFileTell(obj->pdf);
+  obj->pdf->current_obj = obj;
 
   // Return the new stream...
   return (_pdfioStreamCreate(obj, length_obj, filter));
@@ -454,6 +467,12 @@ pdfioObjOpenStream(pdfio_obj_t *obj,	// I - Object
   if (!obj)
     return (NULL);
 
+  if (obj->pdf->current_obj)
+  {
+    _pdfioFileError(obj->pdf, "Another object (%u) is already open.", (unsigned)obj->pdf->current_obj->number);
+    return (NULL);
+  }
+
   // Make sure we've loaded the object dictionary...
   if (!obj->value.type)
   {
@@ -466,6 +485,8 @@ pdfioObjOpenStream(pdfio_obj_t *obj,	// I - Object
     return (NULL);
 
   // Open the stream...
+  obj->pdf->current_obj = obj;
+
   return (_pdfioStreamOpen(obj, decode));
 }
 

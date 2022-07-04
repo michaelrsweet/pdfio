@@ -3239,13 +3239,13 @@ write_unit_file(
   // Create some image objects...
   fputs("pdfioFileCreateImageObjFromFile(\"testfiles/color.jpg\"): ", stdout);
   if ((color_jpg = pdfioFileCreateImageObjFromFile(outpdf, "testfiles/color.jpg", true)) != NULL)
-    puts("PASS");
+    printf("PASS (%u)\n", (unsigned)pdfioObjGetNumber(color_jpg));
   else
     return (1);
 
   fputs("pdfioFileCreateImageObjFromFile(\"testfiles/gray.jpg\"): ", stdout);
   if ((gray_jpg = pdfioFileCreateImageObjFromFile(outpdf, "testfiles/gray.jpg", true)) != NULL)
-    puts("PASS");
+    printf("PASS (%u)\n", (unsigned)pdfioObjGetNumber(gray_jpg));
   else
     return (1);
 

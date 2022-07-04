@@ -174,6 +174,8 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 
   done:
 
+  st->pdf->current_obj = NULL;
+
   free(st->prbuffer);
   free(st->psbuffer);
   free(st);

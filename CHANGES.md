@@ -8,6 +8,8 @@ v1.1.0 (Month DD, YYYY)
 - Added `pdfioFileCreateTemporary` function (Issue #29)
 - Added `pdfioDictIterateKeys` function (Issue #31)
 - Added `pdfioContentPathEnd` function.
+- Added protection against opening multiple streams in the same file at the
+  same time.
 - Fixed "install-shared" target (Issue #32)
 - Fixed `pdfioContentMatrixRotate` function.
 
