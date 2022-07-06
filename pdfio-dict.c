@@ -1,7 +1,7 @@
 //
 // PDF dictionary functions for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2022 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -748,7 +748,7 @@ pdfioDictSetNull(pdfio_dict_t *dict,	// I - Dictionary
 bool					// O - `true` on success, `false` on failure
 pdfioDictSetNumber(pdfio_dict_t  *dict,	// I - Dictionary
                    const char    *key,	// I - Key
-                   double         value)	// I - Value
+                   double        value)	// I - Value
 {
   _pdfio_value_t temp;			// New value
 
