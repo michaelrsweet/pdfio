@@ -101,6 +101,7 @@ pdfioContentPathClose
 pdfioContentPathCurve
 pdfioContentPathCurve13
 pdfioContentPathCurve23
+pdfioContentPathEnd
 pdfioContentPathLineTo
 pdfioContentPathMoveTo
 pdfioContentPathRect
