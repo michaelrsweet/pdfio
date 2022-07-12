@@ -24,6 +24,7 @@
 static pdfio_obj_t	*add_obj(pdfio_file_t *pdf, size_t number, unsigned short generation, off_t offset);
 static int		compare_objmaps(_pdfio_objmap_t *a, _pdfio_objmap_t *b);
 static int		compare_objs(pdfio_obj_t **a, pdfio_obj_t **b);
+static const char	*get_info_string(pdfio_file_t *pdf, const char *key);
 static bool		load_obj_stream(pdfio_obj_t *obj);
 static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj, size_t depth);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset, pdfio_password_cb_t password_cb, void *password_data);
@@ -892,7 +893,7 @@ pdfioFileFindObj(
 const char *				// O - Author or `NULL` for none
 pdfioFileGetAuthor(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Author") : NULL);
+  return (get_info_string(pdf, "Author"));
 }
 
 
@@ -904,7 +905,7 @@ time_t					// O - Creation date or `0` for none
 pdfioFileGetCreationDate(
     pdfio_file_t *pdf)			// I - PDF file
 {
-  return (pdf && pdf->info_obj ? pdfioDictGetDate(pdf->info_obj->value.value.dict, "CreationDate") : 0);
+  return (pdf && pdf->info_obj ? pdfioDictGetDate(pdfioObjGetDict(pdf->info_obj), "CreationDate") : 0);
 }
 
 
@@ -915,7 +916,7 @@ pdfioFileGetCreationDate(
 const char *				// O - Creator string or `NULL` for none
 pdfioFileGetCreator(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Creator") : NULL);
+  return (get_info_string(pdf, "Creator"));
 }
 
 
@@ -937,7 +938,7 @@ pdfioFileGetID(pdfio_file_t *pdf)	// I - PDF file
 const char *				// O - Keywords string or `NULL` for none
 pdfioFileGetKeywords(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Keywords") : NULL);
+  return (get_info_string(pdf, "Keywords"));
 }
 
 
@@ -1041,7 +1042,7 @@ pdfioFileGetPermissions(
 const char *				// O - Producer string or `NULL` for none
 pdfioFileGetProducer(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Producer") : NULL);
+  return (get_info_string(pdf, "Producer"));
 }
 
 
@@ -1052,7 +1053,7 @@ pdfioFileGetProducer(pdfio_file_t *pdf)	// I - PDF file
 const char *				// O - Subject or `NULL` for none
 pdfioFileGetSubject(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Subject") : NULL);
+  return (get_info_string(pdf, "Subject"));
 }
 
 
@@ -1063,7 +1064,7 @@ pdfioFileGetSubject(pdfio_file_t *pdf)	// I - PDF file
 const char *				// O - Title or `NULL` for none
 pdfioFileGetTitle(pdfio_file_t *pdf)	// I - PDF file
 {
-  return (pdf && pdf->info_obj ? pdfioDictGetString(pdf->info_obj->value.value.dict, "Title") : NULL);
+  return (get_info_string(pdf, "Title"));
 }
 
 
@@ -1403,6 +1404,51 @@ compare_objs(pdfio_obj_t **a,		// I - First object
     return (0);
   else
     return (1);
+}
+
+
+//
+// 'get_info_string()' - Get a string value from the Info dictionary.
+//
+// This function also handles converting binary strings to C strings, which
+// occur in encrypted PDF files.
+//
+
+static const char *			// O - String or `NULL` if not found
+get_info_string(pdfio_file_t *pdf,	// I - PDF file
+                const char   *key)	// I - Dictionary key
+{
+  pdfio_dict_t	*dict;			// Info dictionary
+  _pdfio_value_t *value;		// Value
+
+  // Range check input...
+  if (!pdf || !pdf->info_obj || (dict = pdfioObjGetDict(pdf->info_obj)) == NULL || (value = _pdfioDictGetValue(dict, key)) == NULL)
+    return (NULL);
+
+  // If we already have a value, return it...
+  if (value->type == PDFIO_VALTYPE_NAME || value->type == PDFIO_VALTYPE_STRING)
+  {
+    return (value->value.string);
+  }
+  else if (value->type == PDFIO_VALTYPE_BINARY && value->value.binary.datalen < 4096)
+  {
+    // Convert binary string to regular string...
+    char	temp[4096];		// Temporary string
+
+    memcpy(temp, value->value.binary.data, value->value.binary.datalen);
+    temp[value->value.binary.datalen] = '\0';
+
+    free(value->value.binary.data);
+    value->type         = PDFIO_VALTYPE_STRING;
+    value->value.string = pdfioStringCreate(pdf, temp);
+
+    return (value->value.string);
+  }
+  else
+  {
+    // Something else that is not a string...
+    return (NULL);
+  }
 }
 
 

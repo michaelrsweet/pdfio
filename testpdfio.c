@@ -1310,6 +1310,7 @@ read_unit_file(const char *filename,	// I - File to read
 {
   pdfio_file_t	*pdf;			// PDF file
   size_t	i;			// Looping var
+  const char	*s;			// String
   bool		error = false;		// Error callback data
 
 
@@ -1319,6 +1320,87 @@ read_unit_file(const char *filename,	// I - File to read
     puts("PASS");
   else
     return (1);
+
+  // Verify metadata...
+  fputs("pdfioFileGetAuthor: ", stdout);
+  if ((s = pdfioFileGetAuthor(pdf)) != NULL && !strcmp(s, "Michael R Sweet"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'Michael R Sweet')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'Michael R Sweet')");
+    return (1);
+  }
+
+  fputs("pdfioFileGetCreator: ", stdout);
+  if ((s = pdfioFileGetCreator(pdf)) != NULL && !strcmp(s, "testpdfio"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'testpdfio')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'testpdfio')");
+    return (1);
+  }
+
+  fputs("pdfioFileGetKeywords: ", stdout);
+  if ((s = pdfioFileGetKeywords(pdf)) != NULL && !strcmp(s, "one fish,two fish,red fish,blue fish"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'one fish,two fish,red fish,blue fish')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'one fish,two fish,red fish,blue fish')");
+    return (1);
+  }
+
+  fputs("pdfioFileGetSubject: ", stdout);
+  if ((s = pdfioFileGetSubject(pdf)) != NULL && !strcmp(s, "Unit test document"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'Unit test document')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'Unit test document')");
+    return (1);
+  }
+
+  fputs("pdfioFileGetTitle: ", stdout);
+  if ((s = pdfioFileGetTitle(pdf)) != NULL && !strcmp(s, "Test Document"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'Test Document')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'Test Document')");
+    return (1);
+  }
 
   // Verify the number of pages is the same...
   fputs("pdfioFileGetNumPages: ", stdout);

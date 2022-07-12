@@ -11,6 +11,7 @@ v1.1.0 (Month DD, YYYY)
 - Added protection against opening multiple streams in the same file at the
   same time.
 - Fixed "install-shared" target (Issue #32)
+- Fixed `pdfioFileGet...` metadata APIs (Issue #33)
 - Fixed `pdfioContentMatrixRotate` function.
 
 

@@ -219,7 +219,6 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 
 
   PDFIO_DEBUG("_pdfioValueRead(pdf=%p, obj=%p, v=%p)\n", pdf, obj, v);
-  (void)obj; // TODO: Implement decryption
 
   if (!_pdfioTokenGet(tb, token, sizeof(token)))
     return (NULL);
@@ -284,6 +283,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 	}
       }
     }
+
     if (token[i])
     {
       // Just a string...
@@ -366,6 +366,33 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
       }
 
       *dataptr++ = (unsigned char)d;
+    }
+
+    if (obj && pdf->encryption)
+    {
+      // Decrypt the string...
+      _pdfio_crypto_ctx_t ctx;		// Decryption context
+      _pdfio_crypto_cb_t cb;		// Decryption callback
+      size_t	ivlen;			// Number of initialization vector bytes
+      uint8_t	temp[32768];		// Temporary buffer for decryption
+      size_t	templen;		// Number of actual data bytes
+
+      if (v->value.binary.datalen > (sizeof(temp) - 32))
+      {
+	_pdfioFileError(pdf, "Unable to read encrypted binary string - too long.");
+	return (false);
+      }
+
+      cb      = _pdfioCryptoMakeReader(pdf, obj, &ctx, v->value.binary.data, &ivlen);
+      templen = (cb)(&ctx, temp, v->value.binary.data + ivlen, v->value.binary.datalen - ivlen);
+
+      // Copy the decrypted string back to the value and adjust the length...
+      memcpy(v->value.binary.data, temp, templen);
+
+      if (pdf->encryption >= PDFIO_ENCRYPTION_AES_128)
+        v->value.binary.datalen = templen - temp[templen - 1];
+      else
+	v->value.binary.datalen = templen;
     }
   }
   else if (strchr("0123456789-+.", token[0]) != NULL)
