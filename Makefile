@@ -10,7 +10,10 @@
 # POSIX makefile
 .POSIX:
 
-# Variables...
+# Build silently
+.SILENT:
+
+# Variables
 AR		=	ar
 ARFLAGS		=	cr
 CC		=	cc
@@ -33,6 +36,7 @@ prefix		=	/usr/local
 # Base rules
 .SUFFIXES:	.c .h .o
 .c.o:
+	echo Compiling $<...
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(COMMONFLAGS) -c $<
 
 
@@ -95,8 +99,10 @@ clean:
 
 # Install everything
 install:	$(TARGETS)
+	echo Installing header files to $(DESTDIR)$(prefix)/include...
 	-mkdir -p $(DESTDIR)$(prefix)/include
 	cp $(PUBHEADERS) $(DESTDIR)$(prefix)/include
+	echo Installing library files to $(DESTDIR)$(prefix)/lib...
 	-mkdir -p $(DESTDIR)$(prefix)/lib
 	cp libpdfio.a $(DESTDIR)$(prefix)/lib
 	$(RANLIB) $(DESTDIR)$(prefix)/lib/libpdfio.a
@@ -108,12 +114,15 @@ install:	$(TARGETS)
 		codesign -s "$(CODESIGN_IDENTITY)" -o runtime --timestamp $(DESTDIR)$(prefix)/lib/libpdfio.1.dylib; \
 		ln -sf libpdfio.1.dylib $(DESTDIR)$(prefix)/lib/libpdfio.dylib; \
 	fi
+	echo Installing pkg-config files to $(DESTDIR)$(prefix)/lib/pkgconfig...
 	-mkdir -p $(DESTDIR)$(prefix)/lib/pkgconfig
 	echo 'prefix="$(prefix)"' >$(DESTDIR)$(prefix)/lib/pkgconfig/pdfio.pc
 	echo 'Version: $(VERSION)' >>$(DESTDIR)$(prefix)/lib/pkgconfig/pdfio.pc
 	cat pdfio.pc.in >>$(DESTDIR)$(prefix)/lib/pkgconfig/pdfio.pc
+	echo Installing documentation to $(DESTDIR)$(prefix)/share/doc/pdfio...
 	-mkdir -p $(DESTDIR)$(prefix)/share/doc/pdfio
 	cp doc/pdfio.html doc/pdfio-512.png LICENSE NOTICE $(DESTDIR)$(prefix)/share/doc/pdfio
+	echo Installing man page to $(DESTDIR)$(prefix)/share/man/man3...
 	-mkdir -p $(DESTDIR)$(prefix)/share/man/man3
 	cp doc/pdfio.3 $(DESTDIR)$(prefix)/share/man/man3
 
@@ -135,13 +144,16 @@ valgrind:	testpdfio
 
 # pdfio library
 libpdfio.a:		$(LIBOBJS)
+	echo Archiving $@...
 	$(AR) $(ARFLAGS) $@ $(LIBOBJS)
 	$(RANLIB) $@
 
 libpdfio.so.1:		$(LIBOBJS)
+	echo Linking $@...
 	$(CC) $(DSOFLAGS) $(COMMONFLAGS) -shared -o $@ -Wl,-soname,$@ $(LIBOBJS) $(LIBS)
 
 libpdfio.1.dylib:	$(LIBOBJS)
+	echo Linking $@...
 	$(CC) $(DSOFLAGS) $(COMMONFLAGS) -dynamiclib -o $@ -install_name $(prefix)/lib/$@ -current_version $(VERSION) -compatibility_version 1.0 $(LIBOBJS) $(LIBS)
 
 
@@ -161,11 +173,13 @@ pdfio1.def: $(LIBOBJS) Makefile
 
 # pdfio text extraction (demo, doesn't handle a lot of things yet)
 pdfiototext:		pdfiototext.o libpdfio.a
+	echo Linking $@...
 	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o $@ pdfiototext.o libpdfio.a $(LIBS)
 
 
 # pdfio test program
 testpdfio:		testpdfio.o libpdfio.a
+	echo Linking $@...
 	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o $@ testpdfio.o libpdfio.a $(LIBS)
 
 
@@ -182,6 +196,7 @@ DOCFLAGS	=	\
 
 .PHONY: doc
 doc:
+	echo Generating documentation...
 	codedoc $(DOCFLAGS) --title "PDFio Programming Manual v$(VERSION)" $(PUBHEADERS) $(PUBOBJS:.o=.c) --body doc/pdfio.md --coverimage doc/pdfio-512.png pdfio.xml >doc/pdfio.html
 	codedoc $(DOCFLAGS) --title "PDFio Programming Manual v$(VERSION)" --body doc/pdfio.md --coverimage doc/pdfio-epub.png pdfio.xml --epub doc/pdfio.epub
 	codedoc $(DOCFLAGS) --title "pdf read/write library" --man pdfio --section 3 --body doc/pdfio.md pdfio.xml >doc/pdfio.3
