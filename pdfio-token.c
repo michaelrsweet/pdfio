@@ -259,6 +259,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
   switch (state)
   {
     case '(' : // Literal string
+	parens = 1;
 	while ((ch = get_char(tb)) != EOF)
 	{
 	  if (ch == 0)
@@ -332,9 +333,6 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  }
 	  else if (ch == ')')
 	  {
-	    if (parens == 0)
-	      break;
-
 	    parens --;
 	  }
 
@@ -349,6 +347,9 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	    _pdfioFileError(tb->pdf, "Token too large.");
 	    return (false);
 	  }
+
+	  if (parens == 0)
+	    break;
 	}
 
 	if (ch != ')')
