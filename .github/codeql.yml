@@ -1,0 +1,7 @@
+paths-ignore:
+  - 'test*.c'
+
+query-filters:
+  - exclude:
+      id: cpp/commented-out-code
+
