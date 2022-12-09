@@ -1,5 +1,5 @@
 paths-ignore:
-  - 'test**.c'
+  - testpdfio.c
 
 query-filters:
   - exclude:
