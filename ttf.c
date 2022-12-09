@@ -420,7 +420,7 @@ ttfCreate(const char   *filename,	// I - Filename
   if (read_os_2(font, &os_2))
   {
     // Copy key values from OS/2 table...
-    static const ttf_stretch_t widths[] =
+    static const ttf_stretch_t stretches[] =
     {
       TTF_STRETCH_ULTRA_CONDENSED,	// ultra-condensed
       TTF_STRETCH_EXTRA_CONDENSED,	// extra-condensed
@@ -433,8 +433,8 @@ ttfCreate(const char   *filename,	// I - Filename
       TTF_STRETCH_ULTRA_EXPANDED	// ultra-expanded
     };
 
-    if (os_2.usWidthClass >= 1 && os_2.usWidthClass <= (int)(sizeof(widths) / sizeof(widths[0])))
-      font->stretch = widths[os_2.usWidthClass - 1];
+    if (os_2.usWidthClass >= 1 && os_2.usWidthClass <= (int)(sizeof(stretches) / sizeof(stretches[0])))
+      font->stretch = stretches[os_2.usWidthClass - 1];
 
     font->weight     = (short)os_2.usWeightClass;
     font->cap_height = os_2.sCapHeight;

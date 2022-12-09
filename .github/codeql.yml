@@ -1,7 +1,22 @@
 paths-ignore:
-  - 'test*.c'
+  - 'test**.c'
 
 query-filters:
   - exclude:
       id: cpp/commented-out-code
-
+  - exclude:
+      id: cpp/toctou-race-condition
+  - exclude:
+      id: cpp/weak-cryptographic-algorithm
+  - exclude:
+      id: cpp/world-writable-file-creation
+  - exclude:
+      id: cpp/uncontrolled-allocation-size
+  - exclude:
+      id: cpp/path-injection
+  - exclude:
+      id: cpp/stack-address-escape
+  - exclude:
+      id: cpp/loop-variable-changed
+  - exclude:
+      id: cpp/long-switch
