@@ -1,7 +1,7 @@
 //
 // PDF stream functions for PDFio.
 //
-// Copyright © 2021-2022 by Michael R Sweet.
+// Copyright © 2021-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -365,6 +365,13 @@ pdfioStreamConsume(pdfio_stream_t *st,	// I - Stream
 
 //
 // 'pdfioStreamGetToken()' - Read a single PDF token from a stream.
+//
+// This function reads a single PDF token from a stream.  Operator tokens,
+// boolean values, and numbers are returned as-is in the provided string buffer.
+// String values start with the opening parenthesis ('(') but have all escaping
+// resolved and the terminating parenthesis removed.  Hexadecimal string values
+// start with the opening angle bracket ('<') and have all whitespace and the
+// terminating angle bracket removed.
 //
 
 bool					// O - `true` on success, `false` on EOF
