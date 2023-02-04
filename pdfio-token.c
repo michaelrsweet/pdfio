@@ -1,7 +1,7 @@
 //
 // PDF token parsing functions for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -129,9 +129,20 @@ _pdfioTokenGet(_pdfio_token_t *tb,	// I - Token buffer/stack
   if (tb->num_tokens > 0)
   {
     // Yes, return it...
+    size_t len;				// Length of token
+
     tb->num_tokens --;
-    strncpy(buffer, tb->tokens[tb->num_tokens], bufsize - 1);
-    buffer[bufsize - 1] = '\0';
+
+    if ((len = strlen(tb->tokens[tb->num_tokens])) > (bufsize - 1))
+    {
+      // Value too large...
+      PDFIO_DEBUG("_pdfioTokenGet(tb=%p, buffer=%p, bufsize=%u): Token '%s' from stack too large.\n", tb, buffer, (unsigned)bufsize, tb->tokens[tb->num_tokens]);
+      *buffer = '\0';
+      return (false);
+    }
+
+    memcpy(buffer, tb->tokens[tb->num_tokens], len);
+    buffer[len] = '\0';
 
     PDFIO_DEBUG("_pdfioTokenGet(tb=%p, buffer=%p, bufsize=%u): Popping '%s' from stack.\n", tb, buffer, (unsigned)bufsize, buffer);
 
@@ -536,7 +547,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 
   *bufptr = '\0';
 
-  PDFIO_DEBUG("_pdfioTokenRead: Read '%s'.\n", buffer);
+//  PDFIO_DEBUG("_pdfioTokenRead: Read '%s'.\n", buffer);
 
   return (bufptr > buffer);
 }
@@ -573,6 +584,7 @@ get_char(_pdfio_token_t *tb)		// I - Token buffer
     tb->bufptr = tb->buffer;
     tb->bufend = tb->buffer + bytes;
 
+#if 0
 #ifdef DEBUG
     unsigned char *ptr;			// Pointer into buffer
 
@@ -586,6 +598,7 @@ get_char(_pdfio_token_t *tb)		// I - Token buffer
     }
     PDFIO_DEBUG("'\n");
 #endif // DEBUG
+#endif // 0
   }
 
   // Return the next character...

@@ -1,7 +1,7 @@
 //
 // Common support functions for pdfio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -37,6 +37,8 @@ _pdfioFileConsume(pdfio_file_t *pdf,	// I - PDF file
     pdf->bufptr += bytes;
   else if (_pdfioFileSeek(pdf, (off_t)bytes, SEEK_CUR) < 0)
     return (false);
+
+  PDFIO_DEBUG("_pdfioFileConsume: pos=%ld\n", (long)(pdf->bufpos + pdf->bufptr - pdf->buffer));
 
   return (true);
 }
@@ -525,7 +527,7 @@ read_buffer(pdfio_file_t *pdf,		// I - PDF file
   return (rbytes);
 }
 
-  
+
 //
 // 'write_buffer()' - Write a buffer to a PDF file.
 //

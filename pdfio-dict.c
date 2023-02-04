@@ -1,7 +1,7 @@
 //
 // PDF dictionary functions for PDFio.
 //
-// Copyright © 2021-2022 by Michael R Sweet.
+// Copyright © 2021-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -541,8 +541,15 @@ _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
       _pdfioFileError(pdf, "Invalid dictionary contents.");
       break;
     }
+    else if (_pdfioDictGetValue(dict, key + 1))
+    {
+      _pdfioFileError(pdf, "Duplicate dictionary key '%s'.", key + 1);
+      return (NULL);
+    }
 
     // Then get the next value...
+    PDFIO_DEBUG("_pdfioDictRead: Reading value for '%s'.\n", key + 1);
+
     if (!_pdfioValueRead(pdf, obj, tb, &value, depth))
     {
       _pdfioFileError(pdf, "Missing value for dictionary key.");
@@ -932,9 +939,9 @@ _pdfioDictSetValue(
 
 #ifdef DEBUG
   PDFIO_DEBUG("_pdfioDictSetValue(%p): %lu pairs\n", (void *)dict, (unsigned long)dict->num_pairs);
-  PDFIO_DEBUG("_pdfioDictSetValue(%p): ", (void *)dict);
-  PDFIO_DEBUG_DICT(dict);
-  PDFIO_DEBUG("\n");
+//  PDFIO_DEBUG("_pdfioDictSetValue(%p): ", (void *)dict);
+//  PDFIO_DEBUG_DICT(dict);
+//  PDFIO_DEBUG("\n");
 #endif // DEBUG
 
   return (true);

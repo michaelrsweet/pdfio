@@ -1,7 +1,7 @@
 //
 // PDF file functions for PDFio.
 //
-// Copyright © 2021-2022 by Michael R Sweet.
+// Copyright © 2021-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -1983,6 +1983,8 @@ load_xref(
 	_pdfioFileError(pdf, "Trailer is not a dictionary.");
 	return (false);
       }
+
+      PDFIO_DEBUG("load_xref: Got trailer dict.\n");
 
       _pdfioTokenFlush(&tb);
 

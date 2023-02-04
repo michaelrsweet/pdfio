@@ -2,9 +2,10 @@ Changes in PDFio
 ================
 
 
-v1.1.0 (Month DD, YYYY)
------------------------
+v1.1.0 (February 3, 2023)
+-------------------------
 
+- CVE-2023-nnnn: Fixed a potential denial-of-service with corrupt PDF files.
 - Added `pdfioFileCreateTemporary` function (Issue #29)
 - Added `pdfioDictIterateKeys` function (Issue #31)
 - Added `pdfioContentPathEnd` function.
