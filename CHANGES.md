@@ -2,7 +2,7 @@ Changes in PDFio
 ================
 
 
-v1.1.0 (February 3, 2023)
+v1.1.0 (February 6, 2023)
 -------------------------
 
 - CVE-2023-24808: Fixed a potential denial-of-service with corrupt PDF files.
