@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="testpdfio.c">
+    <ClCompile Include="src\testpdfio.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
