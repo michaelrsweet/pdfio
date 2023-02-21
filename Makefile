@@ -17,11 +17,10 @@
 AR		=	ar
 ARFLAGS		=	cr
 CC		=	cc
-CFLAGS		=
+CFLAGS		=	'-DPDFIO_VERSION="$(VERSION)"'
 CODESIGN_IDENTITY =	Developer ID
-COMMONFLAGS	=	-Os -g
+COMMONFLAGS	=	-Os -g -Isrc
 #COMMONFLAGS	=	-O0 -g -fsanitize=address
-CPPFLAGS	=	'-DPDFIO_VERSION="$(VERSION)"'
 DESTDIR		=	$(DSTROOT)
 DSO		=	cc
 DSOFLAGS	=
@@ -37,37 +36,37 @@ prefix		=	/usr/local
 .SUFFIXES:	.c .h .o
 .c.o:
 	echo Compiling $<...
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(COMMONFLAGS) -c $<
+	$(CC) $(CFLAGS) $(COMMONFLAGS) -c $< -o $@
 
 
 # Files
 PUBHEADERS	=	\
-			pdfio.h \
-			pdfio-content.h
+			src/pdfio.h \
+			src/pdfio-content.h
 PUBOBJS		=	\
-			pdfio-aes.o \
-			pdfio-array.o \
-			pdfio-common.o \
-			pdfio-content.o \
-			pdfio-crypto.o \
-			pdfio-dict.o \
-			pdfio-file.o \
-			pdfio-md5.o \
-			pdfio-object.o \
-			pdfio-page.o \
-			pdfio-rc4.o \
-			pdfio-sha256.o \
-			pdfio-stream.o \
-			pdfio-string.o \
-			pdfio-token.o \
-			pdfio-value.o
+			src/pdfio-aes.o \
+			src/pdfio-array.o \
+			src/pdfio-common.o \
+			src/pdfio-content.o \
+			src/pdfio-crypto.o \
+			src/pdfio-dict.o \
+			src/pdfio-file.o \
+			src/pdfio-md5.o \
+			src/pdfio-object.o \
+			src/pdfio-page.o \
+			src/pdfio-rc4.o \
+			src/pdfio-sha256.o \
+			src/pdfio-stream.o \
+			src/pdfio-string.o \
+			src/pdfio-token.o \
+			src/pdfio-value.o
 LIBOBJS		=	\
 			$(PUBOBJS) \
-			ttf.o
+			src/ttf.o
 OBJS		=	\
 			$(LIBOBJS) \
-			pdfiototext.o \
-			testpdfio.o
+			src/pdfiototext.o \
+			src/testpdfio.o
 TARGETS		=	\
 			$(DSONAME) \
 			libpdfio.a \
@@ -135,24 +134,24 @@ install-shared:
 
 
 # Test everything
-test:	testpdfio
+test: testpdfio
 	./testpdfio
 
-valgrind:	testpdfio
+valgrind: testpdfio
 	valgrind --leak-check=full ./testpdfio
 
 
 # pdfio library
-libpdfio.a:		$(LIBOBJS)
+libpdfio.a: $(LIBOBJS)
 	echo Archiving $@...
 	$(AR) $(ARFLAGS) $@ $(LIBOBJS)
 	$(RANLIB) $@
 
-libpdfio.so.1:		$(LIBOBJS)
+libpdfio.so.1: $(LIBOBJS)
 	echo Linking $@...
 	$(CC) $(DSOFLAGS) $(COMMONFLAGS) -shared -o $@ -Wl,-soname,$@ $(LIBOBJS) $(LIBS)
 
-libpdfio.1.dylib:	$(LIBOBJS)
+libpdfio.1.dylib: $(LIBOBJS)
 	echo Linking $@...
 	$(CC) $(DSOFLAGS) $(COMMONFLAGS) -dynamiclib -o $@ -install_name $(prefix)/lib/$@ -current_version $(VERSION) -compatibility_version 1.0 $(LIBOBJS) $(LIBS)
 
@@ -172,21 +171,21 @@ pdfio1.def: $(LIBOBJS) Makefile
 
 
 # pdfio text extraction (demo, doesn't handle a lot of things yet)
-pdfiototext:		pdfiototext.o libpdfio.a
+pdfiototext: src/pdfiototext.o libpdfio.a
 	echo Linking $@...
-	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o $@ pdfiototext.o libpdfio.a $(LIBS)
+	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o $@ $^ $(LIBS)
 
 
 # pdfio test program
-testpdfio:		testpdfio.o libpdfio.a
+testpdfio: src/testpdfio.o libpdfio.a
 	echo Linking $@...
-	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o $@ testpdfio.o libpdfio.a $(LIBS)
+	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o $@ $^ $(LIBS)
 
 
 # Dependencies
-$(OBJS):		pdfio.h pdfio-private.h Makefile
-pdfio-content.o:	pdfio-content.h ttf.h
-ttf.o:			ttf.h
+$(OBJS): src/pdfio.h src/pdfio-private.h Makefile
+src/pdfio-content.o: src/pdfio-content.h src/ttf.h
+src/ttf.o: src/ttf.h
 
 # Make documentation using Codedoc <https://www.msweet.org/codedoc>
 DOCFLAGS	=	\

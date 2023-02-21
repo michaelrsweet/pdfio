@@ -142,29 +142,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="pdfio-content.h" />
-    <ClInclude Include="pdfio-private.h" />
-    <ClInclude Include="pdfio.h" />
-    <ClInclude Include="ttf.h" />
+    <ClInclude Include="src\pdfio-content.h" />
+    <ClInclude Include="src\pdfio-private.h" />
+    <ClInclude Include="src\pdfio.h" />
+    <ClInclude Include="src\ttf.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pdfio-aes.c" />
-    <ClCompile Include="pdfio-array.c" />
-    <ClCompile Include="pdfio-common.c" />
-    <ClCompile Include="pdfio-content.c" />
-    <ClCompile Include="pdfio-crypto.c" />
-    <ClCompile Include="pdfio-dict.c" />
-    <ClCompile Include="pdfio-file.c" />
-    <ClCompile Include="pdfio-md5.c" />
-    <ClCompile Include="pdfio-object.c" />
-    <ClCompile Include="pdfio-page.c" />
-    <ClCompile Include="pdfio-rc4.c" />
-    <ClCompile Include="pdfio-sha256.c" />
-    <ClCompile Include="pdfio-stream.c" />
-    <ClCompile Include="pdfio-string.c" />
-    <ClCompile Include="pdfio-token.c" />
-    <ClCompile Include="pdfio-value.c" />
-    <ClCompile Include="ttf.c" />
+    <ClCompile Include="src\pdfio-aes.c" />
+    <ClCompile Include="src\pdfio-array.c" />
+    <ClCompile Include="src\pdfio-common.c" />
+    <ClCompile Include="src\pdfio-content.c" />
+    <ClCompile Include="src\pdfio-crypto.c" />
+    <ClCompile Include="src\pdfio-dict.c" />
+    <ClCompile Include="src\pdfio-file.c" />
+    <ClCompile Include="src\pdfio-md5.c" />
+    <ClCompile Include="src\pdfio-object.c" />
+    <ClCompile Include="src\pdfio-page.c" />
+    <ClCompile Include="src\pdfio-rc4.c" />
+    <ClCompile Include="src\pdfio-sha256.c" />
+    <ClCompile Include="src\pdfio-stream.c" />
+    <ClCompile Include="src\pdfio-string.c" />
+    <ClCompile Include="src\pdfio-token.c" />
+    <ClCompile Include="src\pdfio-value.c" />
+    <ClCompile Include="src\ttf.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

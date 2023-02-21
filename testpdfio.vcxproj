@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="testpdfio.c" />
+    <ClCompile Include="src\testpdfio.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

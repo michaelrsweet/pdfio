@@ -24,8 +24,8 @@
         <file src="doc\pdfio-128.png" target="build\native" />
         <file src="README.md" target="build\native" />
         <file src="pdfio_native.props" target="build\native" />
-        <file src="pdfio.h" target="build\native\include" />
-        <file src="pdfio-content.h" target="build\native\include" />
+        <file src="src\pdfio.h" target="build\native\include" />
+        <file src="src\pdfio-content.h" target="build\native\include" />
         <!--<file src="Win32\**\pdfio1.lib" target="build\native\lib\Win32" />-->
         <file src="x64\**\pdfio1.lib" target="build\native\lib\x64" />
     </files>

@@ -15,69 +15,69 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pdfio.h">
+    <ClInclude Include="src\pdfio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pdfio-content.h">
+    <ClInclude Include="src\pdfio-content.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pdfio-private.h">
+    <ClInclude Include="src\pdfio-private.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ttf.h">
+    <ClInclude Include="src\ttf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pdfio-array.c">
+    <ClCompile Include="src\pdfio-array.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-common.c">
+    <ClCompile Include="src\pdfio-common.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-content.c">
+    <ClCompile Include="src\pdfio-content.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-dict.c">
+    <ClCompile Include="src\pdfio-dict.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-file.c">
+    <ClCompile Include="src\pdfio-file.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-object.c">
+    <ClCompile Include="src\pdfio-object.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-page.c">
+    <ClCompile Include="src\pdfio-page.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-stream.c">
+    <ClCompile Include="src\pdfio-stream.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-string.c">
+    <ClCompile Include="src\pdfio-string.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-token.c">
+    <ClCompile Include="src\pdfio-token.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-value.c">
+    <ClCompile Include="src\pdfio-value.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ttf.c">
+    <ClCompile Include="src\ttf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-aes.c">
+    <ClCompile Include="src\pdfio-aes.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-crypto.c">
+    <ClCompile Include="src\pdfio-crypto.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-md5.c">
+    <ClCompile Include="src\pdfio-md5.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-rc4.c">
+    <ClCompile Include="src\pdfio-rc4.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pdfio-sha256.c">
+    <ClCompile Include="src\pdfio-sha256.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
