@@ -121,7 +121,7 @@ You can reproduce this with the makefile using:
 Legal Stuff
 -----------
 
-PDFio is Copyright © 2021-2022 by Michael R Sweet.
+PDFio is Copyright © 2021-2023 by Michael R Sweet.
 
 This software is licensed under the Apache License Version 2.0 with an
 (optional) exception to allow linking against GPL2/LGPL2 software.  See the
