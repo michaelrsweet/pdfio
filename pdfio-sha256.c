@@ -1,7 +1,7 @@
 //
 // SHA-256 functions for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2023 by Michael R Sweet.
 // Copyright © 2011 IETF Trust and the persons identified as authors of the
 // code.  All rights reserved.
 //
@@ -217,7 +217,7 @@ _pdfioCryptoSHA256Append(_pdfio_sha256_t *context, const uint8_t *message_array,
  */
 void
 _pdfioCryptoSHA256Finish(_pdfio_sha256_t *context,
-                 uint8_t Message_Digest[SHA256HashSize])
+                 uint8_t *Message_Digest)
 {
   SHA224_256ResultN(context, Message_Digest, SHA256HashSize);
 }

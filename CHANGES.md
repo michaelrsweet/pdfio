@@ -2,6 +2,12 @@ Changes in PDFio
 ================
 
 
+v1.1.1 (Month DD, YYYY)
+-----------------------
+
+- Fixed a build issue.
+
+
 v1.1.0 (February 6, 2023)
 -------------------------
 
