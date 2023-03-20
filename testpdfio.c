@@ -406,7 +406,7 @@ do_test_file(const char *filename,	// I - PDF filename
 
       filter = pdfioDictGetName(dict, "Filter");
 
-      if ((st = pdfioObjOpenStream(obj, (filter && !strcmp(filter, "FlateDecode")) ? PDFIO_FILTER_FLATE : PDFIO_FILTER_NONE)) == NULL)
+      if ((st = pdfioObjOpenStream(obj, filter && !strcmp(filter, "FlateDecode"))) == NULL)
       {
         _pdfioValueDebug(&obj->value, stdout);
 	putchar('\n');
