@@ -1008,6 +1008,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
             size_t         bytes)	// I - Number of bytes to read
 {
   ssize_t	rbytes;			// Bytes read
+  uInt		avail_in, avail_out;	// Previous flate values
 
 
   if (st->filter == PDFIO_FILTER_NONE)
@@ -1060,9 +1061,17 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       st->flate.next_out  = (Bytef *)buffer;
       st->flate.avail_out = (uInt)bytes;
 
+      avail_in  = st->flate.avail_in;
+      avail_out = st->flate.avail_out;
+
       if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
       {
 	_pdfioFileError(st->pdf, "Unable to decompress stream data: %s", zstrerror(status));
+	return (-1);
+      }
+      else if (avail_in == st->flate.avail_in && avail_out == st->flate.avail_out)
+      {
+	_pdfioFileError(st->pdf, "Corrupt stream data.");
 	return (-1);
       }
 
@@ -1113,12 +1122,15 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	  st->flate.avail_in = (uInt)rbytes;
 	}
 
+        avail_in  = st->flate.avail_in;
+        avail_out = st->flate.avail_out;
+
 	if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
 	{
 	  _pdfioFileError(st->pdf, "Unable to decompress stream data: %s", zstrerror(status));
 	  return (-1);
 	}
-	else if (status == Z_STREAM_END)
+	else if (status == Z_STREAM_END || (avail_in == st->flate.avail_in && avail_out == st->flate.avail_out))
 	  break;
       }
 
@@ -1180,12 +1192,15 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	  st->flate.avail_in = (uInt)rbytes;
 	}
 
+        avail_in  = st->flate.avail_in;
+        avail_out = st->flate.avail_out;
+
 	if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
 	{
 	  _pdfioFileError(st->pdf, "Unable to decompress stream data: %s", zstrerror(status));
 	  return (-1);
 	}
-	else if (status == Z_STREAM_END)
+	else if (status == Z_STREAM_END || (avail_in == st->flate.avail_in && avail_out == st->flate.avail_out))
 	  break;
       }
 
