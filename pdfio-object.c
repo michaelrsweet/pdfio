@@ -420,6 +420,9 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   }
 
   ptr += 3;
+  while (*ptr && isspace(*ptr & 255))
+    ptr ++;
+
   _pdfioFileConsume(obj->pdf, (size_t)(ptr - line));
 
   // Then grab the object value...
@@ -438,11 +441,14 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
     return (false);
   }
 
+  if (tb.bufptr && tb.bufptr < tb.bufend && (*(tb.bufptr) == 0x0d || *(tb.bufptr) == 0x0a))
+    tb.bufptr ++;			// Skip trailing CR or LF after token
+
   _pdfioTokenFlush(&tb);
 
   if (!strcmp(line, "stream"))
   {
-    // Yes, save its location...
+    // Yes, this is an embedded stream so save its location...
     obj->stream_offset = _pdfioFileTell(obj->pdf);
     PDFIO_DEBUG("_pdfioObjLoad: stream_offset=%lu.\n", (unsigned long)obj->stream_offset);
   }
