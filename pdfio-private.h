@@ -1,7 +1,7 @@
 //
 // Private header file for PDFio.
 //
-// Copyright © 2021-2022 by Michael R Sweet.
+// Copyright © 2021-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -10,17 +10,11 @@
 #ifndef PDFIO_PRIVATE_H
 #  define PDFIO_PRIVATE_H
 
-//
-// Include necessary headers...
-//
 
 #  ifdef _WIN32
-/*
- * Disable bogus VS warnings/errors...
- */
-
-#    define _CRT_SECURE_NO_WARNINGS
+#    define _CRT_SECURE_NO_WARNINGS	// Disable bogus VS warnings/errors...
 #  endif // _WIN32
+
 
 #  include "pdfio.h"
 #  include <stdarg.h>
@@ -32,18 +26,7 @@
 #  ifdef _WIN32
 #    include <io.h>
 #    include <direct.h>
-
-/*
- * Microsoft renames the POSIX functions to _name, and introduces
- * a broken compatibility layer using the original names.  As a result,
- * random crashes can occur when, for example, strdup() allocates memory
- * from a different heap than used by malloc() and free().
- *
- * To avoid moronic problems like this, we #define the POSIX function
- * names to the corresponding non-standard Microsoft names.
- */
-
-#    define access	_access
+#    define access	_access		// Map standard POSIX/C99 names
 #    define close	_close
 #    define fileno	_fileno
 #    define lseek	_lseek
@@ -56,12 +39,7 @@
 #    define unlink	_unlink
 #    define vsnprintf	_vsnprintf
 #    define write	_write
-
-/*
- * Map various parameters for POSIX...
- */
-
-#    define F_OK	00
+#    define F_OK	00		// POSIX parameters/flags
 #    define W_OK	02
 #    define R_OK	04
 #    define O_RDONLY	_O_RDONLY
@@ -71,7 +49,7 @@
 #    define O_BINARY	_O_BINARY
 #  else // !_WIN32
 #    include <unistd.h>
-#    define O_BINARY	0
+#    define O_BINARY	0		// Used on Windows for binary files...
 #  endif // _WIN32
 #  include <string.h>
 #  include <ctype.h>
@@ -410,5 +388,6 @@ extern void		_pdfioValueDebug(_pdfio_value_t *v, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioValueDelete(_pdfio_value_t *v) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioValueRead(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_token_t *ts, _pdfio_value_t *v, size_t depth) _PDFIO_INTERNAL;
 extern bool		_pdfioValueWrite(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_value_t *v, off_t *length) _PDFIO_INTERNAL;
+
 
 #endif // !PDFIO_PRIVATE_H
