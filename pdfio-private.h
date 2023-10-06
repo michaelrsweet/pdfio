@@ -9,17 +9,14 @@
 
 #ifndef PDFIO_PRIVATE_H
 #  define PDFIO_PRIVATE_H
-
-
 #  ifdef _WIN32
 #    define _CRT_SECURE_NO_WARNINGS	// Disable bogus VS warnings/errors...
 #  endif // _WIN32
-
-
 #  include "pdfio.h"
 #  include <stdarg.h>
 #  include <stdint.h>
 #  include <string.h>
+#  include <ctype.h>
 #  include <errno.h>
 #  include <inttypes.h>
 #  include <fcntl.h>
@@ -42,17 +39,15 @@
 #    define F_OK	00		// POSIX parameters/flags
 #    define W_OK	02
 #    define R_OK	04
-#    define O_RDONLY	_O_RDONLY
+#    define O_RDONLY	_O_RDONLY	// Map standard POSIX open flags
 #    define O_WRONLY	_O_WRONLY
 #    define O_CREAT	_O_CREAT
 #    define O_TRUNC	_O_TRUNC
 #    define O_BINARY	_O_BINARY
 #  else // !_WIN32
 #    include <unistd.h>
-#    define O_BINARY	0		// Used on Windows for binary files...
+#    define O_BINARY	0		// Map Windows-specific open flag
 #  endif // _WIN32
-#  include <string.h>
-#  include <ctype.h>
 #  include <zlib.h>
 
 
