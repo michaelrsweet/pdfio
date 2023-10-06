@@ -7,6 +7,8 @@ v1.1.2 (TBD)
 
 - Fixed an issue with broken PDF files containing extra CR and/or LF separators
   after the object stream token (Issue #40)
+- Fixed an issue with PDF files produced by Microsoft Reporting Services
+  (Issue #46)
 
 
 v1.1.1 (March 20, 2023)

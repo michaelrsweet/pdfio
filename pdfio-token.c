@@ -495,6 +495,13 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  *bufptr++ = (char)ch;
 	  break;
 	}
+	else if (ch == '>')
+	{
+	  // Issue #46: Empty hex string from Microsoft PDF generator; treat as
+	  // empty literal string...
+	  *buffer = '(';
+	  break;
+	}
 	else if (!isspace(ch & 255) && !isxdigit(ch & 255))
 	{
 	  _pdfioFileError(tb->pdf, "Syntax error: '<%c'", ch);

@@ -1759,9 +1759,9 @@ load_xref(
       w_2     = w[0];
       w_3     = w[0] + w[1];
 
-      if (w[1] == 0 || w[2] > 2 || w[0] > sizeof(buffer) || w[1] > sizeof(buffer) || w[2] > sizeof(buffer) || w_total > sizeof(buffer))
+      if (w[1] == 0 || w[2] > 4 || w[0] > sizeof(buffer) || w[1] > sizeof(buffer) || w[2] > sizeof(buffer) || w_total > sizeof(buffer))
       {
-	_pdfioFileError(pdf, "Cross-reference stream has invalid W key.");
+	_pdfioFileError(pdf, "Cross-reference stream has invalid W key [%u %u %u].", (unsigned)w[0], (unsigned)w[1], (unsigned)w[2]);
 	return (false);
       }
 
@@ -1801,9 +1801,11 @@ load_xref(
 	    }
 	  }
 
+          // Offset
 	  for (i = 1, offset = buffer[w_2]; i < w[1]; i ++)
 	    offset = (offset << 8) | buffer[w_2 + i];
 
+          // Generation number
 	  switch (w[2])
 	  {
 	    default :
@@ -1814,6 +1816,19 @@ load_xref(
 		break;
 	    case 2 :
 		generation = (buffer[w_3] << 8) | buffer[w_3 + 1];
+		break;
+	    case 3 :
+	        // Issue #46: Stupid Microsoft PDF generator using 3 bytes to
+	        // encode 16-bit generation numbers == 0 (probably a lazy coder
+	        // stuffing things into an array of 64-bit unsigned integers)
+		generation = (buffer[w_3] << 16) | (buffer[w_3 + 1] << 8) | buffer[w_3 + 2];
+		if (generation > 65535)
+		  generation = 65535;
+		break;
+	    case 4 : // Even stupider :)
+		generation = (buffer[w_3] << 24) | (buffer[w_3 + 1] << 16) | (buffer[w_3 + 2] << 8) | buffer[w_3 + 3];
+		if (generation > 65535)
+		  generation = 65535;
 		break;
 	  }
 
