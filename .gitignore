@@ -8,6 +8,8 @@
 /doc/pdfio.epub
 /packages
 /pdfio.xcodeproj/xcshareddata
+/pdfio-*.tar.gz*
+/pdfio-*.zip*
 /pdfiototext
 /testpdfio
 /testpdfio-*.pdf
