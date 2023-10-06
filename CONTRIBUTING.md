@@ -118,7 +118,7 @@ the source file and the copyright and licensing notice:
     //
     // Description of file contents.
     //
-    // Copyright YYYY by AUTHOR.
+    // Copyright © YYYY by AUTHOR.
     //
     // Licensed under Apache License v2.0.  See the file "LICENSE" for more
     // information.
@@ -330,7 +330,7 @@ typedef, for example:
 
 All constant names are uppercase with underscores between words, e.g.,
 `PDFIO_THIS_CONSTANT`, `PDFIO_THAT_CONSTANT`, etc.  Constants begin with the
-"PDFio\_" prefix to avoid conflicts with system constants.  Private constants
+"PDFIO\_" prefix to avoid conflicts with system constants.  Private constants
 start with an underscore, e.g., `_PDFIO_THIS_CONSTANT`,
 `_PDFIO_THAT_CONSTANT`, etc.
 
@@ -369,11 +369,12 @@ extensions MUST NOT be used.
 The following variables are defined in the makefile:
 
 - `AR`; the static library archiver command,
-- `ARFLAGS`; options for the static library archiver command,
+- `ARFLAGS`; options for the static library archiver,
 - `CC`; the C compiler command,
-- `CFLAGS`; options for the C compiler command,
+- `CFLAGS`; options for the C compiler,
 - `CODESIGN_IDENTITY`: the code signing identity,
 - `COMMONFLAGS`; common compiler optimization options,
+- `CPPFLAGS`; options for the C preprocessor,
 - `DESTDIR`/`DSTROOT`: the destination root directory when installing.
 - `DSO`; the shared library building command,
 - `DSOFLAGS`; options for the shared library building command,
@@ -395,4 +396,5 @@ The following standard targets are defined in the makefile:
   with debug printfs and the clang address sanitizer enabled.
 - `install`; installs all distribution files in their corresponding locations.
 - `install-shared`; same as `install` but also installs the shared library.
+- `macos`; same as `all` but creates a Universal Binary (X64 + ARM64).
 - `test`; runs the unit test program, building it as needed.
