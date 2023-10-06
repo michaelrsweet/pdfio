@@ -579,12 +579,6 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       st->flate.next_in  = (Bytef *)st->cbuffer;
       st->flate.avail_in = (uInt)rbytes;
 
-      if (st->cbuffer[0] == 0x0a)
-      {
-        st->flate.next_in ++;		// Skip newline
-        st->flate.avail_in --;
-      }
-
       PDFIO_DEBUG("_pdfioStreamOpen: avail_in=%u, cbuffer=<%02X%02X%02X%02X%02X%02X%02X%02X...>\n", st->flate.avail_in, st->cbuffer[0], st->cbuffer[1], st->cbuffer[2], st->cbuffer[3], st->cbuffer[4], st->cbuffer[5], st->cbuffer[6], st->cbuffer[7]);
 
       if ((status = inflateInit(&(st->flate))) != Z_OK)
