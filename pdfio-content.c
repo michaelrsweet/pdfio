@@ -1,7 +1,7 @@
 //
 // Content helper functions for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -670,6 +670,9 @@ pdfioContentSave(pdfio_stream_t *st)	// I - Stream
 //
 // 'pdfioContentSetDashPattern()' - Set the stroke pattern.
 //
+// This function sets the stroke pattern when drawing lines.  If "on" and "off"
+// are 0, a solid line is drawn.
+//
 
 bool					// O - `true` on success, `false` on failure
 pdfioContentSetDashPattern(
@@ -678,7 +681,12 @@ pdfioContentSetDashPattern(
     double         on,			// I - On length
     double         off)			// I - Off length
 {
-  return (pdfioStreamPrintf(st, "[%g %g] %g d\n", on, off, phase));
+  if (on <= 0.0 && off <= 0.0)
+    return (pdfioStreamPrintf(st, "[] %g d\n", phase));
+  else if (fabs(on - off) < 0.001)
+    return (pdfioStreamPrintf(st, "[%g] %g d\n", on, phase));
+  else
+    return (pdfioStreamPrintf(st, "[%g %g] %g d\n", on, off, phase));
 }
 
 

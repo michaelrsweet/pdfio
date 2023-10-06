@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2022-07-03" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2023-10-06" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -34,7 +34,7 @@ PDFio is
 .I not
  concerned with rendering or viewing a PDF file, although a PDF RIP or viewer could be written using it.
 .PP
-PDFio is Copyright \[co] 2021\-2022 by Michael R Sweet and is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GPL2/LGPL2 software. See the files "LICENSE" and "NOTICE" for more information.
+PDFio is Copyright \[co] 2021\-2023 by Michael R Sweet and is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GPL2/LGPL2 software. See the files "LICENSE" and "NOTICE" for more information.
 .SS Requirements
 .PP
 PDFio requires the following to build the software:
@@ -1357,7 +1357,7 @@ bool  pdfioContentFillAndStroke (
 .fi
 .SS pdfioContentMatrixConcat
 Concatenate a matrix to the current graphics
-state.
+                               state.
 .PP
 .nf
 bool  pdfioContentMatrixConcat (
@@ -1507,6 +1507,9 @@ bool  pdfioContentSetDashPattern (
     double off
 );
 .fi
+.PP
+This function sets the stroke pattern when drawing lines.  If "on" and "off"
+are 0, a solid line is drawn.
 .SS pdfioContentSetFillColorDeviceCMYK
 Set device CMYK fill color.
 .PP
@@ -1981,6 +1984,7 @@ function "cb":
     }
 
 .fi
+
 The iteration continues as long as the callback returns \fBtrue\fR or all keys
 have been iterated.
 .SS pdfioDictSetArray
@@ -2305,10 +2309,11 @@ written:
     ssize_t
     output_cb(void *output_ctx, const void *buffer, size_t bytes)
     {
-    // Write buffer to output and return the number of bytes written
+      // Write buffer to output and return the number of bytes written
     }
 
 .fi
+
 The "version" argument specifies the PDF version number for the file or
 \fBNULL\fR for the default ("2.0").
 .PP
@@ -2616,7 +2621,7 @@ double  pdfioImageGetWidth (
 .fi
 .SS pdfioObjClose
 Close an object, writing any data as needed to the PDF
-file.
+                    file.
 .PP
 .nf
 bool  pdfioObjClose (
@@ -2802,6 +2807,13 @@ bool  pdfioStreamGetToken (
     size_t bufsize
 );
 .fi
+.PP
+This function reads a single PDF token from a stream.  Operator tokens,
+boolean values, and numbers are returned as-is in the provided string buffer.
+String values start with the opening parenthesis ('(') but have all escaping
+resolved and the terminating parenthesis removed.  Hexadecimal string values
+start with the opening angle bracket ('<') and have all whitespace and the
+terminating angle bracket removed.
 .SS pdfioStreamPeek
 Peek at data in a stream.
 .PP
@@ -3035,4 +3047,4 @@ typedef uint8_t state_t[4][4];
 Michael R Sweet
 .SH COPYRIGHT
 .PP
-Copyright (c) 2021-2022 by Michael R Sweet
+Copyright (c) 2021-2023 by Michael R Sweet

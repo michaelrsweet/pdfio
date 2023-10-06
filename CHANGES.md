@@ -5,6 +5,8 @@ Changes in PDFio
 v1.1.2 (TBD)
 ------------
 
+- Updated `pdfioContentSetDashPattern` to support setting a solid (0 length)
+  dash pattern (Issue #41)
 - Fixed an issue with broken PDF files containing extra CR and/or LF separators
   after the object stream token (Issue #40)
 - Fixed an issue with PDF files produced by Microsoft Reporting Services
