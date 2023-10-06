@@ -3,14 +3,10 @@
 //
 //     https://github.com/michaelrsweet/ttf
 //
-// Copyright © 2018-2021 by Michael R Sweet.
+// Copyright © 2018-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
-//
-
-//
-// Include necessary headers...
 //
 
 #ifdef _WIN32
@@ -690,6 +686,9 @@ ttfGetExtents(
       // ASCII...
       ch = *s++;
     }
+
+    // Issue #1: Offset past ".notdef"...
+    ch ++;
 
     // Find its width...
     if ((widths = font->widths[ch / 256]) != NULL)

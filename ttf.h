@@ -3,7 +3,7 @@
 //
 //     https://github.com/michaelrsweet/ttf
 //
-// Copyright © 2018-2021 by Michael R Sweet.
+// Copyright © 2018-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -11,17 +11,11 @@
 
 #ifndef TTF_H
 #  define TTF_H
-
-//
-// Include necessary headers...
-//
-
 #  include <stdbool.h>
 #  include <sys/types.h>
-
 #  ifdef __cplusplus
 extern "C" {
-#  endif //
+#  endif // __cplusplus
 
 
 //
@@ -89,8 +83,8 @@ extern ttf_t		*ttfCreate(const char *filename, size_t idx, ttf_err_cb_t err_cb, 
 extern void		ttfDelete(ttf_t *font);
 extern int		ttfGetAscent(ttf_t *font);
 extern ttf_rect_t	*ttfGetBounds(ttf_t *font, ttf_rect_t *bounds);
-extern int		ttfGetCapHeight(ttf_t *font);
 extern const int	*ttfGetCMap(ttf_t *font, size_t *num_cmap);
+extern int		ttfGetCapHeight(ttf_t *font);
 extern const char	*ttfGetCopyright(ttf_t *font);
 extern int		ttfGetDescent(ttf_t *font);
 extern ttf_rect_t	*ttfGetExtents(ttf_t *font, float size, const char *s, ttf_rect_t *extents);
@@ -112,5 +106,4 @@ extern bool		ttfIsFixedPitch(ttf_t *font);
 #  ifdef __cplusplus
 }
 #  endif // __cplusplus
-
 #endif // !TTF_H
