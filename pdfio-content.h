@@ -1,7 +1,7 @@
 //
 // Public content header file for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -9,18 +9,7 @@
 
 #ifndef PDFIO_CONTENT_H
 #  define PDFIO_CONTENT_H
-
-//
-// Include necessary headers...
-//
-
 #  include "pdfio.h"
-
-
-//
-// C++ magic...
-//
-
 #  ifdef __cplusplus
 extern "C" {
 #  endif // __cplusplus
@@ -150,10 +139,6 @@ extern bool		pdfioPageDictAddColorSpace(pdfio_dict_t *dict, const char *name, pd
 extern bool		pdfioPageDictAddFont(pdfio_dict_t *dict, const char *name, pdfio_obj_t *obj) _PDFIO_PUBLIC;
 extern bool		pdfioPageDictAddImage(pdfio_dict_t *dict, const char *name, pdfio_obj_t *obj) _PDFIO_PUBLIC;
 
-
-//
-// C++ magic...
-//
 
 #  ifdef __cplusplus
 }
