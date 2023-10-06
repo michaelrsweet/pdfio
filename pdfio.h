@@ -1,7 +1,7 @@
 //
 // Public header file for PDFio.
 //
-// Copyright © 2021-2022 by Michael R Sweet.
+// Copyright © 2021-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -9,25 +9,21 @@
 
 #ifndef PDFIO_H
 #  define PDFIO_H
-
-//
-// Include necessary headers...
-//
-
 #  include <stdio.h>
 #  include <stdlib.h>
 #  include <stdbool.h>
 #  include <sys/types.h>
 #  include <time.h>
-
-
-//
-// C++ magic...
-//
-
 #  ifdef __cplusplus
 extern "C" {
 #  endif // __cplusplus
+
+
+//
+// Version number...
+//
+
+#  define PDFIO_VERSION		"1.1.2"
 
 
 //
@@ -243,10 +239,6 @@ extern bool		pdfioStreamWrite(pdfio_stream_t *st, const void *buffer, size_t byt
 extern char		*pdfioStringCreate(pdfio_file_t *pdf, const char *s)  _PDFIO_PUBLIC;
 extern char		*pdfioStringCreatef(pdfio_file_t *pdf, const char *format, ...) _PDFIO_FORMAT(2,3) _PDFIO_PUBLIC;
 
-
-//
-// C++ magic...
-//
 
 #  ifdef __cplusplus
 }

@@ -21,7 +21,7 @@ CFLAGS		=
 CODESIGN_IDENTITY =	Developer ID
 COMMONFLAGS	=	-Os -g
 #COMMONFLAGS	=	-O0 -g -fsanitize=address
-CPPFLAGS	=	'-DPDFIO_VERSION="$(VERSION)"'
+CPPFLAGS	=
 DESTDIR		=	$(DSTROOT)
 DSO		=	cc
 DSOFLAGS	=
@@ -89,7 +89,7 @@ debug:
 	$(MAKE) -$(MAKEFLAGS) COMMONFLAGS="-g -fsanitize=address -DDEBUG=1" clean all
 
 macos:
-	$(MAKE) -$(MAKEFLAGS) COMMONFLAGS="-Os -mmacosx-version-min=10.14 -arch x86_64 -arch arm64" clean all
+	$(MAKE) -$(MAKEFLAGS) COMMONFLAGS="-Os -mmacosx-version-min=11 -arch x86_64 -arch arm64" clean all
 
 
 # Clean everything
@@ -191,7 +191,7 @@ ttf.o:			ttf.h
 # Make documentation using Codedoc <https://www.msweet.org/codedoc>
 DOCFLAGS	=	\
 			--author "Michael R Sweet" \
-			--copyright "Copyright (c) 2021-2022 by Michael R Sweet" \
+			--copyright "Copyright (c) 2021-2023 by Michael R Sweet" \
 			--docversion $(VERSION)
 
 .PHONY: doc
