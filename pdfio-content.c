@@ -1448,8 +1448,11 @@ pdfioFileCreateFontObjFromFile(
 
     cmap = ttfGetCMap(font, &num_cmap);
 
+    PDFIO_DEBUG("pdfioFileCreateFontObjFromFile: num_cmap=%u\n", (unsigned)num_cmap);
+
     for (i = 0, bufptr = buffer, bufend = buffer + sizeof(buffer); i < num_cmap; i ++)
     {
+      PDFIO_DEBUG("pdfioFileCreateFontObjFromFile: cmap[%u]=%d\n", (unsigned)i, cmap[i]);
       if (cmap[i] < 0)
       {
         // Map undefined glyph to .notdef...
@@ -1505,7 +1508,7 @@ pdfioFileCreateFontObjFromFile(
 
     // CIDSystemInfo mapping to Adobe UCS2 v0 (Unicode)
     pdfioDictSetString(sidict, "Registry", "Adobe");
-    pdfioDictSetString(sidict, "Ordering", "Identity");
+    pdfioDictSetString(sidict, "Ordering", "Identity-H");
     pdfioDictSetNumber(sidict, "Supplement", 0);
 
     // Then the dictionary for the CID base font...
@@ -2997,7 +3000,7 @@ write_string(pdfio_stream_t *st,	// I - Stream
 
 
   // Start the string...
-  if (!pdfioStreamPuts(st, unicode ? "<" : "("))
+  if (!pdfioStreamPuts(st, unicode ? "<FEFF" : "("))
     return (false);
 
   // Loop through the string, handling UTF-8 as needed...

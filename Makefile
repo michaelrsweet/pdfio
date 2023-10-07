@@ -136,7 +136,7 @@ install-shared:
 
 # Test everything
 test:	testpdfio
-	./testpdfio
+	./testpdfio 2>test.log
 
 valgrind:	testpdfio
 	valgrind --leak-check=full ./testpdfio
