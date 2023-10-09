@@ -9,6 +9,7 @@ v1.1.2 (TBD)
   dash pattern (Issue #41)
 - Fixed an issue with broken PDF files containing extra CR and/or LF separators
   after the object stream token (Issue #40)
+- Fixed an issue with PDF files produced by Crystal Reports (Issue #45)
 - Fixed an issue with PDF files produced by Microsoft Reporting Services
   (Issue #46)
 

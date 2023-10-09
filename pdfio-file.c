@@ -1914,12 +1914,12 @@ load_xref(
 	}
       }
     }
-    else if (!strcmp(line, "xref"))
+    else if (!strncmp(line, "xref", 4) && !line[4] || isspace(line[4] & 255))
     {
       // Read the xref tables
       while (_pdfioFileGets(pdf, line, sizeof(line)))
       {
-	if (!strcmp(line, "trailer"))
+	if (!strncmp(line, "trailer", 7) && !line[7] || isspace(line[7] & 255))
 	  break;
 	else if (!line[0])
 	  continue;
@@ -1984,7 +1984,7 @@ load_xref(
 	}
       }
 
-      if (strcmp(line, "trailer"))
+      if (strncmp(line, "trailer", 7))
       {
 	_pdfioFileError(pdf, "Missing trailer.");
 	return (false);
