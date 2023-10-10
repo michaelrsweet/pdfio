@@ -12,6 +12,10 @@ v1.1.2 (TBD)
 - Fixed an issue with PDF files produced by Crystal Reports (Issue #45)
 - Fixed an issue with PDF files produced by Microsoft Reporting Services
   (Issue #46)
+- Fixed support for compound filters where the filter array consists of a
+  single named filter (Issue #47)
+- Fixed builds on Windows - needed windows.h header for temporary files
+  (Issue #48)
 
 
 v1.1.1 (March 20, 2023)

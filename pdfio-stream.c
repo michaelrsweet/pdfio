@@ -464,11 +464,18 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
     // Try to decode/decompress the contents of this object...
     const char	*filter = pdfioDictGetName(dict, "Filter");
 					// Filter value
+    pdfio_array_t *fa;			// Filter array
+
+    if (!filter && (fa = pdfioDictGetArray(dict, "Filter")) != NULL && pdfioArrayGetSize(fa) == 1)
+    {
+      // Support single-valued arrays...
+      filter = pdfioArrayGetName(fa, 0);
+    }
 
     if (!filter)
     {
       // No single filter name, do we have a compound filter?
-      if (pdfioDictGetArray(dict, "Filter"))
+      if (fa)
       {
 	// TODO: Implement compound filters...
 	_pdfioFileError(st->pdf, "Unsupported compound stream filter.");
