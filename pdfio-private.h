@@ -23,6 +23,7 @@
 #  ifdef _WIN32
 #    include <io.h>
 #    include <direct.h>
+#    include <windows.h> // GetTempPathA
 #    define access	_access		// Map standard POSIX/C99 names
 #    define close	_close
 #    define fileno	_fileno
