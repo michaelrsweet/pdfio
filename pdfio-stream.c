@@ -464,9 +464,10 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
     // Try to decode/decompress the contents of this object...
     const char	*filter = pdfioDictGetName(dict, "Filter");
 					// Filter value
-    pdfio_array_t *fa;			// Filter array
+    pdfio_array_t *fa = pdfioDictGetArray(dict, "Filter");
+					// Filter array
 
-    if (!filter && (fa = pdfioDictGetArray(dict, "Filter")) != NULL && pdfioArrayGetSize(fa) == 1)
+    if (!filter && fa && pdfioArrayGetSize(fa) == 1)
     {
       // Support single-valued arrays...
       filter = pdfioArrayGetName(fa, 0);
