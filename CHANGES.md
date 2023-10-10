@@ -2,8 +2,8 @@ Changes in PDFio
 ================
 
 
-v1.1.2 (TBD)
-------------
+v1.1.2 (October 10, 2023)
+-------------------------
 
 - Updated `pdfioContentSetDashPattern` to support setting a solid (0 length)
   dash pattern (Issue #41)
