@@ -75,6 +75,7 @@ typedef __int64 ssize_t;		// POSIX type not present on Windows...
 // DEBUG is defined and is a no-op otherwise...
 //
 
+#define DEBUG
 #ifdef DEBUG
 #  define TTF_DEBUG(...) fprintf(stderr, __VA_ARGS__)
 #else
@@ -448,7 +449,7 @@ ttfCreate(const char   *filename,	// I - Filename
     font->cap_height = font->ascent;
 
   if (font->x_height == 0)
-    font->x_height   = 3 * font->ascent / 5;
+    font->x_height = 3 * font->ascent / 5;
 
   // Build a sparse glyph widths table...
   font->min_char = -1;
@@ -458,7 +459,8 @@ ttfCreate(const char   *filename,	// I - Filename
     if (font->cmap[i] >= 0)
     {
       int	bin = (int)i / 256,	// Sub-array bin
-		glyph = font->cmap[i];	// Glyph index
+		glyph = font->cmap[i] + 1;
+					// Glyph index (+1 to get past .notdef)
 
       // Update min/max...
       if (font->min_char < 0)
@@ -687,9 +689,6 @@ ttfGetExtents(
       ch = *s++;
     }
 
-    // Issue #1: Offset past ".notdef"...
-    ch ++;
-
     // Find its width...
     if ((widths = font->widths[ch / 256]) != NULL)
     {
@@ -855,16 +854,13 @@ int					// O - Width in 1000ths
 ttfGetWidth(ttf_t *font,		// I - Font
             int   ch)			// I - Unicode character
 {
-  int	bin;				// Bin in widths array
+  ch --;
+  int	bin =  ch >> 8;			// Bin in widths array
 
 
   // Range check input...
   if (!font || ch < ' ' || ch == 0x7f)
     return (0);
-
-  // Issue #1: Offset past ".notdef"...
-  ch ++;
-  bin = ch >> 8;
 
   if (font->widths[bin])
     return ((int)(1000.0f * font->widths[bin][ch & 255].width / font->units));
@@ -1309,17 +1305,17 @@ read_cmap(ttf_t *font)			// I - Font
               {
                 // Use an "obscure indexing trick" (words from the spec, not
                 // mine) to look up the glyph index...
-                temp = segment->idRangeOffset / 2 + ch - segment->startCode + seg - segCount - 1;
+                temp = segment->idRangeOffset / 2 + ch - segment->startCode + seg - segCount;
 
-                if (temp < 0 || temp >= numGlyphIdArray || !glyphIdArray[temp])
+                if (temp < 0 || temp >= numGlyphIdArray)
                   glyph = -1;
 		else
-		  glyph = ((glyphIdArray[temp] + segment->idDelta) & 65535) - 1;
+		  glyph = (glyphIdArray[temp] + segment->idDelta) & 65535;
               }
               else
               {
                 // Just use idDelta to compute a glyph index...
-                glyph = ((ch + segment->idDelta) & 65535) - 1;
+                glyph = (ch + segment->idDelta) & 65535;
 	      }
 
 	      cmapptr[ch] = glyph;

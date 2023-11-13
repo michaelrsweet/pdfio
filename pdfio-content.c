@@ -1466,8 +1466,8 @@ pdfioFileCreateFontObjFromFile(
       else
       {
         // Map to specified glyph...
-        *bufptr++ = (unsigned char)((cmap[i] + 1) >> 8);
-        *bufptr++ = (unsigned char)((cmap[i] + 1) & 255);
+        *bufptr++ = (unsigned char)(cmap[i] >> 8);
+        *bufptr++ = (unsigned char)(cmap[i] & 255);
       }
 
       if (bufptr >= bufend)

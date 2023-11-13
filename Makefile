@@ -67,12 +67,14 @@ LIBOBJS		=	\
 OBJS		=	\
 			$(LIBOBJS) \
 			pdfiototext.o \
-			testpdfio.o
+			testpdfio.o \
+			testttf.o
 TARGETS		=	\
 			$(DSONAME) \
 			libpdfio.a \
 			pdfiototext \
-			testpdfio
+			testpdfio \
+			testttf
 
 
 # Make everything
@@ -136,6 +138,7 @@ install-shared:
 
 # Test everything
 test:	testpdfio
+	./testttf 2>test.log
 	./testpdfio 2>test.log
 
 valgrind:	testpdfio
@@ -182,10 +185,16 @@ testpdfio:		testpdfio.o libpdfio.a
 	echo Linking $@...
 	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o $@ testpdfio.o libpdfio.a $(LIBS)
 
+# TTF test program
+testttf:	ttf.o testttf.o
+	echo Linking $@...
+	$(CC) $(LDFLAGS) -o testttf ttf.o testttf.o $(LIBS)
+
 
 # Dependencies
 $(OBJS):		pdfio.h pdfio-private.h Makefile
 pdfio-content.o:	pdfio-content.h ttf.h
+testttf.o:		ttf.h
 ttf.o:			ttf.h
 
 # Make documentation using Codedoc <https://www.msweet.org/codedoc>
