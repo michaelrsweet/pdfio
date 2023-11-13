@@ -455,7 +455,7 @@ do_test_file(const char *filename,	// I - PDF filename
 	      }
 	    }
 
-	    printf("    Page #%d is %gx%g.\n", (int)n + 1, media_box.x2, media_box.y2);
+	    printf("    Page #%d (obj %d) is %gx%g.\n", (int)n + 1, (int)pdfioObjGetNumber(obj), media_box.x2, media_box.y2);
 	  }
 	}
 

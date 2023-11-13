@@ -855,13 +855,18 @@ int					// O - Width in 1000ths
 ttfGetWidth(ttf_t *font,		// I - Font
             int   ch)			// I - Unicode character
 {
-  int	bin = ch >> 8;			// Bin in widths array
+  int	bin;				// Bin in widths array
 
 
   // Range check input...
   if (!font || ch < ' ' || ch == 0x7f)
     return (0);
-  else if (font->widths[bin])
+
+  // Issue #1: Offset past ".notdef"...
+  ch ++;
+  bin = ch >> 8;
+
+  if (font->widths[bin])
     return ((int)(1000.0f * font->widths[bin][ch & 255].width / font->units));
   else if (font->widths[0])		// .notdef
     return ((int)(1000.0f * font->widths[0][0].width / font->units));

@@ -1410,6 +1410,7 @@ pdfioFileCreateFontObjFromFile(
     pdfio_dict_t	*cid2gid;	// CIDToGIDMap dictionary
     pdfio_obj_t		*cid2gid_obj;	// CIDToGIDMap object
     size_t		i,		// Looping var
+			start,		// Start character
 			num_cmap;	// Number of CMap entries
     const int		*cmap;		// CMap entries
     unsigned char	*bufptr,	// Pointer into buffer
@@ -1418,6 +1419,9 @@ pdfioFileCreateFontObjFromFile(
     pdfio_obj_t		*type2_obj;	// CIDFontType2 font object
     pdfio_array_t	*descendants;	// Decendant font list
     pdfio_dict_t	*sidict;	// CIDSystemInfo dictionary
+    pdfio_array_t	*w_array,	// Width array
+			*temp_array;	// Temporary width sub-array
+    int			w0, w1;		// Widths
 
     // Create a CIDToGIDMap object for the Unicode font...
     if ((cid2gid = pdfioDictCreate(pdf)) == NULL)
@@ -1462,8 +1466,8 @@ pdfioFileCreateFontObjFromFile(
       else
       {
         // Map to specified glyph...
-        *bufptr++ = (unsigned char)(cmap[i] >> 8);
-        *bufptr++ = (unsigned char)(cmap[i] & 255);
+        *bufptr++ = (unsigned char)((cmap[i] + 1) >> 8);
+        *bufptr++ = (unsigned char)((cmap[i] + 1) & 255);
       }
 
       if (bufptr >= bufend)
@@ -1506,9 +1510,55 @@ pdfioFileCreateFontObjFromFile(
       return (NULL);
     }
 
+    // Width array
+    if ((w_array = pdfioArrayCreate(pdf)) == NULL)
+    {
+      ttfDelete(font);
+      return (NULL);
+    }
+
+    for (start = 0, w0 = ttfGetWidth(font, 0), i = 1; i < 65536; start = i, w0 = w1, i ++)
+    {
+      while (i < 65536 && (w1 = ttfGetWidth(font, i)) == w0)
+        i ++;
+
+      if ((i - start) > 1)
+      {
+        // Encode a repeating sequence...
+        pdfioArrayAppendNumber(w_array, start);
+        pdfioArrayAppendNumber(w_array, i);
+        pdfioArrayAppendNumber(w_array, w0);
+      }
+      else
+      {
+        // Encode a non-repeating sequence...
+        pdfioArrayAppendNumber(w_array, start);
+
+        if ((temp_array = pdfioArrayCreate(pdf)) == NULL)
+        {
+	  ttfDelete(font);
+	  return (NULL);
+        }
+
+        pdfioArrayAppendNumber(temp_array, w0);
+        for (w0 = w1, i ++; i < 65536; w0 = w1, i ++)
+        {
+          if ((w1 = ttfGetWidth(font, i)) == w0 && i < 65535)
+            break;
+
+	  pdfioArrayAppendNumber(temp_array, w0);
+        }
+
+        if (i == 65536)
+	  pdfioArrayAppendNumber(temp_array, w0);
+
+        pdfioArrayAppendArray(w_array, temp_array);
+      }
+    }
+
     // CIDSystemInfo mapping to Adobe UCS2 v0 (Unicode)
     pdfioDictSetString(sidict, "Registry", "Adobe");
-    pdfioDictSetString(sidict, "Ordering", "Identity-H");
+    pdfioDictSetString(sidict, "Ordering", "Identity");
     pdfioDictSetNumber(sidict, "Supplement", 0);
 
     // Then the dictionary for the CID base font...
@@ -1518,6 +1568,7 @@ pdfioFileCreateFontObjFromFile(
     pdfioDictSetDict(type2, "CIDSystemInfo", sidict);
     pdfioDictSetObj(type2, "CIDToGIDMap", cid2gid_obj);
     pdfioDictSetObj(type2, "FontDescriptor", desc_obj);
+    pdfioDictSetArray(type2, "W", w_array);
 
     if ((type2_obj = pdfioFileCreateObj(pdf, type2)) == NULL)
     {
