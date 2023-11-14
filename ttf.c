@@ -480,7 +480,7 @@ ttfCreate(const char   *filename,	// I - Filename
 
 #ifdef DEBUG
     if (i >= ' ' && i < 127)
-      TTF_DEBUG("ttfCreate: width['%c']=%d(%d)\n", (char)i, font->widths[0][i].width, font->widths[0][i].left_bearingx);
+      TTF_DEBUG("ttfCreate: width['%c']=%d(%d)\n", (char)i, font->widths[0][i].width, font->widths[0][i].left_bearing);
 #endif // DEBUG
   }
 

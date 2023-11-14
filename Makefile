@@ -188,7 +188,7 @@ testpdfio:		testpdfio.o libpdfio.a
 # TTF test program
 testttf:	ttf.o testttf.o
 	echo Linking $@...
-	$(CC) $(LDFLAGS) -o testttf ttf.o testttf.o $(LIBS)
+	$(CC) $(LDFLAGS) $(COMMONFLAGS) -o testttf ttf.o testttf.o $(LIBS)
 
 
 # Dependencies
