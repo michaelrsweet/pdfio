@@ -1526,7 +1526,7 @@ pdfioFileCreateFontObjFromFile(
       {
         // Encode a repeating sequence...
         pdfioArrayAppendNumber(w_array, start);
-        pdfioArrayAppendNumber(w_array, i);
+        pdfioArrayAppendNumber(w_array, i - 1);
         pdfioArrayAppendNumber(w_array, w0);
       }
       else
@@ -1551,6 +1551,8 @@ pdfioFileCreateFontObjFromFile(
 
         if (i == 65536)
 	  pdfioArrayAppendNumber(temp_array, w0);
+	else
+	  i --;
 
         pdfioArrayAppendArray(w_array, temp_array);
       }

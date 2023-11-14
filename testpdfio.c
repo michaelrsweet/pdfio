@@ -2391,24 +2391,11 @@ write_font_test(pdfio_file_t *pdf,	// I - PDF file
   };
 
 
-#if 0
-  if (unicode)
-  {
-    fputs("pdfioFileCreateFontObjFromFile(NotoSansJP-Regular.otf): ", stdout);
-    if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/NotoSansJP-Regular.otf", true)) != NULL)
-      puts("PASS");
-    else
-      return (1);
-  }
+  fputs("pdfioFileCreateFontObjFromFile(OpenSans-Regular.ttf): ", stdout);
+  if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", unicode)) != NULL)
+    puts("PASS");
   else
-#endif // 0
-  {
-    fputs("pdfioFileCreateFontObjFromFile(OpenSans-Regular.ttf): ", stdout);
-    if ((opensans = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", unicode)) != NULL)
-      puts("PASS");
-    else
-      return (1);
-  }
+    return (1);
 
   fputs("pdfioDictCreate: ", stdout);
   if ((dict = pdfioDictCreate(pdf)) != NULL)

@@ -71,11 +71,10 @@ typedef __int64 ssize_t;		// POSIX type not present on Windows...
 
 
 //
-// DEBUG is typically defined for debug builds.  TTF_DEBUG maps to printf when
+// DEBUG is typically defined for debug builds.  TTF_DEBUG maps to fprintf when
 // DEBUG is defined and is a no-op otherwise...
 //
 
-#define DEBUG
 #ifdef DEBUG
 #  define TTF_DEBUG(...) fprintf(stderr, __VA_ARGS__)
 #else
@@ -459,8 +458,7 @@ ttfCreate(const char   *filename,	// I - Filename
     if (font->cmap[i] >= 0)
     {
       int	bin = (int)i / 256,	// Sub-array bin
-		glyph = font->cmap[i] + 1;
-					// Glyph index (+1 to get past .notdef)
+		glyph = font->cmap[i];	// Glyph index
 
       // Update min/max...
       if (font->min_char < 0)
@@ -479,6 +477,11 @@ ttfCreate(const char   *filename,	// I - Filename
       else
 	font->widths[bin][i & 255] = widths[glyph];
     }
+
+#ifdef DEBUG
+    if (i >= ' ' && i < 127)
+      TTF_DEBUG("ttfCreate: width['%c']=%d(%d)\n", (char)i, font->widths[0][i].width, font->widths[0][i].left_bearingx);
+#endif // DEBUG
   }
 
   // Cleanup and return the font...
@@ -736,17 +739,6 @@ ttfGetFamily(ttf_t *font)		// I - Font
 
 
 //
-// 'ttfIsFixedPitch()' - Determine whether a font is fixedpitch.
-//
-
-bool					// O - `true` if fixed pitch, `false` otherwise
-ttfIsFixedPitch(ttf_t *font)		// I - Font
-{
-  return (font ? font->is_fixed : false);
-}
-
-
-//
 // 'ttfGetItalicAngle()' - Get the italic angle.
 //
 
@@ -854,7 +846,6 @@ int					// O - Width in 1000ths
 ttfGetWidth(ttf_t *font,		// I - Font
             int   ch)			// I - Unicode character
 {
-  ch --;
   int	bin =  ch >> 8;			// Bin in widths array
 
 
@@ -879,6 +870,17 @@ int					// O - Lowercase letter height in 1000ths
 ttfGetXHeight(ttf_t *font)		// I - Font
 {
   return (font ? (int)(1000 * font->x_height / font->units) : 0);
+}
+
+
+//
+// 'ttfIsFixedPitch()' - Determine whether a font is fixedpitch.
+//
+
+bool					// O - `true` if fixed pitch, `false` otherwise
+ttfIsFixedPitch(ttf_t *font)		// I - Font
+{
+  return (font ? font->is_fixed : false);
 }
 
 
@@ -1582,6 +1584,8 @@ read_hmtx(ttf_t           *font,	// I - Font
   {
     widths[i].width        = (short)read_ushort(font);
     widths[i].left_bearing = (short)read_short(font);
+
+    TTF_DEBUG("read_hmtx: widths[%d].width=%d, .left_bearing=%d\n", i, widths[i].width, widths[i].left_bearing);
   }
 
   return (widths);

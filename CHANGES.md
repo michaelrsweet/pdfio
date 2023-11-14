@@ -2,6 +2,12 @@ Changes in PDFio
 ================
 
 
+v1.1.3 (Month DD, YYYY)
+-----------------------
+
+- Fixed Unicode font support (Issue #16)
+
+
 v1.1.2 (October 10, 2023)
 -------------------------
 
