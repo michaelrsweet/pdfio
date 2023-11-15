@@ -452,6 +452,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       return (NULL);
     }
 
+    PDFIO_DEBUG("_pdfioStreamOpen: ivlen=%d\n", (int)ivlen);
     if (ivlen > 0)
       _pdfioFileConsume(st->pdf, ivlen);
 
@@ -567,6 +568,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       else
         st->predictor = _PDFIO_PREDICTOR_NONE;
 
+      PDFIO_DEBUG("_pdfioStreamOpen: pos=%ld\n", (long)_pdfioFileTell(st->pdf));
       if (sizeof(st->cbuffer) > st->remaining)
 	rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->remaining);
       else

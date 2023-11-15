@@ -1514,6 +1514,7 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
 
     // Skip offset
     _pdfioTokenGet(&tb, buffer, sizeof(buffer));
+    PDFIO_DEBUG("load_obj_stream: %ld at offset %s\n", (long)number, buffer);
   }
 
   if (!buffer[0])
@@ -1865,8 +1866,18 @@ load_xref(
 		break;
 	    }
 
-	    if (i >= num_sobjs && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
-	      sobjs[num_sobjs ++] = (size_t)offset;
+	    if (i >= num_sobjs)
+	    {
+	      if (num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
+	      {
+		sobjs[num_sobjs ++] = (size_t)offset;
+	      }
+	      else
+	      {
+		_pdfioFileError(pdf, "Too many object streams.");
+	        return (false);
+	      }
+	    }
 	  }
 	  else if (!current)
 	  {

@@ -375,9 +375,9 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
     if (whence != SEEK_END && offset >= pdf->bufpos && offset < (pdf->bufpos + pdf->bufend - pdf->buffer))
     {
       // Yes, seek within existing buffer...
-      pdf->bufptr = pdf->buffer + offset - pdf->bufpos;
+      pdf->bufptr = pdf->buffer + (offset - pdf->bufpos);
       PDFIO_DEBUG("_pdfioFileSeek: Seek within buffer, bufpos=%ld.\n", (long)pdf->bufpos);
-      PDFIO_DEBUG("_pdfioFileSeek: buffer=%p, bufptr=%p, bufend=%p\n", pdf->buffer, pdf->bufptr, pdf->bufend);
+      PDFIO_DEBUG("_pdfioFileSeek: buffer=%p, bufptr=%p(<%02X%02X...>), bufend=%p\n", pdf->buffer, pdf->bufptr, pdf->bufptr[0] & 255, pdf->bufptr[1] & 255, pdf->bufend);
       return (offset);
     }
 
