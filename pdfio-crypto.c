@@ -1,7 +1,7 @@
 //
 // Cryptographic support functions for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -446,6 +446,7 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
 
         // Initialize the RC4 context using 40 bits of the digest...
 	_pdfioCryptoRC4Init(&ctx->rc4, digest, 5);
+	*ivlen = 0;
 	return ((_pdfio_crypto_cb_t)_pdfioCryptoRC4Crypt);
 
     case PDFIO_ENCRYPTION_RC4_128 :
