@@ -2,8 +2,8 @@ Changes in PDFio
 ================
 
 
-v1.1.3 (Month DD, YYYY)
------------------------
+v1.1.3 (November 15, 2023)
+--------------------------
 
 - Fixed Unicode font support (Issue #16)
 - Fixed missing initializer for 40-bit RC4 encryption (Issue #51)
