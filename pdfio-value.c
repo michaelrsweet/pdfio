@@ -383,7 +383,10 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 	return (false);
       }
 
-      cb      = _pdfioCryptoMakeReader(pdf, obj, &ctx, v->value.binary.data, &ivlen);
+      ivlen = v->value.binary.datalen;
+      if ((cb = _pdfioCryptoMakeReader(pdf, obj, &ctx, v->value.binary.data, &ivlen)) == NULL)
+	return (false);
+
       templen = (cb)(&ctx, temp, v->value.binary.data + ivlen, v->value.binary.datalen - ivlen);
 
       // Copy the decrypted string back to the value and adjust the length...

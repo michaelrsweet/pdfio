@@ -449,8 +449,15 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
 	*ivlen = 0;
 	return ((_pdfio_crypto_cb_t)_pdfioCryptoRC4Crypt);
 
-    case PDFIO_ENCRYPTION_RC4_128 :
     case PDFIO_ENCRYPTION_AES_128 :
+        if (*ivlen < 16)
+        {
+          *ivlen = 0;
+          _pdfioFileError(pdf, "Value too short for AES encryption.");
+          return (NULL);
+        }
+
+    case PDFIO_ENCRYPTION_RC4_128 :
 	// Copy the key data for the MD5 hash.
 	memcpy(data, pdf->file_key, sizeof(pdf->file_key));
 	data[16] = (uint8_t)obj->number;

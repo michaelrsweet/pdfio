@@ -2,6 +2,12 @@ Changes in PDFio
 ================
 
 
+v1.1.4 (Month DD, YYYY)
+-----------------------
+
+- Fixed detection of encrypted strings that are too short (Issue #52)
+
+
 v1.1.3 (November 15, 2023)
 --------------------------
 
