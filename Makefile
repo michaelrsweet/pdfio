@@ -29,7 +29,7 @@ DSONAME		=
 LDFLAGS		=
 LIBS		=	-lm -lz
 RANLIB		=	ranlib
-VERSION		=	1.1.3
+VERSION		=	1.1.4
 prefix		=	/usr/local
 
 

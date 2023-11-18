@@ -23,7 +23,7 @@ extern "C" {
 // Version number...
 //
 
-#  define PDFIO_VERSION		"1.1.3"
+#  define PDFIO_VERSION		"1.1.4"
 
 
 //
