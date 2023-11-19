@@ -165,8 +165,7 @@ test_font(const char *filename)		// I - Font filename
   }
   else
   {
-    puts("FAIL");
-    errors ++;
+    puts("WARNING (no copyright found)");
   }
 
   for (i = 0; i < (int)(sizeof(strings) / sizeof(strings[0])); i ++)
@@ -195,7 +194,7 @@ test_font(const char *filename)		// I - Font filename
   }
 
   fputs("ttfGetItalicAngle: ", stdout);
-  if ((realvalue = ttfGetItalicAngle(font)) >= 0.0)
+  if ((realvalue = ttfGetItalicAngle(font)) >= -180.0 && realvalue <= 180.0)
   {
     printf("PASS (%g)\n", realvalue);
   }

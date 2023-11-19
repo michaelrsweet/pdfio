@@ -1282,7 +1282,7 @@ read_cmap(ttf_t *font)			// I - Font
 
           // Based on the end code of the segent table, allocate space for the
           // uncompressed cmap table...
-          segCount --;			// Last segment is not used (sigh)
+//          segCount --;			// Last segment is not used (sigh)
 
 	  font->num_cmap = segments[segCount - 1].endCode + 1;
 	  font->cmap     = cmapptr = (int *)malloc(font->num_cmap * sizeof(int));
@@ -1307,7 +1307,7 @@ read_cmap(ttf_t *font)			// I - Font
               {
                 // Use an "obscure indexing trick" (words from the spec, not
                 // mine) to look up the glyph index...
-                temp = segment->idRangeOffset / 2 - segCount + (ch - segment->startCode) + (seg - segCount);
+                temp = segment->idRangeOffset / 2 - segCount + (ch - segment->startCode) + (segment - segments);
 
                 TTF_DEBUG("read_cmap: ch=%d, temp=%d\n", ch, temp);
                 if (temp < 0 || temp >= numGlyphIdArray)
