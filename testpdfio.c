@@ -2392,7 +2392,8 @@ write_font_test(
     "Märr-ŋamathirri",
     "Ẹ ku abọ",
     "Kíimak 'oolal",
-    "Ngiyakwemukela"
+    "Ngiyakwemukela",
+    "いらっしゃいませ"
   };
 
 

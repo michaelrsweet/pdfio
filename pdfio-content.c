@@ -3053,7 +3053,7 @@ write_string(pdfio_stream_t *st,	// I - Stream
 
 
   // Start the string...
-  if (!pdfioStreamPuts(st, unicode ? "<FEFF" : "("))
+  if (!pdfioStreamPuts(st, unicode ? "<" : "("))
     return (false);
 
   // Loop through the string, handling UTF-8 as needed...
