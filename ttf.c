@@ -479,7 +479,7 @@ ttfCreate(const char   *filename,	// I - Filename
     }
 
 #ifdef DEBUG
-    if (i >= ' ' && i < 127)
+    if (i >= ' ' && i < 127 && font->widths[0])
       TTF_DEBUG("ttfCreate: width['%c']=%d(%d)\n", (char)i, font->widths[0][i].width, font->widths[0][i].left_bearing);
 #endif // DEBUG
   }
@@ -1307,8 +1307,9 @@ read_cmap(ttf_t *font)			// I - Font
               {
                 // Use an "obscure indexing trick" (words from the spec, not
                 // mine) to look up the glyph index...
-                temp = segment->idRangeOffset / 2 + ch - segment->startCode + seg - segCount;
+                temp = segment->idRangeOffset / 2 - segCount + (ch - segment->startCode) + (seg - segCount);
 
+                TTF_DEBUG("read_cmap: ch=%d, temp=%d\n", ch, temp);
                 if (temp < 0 || temp >= numGlyphIdArray)
                   glyph = -1;
 		else
