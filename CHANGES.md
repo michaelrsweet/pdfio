@@ -8,6 +8,7 @@ v1.1.4 (Month DD, YYYY)
 - Fixed detection of encrypted strings that are too short (Issue #52)
 - Fixed a TrueType CMAP decoding bug.
 - Fixed a text rendering issue for Asian text.
+- Added a ToUnicode map for Unicode text to support text copying.
 
 
 v1.1.3 (November 15, 2023)

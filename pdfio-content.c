@@ -1289,13 +1289,13 @@ pdfioFileCreateFontObjFromFile(
   pdfio_dict_t	*dict,			// Font dictionary
 		*desc,			// Font descriptor
 		*file;			// Font file dictionary
-  pdfio_obj_t	*obj,			// Font object
+  pdfio_obj_t	*obj = NULL,		// Font object
 		*desc_obj,		// Font descriptor object
 		*file_obj;		// Font file object
   const char	*basefont;		// Base font name
   pdfio_array_t	*bbox;			// Font bounding box array
   pdfio_stream_t *st;			// Font stream
-  int		fd;			// File
+  int		fd = -1;		// File
   unsigned char	buffer[16384];		// Read buffer
   ssize_t	bytes;			// Bytes read
 
@@ -1324,48 +1324,32 @@ pdfioFileCreateFontObjFromFile(
 
   // Create the font file dictionary and object...
   if ((file = pdfioDictCreate(pdf)) == NULL)
-  {
-    ttfDelete(font);
-    close(fd);
-    return (NULL);
-  }
+    goto done;
 
   pdfioDictSetName(file, "Filter", "FlateDecode");
 
   if ((file_obj = pdfioFileCreateObj(pdf, file)) == NULL)
-  {
-    ttfDelete(font);
-    close(fd);
-    return (NULL);
-  }
+    goto done;
 
   if ((st = pdfioObjCreateStream(file_obj, PDFIO_FILTER_FLATE)) == NULL)
-  {
-    ttfDelete(font);
-    close(fd);
-    return (NULL);
-  }
+    goto done;
 
   while ((bytes = read(fd, buffer, sizeof(buffer))) > 0)
   {
     if (!pdfioStreamWrite(st, buffer, (size_t)bytes))
     {
-      ttfDelete(font);
-      close(fd);
       pdfioStreamClose(st);
-      return (NULL);
+      goto done;
     }
   }
 
   close(fd);
+  fd = -1;
   pdfioStreamClose(st);
 
   // Create the font descriptor dictionary and object...
   if ((bbox = pdfioArrayCreate(pdf)) == NULL)
-  {
-    ttfDelete(font);
-    return (NULL);
-  }
+    goto done;
 
   ttfGetBounds(font, &bounds);
 
@@ -1375,10 +1359,7 @@ pdfioFileCreateFontObjFromFile(
   pdfioArrayAppendNumber(bbox, bounds.top);
 
   if ((desc = pdfioDictCreate(pdf)) == NULL)
-  {
-    ttfDelete(font);
-    return (NULL);
-  }
+    goto done;
 
   basefont = pdfioStringCreate(pdf, ttfGetPostScriptName(font));
 
@@ -1397,22 +1378,25 @@ pdfioFileCreateFontObjFromFile(
   pdfioDictSetNumber(desc, "StemV", ttfGetWeight(font) / 4 + 25);
 
   if ((desc_obj = pdfioFileCreateObj(pdf, desc)) == NULL)
-  {
-    ttfDelete(font);
-    return (NULL);
-  }
+    goto done;
 
   pdfioObjClose(desc_obj);
 
   if (unicode)
   {
     // Unicode (CID) font...
-    pdfio_dict_t	*cid2gid;	// CIDToGIDMap dictionary
-    pdfio_obj_t		*cid2gid_obj;	// CIDToGIDMap object
+    pdfio_dict_t	*cid2gid,	// CIDToGIDMap dictionary
+			*to_unicode;	// ToUnicode dictionary
+    pdfio_obj_t		*cid2gid_obj,	// CIDToGIDMap object
+			*to_unicode_obj;// ToUnicode object
     size_t		i,		// Looping var
 			start,		// Start character
 			num_cmap;	// Number of CMap entries
     const int		*cmap;		// CMap entries
+    int			glyph,		// Current glyph
+			min_glyph,	// First glyph
+			max_glyph;	// Last glyph
+    unsigned short	glyphs[65536];	// Glyph to Unicode mapping
     unsigned char	*bufptr,	// Pointer into buffer
 			*bufend;	// End of buffer
     pdfio_dict_t	*type2;		// CIDFontType2 font dictionary
@@ -1423,34 +1407,36 @@ pdfioFileCreateFontObjFromFile(
 			*temp_array;	// Temporary width sub-array
     int			w0, w1;		// Widths
 
+    // Create a CIDSystemInfo mapping to Adobe UCS2 v0 (Unicode)
+    if ((sidict = pdfioDictCreate(pdf)) == NULL)
+      goto done;
+
+    pdfioDictSetString(sidict, "Registry", "Adobe");
+    pdfioDictSetString(sidict, "Ordering", "Identity");
+    pdfioDictSetNumber(sidict, "Supplement", 0);
+
     // Create a CIDToGIDMap object for the Unicode font...
     if ((cid2gid = pdfioDictCreate(pdf)) == NULL)
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
+      goto done;
 
 #ifndef DEBUG
     pdfioDictSetName(cid2gid, "Filter", "FlateDecode");
 #endif // !DEBUG
 
     if ((cid2gid_obj = pdfioFileCreateObj(pdf, cid2gid)) == NULL)
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
+      goto done;
 
 #ifdef DEBUG
     if ((st = pdfioObjCreateStream(cid2gid_obj, PDFIO_FILTER_NONE)) == NULL)
 #else
     if ((st = pdfioObjCreateStream(cid2gid_obj, PDFIO_FILTER_FLATE)) == NULL)
 #endif // DEBUG
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
+      goto done;
 
-    cmap = ttfGetCMap(font, &num_cmap);
+    cmap      = ttfGetCMap(font, &num_cmap);
+    min_glyph = 65536;
+    max_glyph = 0;
+    memset(glyphs, 0, sizeof(glyphs));
 
     PDFIO_DEBUG("pdfioFileCreateFontObjFromFile: num_cmap=%u\n", (unsigned)num_cmap);
 
@@ -1468,6 +1454,12 @@ pdfioFileCreateFontObjFromFile(
         // Map to specified glyph...
         *bufptr++ = (unsigned char)(cmap[i] >> 8);
         *bufptr++ = (unsigned char)(cmap[i] & 255);
+
+        glyphs[cmap[i]] = i;
+        if (cmap[i] < min_glyph)
+          min_glyph = cmap[i];
+        if (cmap[i] > max_glyph)
+          max_glyph = cmap[i];
       }
 
       if (bufptr >= bufend)
@@ -1476,8 +1468,7 @@ pdfioFileCreateFontObjFromFile(
         if (!pdfioStreamWrite(st, buffer, (size_t)(bufptr - buffer)))
         {
 	  pdfioStreamClose(st);
-          ttfDelete(font);
-          return (NULL);
+	  goto done;
         }
 
         bufptr = buffer;
@@ -1490,32 +1481,64 @@ pdfioFileCreateFontObjFromFile(
       if (!pdfioStreamWrite(st, buffer, (size_t)(bufptr - buffer)))
       {
 	pdfioStreamClose(st);
-	ttfDelete(font);
-	return (NULL);
+	goto done;
       }
     }
 
     pdfioStreamClose(st);
 
+    // ToUnicode mapping object
+    to_unicode = pdfioDictCreate(pdf);
+    pdfioDictSetName(to_unicode, "Type", "CMap");
+    pdfioDictSetName(to_unicode, "CMapName", "Adobe-Identity-UCS2");
+    pdfioDictSetDict(to_unicode, "CIDSystemInfo", sidict);
+
+#ifndef DEBUG
+    pdfioDictSetName(to_unicode, "Filter", "FlateDecode");
+#endif // !DEBUG
+
+    if ((to_unicode_obj = pdfioFileCreateObj(pdf, to_unicode)) == NULL)
+      goto done;
+
+#ifdef DEBUG
+    if ((st = pdfioObjCreateStream(to_unicode_obj, PDFIO_FILTER_NONE)) == NULL)
+#else
+    if ((st = pdfioObjCreateStream(to_unicode_obj, PDFIO_FILTER_FLATE)) == NULL)
+#endif // DEBUG
+      goto done;
+
+    pdfioStreamPuts(st,
+		    "stream\n"
+		    "/CIDInit /ProcSet findresource begin\n"
+		    "12 dict begin\n"
+		    "begincmap\n"
+		    "/CIDSystemInfo<<\n"
+		    "/Registry (Adobe)\n"
+		    "/Ordering (UCS2)\n"
+		    "/Supplement 0\n"
+		    ">> def\n"
+		    "/CMapName /Adobe-Identity-UCS2 def\n"
+		    "/CMapType 2 def\n"
+		    "1 begincodespacerange\n"
+		    "<0000> <FFFF>\n"
+		    "endcodespacerange\n"
+		    "1 beginbfrange\n"
+		    "<0000> <FFFF> <0000>\n"
+                    "endbfrange\n"
+                    "endcmap\n"
+                    "CMapName currentdict /CMap defineresource pop\n"
+                    "end\n"
+                    "end\n");
+
+    pdfioStreamClose(st);
+
     // Create a CIDFontType2 dictionary for the Unicode font...
     if ((type2 = pdfioDictCreate(pdf)) == NULL)
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
-
-    if ((sidict = pdfioDictCreate(pdf)) == NULL)
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
+      goto done;
 
     // Width array
     if ((w_array = pdfioArrayCreate(pdf)) == NULL)
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
+      goto done;
 
     for (start = 0, w0 = ttfGetWidth(font, 0), i = 1; i < 65536; start = i, w0 = w1, i ++)
     {
@@ -1535,10 +1558,7 @@ pdfioFileCreateFontObjFromFile(
         pdfioArrayAppendNumber(w_array, start);
 
         if ((temp_array = pdfioArrayCreate(pdf)) == NULL)
-        {
-	  ttfDelete(font);
-	  return (NULL);
-        }
+	  goto done;
 
         pdfioArrayAppendNumber(temp_array, w0);
         for (w0 = w1, i ++; i < 65536; w0 = w1, i ++)
@@ -1558,11 +1578,6 @@ pdfioFileCreateFontObjFromFile(
       }
     }
 
-    // CIDSystemInfo mapping to Adobe UCS2 v0 (Unicode)
-    pdfioDictSetString(sidict, "Registry", "Adobe");
-    pdfioDictSetString(sidict, "Ordering", "Identity");
-    pdfioDictSetNumber(sidict, "Supplement", 0);
-
     // Then the dictionary for the CID base font...
     pdfioDictSetName(type2, "Type", "Font");
     pdfioDictSetName(type2, "Subtype", "CIDFontType2");
@@ -1573,54 +1588,38 @@ pdfioFileCreateFontObjFromFile(
     pdfioDictSetArray(type2, "W", w_array);
 
     if ((type2_obj = pdfioFileCreateObj(pdf, type2)) == NULL)
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
+      goto done;
 
     pdfioObjClose(type2_obj);
 
     // Create a Type 0 font object...
     if ((descendants = pdfioArrayCreate(pdf)) == NULL)
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
+      goto done;
 
     pdfioArrayAppendObj(descendants, type2_obj);
 
     if ((dict = pdfioDictCreate(pdf)) == NULL)
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
+      goto done;
 
     pdfioDictSetName(dict, "Type", "Font");
     pdfioDictSetName(dict, "Subtype", "Type0");
     pdfioDictSetName(dict, "BaseFont", basefont);
     pdfioDictSetArray(dict, "DescendantFonts", descendants);
     pdfioDictSetName(dict, "Encoding", "Identity-H");
+    pdfioDictSetObj(dict, "ToUnicode", to_unicode_obj);
 
-    if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
-      return (NULL);
-
-    pdfioObjClose(obj);
+    if ((obj = pdfioFileCreateObj(pdf, dict)) != NULL)
+      pdfioObjClose(obj);
   }
   else
   {
     // Simple (CP1282 or custom encoding) 8-bit font...
     if (ttfGetMaxChar(font) >= 255 && !pdf->cp1252_obj && !create_cp1252(pdf))
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
+      goto done;
 
     // Create a TrueType font object...
     if ((dict = pdfioDictCreate(pdf)) == NULL)
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
+      goto done;
 
     pdfioDictSetName(dict, "Type", "Font");
     pdfioDictSetName(dict, "Subtype", "TrueType");
@@ -1630,14 +1629,14 @@ pdfioFileCreateFontObjFromFile(
 
     pdfioDictSetObj(dict, "FontDescriptor", desc_obj);
 
-    if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
-    {
-      ttfDelete(font);
-      return (NULL);
-    }
-
-    pdfioObjClose(obj);
+    if ((obj = pdfioFileCreateObj(pdf, dict)) != NULL)
+      pdfioObjClose(obj);
   }
+
+  done:
+
+  if (fd >= 0)
+    close(fd);
 
   ttfDelete(font);
 
