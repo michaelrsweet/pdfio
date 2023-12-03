@@ -2,8 +2,8 @@ Changes in PDFio
 ================
 
 
-v1.1.4 (Month DD, YYYY)
------------------------
+v1.1.4 (December 3, 2023)
+-------------------------
 
 - Fixed detection of encrypted strings that are too short (Issue #52)
 - Fixed a TrueType CMAP decoding bug.
