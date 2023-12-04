@@ -9,23 +9,26 @@ on:
 jobs:
   build-linux:
 
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: update build environment
+    - name: Checkout PDFio sources
+      uses: actions/checkout@v4
+    - name: Update Build Environment
       run: sudo apt-get update --fix-missing -y
-    - name: install prerequisites
+    - name: Install Prerequisites
       run: sudo apt-get install -y cppcheck zlib1g-dev
-    - name: make
+    - name: Configure PDFio
+      run: ./configure --enable-debug --enable-sanitizer --enable-maintainer
+    - name: Build PDFio
       run: make "COMMONFLAGS=-g -fsanitize=address"
-    - name: test
+    - name: Test PDFio
       env:
         ASAN_OPTIONS: leak_check_at_exit=false
       run: make test
-    - name: clang static analyzer
+    - name: Run Clang Static Analyzer
       run: make CC=clang "GHA_ERROR=::error::" clang
-    - name: cppcheck
+    - name: Run cppcheck
       run: make "GHA_ERROR=::error::" cppcheck
 
   build-macos:
@@ -33,12 +36,15 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: make
+    - name: Checkout PDFio sources
+      uses: actions/checkout@v4
+    - name: Configure PDFio
+      run: ./configure --enable-debug --enable-sanitizer --enable-maintainer
+    - name: Build PDFio
       run: make "COMMONFLAGS=-g -fsanitize=address"
-    - name: test
+    - name: Test PDFio
       run: make test
-    - name: clang static analyzer
+    - name: Run Clang Static Analyzer
       run: make CC=clang "GHA_ERROR=::error::" clang
 
   build-windows:
@@ -46,10 +52,11 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: setup-msbuild
+    - name: Checkout PDFio sources
+      uses: actions/checkout@v4
+    - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1.0.2
-    - name: nuget restore
+    - name: Nuget Restore
       run: nuget restore pdfio.sln
-    - name: msbuild
+    - name: Build PDFio
       run: msbuild pdfio.sln

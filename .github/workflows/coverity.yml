@@ -7,10 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: Coverity
     steps:
-      - uses: actions/checkout@v2
-      - name: update build environment
+      - name: Checkout PDFio sources
+        uses: actions/checkout@v4
+      - name: Update Build Environment
         run: sudo apt-get update --fix-missing -y
-      - name: install prerequisites
+      - name: Install Prerequisites
         run: sudo apt-get install -y zlib1g-dev
       - name: Download Coverity Build Tool
         run: |
@@ -20,11 +21,15 @@ jobs:
         env:
           TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
 
-      - name: Build with cov-build
+      - name: Configure PDFio
+        run: ./configure --enable-debug --enable-maintainer
+
+      - name: Build PDFio with cov-build
         run: |
           export PATH=`pwd`/cov-analysis-linux64/bin:$PATH
           cov-build --dir cov-int make
-      - name: Submit the result to Coverity Scan
+
+      - name: Submit the Result to Coverity Scan
         run: |
           tar czvf cov.tgz cov-int
           curl \

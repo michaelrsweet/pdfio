@@ -23,15 +23,15 @@ jobs:
         language: [ cpp ]
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Checkout PDFio sources
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
-      - name: Update build environment
+      - name: Update Build Environment
         run: sudo apt-get update --fix-missing -y
 
-      - name: Install prerequisites
+      - name: Install Prerequisites
         run: sudo apt-get install -y zlib1g-dev
 
       - name: Initialize CodeQL
