@@ -109,6 +109,7 @@ OBJS		=	\
 TARGETS		=	\
 			$(LIBPDFIO) \
 			$(LIBPDFIO_STATIC) \
+			pdfio.pc \
 			pdfiototext \
 			testpdfio \
 			testttf
@@ -214,6 +215,14 @@ testpdfio:		testpdfio.o libpdfio.a
 testttf:	ttf.o testttf.o
 	echo Linking $@...
 	$(CC) $(LDFLAGS) -o testttf ttf.o testttf.o $(LIBS)
+
+# updated Makefile
+Makefile: Makefile.in
+	./config.status $@
+
+# updated pkg-config file
+pdfio.pc: pdfio.pc.in
+	./config.status $@
 
 
 # Dependencies
