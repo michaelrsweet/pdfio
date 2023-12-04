@@ -1393,8 +1393,7 @@ pdfioFileCreateFontObjFromFile(
 			start,		// Start character
 			num_cmap;	// Number of CMap entries
     const int		*cmap;		// CMap entries
-    int			glyph,		// Current glyph
-			min_glyph,	// First glyph
+    int			min_glyph,	// First glyph
 			max_glyph;	// Last glyph
     unsigned short	glyphs[65536];	// Glyph to Unicode mapping
     unsigned char	*bufptr,	// Pointer into buffer

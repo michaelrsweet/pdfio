@@ -6,8 +6,12 @@
 /.vs
 /afl-output
 /autom4te.cache
+/config.log
+/config.status
 /doc/pdfio.epub
+/Makefile
 /packages
+/pdfio.pc
 /pdfio.xcodeproj/xcshareddata
 /pdfio-*.tar.gz*
 /pdfio-*.zip*

@@ -1925,12 +1925,12 @@ load_xref(
 	}
       }
     }
-    else if (!strncmp(line, "xref", 4) && !line[4] || isspace(line[4] & 255))
+    else if (!strncmp(line, "xref", 4) && (!line[4] || isspace(line[4] & 255)))
     {
       // Read the xref tables
       while (_pdfioFileGets(pdf, line, sizeof(line)))
       {
-	if (!strncmp(line, "trailer", 7) && !line[7] || isspace(line[7] & 255))
+	if (!strncmp(line, "trailer", 7) && (!line[7] || isspace(line[7] & 255)))
 	  break;
 	else if (!line[0])
 	  continue;
