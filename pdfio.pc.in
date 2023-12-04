@@ -9,5 +9,5 @@ Version: @PDFIO_VERSION@
 URL: https://www.msweet.org/pdfio
 Requires: @PKGCONFIG_REQUIRES@
 Libs: @PKGCONFIG_LIBS@
-Libs.private: @PKGCONFIG_LIBS_PRIVATE@
+Libs.private: @PKGCONFIG_LIBS_PRIVATE@ -lm
 Cflags: @PKGCONFIG_CFLAGS@
