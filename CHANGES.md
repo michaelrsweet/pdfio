@@ -2,6 +2,12 @@ Changes in PDFio
 ================
 
 
+v1.2.0 (Month DD, YYYY)
+-----------------------
+
+- Now use autoconf to configure the PDFio sources (Issue #54)
+
+
 v1.1.4 (December 3, 2023)
 -------------------------
 

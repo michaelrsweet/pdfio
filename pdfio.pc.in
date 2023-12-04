@@ -1,6 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
 Name: pdfio
 Description: PDF read/write library
+Version: @PDFIO_VERSION@
 URL: https://www.msweet.org/pdfio
-Requires: zlib >= 1.0
-Libs: -L${prefix}/lib -lpdfio -lm
-Cflags: -I${prefix}/include
+Requires: @PKGCONFIG_REQUIRES@
+Libs: @PKGCONFIG_LIBS@
+Libs.private: @PKGCONFIG_LIBS_PRIVATE@
+Cflags: @PKGCONFIG_CFLAGS@

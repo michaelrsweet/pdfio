@@ -5,6 +5,7 @@
 *.so.1
 /.vs
 /afl-output
+/autom4te.cache
 /doc/pdfio.epub
 /packages
 /pdfio.xcodeproj/xcshareddata

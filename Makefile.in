@@ -1,0 +1,260 @@
+#
+# Makefile for PDFio.
+#
+# Copyright © 2021-2023 by Michael R Sweet.
+#
+# Licensed under Apache License v2.0.  See the file "LICENSE" for more
+# information.
+#
+
+# POSIX makefile
+.POSIX:
+
+
+# Build silently
+.SILENT:
+
+
+# Version number...
+PDFIO_VERSION		=	@PDFIO_VERSION@
+PDFIO_VERSION_MAJOR	=	@PDFIO_VERSION_MAJOR@
+PDFIO_VERSION_MINOR	=	@PDFIO_VERSION_MINOR@
+
+
+# Programs and options...
+AR		=	@AR@
+ARFLAGS		=	@ARFLAGS@
+CC		=	@CC@
+CFLAGS		=	@CFLAGS@ $(CPPFLAGS) $(OPTIM) $(WARNINGS)
+CODE_SIGN	=	@CODE_SIGN@
+CODESIGN_IDENTITY =	-
+CPPFLAGS	=	@CPPFLAGS@
+CSFLAGS		=	-s "$(CODESIGN_IDENTITY)" @CSFLAGS@ --timestamp
+DSOFLAGS	=	@DSOFLAGS@ $(CFLAGS)
+INSTALL		=	@INSTALL@
+LDFLAGS		=	@LDFLAGS@ $(OPTIM)
+LIBS		=	@LIBS@
+LN		=	@LN@
+OPTIM		=	@OPTIM@
+RANLIB		=	@RANLIB@
+RM		=	@RM@ -f
+RMDIR		=	@RMDIR@
+SHELL		=	/bin/sh
+WARNINGS	=	@WARNINGS@
+
+
+# Targets
+LIBPDFIO	=	@LIBPDFIO@
+LIBPDFIO_STATIC	=	@LIBPDFIO_STATIC@
+
+
+# Directories...
+bindir		=	@bindir@
+datadir		=	@datadir@
+datarootdir	=	@datarootdir@
+exec_prefix	=	@exec_prefix@
+includedir	=	@includedir@
+infodir		=	@infodir@
+libdir		=	@libdir@
+libexecdir	=	@libexecdir@
+localstatedir	=	@localstatedir@
+mandir		=	@mandir@
+oldincludedir	=	@oldincludedir@
+prefix		=	@prefix@
+sbindir		=	@sbindir@
+sharedstatedir	=	@sharedstatedir@
+srcdir		=	@srcdir@
+sysconfdir	=	@sysconfdir@
+top_srcdir	=	@top_srcdir@
+
+BUILDROOT	=	$(DSTROOT)$(RPM_BUILD_ROOT)$(DESTDIR)
+
+
+# Build commands...
+.SUFFIXES:	.c .h .o
+.c.o:
+	echo Compiling $<...
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+
+# Files
+PUBHEADERS	=	\
+			pdfio.h \
+			pdfio-content.h
+PUBOBJS		=	\
+			pdfio-aes.o \
+			pdfio-array.o \
+			pdfio-common.o \
+			pdfio-content.o \
+			pdfio-crypto.o \
+			pdfio-dict.o \
+			pdfio-file.o \
+			pdfio-md5.o \
+			pdfio-object.o \
+			pdfio-page.o \
+			pdfio-rc4.o \
+			pdfio-sha256.o \
+			pdfio-stream.o \
+			pdfio-string.o \
+			pdfio-token.o \
+			pdfio-value.o
+LIBOBJS		=	\
+			$(PUBOBJS) \
+			ttf.o
+OBJS		=	\
+			$(LIBOBJS) \
+			pdfiototext.o \
+			testpdfio.o \
+			testttf.o
+TARGETS		=	\
+			$(DSONAME) \
+			libpdfio.a \
+			pdfiototext \
+			testpdfio \
+			testttf
+
+
+# Make everything
+all:		$(TARGETS)
+
+
+# Clean everything
+clean:
+	rm -f $(TARGETS) $(OBJS)
+
+
+# Install everything
+install:	$(TARGETS)
+	echo Installing header files to $(BUILDROOT)$(includedir)...
+	$(INSTALL) -d -m 755 $(BUILDROOT)$(includedir)
+	for file in $(PUBHEADERS); do \
+		$(INSTALL) -c -m 644 $$file $(BUILDROOT)$(includedir); \
+	done
+	echo Installing library files to $(BUILDROOT)$(libdir)...
+	$(INSTALL) -d -m 755 $(BUILDROOT)$(libdir)
+	if test "x$(LIBPDFIO_STATIC)" != x; then \
+		$(INSTALL) -c -m 644 $(LIBPDFIO_STATIC) $(BUILDROOT)$(libdir); \
+		$(RANLIB) $(BUILDROOT)$(libdir)/$(LIBPDFIO_STATIC); \
+	fi
+	if test "x$(LIBPDFIO)" = xlibpdfio.so.1; then \
+		$(INSTALL) -c -m 755 libpdfio.so.1 $(BUILDROOT)$(libdir); \
+		ln -sf libpdfio.so.1 $(BUILDROOT)$(libdir)/libpdfio.so; \
+	elif test "x$(LIBPDFIO)" = xlibpdfio.1.dylib; then \
+		$(INSTALL) -c -m 755 libpdfio.1.dylib $(BUILDROOT)$(libdir); \
+		codesign -s "$(CODESIGN_IDENTITY)" -o runtime --timestamp $(BUILDROOT)$(libdir)/libpdfio.1.dylib; \
+		ln -sf libpdfio.1.dylib $(BUILDROOT)$(libdir)/libpdfio.dylib; \
+	else \
+		$(INSTALL) -c -m 644 $(LIBPDFIO) $(BUILDROOT)$(libdir); \
+		$(RANLIB) $(BUILDROOT)$(libdir)/$(LIBPDFIO); \
+	fi
+	echo Installing pkg-config files to $(BUILDROOT)$(libdir)/pkgconfig...
+	$(INSTALL) -d -m 755 $(BUILDROOT)$(libdir)/pkgconfig
+	$(INSTALL) -c -m 644 pdfio.pc $(BUILDROOT)$(libdir)/pkgconfig
+	echo Installing documentation to $(BUILDROOT)$(datadir)/doc/pdfio...
+	$(INSTALL) -d -m 755 $(BUILDROOT)$(datadir)/doc/pdfio
+	for file in doc/pdfio.html doc/pdfio-512.png LICENSE NOTICE; do \
+		$(INSTALL) -c -m 644  $$file $(BUILDROOT)$(datadir)/doc/pdfio; \
+	done
+	echo Installing man page to $(BUILDROOT)$(datadir)/man/man3...
+	$(INSTALL) -d -m 755 $(BUILDROOT)$(datadir)/man/man3
+	$(INSTALL) -c -m 644 doc/pdfio.3 $(BUILDROOT)$(datadir)/man/man3
+
+
+# Test everything
+test:	testpdfio testttf
+	./testttf 2>test.log
+	./testpdfio 2>test.log
+
+valgrind:	testpdfio
+	valgrind --leak-check=full ./testpdfio
+
+
+# pdfio library
+libpdfio.a:		$(LIBOBJS)
+	echo Archiving $@...
+	$(AR) $(ARFLAGS) $@ $(LIBOBJS)
+	$(RANLIB) $@
+
+libpdfio.so.1:		$(LIBOBJS)
+	echo Linking $@...
+	$(CC) $(DSOFLAGS) -shared -o $@ -Wl,-soname,$@ $(LIBOBJS) $(LIBS)
+
+libpdfio.1.dylib:	$(LIBOBJS)
+	echo Linking $@...
+	$(CC) $(DSOFLAGS) -dynamiclib -o $@ -install_name $(libdir)/$@ -current_version $(PDFIO_VERSION_MAJOR).$(PDFIO_VERSION_MINOR) -compatibility_version 1.0 $(LIBOBJS) $(LIBS)
+
+
+# pdfio1.def (Windows DLL exports file...)
+#
+# I'd love to use __declspec(dllexport) but MS puts it before the function
+# declaration instead of after like everyone else, and it breaks Codedoc and
+# other tools I rely on...
+pdfio1.def: $(LIBOBJS) Makefile
+	echo Generating $@...
+	echo "LIBRARY pdfio1" >$@
+	echo "VERSION $(PDFIO_VERSION_MAJOR).$(PDFIO_VERSION_MINOR)" >>$@
+	echo "EXPORTS" >>$@
+	nm $(LIBOBJS) 2>/dev/null | grep "T _" | awk '{print $$3}' | \
+		grep -v '^_ttf' | sed -e '1,$$s/^_//' | sort >>$@
+
+
+# pdfio text extraction (demo, doesn't handle a lot of things yet)
+pdfiototext:		pdfiototext.o libpdfio.a
+	echo Linking $@...
+	$(CC) $(LDFLAGS) -o $@ pdfiototext.o libpdfio.a $(LIBS)
+
+
+# pdfio test program
+testpdfio:		testpdfio.o libpdfio.a
+	echo Linking $@...
+	$(CC) $(LDFLAGS) -o $@ testpdfio.o libpdfio.a $(LIBS)
+
+
+# TTF test program
+testttf:	ttf.o testttf.o
+	echo Linking $@...
+	$(CC) $(LDFLAGS) -o testttf ttf.o testttf.o $(LIBS)
+
+
+# Dependencies
+$(OBJS):		pdfio.h pdfio-private.h Makefile
+pdfio-content.o:	pdfio-content.h ttf.h
+testttf.o:		ttf.h
+ttf.o:			ttf.h
+
+
+# Make documentation using Codedoc <https://www.msweet.org/codedoc>
+DOCFLAGS	=	\
+			--author "Michael R Sweet" \
+			--copyright "Copyright (c) 2021-2023 by Michael R Sweet" \
+			--docversion $(PDFIO_VERSION)
+
+.PHONY: doc
+doc:
+	echo Generating documentation...
+	codedoc $(DOCFLAGS) --title "PDFio Programming Manual v$(PDFIO_VERSION)" $(PUBHEADERS) $(PUBOBJS:.o=.c) --body doc/pdfio.md --coverimage doc/pdfio-512.png pdfio.xml >doc/pdfio.html
+	codedoc $(DOCFLAGS) --title "PDFio Programming Manual v$(PDFIO_VERSIONmc6809e
+	)" --body doc/pdfio.md --coverimage doc/pdfio-epub.png pdfio.xml --epub doc/pdfio.epub
+	codedoc $(DOCFLAGS) --title "pdf read/write library" --man pdfio --section 3 --body doc/pdfio.md pdfio.xml >doc/pdfio.3
+	rm -f pdfio.xml
+
+
+# Fuzz-test the library <https://lcamtuf.coredump.cx/afl/>
+.PHONY: afl
+afl:
+	$(MAKE) -$(MAKEFLAGS) CC="afl-clang-fast" COMMONFLAGS="-g" clean all
+	test afl-output || rm -rf afl-output
+	afl-fuzz -x afl-pdf.dict -i afl-input -o afl-output -V 600 -e pdf -t 5000 ./testpdfio @@
+
+
+# Analyze code with the Clang static analyzer <https://clang-analyzer.llvm.org>
+clang:
+	clang $(CPPFLAGS) --analyze $(OBJS:.o=.c) 2>clang.log
+	rm -rf $(OBJS:.o=.plist)
+	test -s clang.log && (echo "$(GHA_ERROR)Clang detected issues."; echo ""; cat clang.log; exit 1) || exit 0
+
+
+# Analyze code using Cppcheck <http://cppcheck.sourceforge.net>
+cppcheck:
+	cppcheck $(CPPFLAGS) --template=gcc --addon=cert.py --suppressions-list=.cppcheck $(OBJS:.o=.c) 2>cppcheck.log
+	test -s cppcheck.log && (echo "$(GHA_ERROR)Cppcheck detected issues."; echo ""; cat cppcheck.log; exit 1) || exit 0
