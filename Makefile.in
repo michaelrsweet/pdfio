@@ -155,9 +155,9 @@ install:	$(TARGETS)
 	for file in doc/pdfio.html doc/pdfio-512.png LICENSE NOTICE; do \
 		$(INSTALL) -c -m 644  $$file $(BUILDROOT)$(datadir)/doc/pdfio; \
 	done
-	echo Installing man page to $(BUILDROOT)$(datadir)/man/man3...
-	$(INSTALL) -d -m 755 $(BUILDROOT)$(datadir)/man/man3
-	$(INSTALL) -c -m 644 doc/pdfio.3 $(BUILDROOT)$(datadir)/man/man3
+	echo Installing man page to $(BUILDROOT)$(mandir)/man3...
+	$(INSTALL) -d -m 755 $(BUILDROOT)$(mandir)/man3
+	$(INSTALL) -c -m 644 doc/pdfio.3 $(BUILDROOT)$(mandir)/man3
 
 
 # Test everything
