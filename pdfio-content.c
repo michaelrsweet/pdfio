@@ -7,10 +7,6 @@
 // information.
 //
 
-//
-// Include necessary headers...
-//
-
 #include "pdfio-private.h"
 #include "pdfio-content.h"
 #include "ttf.h"
@@ -1061,6 +1057,27 @@ bool					// O - `true` on success, `false` on failure
 pdfioContentTextEnd(pdfio_stream_t *st)	// I - Stream
 {
   return (pdfioStreamPuts(st, "ET\n"));
+}
+
+
+//
+// 'pdfioContextTextMeasure()' - Measure a text string and return its width.
+//
+
+double					// O - Width
+pdfioContextTextMeasure(
+    pdfio_obj_t *font,			// I - Font object created by @link pdfioFileCreateFontObjFromFile@
+    const char  *s,			// I - UTF-8 string
+    double      size)			// I - Font size/height
+{
+  ttf_t		*ttf = (ttf_t *)_pdfioObjGetExtension(font);
+					// TrueType font data
+  ttf_rect_t	extents;		// Text extents
+
+
+  ttfGetExtents(ttf, size, s, &extents);
+
+  return (extents.right - extents.left);
 }
 
 

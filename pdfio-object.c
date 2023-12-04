@@ -7,10 +7,6 @@
 // information.
 //
 
-//
-// Include necessary headers...
-//
-
 #include "pdfio-private.h"
 
 
@@ -268,6 +264,17 @@ pdfioObjGetDict(pdfio_obj_t *obj)	// I - Object
 
 
 //
+// '_pdfioObjGetExtension()' - Get the extension pointer for an object.
+//
+
+void *					// O - Extension data
+_pdfioObjGetExtension(pdfio_obj_t *obj)	// I - Object
+{
+  return (obj->data);
+}
+
+
+//
 // 'pdfioObjGetGeneration()' - Get the object's generation number.
 //
 
@@ -495,6 +502,21 @@ pdfioObjOpenStream(pdfio_obj_t *obj,	// I - Object
   obj->pdf->current_obj = obj;
 
   return (_pdfioStreamOpen(obj, decode));
+}
+
+
+//
+// '_pdfioObjSetExtension()' - Set extension data for an object.
+//
+
+void
+_pdfioObjSetExtension(
+    pdfio_obj_t *obj,			// I - Object
+    void        *data,			// I - Data
+    void        (*datafree)(void *))	// I - Free function
+{
+  obj->data     = data;
+  obj->datafree = datafree;
 }
 
 

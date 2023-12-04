@@ -287,6 +287,8 @@ struct _pdfio_obj_s			// Object
   size_t	stream_length;		// Length of stream, if any
   _pdfio_value_t value;			// Dictionary/number/etc. value
   pdfio_stream_t *stream;		// Open stream, if any
+  void		*data;			// Extension data, if any
+  void		(*datafree)(void *);	// Free callback for extension data
 };
 
 struct _pdfio_stream_s			// Stream
@@ -365,7 +367,9 @@ extern off_t		_pdfioFileTell(pdfio_file_t *pdf) _PDFIO_INTERNAL;
 extern bool		_pdfioFileWrite(pdfio_file_t *pdf, const void *buffer, size_t bytes) _PDFIO_INTERNAL;
 
 extern void		_pdfioObjDelete(pdfio_obj_t *obj) _PDFIO_INTERNAL;
+extern void		*_pdfioObjGetExtension(pdfio_obj_t *obj) _PDFIO_INTERNAL;
 extern bool		_pdfioObjLoad(pdfio_obj_t *obj) _PDFIO_INTERNAL;
+extern void		_pdfioObjSetExtension(pdfio_obj_t *obj, void *data, void (*datafree)(void *)) _PDFIO_INTERNAL;
 
 extern pdfio_stream_t	*_pdfioStreamCreate(pdfio_obj_t *obj, pdfio_obj_t *length_obj, pdfio_filter_t compression) _PDFIO_INTERNAL;
 extern pdfio_stream_t	*_pdfioStreamOpen(pdfio_obj_t *obj, bool decode) _PDFIO_INTERNAL;
