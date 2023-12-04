@@ -1368,7 +1368,7 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-static        do not install static library
-  --disable-shared        do not install shared library
+  --enable-shared         install shared library
   --enable-debug          turn on debugging, default=no
   --enable-maintainer     turn on maintainer mode, default=no
   --enable-sanitizer      build with AddressSanitizer, default=no
@@ -4111,7 +4111,7 @@ then :
 fi
 
 
-if test x$enable_shared != xno
+if test x$enable_shared = xyes
 then :
 
     if test "$host_os_name" = darwin

@@ -122,9 +122,9 @@ AS_IF([$PKCONFIG --exists zlib], [
 
 dnl Library target...
 AC_ARG_ENABLE([static], AS_HELP_STRING([--disable-static], [do not install static library]))
-AC_ARG_ENABLE([shared], AS_HELP_STRING([--disable-shared], [do not install shared library]))
+AC_ARG_ENABLE([shared], AS_HELP_STRING([--enable-shared], [install shared library]))
 
-AS_IF([test x$enable_shared != xno], [
+AS_IF([test x$enable_shared = xyes], [
     AS_IF([test "$host_os_name" = darwin], [
 	LIBPDFIO="libpdfio.1.dylib"
     ], [

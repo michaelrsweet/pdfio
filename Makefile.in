@@ -107,8 +107,8 @@ OBJS		=	\
 			testpdfio.o \
 			testttf.o
 TARGETS		=	\
-			$(DSONAME) \
-			libpdfio.a \
+			$(LIBPDFIO) \
+			$(LIBPDFIO_STATIC) \
 			pdfiototext \
 			testpdfio \
 			testttf
