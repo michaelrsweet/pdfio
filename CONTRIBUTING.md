@@ -43,13 +43,16 @@ Contents
 Build System
 ------------
 
-The build system uses a simple POSIX makefile to build a static or shared
-library.  To improve portability, makefiles *must not* make use of features
-unique to GNU make.  See the [Makefile Guidelines](#makefile-guidelines) section
-for a description of the allowed make features and makefile guidelines.
+The build system uses [GNU autoconf][AUTOCONF] to create a simple POSIX makefile
+to build static and/or shared libraries.  To improve portability, makefiles
+*must not* make use of features unique to GNU make.  See the
+[Makefile Guidelines](#makefile-guidelines) section for a description of the
+allowed make features and makefile guidelines.
 
 An Xcode project is provided for macOS/iOS developers, and a Visual Studio
 solution and projects for Windows developers.
+
+[AUTOCONF]: https://www.gnu.org/software/autoconf/
 
 
 Version Numbering
@@ -373,14 +376,15 @@ The following variables are defined in the makefile:
 - `CC`; the C compiler command,
 - `CFLAGS`; options for the C compiler,
 - `CODESIGN_IDENTITY`: the code signing identity,
-- `COMMONFLAGS`; common compiler optimization options,
 - `CPPFLAGS`; options for the C preprocessor,
 - `DESTDIR`/`DSTROOT`: the destination root directory when installing.
 - `DSO`; the shared library building command,
 - `DSOFLAGS`; options for the shared library building command,
-- `DSONAME`: the root name of the shared library
 - `LDFLAGS`; options for the linker,
+- `LIBPDFIO`: the name of the primary (shared or static) library
+- `LIBPDFIO_STATIC`: the name of the secondary (static) library
 - `LIBS`; libraries for all programs,
+- `OPTIM`; common compiler optimization options,
 - `prefix`; the installation prefix directory,
 - `RANLIB`; the static library indexing command,
 - `SHELL`; the sh (POSIX shell) command,
@@ -389,12 +393,7 @@ The following variables are defined in the makefile:
 The following standard targets are defined in the makefile:
 
 - `all`; creates the static library and unit test program.
-- `all-shared`; creates a shared library appropriate for the local system.
 - `clean`; removes all target programs libraries, documentation files, and
   object files,
-- `debug`: creates a clean build of the static library and unit test program
-  with debug printfs and the clang address sanitizer enabled.
 - `install`; installs all distribution files in their corresponding locations.
-- `install-shared`; same as `install` but also installs the shared library.
-- `macos`; same as `all` but creates a Universal Binary (X64 + ARM64).
 - `test`; runs the unit test program, building it as needed.
