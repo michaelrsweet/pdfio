@@ -2325,6 +2325,18 @@ Note: Currently PNG support is limited to grayscale, RGB, or indexed files
 without interlacing or alpha.  Transparency (masking) based on color/index
 .IP 5
 is supported.
+.SS pdfioFileCreateNumberObj
+Create a new object in a PDF file containing a number.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateNumberObj (
+    pdfio_file_t *pdf,
+    double number
+);
+.fi
+.PP
+This function creates a new object with a number value in a PDF file.
+You must call \fIpdfioObjClose\fR to write the object to the file.
 .SS pdfioFileCreateObj
 Create a new object in a PDF file.
 .PP
@@ -2389,6 +2401,18 @@ pdfio_stream_t * pdfioFileCreatePage (
     pdfio_dict_t *dict
 );
 .fi
+.SS pdfioFileCreateStringObj
+Create a new object in a PDF file containing a string.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateStringObj (
+    pdfio_file_t *pdf,
+    const char *string
+);
+.fi
+.PP
+This function creates a new object with a string value in a PDF file.
+You must call \fIpdfioObjClose\fR to write the object to the file.
 .SS pdfioFileCreateTemporary
 
 .PP

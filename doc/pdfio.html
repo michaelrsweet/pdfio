@@ -385,9 +385,11 @@ span.string {
 <li><a href="#pdfioFileCreateICCObjFromFile">pdfioFileCreateICCObjFromFile</a></li>
 <li><a href="#pdfioFileCreateImageObjFromData">pdfioFileCreateImageObjFromData</a></li>
 <li><a href="#pdfioFileCreateImageObjFromFile">pdfioFileCreateImageObjFromFile</a></li>
+<li><a href="#pdfioFileCreateNumberObj">pdfioFileCreateNumberObj</a></li>
 <li><a href="#pdfioFileCreateObj">pdfioFileCreateObj</a></li>
 <li><a href="#pdfioFileCreateOutput">pdfioFileCreateOutput</a></li>
 <li><a href="#pdfioFileCreatePage">pdfioFileCreatePage</a></li>
+<li><a href="#pdfioFileCreateStringObj">pdfioFileCreateStringObj</a></li>
 <li><a href="#pdfioFileCreateTemporary">pdfioFileCreateTemporary</a></li>
 <li><a href="#pdfioFileFindObj">pdfioFileFindObj</a></li>
 <li><a href="#pdfioFileGetAuthor">pdfioFileGetAuthor</a></li>
@@ -2771,6 +2773,22 @@ image on the page.<br>
 Note: Currently PNG support is limited to grayscale, RGB, or indexed files
 without interlacing or alpha.  Transparency (masking) based on color/index
 is supported.</blockquote>
+<h3 class="function"><a id="pdfioFileCreateNumberObj">pdfioFileCreateNumberObj</a></h3>
+<p class="description">Create a new object in a PDF file containing a number.</p>
+<p class="code">
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateNumberObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, double number);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>number</th>
+<td class="description">Number value</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">New object</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function creates a new object with a number value in a PDF file.
+You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write the object to the file.</p>
 <h3 class="function"><a id="pdfioFileCreateObj">pdfioFileCreateObj</a></h3>
 <p class="description">Create a new object in a PDF file.</p>
 <p class="code">
@@ -2849,6 +2867,22 @@ stored as indirect object references.</blockquote>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Contents stream</p>
+<h3 class="function"><a id="pdfioFileCreateStringObj">pdfioFileCreateStringObj</a></h3>
+<p class="description">Create a new object in a PDF file containing a string.</p>
+<p class="code">
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateStringObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, const char *string);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>string</th>
+<td class="description">String</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">New object</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function creates a new object with a string value in a PDF file.
+You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write the object to the file.</p>
 <h3 class="function"><a id="pdfioFileCreateTemporary">pdfioFileCreateTemporary</a></h3>
 <p class="description"></p>
 <p class="code">

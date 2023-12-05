@@ -335,6 +335,32 @@ pdfioFileCreateArrayObj(
 
 
 //
+// 'pdfioFileCreateNumberObj()' - Create a new object in a PDF file containing a number.
+//
+// This function creates a new object with a number value in a PDF file.
+// You must call @link pdfioObjClose@ to write the object to the file.
+//
+
+pdfio_obj_t *				// O - New object
+pdfioFileCreateNumberObj(
+    pdfio_file_t *pdf,			// I - PDF file
+    double       number)		// I - Number value
+{
+  _pdfio_value_t	value;		// Object value
+
+
+  // Range check input...
+  if (!pdf)
+    return (NULL);
+
+  value.type         = PDFIO_VALTYPE_NUMBER;
+  value.value.number = number;
+
+  return (_pdfioFileCreateObj(pdf, NULL, &value));
+}
+
+
+//
 // 'pdfioFileCreateObj()' - Create a new object in a PDF file.
 //
 
@@ -636,6 +662,32 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
 #else
   return (pdfioObjCreateStream(contents, PDFIO_FILTER_FLATE));
 #endif // DEBUG
+}
+
+
+//
+// 'pdfioFileCreateStringObj()' - Create a new object in a PDF file containing a string.
+//
+// This function creates a new object with a string value in a PDF file.
+// You must call @link pdfioObjClose@ to write the object to the file.
+//
+
+pdfio_obj_t *				// O - New object
+pdfioFileCreateStringObj(
+    pdfio_file_t *pdf,			// I - PDF file
+    const char   *string)		// I - String
+{
+  _pdfio_value_t	value;		// Object value
+
+
+  // Range check input...
+  if (!pdf)
+    return (NULL);
+
+  value.type         = PDFIO_VALTYPE_STRING;
+  value.value.string = string;
+
+  return (_pdfioFileCreateObj(pdf, NULL, &value));
 }
 
 

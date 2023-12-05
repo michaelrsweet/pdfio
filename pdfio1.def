@@ -181,9 +181,11 @@ pdfioFileCreateFontObjFromFile
 pdfioFileCreateICCObjFromFile
 pdfioFileCreateImageObjFromData
 pdfioFileCreateImageObjFromFile
+pdfioFileCreateNumberObj
 pdfioFileCreateObj
 pdfioFileCreateOutput
 pdfioFileCreatePage
+pdfioFileCreateStringObj
 pdfioFileCreateTemporary
 pdfioFileFindObj
 pdfioFileGetAuthor

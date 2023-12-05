@@ -5,6 +5,8 @@ Changes in PDFio
 v1.2.0 (Month DD, YYYY)
 -----------------------
 
+- Added `pdfioFileCreateNumberObj` and `pdfioFileCreateStringObj` functions
+  (Issue #14)
 - Added `pdfioContentTextMeasure` function (Issue #17)
 - Added `pdfioContentTextNewLineShow` and `pdfioContentTextNewLineShowf`
   functions (Issue #24)
