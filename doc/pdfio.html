@@ -467,7 +467,6 @@ span.string {
 <li><a href="#pdfio_stream_t">pdfio_stream_t</a></li>
 <li><a href="#pdfio_textrendering_t">pdfio_textrendering_t</a></li>
 <li><a href="#pdfio_valtype_t">pdfio_valtype_t</a></li>
-<li><a href="#state_t[4][4]">state_t[4][4]</a></li>
 </ul></li>
 <li><a href="#STRUCTURES">Structures</a><ul class="subcontents">
 <li><a href="#pdfio_rect_s">pdfio_rect_s</a></li>
@@ -719,7 +718,7 @@ pdfio_stream_t *st = pdfioFileCreatePage(pdf, dict);
 <p>The <a href="#pdf-content-helper-functions">PDF content helper functions</a> provide additional functions for writing specific PDF page stream commands.</p>
 <p>When you are done writing the stream, call <a href="#pdfioStreamCLose"><code>pdfioStreamCLose</code></a> to close both the stream and the object.</p>
 <h3 class="title" id="pdf-content-helper-functions">PDF Content Helper Functions</h3>
-<p>PDFio includes many helper functions for embedding or writing specific kinds of content to a PDF file. These functions can be roughly grouped into ??? categories:</p>
+<p>PDFio includes many helper functions for embedding or writing specific kinds of content to a PDF file. These functions can be roughly grouped into five categories:</p>
 <ul>
 <li><p><a href="#color-space-functions">Color Space Functions</a></p>
 </li>
@@ -805,7 +804,9 @@ pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, <span class="string">&q
 pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, <span class="string">&quot;NotoSansJP-Regular.otf&quot;</span>, <span class="reserved">true</span>);
 </code></pre>
 <p>will embed the NotoSansJP Regular OpenType font with full support for Unicode.</p>
+<blockquote>
 <p>Note: Not all fonts support Unicode.</p>
+</blockquote>
 <h4 id="image-object-functions">Image Object Functions</h4>
 <p>PDF supports images with many different color spaces and bit depths with optional transparency. PDFio provides two helper functions for creating image objects that can be referenced in page streams. The first function is <a href="#pdfioFileCreateImageObjFromData"><code>pdfioFileCreateImageObjFromData</code></a> which creates an image object from data in memory, for example:</p>
 <pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
@@ -936,7 +937,11 @@ pdfio_obj_t *img = pdfioFileCreateImageObjFromFile(pdf, <span class="string">&qu
 </li>
 <li><p><a href="#pdfioContentTextMoveTo"><code>pdfioContentTextMoveTo</code></a> moves within the current line in a text block</p>
 </li>
-<li><p><a href="#pdfioContentTextNextLine"><code>pdfioContentTextNextLine</code></a> moves to the beginning of the next line in a text block</p>
+<li><p><a href="#pdfioContentTextNewLine"><code>pdfioContentTextNewLine</code></a> moves to the beginning of the next line in a text block</p>
+</li>
+<li><p><a href="#pdfioContentTextNewLineShow"><code>pdfioContentTextNewLineShow</code></a> moves to the beginning of the next line in a text block and shows literal text with optional word and character spacing</p>
+</li>
+<li><p><a href="#pdfioContentTextNewLineShowf"><code>pdfioContentTextNewLineShowf</code></a> moves to the beginning of the next line in a text block and shows formatted text with optional word and character spacing</p>
 </li>
 <li><p><a href="#pdfioContentTextShow"><code>pdfioContentTextShow</code></a> draws a literal string in a text block</p>
 </li>
@@ -3757,11 +3762,6 @@ typedef enum <a href="#pdfio_textrendering_e">pdfio_textrendering_e</a> pdfio_te
 <p class="description">PDF value types</p>
 <p class="code">
 typedef enum <a href="#pdfio_valtype_e">pdfio_valtype_e</a> pdfio_valtype_t;
-</p>
-<h3 class="typedef"><a id="state_t[4][4]">state_t[4][4]</a></h3>
-<p class="description">4x4 AES state table</p>
-<p class="code">
-typedef uint8_t state_t[4][4];
 </p>
 <h2 class="title"><a id="STRUCTURES">Structures</a></h2>
 <h3 class="struct"><a id="pdfio_rect_s">pdfio_rect_s</a></h3>

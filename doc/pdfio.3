@@ -400,7 +400,7 @@ The PDF content helper functions provide additional functions for writing specif
 When you are done writing the stream, call pdfioStreamCLose to close both the stream and the object.
 .SS PDF Content Helper Functions
 .PP
-PDFio includes many helper functions for embedding or writing specific kinds of content to a PDF file. These functions can be roughly grouped into ??? categories:
+PDFio includes many helper functions for embedding or writing specific kinds of content to a PDF file. These functions can be roughly grouped into five categories:
 .IP \(bu 5
 .PP
 Color Space Functions
@@ -552,6 +552,7 @@ will embed an OpenSans Regular TrueType font using the Windows CP1252 subset of 
 will embed the NotoSansJP Regular OpenType font with full support for Unicode.
 .PP
 Note: Not all fonts support Unicode.
+
 .PP
 Image Object Functions
 .PP
@@ -799,7 +800,15 @@ pdfioContentTextMoveTo moves within the current line in a text block
 
 .IP \(bu 5
 .PP
-pdfioContentTextNextLine moves to the beginning of the next line in a text block
+pdfioContentTextNewLine moves to the beginning of the next line in a text block
+
+.IP \(bu 5
+.PP
+pdfioContentTextNewLineShow moves to the beginning of the next line in a text block and shows literal text with optional word and character spacing
+
+.IP \(bu 5
+.PP
+pdfioContentTextNewLineShowf moves to the beginning of the next line in a text block and shows formatted text with optional word and character spacing
 
 .IP \(bu 5
 .PP
@@ -3108,12 +3117,6 @@ PDF value types
 .PP
 .nf
 typedef enum pdfio_valtype_e pdfio_valtype_t;
-.fi
-.SS state_t[4][4]
-4x4 AES state table
-.PP
-.nf
-typedef uint8_t state_t[4][4];
 .fi
 .SH AUTHOR
 .PP

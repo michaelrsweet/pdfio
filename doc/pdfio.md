@@ -361,7 +361,7 @@ PDF Content Helper Functions
 ----------------------------
 
 PDFio includes many helper functions for embedding or writing specific kinds of
-content to a PDF file.  These functions can be roughly grouped into ???
+content to a PDF file.  These functions can be roughly grouped into five
 categories:
 
 - [Color Space Functions](@)
@@ -455,7 +455,7 @@ pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, "NotoSansJP-Regular.otf
 
 will embed the NotoSansJP Regular OpenType font with full support for Unicode.
 
-Note: Not all fonts support Unicode.
+> Note: Not all fonts support Unicode.
 
 
 ### Image Object Functions
@@ -584,8 +584,12 @@ escaping, as needed:
 - [`pdfioContentTextMoveLine`](@@) moves to the next line with an offset in a
   text block
 - [`pdfioContentTextMoveTo`](@@) moves within the current line in a text block
-- [`pdfioContentTextNextLine`](@@) moves to the beginning of the next line in a
+- [`pdfioContentTextNewLine`](@@) moves to the beginning of the next line in a
   text block
+- [`pdfioContentTextNewLineShow`](@@) moves to the beginning of the next line in a
+  text block and shows literal text with optional word and character spacing
+- [`pdfioContentTextNewLineShowf`](@@) moves to the beginning of the next line in a
+  text block and shows formatted text with optional word and character spacing
 - [`pdfioContentTextShow`](@@) draws a literal string in a text block
 - [`pdfioContentTextShowf`](@@) draws a formatted string in a text block
 - [`pdfioContentTextShowJustified`](@@) draws an array of literal strings with

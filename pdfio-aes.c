@@ -10,10 +10,6 @@
 // (<https://github.com/kokke/tiny-AES-c>)
 //
 
-//
-// Include necessary headers...
-//
-
 #include "pdfio-private.h"
 
 
@@ -21,7 +17,7 @@
 // Local types...
 //
 
-typedef uint8_t state_t[4][4];		// 4x4 AES state table
+typedef uint8_t state_t[4][4];		// 4x4 AES state table @private@
 
 
 //

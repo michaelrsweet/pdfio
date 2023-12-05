@@ -7,10 +7,6 @@
 // information.
 //
 
-//
-// Include necessary headers...
-//
-
 #include "pdfio-private.h"
 #if _WIN32
 #  include <windows.h>

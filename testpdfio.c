@@ -1,7 +1,7 @@
 //
 // Test program for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2023 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -10,11 +10,7 @@
 //
 //   ./testpdfio
 //
-//   ./testpdfio FILENAME [OBJECT-NUMBER] [FILENAME [OBJECT-NUMBER]] ...
-//
-
-//
-// Include necessary headers...
+//   ./testpdfio [--verbose] FILENAME [OBJECT-NUMBER] [FILENAME [OBJECT-NUMBER]] ...
 //
 
 #include "pdfio-private.h"
