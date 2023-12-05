@@ -65,7 +65,7 @@ typedef enum pdfio_encryption_e		// PDF encryption modes
   PDFIO_ENCRYPTION_RC4_40,		// 40-bit RC4 encryption (PDF 1.3)
   PDFIO_ENCRYPTION_RC4_128,		// 128-bit RC4 encryption (PDF 1.4)
   PDFIO_ENCRYPTION_AES_128,		// 128-bit AES encryption (PDF 1.6)
-  PDFIO_ENCRYPTION_AES_256		// 256-bit AES encryption (PDF 2.0)
+  PDFIO_ENCRYPTION_AES_256		// 256-bit AES encryption (PDF 2.0) @exclude all@
 } pdfio_encryption_t;
 typedef enum pdfio_filter_e		// Compression/decompression filters for streams
 {
