@@ -543,9 +543,6 @@ sudo make install
 <p>There is also an Xcode project (&quot;pdfio.xcodeproj&quot;) you can use on macOS which generates a static library that will be installed under &quot;/usr/local&quot; with:</p>
 <pre><code>sudo xcodebuild install
 </code></pre>
-<p>You can reproduce this with the makefile using:</p>
-<pre><code>sudo make macos install
-</code></pre>
 <h3 class="title" id="detecting-pdfio">Detecting PDFio</h3>
 <p>PDFio can be detected using the <code>pkg-config</code> command, for example:</p>
 <pre><code>if pkg-config --exists pdfio; then

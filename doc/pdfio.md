@@ -81,10 +81,6 @@ generates a static library that will be installed under "/usr/local" with:
 
     sudo xcodebuild install
 
-You can reproduce this with the makefile using:
-
-    sudo make macos install
-
 
 Detecting PDFio
 ---------------
