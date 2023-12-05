@@ -2242,6 +2242,7 @@ write_font_test(
   char			title[256],	// Page title
 			textname[256],	// Name of text font
 			*ptr;		// Pointer into name
+  double		width;		// Text width
   int			i;		// Looping var
   static const char * const welcomes[] =// "Welcome" in many languages
   {
@@ -2463,8 +2464,8 @@ write_font_test(
   else
     goto error;
 
-  fputs("pdfioContentTextMoveTo(36.0, 702.0): ", stdout);
-  if (pdfioContentTextMoveTo(st, 36.0, 702.0))
+  fputs("pdfioContentTextMoveTo(198.0, 702.0): ", stdout);
+  if (pdfioContentTextMoveTo(st, 198.0, 702.0))
     puts("PASS");
   else
     return (1);
@@ -2473,15 +2474,33 @@ write_font_test(
   {
     if (i > 0 && (i % 50) == 0)
     {
-      fputs("pdfioContentTextMoveTo(200.0, 600.0): ", stdout);
-      if (pdfioContentTextMoveTo(st, 200.0, 600.0))
+      fputs("pdfioContentTextMoveTo(162.0, 600.0): ", stdout);
+      if (pdfioContentTextMoveTo(st, 162.0, 600.0))
 	puts("PASS");
       else
 	return (1);
     }
 
+    printf("pdfioContentTextMeasure(\"%s\"): ", welcomes[i]);
+    if ((width = pdfioContentTextMeasure(textfont, welcomes[i], 10.0)) >= 0.0)
+      puts("PASS");
+    else
+      return (1);
+
+    printf("pdfioContextTextMoveTo(%g, 0.0): ", -width);
+    if (pdfioContentTextMoveTo(st, -width, 0.0))
+      puts("PASS");
+    else
+      return (1);
+
     printf("pdfioContentTextShowf(\"%s\"): ", welcomes[i]);
     if (pdfioContentTextShowf(st, unicode, "%s\n", welcomes[i]))
+      puts("PASS");
+    else
+      return (1);
+
+    printf("pdfioContextTextMoveTo(%g, 0.0): ", width);
+    if (pdfioContentTextMoveTo(st, width, 0.0))
       puts("PASS");
     else
       return (1);

@@ -115,7 +115,7 @@ extern bool		pdfioContentSetTextXScaling(pdfio_stream_t *st, double percent) _PD
 extern bool		pdfioContentStroke(pdfio_stream_t *st) _PDFIO_PUBLIC;
 extern bool		pdfioContentTextBegin(pdfio_stream_t *st) _PDFIO_PUBLIC;
 extern bool		pdfioContentTextEnd(pdfio_stream_t *st) _PDFIO_PUBLIC;
-extern double		pdfioContextTextMeasure(pdfio_obj_t *font, const char *s, double size) _PDFIO_PUBLIC;
+extern double		pdfioContentTextMeasure(pdfio_obj_t *font, const char *s, double size) _PDFIO_PUBLIC;
 extern bool		pdfioContentTextMoveLine(pdfio_stream_t *st, double tx, double ty) _PDFIO_PUBLIC;
 extern bool		pdfioContentTextMoveTo(pdfio_stream_t *st, double tx, double ty) _PDFIO_PUBLIC;
 extern bool		pdfioContentTextNextLine(pdfio_stream_t *st) _PDFIO_PUBLIC;

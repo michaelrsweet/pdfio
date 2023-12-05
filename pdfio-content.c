@@ -1061,19 +1061,96 @@ pdfioContentTextEnd(pdfio_stream_t *st)	// I - Stream
 
 
 //
-// 'pdfioContextTextMeasure()' - Measure a text string and return its width.
+// 'pdfioContentTextMeasure()' - Measure a text string and return its width.
+//
+// This function measures the given text string "s" and returns its width based
+// on "size". The text string must always use the UTF-8 (Unicode) encoding but
+// any control characters (such as newlines) are ignored.
 //
 
 double					// O - Width
-pdfioContextTextMeasure(
+pdfioContentTextMeasure(
     pdfio_obj_t *font,			// I - Font object created by @link pdfioFileCreateFontObjFromFile@
     const char  *s,			// I - UTF-8 string
     double      size)			// I - Font size/height
 {
+  const char	*subtype;		// Font sub-type
   ttf_t		*ttf = (ttf_t *)_pdfioObjGetExtension(font);
 					// TrueType font data
   ttf_rect_t	extents;		// Text extents
+  int		ch;			// Unicode character
+  char		temp[1024],		// Temporary string
+		*tempptr;		// Pointer into temporary string
 
+
+  if ((subtype = pdfioObjGetSubtype(font)) == NULL || strcmp(subtype, "Type0"))
+  {
+    // Map non-CP1282 characters to '?', everything else as-is...
+    tempptr = temp;
+
+    while (*s && tempptr < (temp + sizeof(temp) - 3))
+    {
+      if ((*s & 0xe0) == 0xc0)
+      {
+	// Two-byte UTF-8
+        ch = ((s[0] & 0x1f) << 6) | (s[1] & 0x3f);
+	s += 2;
+      }
+      else if ((*s & 0xf0) == 0xe0)
+      {
+	// Three-byte UTF-8
+        ch = ((s[0] & 0x0f) << 12) | ((s[1] & 0x3f) << 6) | (s[2] & 0x3f);
+	s += 3;
+      }
+      else if ((*s & 0xf8) == 0xf0)
+      {
+	// Four-byte UTF-8
+        ch = ((s[0] & 0x07) << 18) | ((s[1] & 0x3f) << 12) | ((s[2] & 0x3f) << 6) | (s[3] & 0x3f);
+	s += 4;
+      }
+      else
+      {
+	ch = *s++;
+      }
+
+      if (ch > 255)
+      {
+	// Try mapping from Unicode to CP1252...
+	size_t i;			// Looping var
+
+	for (i = 0; i < (sizeof(_pdfio_cp1252) / sizeof(_pdfio_cp1252[0])); i ++)
+	{
+	  if (ch == _pdfio_cp1252[i])
+	    break;
+	}
+
+	if (i >= (sizeof(_pdfio_cp1252) / sizeof(_pdfio_cp1252[0])))
+	  ch = '?';			// Unsupported chars map to ?
+      }
+
+      if (ch < 128)
+      {
+        // ASCII
+	*tempptr++ = ch;
+      }
+      else if (ch < 2048)
+      {
+        // 2-byte UTF-8
+        *tempptr++ = 0xc0 | ((ch >> 6) & 0x1f);
+        *tempptr++ = 0x80 | (ch & 0x3f);
+      }
+      else
+      {
+        // 3-byte UTF-8
+        *tempptr++ = 0xe0 | ((ch >> 12) & 0x0f);
+        *tempptr++ = 0x80 | ((ch >> 6) & 0x3f);
+        *tempptr++ = 0x80 | (ch & 0x3f);
+      }
+    }
+
+    *tempptr = '\0';
+    s        = temp;
+  }
 
   ttfGetExtents(ttf, size, s, &extents);
 
@@ -1654,7 +1731,7 @@ pdfioFileCreateFontObjFromFile(
   if (fd >= 0)
     close(fd);
 
-  ttfDelete(font);
+  _pdfioObjSetExtension(obj, font, (_pdfio_extfree_t)ttfDelete);
 
   return (obj);
 }

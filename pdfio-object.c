@@ -217,7 +217,12 @@ void
 _pdfioObjDelete(pdfio_obj_t *obj)	// I - Object
 {
   if (obj)
+  {
     pdfioStreamClose(obj->stream);
+
+    if (obj->datafree)
+      (obj->datafree)(obj->data);
+  }
 
   free(obj);
 }
@@ -511,9 +516,9 @@ pdfioObjOpenStream(pdfio_obj_t *obj,	// I - Object
 
 void
 _pdfioObjSetExtension(
-    pdfio_obj_t *obj,			// I - Object
-    void        *data,			// I - Data
-    void        (*datafree)(void *))	// I - Free function
+    pdfio_obj_t      *obj,		// I - Object
+    void             *data,		// I - Data
+    _pdfio_extfree_t datafree)		// I - Free function
 {
   obj->data     = data;
   obj->datafree = datafree;
