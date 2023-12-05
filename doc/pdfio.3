@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2023-12-04" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2023-12-05" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -1808,14 +1808,49 @@ bool  pdfioContentTextMoveTo (
     double ty
 );
 .fi
-.SS pdfioContentTextNextLine
+.SS pdfioContentTextNewLine
 Move to the next line.
 .PP
 .nf
-bool  pdfioContentTextNextLine (
+bool  pdfioContentTextNewLine (
     pdfio_stream_t *st
 );
 .fi
+.SS pdfioContentTextNewLineShow
+Move to the next line and show text.
+.PP
+.nf
+bool  pdfioContentTextNewLineShow (
+    pdfio_stream_t *st,
+    double ws,
+    double cs,
+    bool unicode,
+    const char *s
+);
+.fi
+.PP
+This function moves to the next line and then shows some text with optional
+word and character spacing in a PDF content stream. The "unicode" argument
+specifies that the current font maps to full Unicode.  The "s" argument
+specifies a UTF-8 encoded string.
+.SS pdfioContentTextNewLineShowf
+Show formatted text.
+.PP
+.nf
+bool  pdfioContentTextNewLineShowf (
+    pdfio_stream_t *st,
+    double ws,
+    double cs,
+    bool unicode,
+    const char *format,
+    ...
+);
+.fi
+.PP
+This function moves to the next line and shows some formatted text with
+optional word and character spacing in a PDF content stream. The "unicode"
+argument specifies that the current font maps to full Unicode.  The "format"
+argument specifies a UTF-8 encoded \fBprintf\fR-style format string.
 .SS pdfioContentTextShow
 Show text.
 .PP

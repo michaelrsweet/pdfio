@@ -6,6 +6,9 @@ v1.2.0 (Month DD, YYYY)
 -----------------------
 
 - Added `pdfioContentTextMeasure` function (Issue #17)
+- Added `pdfioContentTextNewLineShow` and `pdfioContentTextNewLineShowf`
+  functions (Issue #24)
+- Renamed `pdfioContentTextNextLine` to `pdfioContentTextNewLine`.
 - Now use autoconf to configure the PDFio sources (Issue #54)
 
 

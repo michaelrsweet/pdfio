@@ -141,7 +141,9 @@ pdfioContentTextEnd
 pdfioContentTextMeasure
 pdfioContentTextMoveLine
 pdfioContentTextMoveTo
-pdfioContentTextNextLine
+pdfioContentTextNewLine
+pdfioContentTextNewLineShow
+pdfioContentTextNewLineShowf
 pdfioContentTextShow
 pdfioContentTextShowJustified
 pdfioContentTextShowf

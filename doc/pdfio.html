@@ -345,7 +345,9 @@ span.string {
 <li><a href="#pdfioContentTextMeasure">pdfioContentTextMeasure</a></li>
 <li><a href="#pdfioContentTextMoveLine">pdfioContentTextMoveLine</a></li>
 <li><a href="#pdfioContentTextMoveTo">pdfioContentTextMoveTo</a></li>
-<li><a href="#pdfioContentTextNextLine">pdfioContentTextNextLine</a></li>
+<li><a href="#pdfioContentTextNewLine">pdfioContentTextNewLine</a></li>
+<li><a href="#pdfioContentTextNewLineShow">pdfioContentTextNewLineShow</a></li>
+<li><a href="#pdfioContentTextNewLineShowf">pdfioContentTextNewLineShowf</a></li>
 <li><a href="#pdfioContentTextShow">pdfioContentTextShow</a></li>
 <li><a href="#pdfioContentTextShowJustified">pdfioContentTextShowJustified</a></li>
 <li><a href="#pdfioContentTextShowf">pdfioContentTextShowf</a></li>
@@ -2055,10 +2057,10 @@ bool pdfioContentTextMoveTo(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, do
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
-<h3 class="function"><a id="pdfioContentTextNextLine">pdfioContentTextNextLine</a></h3>
+<h3 class="function"><a id="pdfioContentTextNewLine">pdfioContentTextNewLine</a></h3>
 <p class="description">Move to the next line.</p>
 <p class="code">
-bool pdfioContentTextNextLine(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
+bool pdfioContentTextNewLine(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>st</th>
@@ -2066,6 +2068,56 @@ bool pdfioContentTextNextLine(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h3 class="function"><a id="pdfioContentTextNewLineShow">pdfioContentTextNewLineShow</a></h3>
+<p class="description">Move to the next line and show text.</p>
+<p class="code">
+bool pdfioContentTextNewLineShow(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, double ws, double cs, bool unicode, const char *s);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>st</th>
+<td class="description">Stream</td></tr>
+<tr><th>ws</th>
+<td class="description">Word spacing or <code>0.0</code> for none</td></tr>
+<tr><th>cs</th>
+<td class="description">Character spacing or <code>0.0</code> for none</td></tr>
+<tr><th>unicode</th>
+<td class="description">Unicode text?</td></tr>
+<tr><th>s</th>
+<td class="description">String to show</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function moves to the next line and then shows some text with optional
+word and character spacing in a PDF content stream. The &quot;unicode&quot; argument
+specifies that the current font maps to full Unicode.  The &quot;s&quot; argument
+specifies a UTF-8 encoded string.</p>
+<h3 class="function"><a id="pdfioContentTextNewLineShowf">pdfioContentTextNewLineShowf</a></h3>
+<p class="description">Show formatted text.</p>
+<p class="code">
+bool pdfioContentTextNewLineShowf(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, double ws, double cs, bool unicode, const char *format, ...);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>st</th>
+<td class="description">Stream</td></tr>
+<tr><th>ws</th>
+<td class="description">Word spacing or <code>0.0</code> for none</td></tr>
+<tr><th>cs</th>
+<td class="description">Character spacing or <code>0.0</code> for none</td></tr>
+<tr><th>unicode</th>
+<td class="description">Unicode text?</td></tr>
+<tr><th>format</th>
+<td class="description"><code>printf</code>-style format string</td></tr>
+<tr><th>...</th>
+<td class="description">Additional arguments as needed</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function moves to the next line and shows some formatted text with
+optional word and character spacing in a PDF content stream. The &quot;unicode&quot;
+argument specifies that the current font maps to full Unicode.  The &quot;format&quot;
+argument specifies a UTF-8 encoded <code>printf</code>-style format string.</p>
 <h3 class="function"><a id="pdfioContentTextShow">pdfioContentTextShow</a></h3>
 <p class="description">Show text.</p>
 <p class="code">
@@ -2125,9 +2177,9 @@ bool pdfioContentTextShowf(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, boo
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Show formatted text.</p>
-<p class="discussion">This function shows some text in a PDF content stream. The &quot;unicode&quot; argument
-specifies that the current font maps to full Unicode.  The &quot;format&quot; argument
-specifies a UTF-8 encoded <code>printf</code>-style format string.</p>
+<p class="discussion">This function shows some formatted text in a PDF content stream. The
+&quot;unicode&quot; argument specifies that the current font maps to full Unicode.
+The &quot;format&quot; argument specifies a UTF-8 encoded <code>printf</code>-style format string.</p>
 <h3 class="function"><a id="pdfioDictCopy">pdfioDictCopy</a></h3>
 <p class="description">Copy a dictionary to a PDF file.</p>
 <p class="code">

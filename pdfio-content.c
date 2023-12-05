@@ -1187,14 +1187,94 @@ pdfioContentTextMoveTo(
 
 
 //
-// 'pdfioContentTextNextLine()' - Move to the next line.
+// 'pdfioContentTextNewLine()' - Move to the next line.
 //
 
 bool					// O - `true` on success, `false` on failure
-pdfioContentTextNextLine(
+pdfioContentTextNewLine(
     pdfio_stream_t *st)			// I - Stream
 {
   return (pdfioStreamPuts(st, "T*\n"));
+}
+
+
+//
+// 'pdfioContentTextNewLineShow()' - Move to the next line and show text.
+//
+// This function moves to the next line and then shows some text with optional
+// word and character spacing in a PDF content stream. The "unicode" argument
+// specifies that the current font maps to full Unicode.  The "s" argument
+// specifies a UTF-8 encoded string.
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioContentTextNewLineShow(
+    pdfio_stream_t *st,			// I - Stream
+    double         ws,			// I - Word spacing or `0.0` for none
+    double         cs,			// I - Character spacing or `0.0` for none
+    bool           unicode,		// I - Unicode text?
+    const char     *s)			// I - String to show
+{
+  bool	newline = false;		// New line?
+  char	op;				// Text operator
+
+
+  // Write word and/or character spacing as needed...
+  if (ws > 0.0 || cs > 0.0)
+  {
+    // Use " operator to show text with word and character spacing...
+    if (!pdfioStreamPrintf(st, "%g %g", ws, cs))
+      return (false);
+
+    op = '\"';
+  }
+  else
+  {
+    // Use ' operator to show text with the defaults...
+    op = '\'';
+  }
+
+  // Write the string...
+  if (!write_string(st, unicode, s, &newline))
+    return (false);
+
+  // Draw it...
+  if (newline)
+    return (pdfioStreamPrintf(st, "%c T*\n", op));
+  else
+    return (pdfioStreamPrintf(st, "%c\n", op));
+}
+
+
+//
+// 'pdfioContentTextNewLineShowf()' - Show formatted text.
+//
+// This function moves to the next line and shows some formatted text with
+// optional word and character spacing in a PDF content stream. The "unicode"
+// argument specifies that the current font maps to full Unicode.  The "format"
+// argument specifies a UTF-8 encoded `printf`-style format string.
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioContentTextNewLineShowf(
+    pdfio_stream_t *st,			// I - Stream
+    double         ws,			// I - Word spacing or `0.0` for none
+    double         cs,			// I - Character spacing or `0.0` for none
+    bool           unicode,		// I - Unicode text?
+    const char     *format,		// I - `printf`-style format string
+    ...)				// I - Additional arguments as needed
+{
+  char		buffer[8192];		// Text buffer
+  va_list	ap;			// Argument pointer
+
+
+  // Format the string...
+  va_start(ap, format);
+  vsnprintf(buffer, sizeof(buffer), format, ap);
+  va_end(ap);
+
+  // Show it...
+  return (pdfioContentTextNewLineShow(st, ws, cs, unicode, buffer));
 }
 
 
@@ -1230,9 +1310,9 @@ pdfioContentTextShow(
 //
 // 'pdfioContentTextShowf()' - Show formatted text.
 //
-// This function shows some text in a PDF content stream. The "unicode" argument
-// specifies that the current font maps to full Unicode.  The "format" argument
-// specifies a UTF-8 encoded `printf`-style format string.
+// This function shows some formatted text in a PDF content stream. The
+// "unicode" argument specifies that the current font maps to full Unicode.
+// The "format" argument specifies a UTF-8 encoded `printf`-style format string.
 //
 
 bool
