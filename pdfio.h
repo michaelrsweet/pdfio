@@ -33,9 +33,11 @@ extern "C" {
 #  if defined(__has_extension) || defined(__GNUC__)
 #    define _PDFIO_PUBLIC	__attribute__ ((visibility("default")))
 #    define _PDFIO_FORMAT(a,b)	__attribute__ ((__format__(__printf__, a,b)))
+#    define _PDFIO_DEPRECATED	__attribute__ ((deprecated)) _PDFIO_PUBLIC
 #  else
 #    define _PDFIO_PUBLIC
 #    define _PDFIO_FORMAT(a,b)
+#    define _PDFIO_DEPRECATED
 #  endif // __has_extension || __GNUC__
 
 

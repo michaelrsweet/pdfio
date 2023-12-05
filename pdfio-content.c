@@ -1199,6 +1199,20 @@ pdfioContentTextNewLine(
 
 
 //
+// 'pdfioContentTextNextLine()' - Legacy function name preserved for binary compatibility.
+//
+// @private@
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioContentTextNextLine(
+    pdfio_stream_t *st)			// I - Stream
+{
+  return (pdfioStreamPuts(st, "T*\n"));
+}
+
+
+//
 // 'pdfioContentTextNewLineShow()' - Move to the next line and show text.
 //
 // This function moves to the next line and then shows some text with optional

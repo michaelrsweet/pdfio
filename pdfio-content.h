@@ -121,6 +121,7 @@ extern bool		pdfioContentTextMoveTo(pdfio_stream_t *st, double tx, double ty) _P
 extern bool		pdfioContentTextNewLine(pdfio_stream_t *st) _PDFIO_PUBLIC;
 extern bool		pdfioContentTextNewLineShow(pdfio_stream_t *st, double ws, double cs, bool unicode, const char *s) _PDFIO_PUBLIC;
 extern bool		pdfioContentTextNewLineShowf(pdfio_stream_t *st, double ws, double cs, bool unicode, const char *format, ...) _PDFIO_PUBLIC _PDFIO_FORMAT(5,6);
+extern bool		pdfioContentTextNextLine(pdfio_stream_t *st) _PDFIO_PUBLIC;
 extern bool		pdfioContentTextShow(pdfio_stream_t *st, bool unicode, const char *s) _PDFIO_PUBLIC;
 extern bool		pdfioContentTextShowf(pdfio_stream_t *st, bool unicode, const char *format, ...) _PDFIO_PUBLIC _PDFIO_FORMAT(3,4);
 extern bool		pdfioContentTextShowJustified(pdfio_stream_t *st, bool unicode, size_t num_fragments, const double *offsets, const char * const *fragments) _PDFIO_PUBLIC;

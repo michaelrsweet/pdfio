@@ -7,10 +7,6 @@
 // information.
 //
 
-//
-// Include necessary headers...
-//
-
 #include "pdfio-private.h"
 #ifndef O_BINARY
 #  define O_BINARY 0
