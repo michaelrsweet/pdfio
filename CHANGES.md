@@ -5,6 +5,7 @@ Changes in PDFio
 v1.2.0 (Month DD, YYYY)
 -----------------------
 
+- Added `pdfioContentTextMeasure` function (Issue #17)
 - Now use autoconf to configure the PDFio sources (Issue #54)
 
 

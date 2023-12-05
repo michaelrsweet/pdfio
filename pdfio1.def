@@ -47,7 +47,9 @@ _pdfioFileSeek
 _pdfioFileTell
 _pdfioFileWrite
 _pdfioObjDelete
+_pdfioObjGetExtension
 _pdfioObjLoad
+_pdfioObjSetExtension
 _pdfioStreamCreate
 _pdfioStreamOpen
 _pdfioStringIsAllocated
@@ -136,6 +138,7 @@ pdfioContentSetTextXScaling
 pdfioContentStroke
 pdfioContentTextBegin
 pdfioContentTextEnd
+pdfioContentTextMeasure
 pdfioContentTextMoveLine
 pdfioContentTextMoveTo
 pdfioContentTextNextLine
