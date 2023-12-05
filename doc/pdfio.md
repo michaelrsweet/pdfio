@@ -27,6 +27,7 @@ PDFio requires the following to build the software:
 
 - A C99 compiler such as Clang, GCC, or MS Visual C
 - A POSIX-compliant `make` program
+- A POSIX-compliant `sh` program
 - ZLIB (<https://www.zlib.net>) 1.0 or higher
 
 IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
@@ -35,10 +36,11 @@ IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
 Installing pdfio
 ----------------
 
-PDFio comes with a portable makefile that will work on any POSIX-compliant
-system with ZLIB installed.  To make it, run:
+PDFio comes with a configure script that creates a portable makefile that will
+work on any POSIX-compliant system with ZLIB installed.  To make it, run:
 
-    make all
+    ./configure
+    make
 
 To test it, run:
 
@@ -46,45 +48,22 @@ To test it, run:
 
 To install it, run:
 
-    make install
+    sudo make install
 
 If you want a shared library, run:
 
-    make all-shared
-    make install-shared
+    ./configure --enable-shared
+    make
+    sudo make install
 
-The default installation location is "/usr/local".  Pass the `prefix` variable
+The default installation location is "/usr/local".  Pass the `--prefix` option
 to make to install it to another location:
 
-    make install prefix=/some/other/directory
+    ./configure --prefix=/some/other/directory
 
-The makefile installs the pdfio header to "${prefix}/include", the library to
-"${prefix}/lib", the `pkg-config` file to "${prefix}/lib/pkgconfig", the man
-page to "${prefix}/share/man/man3", and the documentation to
-"${prefix}/share/doc/pdfio".
+Other configure options can be found using the `--help` option:
 
-The makefile supports the following variables that can be specified in the make
-command or as environment variables:
-
-- `AR`: the library archiver (default "ar")
-- `ARFLAGS`: options for the library archiver (default "cr")
-- `CC`: the C compiler (default "cc")
-- `CFLAGS`: options for the C compiler (default "")
-- `CODESIGN_IDENTITY`: the identity to use when code signing the shared library
-  on macOS (default "Developer ID")
-- `COMMONFLAGS`: options for the C compiler and linker (typically architecture
-  and optimization options, default is "-Os -g")
-- `CPPFLAGS`: options for the C preprocessor (default "")
-- `DESTDIR` and `DSTROOT`: specifies a root directory when installing
-  (default is "", specify only one)
-- `DSOFLAGS`: options for the C compiler when linking the shared library
-  (default "")
-- `LDFLAGS`: options for the C compiler when linking the test programs
-  (default "")
-- `LIBS`: library options when linking the test programs (default "-lz")
-- `RANLIB`: program that generates a table-of-contents in a library
-  (default "ranlib")
-- `prefix`: specifies the installation directory (default "/usr/local")
+    ./configure --help
 
 
 Visual Studio Project

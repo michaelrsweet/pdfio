@@ -509,57 +509,34 @@ span.string {
 </li>
 <li><p>A POSIX-compliant <code>make</code> program</p>
 </li>
+<li><p>A POSIX-compliant <code>sh</code> program</p>
+</li>
 <li><p>ZLIB (<a href="https://www.zlib.net">https://www.zlib.net</a>) 1.0 or higher</p>
 </li>
 </ul>
 <p>IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.</p>
 <h3 class="title" id="installing-pdfio">Installing pdfio</h3>
-<p>PDFio comes with a portable makefile that will work on any POSIX-compliant system with ZLIB installed. To make it, run:</p>
-<pre><code>make all
+<p>PDFio comes with a configure script that creates a portable makefile that will work on any POSIX-compliant system with ZLIB installed. To make it, run:</p>
+<pre><code>./configure
+make
 </code></pre>
 <p>To test it, run:</p>
 <pre><code>make test
 </code></pre>
 <p>To install it, run:</p>
-<pre><code>make install
+<pre><code>sudo make install
 </code></pre>
 <p>If you want a shared library, run:</p>
-<pre><code>make all-shared
-make install-shared
+<pre><code>./configure --enable-shared
+make
+sudo make install
 </code></pre>
-<p>The default installation location is &quot;/usr/local&quot;. Pass the <code>prefix</code> variable to make to install it to another location:</p>
-<pre><code>make install prefix=/some/other/directory
+<p>The default installation location is &quot;/usr/local&quot;. Pass the <code>--prefix</code> option to make to install it to another location:</p>
+<pre><code>./configure --prefix=/some/other/directory
 </code></pre>
-<p>The makefile installs the pdfio header to &quot;${prefix}/include&quot;, the library to &quot;${prefix}/lib&quot;, the <code>pkg-config</code> file to &quot;${prefix}/lib/pkgconfig&quot;, the man page to &quot;${prefix}/share/man/man3&quot;, and the documentation to &quot;${prefix}/share/doc/pdfio&quot;.</p>
-<p>The makefile supports the following variables that can be specified in the make command or as environment variables:</p>
-<ul>
-<li><p><code>AR</code>: the library archiver (default &quot;ar&quot;)</p>
-</li>
-<li><p><code>ARFLAGS</code>: options for the library archiver (default &quot;cr&quot;)</p>
-</li>
-<li><p><code>CC</code>: the C compiler (default &quot;cc&quot;)</p>
-</li>
-<li><p><code>CFLAGS</code>: options for the C compiler (default &quot;&quot;)</p>
-</li>
-<li><p><code>CODESIGN_IDENTITY</code>: the identity to use when code signing the shared library on macOS (default &quot;Developer ID&quot;)</p>
-</li>
-<li><p><code>COMMONFLAGS</code>: options for the C compiler and linker (typically architecture and optimization options, default is &quot;-Os -g&quot;)</p>
-</li>
-<li><p><code>CPPFLAGS</code>: options for the C preprocessor (default &quot;&quot;)</p>
-</li>
-<li><p><code>DESTDIR</code> and <code>DSTROOT</code>: specifies a root directory when installing (default is &quot;&quot;, specify only one)</p>
-</li>
-<li><p><code>DSOFLAGS</code>: options for the C compiler when linking the shared library (default &quot;&quot;)</p>
-</li>
-<li><p><code>LDFLAGS</code>: options for the C compiler when linking the test programs (default &quot;&quot;)</p>
-</li>
-<li><p><code>LIBS</code>: library options when linking the test programs (default &quot;-lz&quot;)</p>
-</li>
-<li><p><code>RANLIB</code>: program that generates a table-of-contents in a library (default &quot;ranlib&quot;)</p>
-</li>
-<li><p><code>prefix</code>: specifies the installation directory (default &quot;/usr/local&quot;)</p>
-</li>
-</ul>
+<p>Other configure options can be found using the <code>--help</code> option:</p>
+<pre><code>./configure --help
+</code></pre>
 <h3 class="title" id="visual-studio-project">Visual Studio Project</h3>
 <p>The Visual Studio solution (&quot;pdfio.sln&quot;) is provided for Windows developers and generates both a static library and DLL.</p>
 <h3 class="title" id="xcode-project">Xcode Project</h3>
