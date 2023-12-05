@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2023-11-15" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2023-12-04" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -1774,6 +1774,20 @@ bool  pdfioContentTextEnd (
     pdfio_stream_t *st
 );
 .fi
+.SS pdfioContentTextMeasure
+Measure a text string and return its width.
+.PP
+.nf
+double  pdfioContentTextMeasure (
+    pdfio_obj_t *font,
+    const char *s,
+    double size
+);
+.fi
+.PP
+This function measures the given text string "s" and returns its width based
+on "size". The text string must always use the UTF-8 (Unicode) encoding but
+any control characters (such as newlines) are ignored.
 .SS pdfioContentTextMoveLine
 Move to the next line and offset.
 .PP

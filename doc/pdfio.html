@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<title>PDFio Programming Manual v1.1.3</title>
+<title>PDFio Programming Manual v1.2.0</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.7">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
 <meta name="copyright" content="Copyright © 2021-2023 by Michael R Sweet">
-<meta name="version" content="1.1.3">
+<meta name="version" content="1.2.0">
 <style type="text/css"><!--
 body {
   background: white;
@@ -245,7 +245,7 @@ span.string {
 <body>
 <div class="header">
 <p><img class="title" src="pdfio-512.png"></p>
-<h1 class="title">PDFio Programming Manual v1.1.3</h1>
+<h1 class="title">PDFio Programming Manual v1.2.0</h1>
 <p>Michael R Sweet</p>
 <p>Copyright © 2021-2023 by Michael R Sweet</p>
 </div>
@@ -342,6 +342,7 @@ span.string {
 <li><a href="#pdfioContentStroke">pdfioContentStroke</a></li>
 <li><a href="#pdfioContentTextBegin">pdfioContentTextBegin</a></li>
 <li><a href="#pdfioContentTextEnd">pdfioContentTextEnd</a></li>
+<li><a href="#pdfioContentTextMeasure">pdfioContentTextMeasure</a></li>
 <li><a href="#pdfioContentTextMoveLine">pdfioContentTextMoveLine</a></li>
 <li><a href="#pdfioContentTextMoveTo">pdfioContentTextMoveTo</a></li>
 <li><a href="#pdfioContentTextNextLine">pdfioContentTextNextLine</a></li>
@@ -2005,6 +2006,25 @@ bool pdfioContentTextEnd(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h3 class="function"><a id="pdfioContentTextMeasure">pdfioContentTextMeasure</a></h3>
+<p class="description">Measure a text string and return its width.</p>
+<p class="code">
+double pdfioContentTextMeasure(<a href="#pdfio_obj_t">pdfio_obj_t</a> *font, const char *s, double size);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>font</th>
+<td class="description">Font object created by <a href="#pdfioFileCreateFontObjFromFile"><code>pdfioFileCreateFontObjFromFile</code></a></td></tr>
+<tr><th>s</th>
+<td class="description">UTF-8 string</td></tr>
+<tr><th>size</th>
+<td class="description">Font size/height</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Width</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function measures the given text string &quot;s&quot; and returns its width based
+on &quot;size&quot;. The text string must always use the UTF-8 (Unicode) encoding but
+any control characters (such as newlines) are ignored.</p>
 <h3 class="function"><a id="pdfioContentTextMoveLine">pdfioContentTextMoveLine</a></h3>
 <p class="description">Move to the next line and offset.</p>
 <p class="code">
