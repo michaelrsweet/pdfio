@@ -577,9 +577,21 @@ LIBS    +=      `pkg-config --libs pdfio`
 </ul>
 <h3 class="title" id="reading-pdf-files">Reading PDF Files</h3>
 <p>You open an existing PDF file using the <a href="#pdfioFileOpen"><code>pdfioFileOpen</code></a> function:</p>
-<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileOpen(<span class="string">&quot;myinputfile.pdf&quot;</span>, error_cb, error_data);
+<pre><code class="language-c">pdfio_file_t *pdf = pdfioFileOpen(<span class="string">&quot;myinputfile.pdf&quot;</span>, password_cb, password_data,
+                                  error_cb, error_data);
 </code></pre>
-<p>where the three arguments to the function are the filename (&quot;myinputfile.pdf&quot;), an optional error callback function (<code>error_cb</code>), and an optional pointer value for the error callback function (<code>error_data</code>). The error callback is called for both errors and warnings and accepts the <code>pdfio_file_t</code> pointer, a message string, and the callback pointer value, for example:</p>
+<p>where the five arguments to the function are the filename (&quot;myinputfile.pdf&quot;), an optional password callback function (<code>password_cb</code>) and data pointer value (<code>password_data</code>), and an optional error callback function (<code>error_cb</code>) and data pointer value (<code>error_data</code>). The password callback is called for encrypted PDF files that are not using the default password, for example:</p>
+<pre><code class="language-c"><span class="reserved">const</span> <span class="reserved">char</span> *
+password_cb(<span class="reserved">void</span> *data, <span class="reserved">const</span> <span class="reserved">char</span> *filename)
+{
+  (<span class="reserved">void</span>)data;     <span class="comment">// This callback doesn't use the data pointer</span>
+  (<span class="reserved">void</span>)filename; <span class="comment">// This callback doesn't use the filename</span>
+
+  <span class="comment">// Return a password string for the file...</span>
+  <span class="reserved">return</span> (<span class="string">&quot;Password42&quot;</span>);
+}
+</code></pre>
+<p>The error callback is called for both errors and warnings and accepts the <code>pdfio_file_t</code> pointer, a message string, and the callback pointer value, for example:</p>
 <pre><code class="language-c"><span class="reserved">bool</span>
 error_cb(pdfio_file_t *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *message, <span class="reserved">void</span> *data)
 {

@@ -138,15 +138,32 @@ Reading PDF Files
 You open an existing PDF file using the [`pdfioFileOpen`](@@) function:
 
 ```c
-pdfio_file_t *pdf = pdfioFileOpen("myinputfile.pdf", error_cb, error_data);
+pdfio_file_t *pdf = pdfioFileOpen("myinputfile.pdf", password_cb, password_data,
+                                  error_cb, error_data);
 
 ```
 
-where the three arguments to the function are the filename ("myinputfile.pdf"),
-an optional error callback function (`error_cb`), and an optional pointer value
-for the error callback function (`error_data`).  The error callback is called
-for both errors and warnings and accepts the `pdfio_file_t` pointer, a message
-string, and the callback pointer value, for example:
+where the five arguments to the function are the filename ("myinputfile.pdf"),
+an optional password callback function (`password_cb`) and data pointer value
+(`password_data`), and an optional error callback function (`error_cb`) and data
+pointer value (`error_data`).  The password callback is called for encrypted PDF
+files that are not using the default password, for example:
+
+```c
+const char *
+password_cb(void *data, const char *filename)
+{
+  (void)data;     // This callback doesn't use the data pointer
+  (void)filename; // This callback doesn't use the filename
+
+  // Return a password string for the file...
+  return ("Password42");
+}
+```
+
+The error callback is called for both errors and warnings and accepts the
+`pdfio_file_t` pointer, a message string, and the callback pointer value, for
+example:
 
 ```c
 bool
