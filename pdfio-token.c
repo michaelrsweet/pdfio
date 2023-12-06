@@ -243,7 +243,10 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
   }
 
   if (ch == EOF)
+  {
+    *bufptr = '\0';
     return (false);
+  }
 
   // Check for delimiters...
   if (strchr(PDFIO_DELIM_CHARS, ch) != NULL)
@@ -354,6 +357,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  {
 	    // Out of space
 	    _pdfioFileError(tb->pdf, "Token too large.");
+	    *bufptr = '\0';
 	    return (false);
 	  }
 	}
@@ -361,6 +365,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	if (ch != ')')
 	{
 	  _pdfioFileError(tb->pdf, "Unterminated string literal.");
+	  *bufptr = '\0';
 	  return (false);
 	}
 
@@ -380,6 +385,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
           {
 	    // Out of space...
 	    _pdfioFileError(tb->pdf, "Token too large.");
+	    *bufptr = '\0';
 	    return (false);
           }
 
@@ -413,6 +419,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  {
 	    // Out of space...
 	    _pdfioFileError(tb->pdf, "Token too large.");
+	    *bufptr = '\0';
 	    return (false);
 	  }
 	}
@@ -436,6 +443,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  {
 	    // Out of space...
 	    _pdfioFileError(tb->pdf, "Token too large.");
+	    *bufptr = '\0';
 	    return (false);
 	  }
 	}
@@ -462,12 +470,17 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	      if (!isxdigit(tch & 255))
 	      {
 		_pdfioFileError(tb->pdf, "Bad # escape in name.");
+		*bufptr = '\0';
 		return (false);
 	      }
 	      else if (isdigit(tch))
+	      {
 		ch = ((ch & 255) << 4) | (tch - '0');
+	      }
 	      else
+	      {
 		ch = ((ch & 255) << 4) | (tolower(tch) - 'a' + 10);
+	      }
 	    }
 	  }
 
@@ -479,6 +492,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  {
 	    // Out of space
 	    _pdfioFileError(tb->pdf, "Token too large.");
+	    *bufptr = '\0';
 	    return (false);
 	  }
 	}
@@ -501,6 +515,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	else if (!isspace(ch & 255) && !isxdigit(ch & 255))
 	{
 	  _pdfioFileError(tb->pdf, "Syntax error: '<%c'", ch);
+	  *bufptr = '\0';
 	  return (false);
 	}
 
@@ -517,12 +532,14 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	    {
 	      // Too large
 	      _pdfioFileError(tb->pdf, "Token too large.");
+	      *bufptr = '\0';
 	      return (false);
 	    }
 	  }
 	  else if (!isspace(ch))
 	  {
 	    _pdfioFileError(tb->pdf, "Invalid hex string character '%c'.", ch);
+	    *bufptr = '\0';
 	    return (false);
 	  }
 	}
@@ -531,6 +548,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	if (ch == EOF)
 	{
 	  _pdfioFileError(tb->pdf, "Unterminated hex string.");
+	  *bufptr = '\0';
 	  return (false);
 	}
 	break;
@@ -543,6 +561,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	else
 	{
 	  _pdfioFileError(tb->pdf, "Syntax error: '>%c'.", ch);
+	  *bufptr = '\0';
 	  return (false);
 	}
 	break;
