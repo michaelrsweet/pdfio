@@ -208,9 +208,10 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	*bufend,			// End of buffer
 	state = '\0';			// Current state
   bool	saw_nul = false;		// Did we see a nul character?
+  size_t count = 0;			// Number of whitespace/comment bytes
 
 
-  //
+
   // "state" is:
   //
   // - '\0' for idle
@@ -229,17 +230,38 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
   // Skip leading whitespace...
   while ((ch = get_char(tb)) != EOF)
   {
+    count ++;
+
     if (ch == '%')
     {
       // Skip comment
+      PDFIO_DEBUG("_pdfioTokenRead: Skipping comment...\n");
       while ((ch = get_char(tb)) != EOF)
       {
+        count ++;
+
 	if (ch == '\n' || ch == '\r')
+	{
 	  break;
+	}
+	else if (count > 2048)
+	{
+	  _pdfioFileError(tb->pdf, "Comment too long.");
+	  *bufptr = '\0';
+	  return (false);
+	}
       }
     }
     else if (!isspace(ch))
+    {
       break;
+    }
+    else if (count > 2048)
+    {
+      _pdfioFileError(tb->pdf, "Too much whitespace.");
+      *bufptr = '\0';
+      return (false);
+    }
   }
 
   if (ch == EOF)
@@ -265,6 +287,8 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
     state     = 'K';
     *bufptr++ = (char)ch;
   }
+
+  PDFIO_DEBUG("_pdfioTokenRead: state='%c'\n", state);
 
   switch (state)
   {
@@ -431,6 +455,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  if (!isdigit(ch) && ch != '.')
 	  {
 	    // End of number...
+	    PDFIO_DEBUG("_pdfioTokenRead: End of number with ch=0x%02x\n", ch);
 	    tb->bufptr --;
 	    break;
 	  }
@@ -496,6 +521,13 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	    return (false);
 	  }
 	}
+
+	if (bufptr == (buffer + 1))
+	{
+	  _pdfioFileError(tb->pdf, "Empty name.");
+	  *bufptr = '\0';
+	  return (false);
+	}
 	break;
 
     case '<' : // Potential hex string
@@ -519,6 +551,8 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  return (false);
 	}
 
+        count = 0;
+
         do
 	{
 	  if (isxdigit(ch))
@@ -527,6 +561,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	    {
 	      // Hex digit
 	      *bufptr++ = (char)ch;
+	      count = 0;
 	    }
 	    else
 	    {
@@ -541,6 +576,16 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	    _pdfioFileError(tb->pdf, "Invalid hex string character '%c'.", ch);
 	    *bufptr = '\0';
 	    return (false);
+	  }
+	  else
+	  {
+	    count ++;
+	    if (count > 2048)
+	    {
+	      _pdfioFileError(tb->pdf, "Too much whitespace.");
+	      *bufptr = '\0';
+	      return (false);
+	    }
 	  }
 	}
 	while ((ch = get_char(tb)) != EOF && ch != '>');
@@ -569,7 +614,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 
   *bufptr = '\0';
 
-//  PDFIO_DEBUG("_pdfioTokenRead: Read '%s'.\n", buffer);
+  PDFIO_DEBUG("_pdfioTokenRead: Read '%s'.\n", buffer);
 
   return (bufptr > buffer);
 }
@@ -606,7 +651,6 @@ get_char(_pdfio_token_t *tb)		// I - Token buffer
     tb->bufptr = tb->buffer;
     tb->bufend = tb->buffer + bytes;
 
-#if 0
 #ifdef DEBUG
     unsigned char *ptr;			// Pointer into buffer
 
@@ -620,7 +664,6 @@ get_char(_pdfio_token_t *tb)		// I - Token buffer
     }
     PDFIO_DEBUG("'\n");
 #endif // DEBUG
-#endif // 0
   }
 
   // Return the next character...

@@ -12,6 +12,9 @@ v1.2.0 (Month DD, YYYY)
   functions (Issue #24)
 - Renamed `pdfioContentTextNextLine` to `pdfioContentTextNewLine`.
 - Now use autoconf to configure the PDFio sources (Issue #54)
+- Updated the token reading code to protect against some obvious abuses of the
+  PDF format.
+- Updated the xref reading code to protect against loops.
 
 
 v1.1.4 (December 3, 2023)

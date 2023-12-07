@@ -2091,8 +2091,19 @@ load_xref(
     PDFIO_DEBUG_VALUE(&trailer);
     PDFIO_DEBUG("\n");
 
-    if ((xref_offset = (off_t)pdfioDictGetNumber(trailer.value.dict, "Prev")) <= 0)
+    off_t new_offset = (off_t)pdfioDictGetNumber(trailer.value.dict, "Prev");
+
+    if (new_offset <= 0)
+    {
       done = true;
+    }
+    else if (new_offset == xref_offset)
+    {
+      _pdfioFileError(pdf, "Recursive xref table.");
+      return (false);
+    }
+
+    xref_offset = new_offset;
   }
 
   // Once we have all of the xref tables loaded, get the important objects and
