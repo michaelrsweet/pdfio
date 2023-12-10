@@ -103,7 +103,7 @@ AC_SUBST([PKGCONFIG_REQUIRES])
 
 dnl ZLIB
 AC_MSG_CHECKING([for zlib via pkg-config])
-AS_IF([$PKCONFIG --exists zlib], [
+AS_IF([$PKGCONFIG --exists zlib], [
     AC_MSG_RESULT([yes])
     LIBS="$($PKGCONFIG --libs zlib) $LIBS"
     CPPFLAGS="$($PKGCONFIG --cflags zlib) $CPPFLAGS"
