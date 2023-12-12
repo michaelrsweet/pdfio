@@ -15,6 +15,10 @@ v1.2.0 (Month DD, YYYY)
 - Updated the token reading code to protect against some obvious abuses of the
   PDF format.
 - Updated the xref reading code to protect against loops.
+- Fixed handling of of trailer dictionaries that started immediately after the
+  "trailer" keyword (Issue #58)
+- Fixed handling of invalid, but common, PDF files with a generation number of
+  65536 in the xref table (Issue #59)
 
 
 v1.1.4 (December 3, 2023)

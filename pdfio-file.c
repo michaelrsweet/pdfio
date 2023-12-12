@@ -1736,7 +1736,7 @@ load_xref(
 	return (false);
       }
 
-      if ((generation = (int)strtol(ptr, &ptr, 10)) < 0 || generation > 65535)
+      if ((generation = (int)strtol(ptr, &ptr, 10)) < 0 || (generation > 65535 && number != 0))
       {
 	_pdfioFileError(pdf, "Bad xref table header '%s'.", line);
 	return (false);
@@ -1979,9 +1979,20 @@ load_xref(
       while (_pdfioFileGets(pdf, line, sizeof(line)))
       {
 	if (!strncmp(line, "trailer", 7) && (!line[7] || isspace(line[7] & 255)))
+	{
+	  if (line[7])
+	  {
+	    // Probably the start of the trailer dictionary, rewind the file so
+	    // we can read it...
+	    _pdfioFileSeek(pdf, 7 - strlen(line), SEEK_CUR);
+	  }
+
 	  break;
+	}
 	else if (!line[0])
+	{
 	  continue;
+	}
 
 	if (sscanf(line, "%jd%jd", &number, &num_objects) != 2)
 	{
@@ -2012,7 +2023,7 @@ load_xref(
 	    return (false);
 	  }
 
-	  if ((generation = (int)strtol(ptr, &ptr, 10)) < 0 || generation > 65535)
+	  if ((generation = (int)strtol(ptr, &ptr, 10)) < 0 || (generation > 65535 && offset != 0))
 	  {
 	    _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
 	    return (false);
