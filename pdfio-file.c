@@ -1154,8 +1154,10 @@ pdfioFileOpen(
     void                *error_data)	// I - Error callback data, if any
 {
   pdfio_file_t	*pdf;			// PDF file
-  char		line[1024],		// Line from file
-		*ptr;			// Pointer into line
+  char		line[1025],		// Line from file
+		*ptr,			// Pointer into line
+		*end;			// End of line
+  ssize_t	bytes;			// Bytes read
   off_t		xref_offset;		// Offset to xref table
 
 
@@ -1210,21 +1212,29 @@ pdfioFileOpen(
   // Copy the version number...
   pdf->version = strdup(line + 5);
 
-  // Grab the last 32 characters of the file to find the start of the xref table...
-  if (_pdfioFileSeek(pdf, -32, SEEK_END) < 0)
+  // Grab the last 1k of the file to find the start of the xref table...
+  if (_pdfioFileSeek(pdf, -1024, SEEK_END) < 0)
   {
     _pdfioFileError(pdf, "Unable to read startxref data.");
     goto error;
   }
 
-  if (_pdfioFileRead(pdf, line, 32) < 32)
+  if ((bytes = _pdfioFileRead(pdf, line, sizeof(line) - 1)) < 1)
   {
     _pdfioFileError(pdf, "Unable to read startxref data.");
     goto error;
   }
-  line[32] = '\0';
 
-  if ((ptr = strstr(line, "startxref")) == NULL)
+  line[bytes] = '\0';
+  end = line + bytes - 9;
+
+  for (ptr = line; ptr < end; ptr ++)
+  {
+    if (!memcmp(ptr, "startxref", 9))
+      break;
+  }
+
+  if (ptr >= end)
   {
     _pdfioFileError(pdf, "Unable to find start of xref table.");
     goto error;
@@ -1407,7 +1417,7 @@ add_obj(pdfio_file_t   *pdf,		// I - PDF file
   obj->generation = generation;
   obj->offset     = offset;
 
-  PDFIO_DEBUG("add_obj: obj=%p, ->pdf=%p, ->number=%lu\n", obj, pdf, (unsigned long)obj->number);
+  PDFIO_DEBUG("add_obj: obj=%p, ->pdf=%p, ->number=%lu, ->offset=%lu\n", obj, pdf, (unsigned long)obj->number, (unsigned long)offset);
 
   // Re-sort object array as needed...
   if (pdf->num_objs > 1 && pdf->objs[pdf->num_objs - 2]->number > number)
@@ -1976,22 +1986,31 @@ load_xref(
     else if (!strncmp(line, "xref", 4) && (!line[4] || isspace(line[4] & 255)))
     {
       // Read the xref tables
+      off_t trailer_offset = _pdfioFileTell(pdf);
+					// Offset of current line
+
+      PDFIO_DEBUG("load_xref: Reading xref table starting at offset %lu\n", (unsigned long)trailer_offset);
       while (_pdfioFileGets(pdf, line, sizeof(line)))
       {
+        PDFIO_DEBUG("load_xref: '%s' at offset %lu\n", line, (unsigned long)trailer_offset);
+
 	if (!strncmp(line, "trailer", 7) && (!line[7] || isspace(line[7] & 255)))
 	{
 	  if (line[7])
 	  {
 	    // Probably the start of the trailer dictionary, rewind the file so
 	    // we can read it...
-	    _pdfioFileSeek(pdf, 7 - strlen(line), SEEK_CUR);
+	    _pdfioFileSeek(pdf, trailer_offset + 7, SEEK_SET);
 	  }
 
 	  break;
 	}
-	else if (!line[0])
+	else
 	{
-	  continue;
+	  trailer_offset = _pdfioFileTell(pdf);
+
+          if (!line[0])
+	    continue;
 	}
 
 	if (sscanf(line, "%jd%jd", &number, &num_objects) != 2)
@@ -2052,6 +2071,8 @@ load_xref(
 	  if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
 	    return (false);
 	}
+
+	trailer_offset = _pdfioFileTell(pdf);
       }
 
       if (strncmp(line, "trailer", 7))

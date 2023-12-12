@@ -141,7 +141,7 @@ _pdfioFileGets(pdfio_file_t *pdf,	// I - PDF file
 	*bufend = buffer + bufsize - 1;	// Pointer to end of buffer
 
 
-  PDFIO_DEBUG("_pdfioFileGets(pdf=%p, buffer=%p, bufsize=%lu) bufpos=%ld, buffer=%p, bufptr=%p, bufend=%p\n", pdf, buffer, (unsigned long)bufsize, (long)pdf->bufpos, pdf->buffer, pdf->bufptr, pdf->bufend);
+  PDFIO_DEBUG("_pdfioFileGets(pdf=%p, buffer=%p, bufsize=%lu) bufpos=%ld, buffer=%p, bufptr=%p, bufend=%p, offset=%lu\n", pdf, buffer, (unsigned long)bufsize, (long)pdf->bufpos, pdf->buffer, pdf->bufptr, pdf->bufend, (unsigned long)(pdf->bufpos + (pdf->bufptr - pdf->buffer)));
 
   while (!eol)
   {
@@ -356,12 +356,12 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
                off_t        offset,	// I - Offset
                int          whence)	// I - Offset base
 {
-  PDFIO_DEBUG("_pdfioFileSeek(pdf=%p, offset=%ld, whence=%d)\n", pdf, (long)offset, whence);
+  PDFIO_DEBUG("_pdfioFileSeek(pdf=%p, offset=%ld, whence=%d) pdf->bufpos=%lu\n", pdf, (long)offset, whence, (unsigned long)(pdf ? pdf->bufpos : 0));
 
   // Adjust offset for relative seeks...
   if (whence == SEEK_CUR)
   {
-    offset += pdf->bufpos;
+    offset += pdf->bufpos + (pdf->bufptr - pdf->buffer);
     whence = SEEK_SET;
   }
 
@@ -404,7 +404,7 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
     return (-1);
   }
 
-  PDFIO_DEBUG("_pdfioFileSeek: Reset bufpos=%ld.\n", (long)pdf->bufpos);
+  PDFIO_DEBUG("_pdfioFileSeek: Reset bufpos=%ld, offset=%lu.\n", (long)pdf->bufpos, (unsigned long)offset);
   PDFIO_DEBUG("_pdfioFileSeek: buffer=%p, bufptr=%p, bufend=%p\n", pdf->buffer, pdf->bufptr, pdf->bufend);
 
   pdf->bufpos = offset;
