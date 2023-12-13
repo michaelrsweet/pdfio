@@ -5,16 +5,20 @@ Changes in PDFio
 v1.2.0 (Month DD, YYYY)
 -----------------------
 
+- Now use autoconf to configure the PDFio sources (Issue #54)
 - Added `pdfioFileCreateNumberObj` and `pdfioFileCreateStringObj` functions
   (Issue #14)
 - Added `pdfioContentTextMeasure` function (Issue #17)
 - Added `pdfioContentTextNewLineShow` and `pdfioContentTextNewLineShowf`
   functions (Issue #24)
 - Renamed `pdfioContentTextNextLine` to `pdfioContentTextNewLine`.
-- Now use autoconf to configure the PDFio sources (Issue #54)
+- Updated the maximum number of object streams in a single file from 4096 to
+  8192 (Issue #58)
 - Updated the token reading code to protect against some obvious abuses of the
   PDF format.
 - Updated the xref reading code to protect against loops.
+- Updated the object handling code to use a binary insertion algorithm -
+  provides a significant (~800x) improvement in open times.
 - Fixed handling of encrypted PDFs with per-object file IDs (Issue #42)
 - Fixed handling of of trailer dictionaries that started immediately after the
   "trailer" keyword (Issue #58)

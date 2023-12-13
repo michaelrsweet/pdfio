@@ -266,7 +266,8 @@ struct _pdfio_file_s			// PDF file structure
 		alloc_dicts;		// Allocated dictionaries
   pdfio_dict_t	**dicts;		// Dictionaries
   size_t	num_objs,		// Number of objects
-		alloc_objs;		// Allocated objects
+		alloc_objs,		// Allocated objects
+		last_obj;		// Last object added
   pdfio_obj_t	**objs,			// Objects
 		*current_obj;		// Current object being written/read
   size_t	num_objmaps,		// Number of object maps

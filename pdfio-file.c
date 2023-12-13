@@ -19,7 +19,6 @@
 
 static pdfio_obj_t	*add_obj(pdfio_file_t *pdf, size_t number, unsigned short generation, off_t offset);
 static int		compare_objmaps(_pdfio_objmap_t *a, _pdfio_objmap_t *b);
-static int		compare_objs(pdfio_obj_t **a, pdfio_obj_t **b);
 static const char	*get_info_string(pdfio_file_t *pdf, const char *key);
 static bool		load_obj_stream(pdfio_obj_t *obj);
 static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj, size_t depth);
@@ -916,21 +915,57 @@ pdfioFileFindObj(
     pdfio_file_t *pdf,			// I - PDF file
     size_t       number)		// I - Object number (1 to N)
 {
-  pdfio_obj_t	key,			// Search key
-		*keyptr,		// Pointer to key
-		**match;		// Pointer to match
+  size_t	left,			// Left object
+		right,			// Right object
+		current;		// Current object
 
 
-  if (pdf->num_objs > 0)
+  PDFIO_DEBUG("pdfioFileFindObj(pdf=%p, number=%lu) alloc_objs=%lu, num_objs=%lu, objs=%p\n", (void *)pdf, (unsigned long)number, (unsigned long)(pdf ? pdf->alloc_objs : 0), (unsigned long)(pdf ? pdf->num_objs : 0), (void *)(pdf ? pdf->objs : NULL));
+
+  // Range check input...
+  if (!pdf || pdf->num_objs == 0 || number < 1)
+    return (NULL);
+
+  // Do a binary search for the object...
+  if ((current = number - 1) >= pdf->num_objs)
+    current = pdf->num_objs / 2;
+
+  PDFIO_DEBUG("pdfioFileFindObj: objs[current=%lu]=%p\n", (unsigned long)current, (void *)pdf->objs[current]);
+
+  if (number == pdf->objs[current]->number)
   {
-    key.number = number;
-    keyptr     = &key;
-    match      = (pdfio_obj_t **)bsearch(&keyptr, pdf->objs, pdf->num_objs, sizeof(pdfio_obj_t *), (int (*)(const void *, const void *))compare_objs);
-
-    return (match ? *match : NULL);
+    // Fast match...
+    return (pdf->objs[current]);
+  }
+  else if (number < pdf->objs[current]->number)
+  {
+    left  = 0;
+    right = current;
+  }
+  else
+  {
+    left  = current;
+    right = pdf->num_objs - 1;
   }
 
-  return (NULL);
+  while ((right - left) > 1)
+  {
+    current = (left + right) / 2;
+
+    if (number == pdf->objs[current]->number)
+      return (pdf->objs[current]);
+    else if (number < pdf->objs[current]->number)
+      right = current;
+    else
+      left = current;
+  }
+
+  if (number == pdf->objs[left]->number)
+    return (pdf->objs[left]);
+  else if (number == pdf->objs[right]->number)
+    return (pdf->objs[right]);
+  else
+    return (NULL);
 }
 
 
@@ -1385,6 +1420,9 @@ add_obj(pdfio_file_t   *pdf,		// I - PDF file
 	off_t          offset)		// I - Offset in file
 {
   pdfio_obj_t	*obj;			// Object
+  size_t	left,			// Left object
+		right,			// Right object
+		current;		// Current object (center)
 
 
   // Allocate memory for the object...
@@ -1410,8 +1448,6 @@ add_obj(pdfio_file_t   *pdf,		// I - PDF file
     pdf->alloc_objs += 32;
   }
 
-  pdf->objs[pdf->num_objs ++] = obj;
-
   obj->pdf        = pdf;
   obj->number     = number;
   obj->generation = generation;
@@ -1419,9 +1455,56 @@ add_obj(pdfio_file_t   *pdf,		// I - PDF file
 
   PDFIO_DEBUG("add_obj: obj=%p, ->pdf=%p, ->number=%lu, ->offset=%lu\n", obj, pdf, (unsigned long)obj->number, (unsigned long)offset);
 
-  // Re-sort object array as needed...
-  if (pdf->num_objs > 1 && pdf->objs[pdf->num_objs - 2]->number > number)
-    qsort(pdf->objs, pdf->num_objs, sizeof(pdfio_obj_t *), (int (*)(const void *, const void *))compare_objs);
+  // Insert object into array as needed...
+  if (pdf->num_objs == 0 || obj->number > pdf->objs[pdf->num_objs - 1]->number)
+  {
+    // Append object...
+    PDFIO_DEBUG("add_obj: Appending at %lu\n", (unsigned long)pdf->num_objs);
+
+    pdf->objs[pdf->num_objs] = obj;
+    pdf->last_obj            = pdf->num_objs;
+  }
+  else
+  {
+    // Insert object...
+    if (obj->number < pdf->objs[pdf->last_obj]->number)
+    {
+      left  = 0;
+      right = pdf->last_obj;
+    }
+    else
+    {
+      left  = pdf->last_obj;
+      right = pdf->num_objs - 1;
+    }
+
+    while ((right - left) > 1)
+    {
+      current = (left + right) / 2;
+
+      if (obj->number < pdf->objs[current]->number)
+        right = current;
+      else
+        left = current;
+    }
+
+    if (obj->number < pdf->objs[left]->number)
+      current = left;
+    else if (obj->number < pdf->objs[right]->number)
+      current = right;
+    else
+      current = right;
+
+    PDFIO_DEBUG("add_obj: Inserting at %lu\n", (unsigned long)current);
+
+    if (current < pdf->num_objs)
+      memmove(pdf->objs + current + 1, pdf->objs + current, (pdf->num_objs - current) * sizeof(pdfio_obj_t *));
+
+    pdf->objs[current] = obj;
+    pdf->last_obj      = current;
+  }
+
+  pdf->num_objs ++;
 
   return (obj);
 }
@@ -1445,23 +1528,6 @@ compare_objmaps(_pdfio_objmap_t *a,	// I - First object map
     return (1);
   else
     return (0);
-}
-
-
-//
-// 'compare_objs()' - Compare the object numbers of two objects.
-//
-
-static int				// O - Result of comparison
-compare_objs(pdfio_obj_t **a,		// I - First object
-             pdfio_obj_t **b)		// I - Second object
-{
-  if ((*a)->number < (*b)->number)
-    return (-1);
-  else if ((*a)->number == (*b)->number)
-    return (0);
-  else
-    return (1);
 }
 
 
@@ -1737,7 +1803,7 @@ load_xref(
       pdfio_stream_t	*st;		// Stream
       unsigned char	buffer[32];	// Read buffer
       size_t		num_sobjs = 0,	// Number of object streams
-			sobjs[4096];	// Object streams to load
+			sobjs[8192];	// Object streams to load
       pdfio_obj_t	*current;	// Current object
 
       if ((number = strtoimax(line, &ptr, 10)) < 1)
