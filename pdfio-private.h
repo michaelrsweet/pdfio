@@ -237,7 +237,8 @@ struct _pdfio_file_s			// PDF file structure
   pdfio_permission_t permissions;	// Access permissions (encrypted PDF files)
   uint8_t	file_key[16],		// File encryption key
 		owner_key[32],		// Owner encryption key
-		user_key[32];		// User encryption key
+		user_key[32],		// User encryption key
+		password[32];		// Padded password
   size_t	file_keylen,		// Length of file encryption key
 		owner_keylen,		// Length of owner encryption key
 		user_keylen;		// Length of user encryption key

@@ -406,9 +406,14 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
      uint8_t             *iv,		// I  - Buffer for initialization vector
      size_t              *ivlen)	// IO - Size of initialization vector
 {
-  uint8_t	data[21];		/* Key data */
-  _pdfio_md5_t	md5;			/* MD5 state */
-  uint8_t	digest[16];		/* MD5 digest value */
+  uint8_t	data[21];		// Key data
+  _pdfio_md5_t	md5;			// MD5 state
+  uint8_t	digest[16];		// MD5 digest value
+  pdfio_array_t	*id_array;		// Object ID array
+  unsigned char	*id_value;		// Object ID value
+  size_t	id_len;			// Length of object ID
+  uint8_t	*file_key,		// Computed file key to use
+		temp_key[16];		// File key for object
 
 
   PDFIO_DEBUG("_pdfioCryptoMakeReader(pdf=%p, obj=%p(%d), ctx=%p, iv=%p, ivlen=%p(%d))\n", pdf, obj, (int)obj->number, ctx, iv, ivlen, (int)*ivlen);
@@ -420,6 +425,53 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
     return (NULL);
   }
 
+  if ((id_array = pdfioDictGetArray(pdfioObjGetDict(obj), "ID")) != NULL)
+  {
+    // Object has its own ID that will get used for encryption...
+    _pdfio_md5_t md5;			// MD5 context
+    uint8_t	file_digest[16];	// MD5 digest of file ID and pad
+    uint8_t	user_pad[32],		// Padded user password
+		own_user_key[32],	// Calculated user key
+		pdf_user_key[32];	// Decrypted user key
+
+    if ((id_value = pdfioArrayGetBinary(id_array, 0, &id_len)) == NULL)
+    {
+      *ivlen = 0;
+      return (NULL);
+    }
+
+    _pdfioCryptoMD5Init(&md5);
+    _pdfioCryptoMD5Append(&md5, pdf_passpad, 32);
+    _pdfioCryptoMD5Append(&md5, id_value, id_len);
+    _pdfioCryptoMD5Finish(&md5, file_digest);
+
+    make_owner_key(pdf->encryption, pdf->password, pdf->owner_key, user_pad);
+    make_file_key(pdf->encryption, pdf->permissions, id_value, id_len, user_pad, pdf->owner_key, temp_key);
+    make_user_key(id_value, id_len, own_user_key);
+
+    if (memcmp(own_user_key, pdf->user_key, sizeof(own_user_key)))
+    {
+      make_file_key(pdf->encryption, pdf->permissions, id_value, id_len, pdf->password, pdf->owner_key, temp_key);
+      make_user_key(id_value, id_len, own_user_key);
+
+      memcpy(pdf_user_key, pdf->user_key, sizeof(pdf_user_key));
+      decrypt_user_key(pdf->encryption, temp_key, pdf_user_key);
+
+      if (memcmp(pdf->password, pdf_user_key, 32) && memcmp(own_user_key, pdf_user_key, 16))
+      {
+	*ivlen = 0;
+	return (NULL);
+      }
+    }
+
+    file_key = temp_key;
+  }
+  else
+  {
+    // Use the default file key...
+    file_key = pdf->file_key;
+  }
+
   switch (pdf->encryption)
   {
     default :
@@ -428,7 +480,7 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
 
     case PDFIO_ENCRYPTION_RC4_40 :
 	// Copy the key data for the MD5 hash.
-	memcpy(data, pdf->file_key, sizeof(pdf->file_key));
+	memcpy(data, file_key, 16);
 	data[16] = (uint8_t)obj->number;
 	data[17] = (uint8_t)(obj->number >> 8);
 	data[18] = (uint8_t)(obj->number >> 16);
@@ -455,7 +507,7 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
 
     case PDFIO_ENCRYPTION_RC4_128 :
 	// Copy the key data for the MD5 hash.
-	memcpy(data, pdf->file_key, sizeof(pdf->file_key));
+	memcpy(data, file_key, 16);
 	data[16] = (uint8_t)obj->number;
 	data[17] = (uint8_t)(obj->number >> 8);
 	data[18] = (uint8_t)(obj->number >> 16);
@@ -769,17 +821,16 @@ _pdfioCryptoUnlock(
       {
         // Matches!
         memcpy(pdf->file_key, file_key, sizeof(pdf->file_key));
+        memcpy(pdf->password, pad, sizeof(pdf->password));
+
         return (true);
       }
 
-     /*
-      * Not the owner password, try the user password...
-      */
-
+      // Not the owner password, try the user password...
       make_file_key(pdf->encryption, pdf->permissions, file_id, file_idlen, pad, pdf->owner_key, file_key);
       PDFIO_DEBUG("_pdfioCryptoUnlock: Fuse=%02X%02X%02X%02X...%02X%02X%02X%02X\n", file_key[0], file_key[1], file_key[2], file_key[3], file_key[12], file_key[13], file_key[14], file_key[15]);
 
-      make_user_key(file_id, file_idlen, user_key);
+      make_user_key(file_id, file_idlen, own_user_key);
 
       memcpy(pdf_user_key, pdf->user_key, sizeof(pdf_user_key));
       decrypt_user_key(pdf->encryption, file_key, pdf_user_key);
@@ -787,10 +838,12 @@ _pdfioCryptoUnlock(
       PDFIO_DEBUG("_pdfioCryptoUnlock: Uuse=%02X%02X%02X%02X...%02X%02X%02X%02X\n", user_key[0], user_key[1], user_key[2], user_key[3], user_key[28], user_key[29], user_key[30], user_key[31]);
       PDFIO_DEBUG("_pdfioCryptoUnlock: Updf=%02X%02X%02X%02X...%02X%02X%02X%02X\n", pdf_user_key[0], pdf_user_key[1], pdf_user_key[2], pdf_user_key[3], pdf_user_key[28], pdf_user_key[29], pdf_user_key[30], pdf_user_key[31]);
 
-      if (!memcmp(pad, pdf_user_key, 32) || !memcmp(user_key, pdf_user_key, 16))
+      if (!memcmp(pad, pdf_user_key, 32) || !memcmp(own_user_key, pdf_user_key, 16))
       {
         // Matches!
         memcpy(pdf->file_key, file_key, sizeof(pdf->file_key));
+        memcpy(pdf->password, pad, sizeof(pdf->password));
+
         return (true);
       }
     }
