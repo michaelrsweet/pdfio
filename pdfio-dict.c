@@ -159,6 +159,30 @@ pdfioDictCreate(pdfio_file_t *pdf)	// I - PDF file
 
 
 //
+// '_pdfioDictDecrypt()' - Decrypt the values in a dictionary.
+//
+
+bool					// O - `true` on success, `false` on error
+_pdfioDictDecrypt(pdfio_file_t *pdf,	// I - PDF file
+                  pdfio_obj_t  *obj,	// I - Object
+                  pdfio_dict_t *dict,	// I - Dictionary
+                  size_t       depth)	// I - Depth
+{
+  size_t	i;			// Looping var
+  _pdfio_pair_t	*pair;			// Current pair
+
+
+  for (i = dict->num_pairs, pair = dict->pairs; i > 0; i --, pair ++)
+  {
+    if (strcmp(pair->key, "ID") && !_pdfioValueDecrypt(pdf, obj, &pair->value, depth + 1))
+      return (false);
+  }
+
+  return (true);
+}
+
+
+//
 // '_pdfioDictDebug()' - Dump a dictionary to stderr.
 //
 

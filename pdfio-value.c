@@ -11,6 +11,13 @@
 
 
 //
+// Local functions...
+//
+
+static time_t	get_date_time(const char *s);
+
+
+//
 // '_pdfioValueCopy()' - Copy a value to a PDF file.
 //
 
@@ -106,6 +113,97 @@ _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
 
 
 //
+// '_pdfioValueDecrypt()' - Decrypt a value.
+//
+
+bool					// O - `true` on success, `false` on error
+_pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
+                   pdfio_obj_t    *obj,	// I - Object
+                   _pdfio_value_t *v,	// I - Value
+                   size_t         depth)// I - Depth
+{
+  _pdfio_crypto_ctx_t	ctx;		// Decryption context
+  _pdfio_crypto_cb_t	cb;		// Decryption callback
+  size_t		ivlen;		// Number of initialization vector bytes
+  uint8_t		temp[32768];	// Temporary buffer for decryption
+  size_t		templen;	// Number of actual data bytes
+  time_t		timeval;	// Date/time value
+
+
+  if (depth > PDFIO_MAX_DEPTH)
+  {
+    _pdfioFileError(pdf, "Value too deep.");
+    return (false);
+  }
+
+  switch (v->type)
+  {
+    case PDFIO_VALTYPE_ARRAY :
+        return (_pdfioArrayDecrypt(pdf, obj, v->value.array, depth + 1));
+        break;
+
+    case PDFIO_VALTYPE_DICT :
+        return (_pdfioDictDecrypt(pdf, obj, v->value.dict, depth + 1));
+        break;
+
+    case PDFIO_VALTYPE_BINARY :
+	// Decrypt the binary string...
+	if (v->value.binary.datalen > (sizeof(temp) - 32))
+	{
+	  _pdfioFileError(pdf, "Unable to read encrypted binary string - too long.");
+	  return (false);
+	}
+
+	ivlen = v->value.binary.datalen;
+	if ((cb = _pdfioCryptoMakeReader(pdf, obj, &ctx, v->value.binary.data, &ivlen)) == NULL)
+	  return (false);
+
+	templen = (cb)(&ctx, temp, v->value.binary.data + ivlen, v->value.binary.datalen - ivlen);
+
+	// Copy the decrypted string back to the value and adjust the length...
+	memcpy(v->value.binary.data, temp, templen);
+
+	if (pdf->encryption >= PDFIO_ENCRYPTION_AES_128)
+	  v->value.binary.datalen = templen - temp[templen - 1];
+	else
+	  v->value.binary.datalen = templen;
+	break;
+
+    case PDFIO_VALTYPE_STRING :
+        // Decrypt regular string...
+        templen = strlen(v->value.string);
+	if (templen > (sizeof(temp) - 33))
+	{
+	  _pdfioFileError(pdf, "Unable to read encrypted string - too long.");
+	  return (false);
+	}
+
+	ivlen = templen;
+	if ((cb = _pdfioCryptoMakeReader(pdf, obj, &ctx, (uint8_t *)v->value.string, &ivlen)) == NULL)
+	  return (false);
+
+	templen = (cb)(&ctx, temp, (uint8_t *)v->value.string + ivlen, templen - ivlen);
+	temp[templen] = '\0';
+
+        if ((timeval = get_date_time((char *)temp)) != 0)
+        {
+          // Change the type to date...
+          v->type       = PDFIO_VALTYPE_DATE;
+          v->value.date = timeval;
+        }
+        else
+        {
+          // Copy the decrypted string back to the value...
+	  v->value.string = pdfioStringCreate(pdf, (char *)temp);
+	}
+        break;
+  }
+
+  return (true);
+}
+
+
+//
 // '_pdfioValueDebug()' - Print the contents of a value.
 //
 
@@ -196,6 +294,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
                 size_t         depth)	// I - Depth of value
 {
   char		token[32768];		// Token buffer
+  time_t	timeval;		// Date/time value
 #ifdef DEBUG
   static const char * const valtypes[] =
   {
@@ -245,73 +344,10 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
     if ((v->value.dict = _pdfioDictRead(pdf, obj, tb, depth + 1)) == NULL)
       return (NULL);
   }
-  else if (!strncmp(token, "(D:", 3))
+  else if (!strncmp(token, "(D:", 3) && (timeval = get_date_time(token + 1)) != 0)
   {
-    // Possible date value of the form:
-    //
-    //   (D:YYYYMMDDhhmmssZ)
-    //   (D:YYYYMMDDhhmmss+HH'mm)
-    //   (D:YYYYMMDDhhmmss-HH'mm)
-    //
-    int		i;			// Looping var
-    struct tm	dateval;		// Date value
-    int		offset;			// Date offset
-
-    for (i = 3; i < 17; i ++)
-    {
-      if (!isdigit(token[i] & 255))
-        break;
-    }
-
-    if (i >= 17)
-    {
-      if (token[i] == 'Z')
-      {
-        i ++;
-      }
-      else if (token[i] == '-' || token[i] == '+')
-      {
-        if (isdigit(token[i + 1] & 255) && isdigit(token[i + 2] & 255) && token[i + 3] == '\'' && isdigit(token[i + 4] & 255) && isdigit(token[i + 5] & 255))
-        {
-          i += 6;
-          if (token[i] == '\'')
-            i ++;
-	}
-      }
-    }
-
-    if (token[i])
-    {
-      // Just a string...
-      v->type         = PDFIO_VALTYPE_STRING;
-      v->value.string = pdfioStringCreate(pdf, token + 1);
-    }
-    else
-    {
-      // Date value...
-      memset(&dateval, 0, sizeof(dateval));
-
-      dateval.tm_year = (token[3] - '0') * 1000 + (token[4] - '0') * 100 + (token[5] - '0') * 10 + token[6] - '0' - 1900;
-      dateval.tm_mon  = (token[7] - '0') * 10 + token[8] - '0' - 1;
-      dateval.tm_mday = (token[9] - '0') * 10 + token[10] - '0';
-      dateval.tm_hour = (token[11] - '0') * 10 + token[12] - '0';
-      dateval.tm_min  = (token[13] - '0') * 10 + token[14] - '0';
-      dateval.tm_sec  = (token[15] - '0') * 10 + token[16] - '0';
-
-      if (token[17] == 'Z')
-      {
-        offset = 0;
-      }
-      else
-      {
-        offset = (token[18] - '0') * 600 + (token[19] - '0') * 60 + (token[20] - '0') * 10 + token[21] - '0';
-        if (token[17] == '-')
-          offset = -offset;
-      }
-
-      v->type       = PDFIO_VALTYPE_DATE;
-      v->value.date = mktime(&dateval) + offset;
-    }
+    v->type       = PDFIO_VALTYPE_DATE;
+    v->value.date = timeval;
   }
   else if (token[0] == '(')
   {
@@ -362,36 +398,6 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
       }
 
       *dataptr++ = (unsigned char)d;
-    }
-
-    if (obj && pdf->encryption)
-    {
-      // Decrypt the string...
-      _pdfio_crypto_ctx_t ctx;		// Decryption context
-      _pdfio_crypto_cb_t cb;		// Decryption callback
-      size_t	ivlen;			// Number of initialization vector bytes
-      uint8_t	temp[32768];		// Temporary buffer for decryption
-      size_t	templen;		// Number of actual data bytes
-
-      if (v->value.binary.datalen > (sizeof(temp) - 32))
-      {
-	_pdfioFileError(pdf, "Unable to read encrypted binary string - too long.");
-	return (false);
-      }
-
-      ivlen = v->value.binary.datalen;
-      if ((cb = _pdfioCryptoMakeReader(pdf, obj, &ctx, v->value.binary.data, &ivlen)) == NULL)
-	return (false);
-
-      templen = (cb)(&ctx, temp, v->value.binary.data + ivlen, v->value.binary.datalen - ivlen);
-
-      // Copy the decrypted string back to the value and adjust the length...
-      memcpy(v->value.binary.data, temp, templen);
-
-      if (pdf->encryption >= PDFIO_ENCRYPTION_AES_128)
-        v->value.binary.datalen = templen - temp[templen - 1];
-      else
-	v->value.binary.datalen = templen;
     }
   }
   else if (strchr("0123456789-+.", token[0]) != NULL)
@@ -727,4 +733,77 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
   }
 
   return (false);
+}
+
+
+//
+// 'get_date_time()' - Convert PDF date/time value to time_t.
+//
+
+static time_t				// O - Time in seconds
+get_date_time(const char *s)		// I - PDF date/time value
+{
+  int		i;			// Looping var
+  struct tm	dateval;		// Date value
+  int		offset;			// Date offset
+
+
+  // Possible date value of the form:
+  //
+  //   (D:YYYYMMDDhhmmssZ)
+  //   (D:YYYYMMDDhhmmss+HH'mm)
+  //   (D:YYYYMMDDhhmmss-HH'mm)
+  //
+
+  for (i = 2; i < 16; i ++)
+  {
+    if (!isdigit(s[i] & 255) || !s[i])
+      break;
+  }
+
+  if (i >= 16)
+  {
+    if (s[i] == 'Z')
+    {
+      i ++;
+    }
+    else if (s[i] == '-' || s[i] == '+')
+    {
+      if (isdigit(s[i + 1] & 255) && isdigit(s[i + 2] & 255) && s[i + 3] == '\'' && isdigit(s[i + 4] & 255) && isdigit(s[i + 5] & 255))
+      {
+	i += 6;
+	if (s[i] == '\'')
+	  i ++;
+      }
+    }
+  }
+
+  if (s[i])
+  {
+    // Just a string...
+    return (0);
+  }
+
+  // Date value...
+  memset(&dateval, 0, sizeof(dateval));
+
+  dateval.tm_year = (s[2] - '0') * 1000 + (s[3] - '0') * 100 + (s[4] - '0') * 10 + s[5] - '0' - 1900;
+  dateval.tm_mon  = (s[6] - '0') * 10 + s[7] - '0' - 1;
+  dateval.tm_mday = (s[8] - '0') * 10 + s[9] - '0';
+  dateval.tm_hour = (s[10] - '0') * 10 + s[11] - '0';
+  dateval.tm_min  = (s[12] - '0') * 10 + s[13] - '0';
+  dateval.tm_sec  = (s[14] - '0') * 10 + s[15] - '0';
+
+  if (s[16] == 'Z')
+  {
+    offset = 0;
+  }
+  else
+  {
+    offset = (s[17] - '0') * 600 + (s[18] - '0') * 60 + (s[19] - '0') * 10 + s[20] - '0';
+    if (s[16] == '-')
+      offset = -offset;
+  }
+
+  return (mktime(&dateval) + offset);
 }

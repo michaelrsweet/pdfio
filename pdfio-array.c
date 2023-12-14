@@ -328,6 +328,30 @@ pdfioArrayCreate(pdfio_file_t *pdf)	// I - PDF file
 
 
 //
+// '_pdfioArrayDecrypt()' - Decrypt values in an array.
+//
+
+bool					// O - `true` on success, `false` on error
+_pdfioArrayDecrypt(pdfio_file_t  *pdf,	// I - PDF file
+                   pdfio_obj_t   *obj,	// I - Object
+                   pdfio_array_t *a,	// I - Array
+                   size_t        depth)	// I - Depth
+{
+  size_t		i;		// Looping var
+  _pdfio_value_t	*v;		// Current value
+
+
+  for (i = a->num_values, v = a->values; i > 0; i --, v ++)
+  {
+    if (!_pdfioValueDecrypt(pdf, obj, v, depth))
+      return (false);
+  }
+
+  return (true);
+}
+
+
+//
 // '_pdfioArrayDebug()' - Print the contents of an array.
 //
 

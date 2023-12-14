@@ -322,6 +322,7 @@ struct _pdfio_stream_s			// Stream
 // Functions...
 //
 
+extern bool		_pdfioArrayDecrypt(pdfio_file_t *pdf, pdfio_obj_t *obj, pdfio_array_t *a, size_t depth) _PDFIO_INTERNAL;
 extern void		_pdfioArrayDebug(pdfio_array_t *a, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioArrayDelete(pdfio_array_t *a) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioArrayGetValue(pdfio_array_t *a, size_t n) _PDFIO_INTERNAL;
@@ -346,6 +347,7 @@ extern void		_pdfioCryptoSHA256Finish(_pdfio_sha256_t *ctx, uint8_t *Message_Dig
 extern bool		_pdfioCryptoUnlock(pdfio_file_t *pdf, pdfio_password_cb_t password_cb, void *password_data) _PDFIO_INTERNAL;
 
 extern void		_pdfioDictClear(pdfio_dict_t *dict, const char *key) _PDFIO_INTERNAL;
+extern bool		_pdfioDictDecrypt(pdfio_file_t *pdf, pdfio_obj_t *obj, pdfio_dict_t *dict, size_t depth) _PDFIO_INTERNAL;
 extern void		_pdfioDictDebug(pdfio_dict_t *dict, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioDictDelete(pdfio_dict_t *dict) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioDictGetValue(pdfio_dict_t *dict, const char *key) _PDFIO_INTERNAL;
@@ -389,6 +391,7 @@ extern void		_pdfioTokenPush(_pdfio_token_t *tb, const char *token) _PDFIO_INTER
 extern bool		_pdfioTokenRead(_pdfio_token_t *tb, char *buffer, size_t bufsize);
 
 extern _pdfio_value_t	*_pdfioValueCopy(pdfio_file_t *pdfdst, _pdfio_value_t *vdst, pdfio_file_t *pdfsrc, _pdfio_value_t *vsrc) _PDFIO_INTERNAL;
+extern bool		_pdfioValueDecrypt(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_value_t *v, size_t depth) _PDFIO_INTERNAL;
 extern void		_pdfioValueDebug(_pdfio_value_t *v, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioValueDelete(_pdfio_value_t *v) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioValueRead(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_token_t *ts, _pdfio_value_t *v, size_t depth) _PDFIO_INTERNAL;

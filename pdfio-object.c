@@ -466,6 +466,13 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
     PDFIO_DEBUG("_pdfioObjLoad: stream_offset=%lu.\n", (unsigned long)obj->stream_offset);
   }
 
+  // Decrypt as needed...
+  if (obj->pdf->encryption)
+  {
+    if (!_pdfioValueDecrypt(obj->pdf, obj, &obj->value, 0))
+      return (false);
+  }
+
   PDFIO_DEBUG("_pdfioObjLoad: ");
   PDFIO_DEBUG_VALUE(&obj->value);
   PDFIO_DEBUG("\n");
