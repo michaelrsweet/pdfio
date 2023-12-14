@@ -469,8 +469,13 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   // Decrypt as needed...
   if (obj->pdf->encryption)
   {
+    PDFIO_DEBUG("_pdfioObjLoad: Decrypting value...\n");
+
     if (!_pdfioValueDecrypt(obj->pdf, obj, &obj->value, 0))
+    {
+      PDFIO_DEBUG("_pdfioObjLoad: Failed to decrypt.\n");
       return (false);
+    }
   }
 
   PDFIO_DEBUG("_pdfioObjLoad: ");
