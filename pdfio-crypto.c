@@ -434,6 +434,8 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
 		own_user_key[32],	// Calculated user key
 		pdf_user_key[32];	// Decrypted user key
 
+    PDFIO_DEBUG("_pdfioCryptoMakeReader: Per-object file ID.\n");
+
     if ((id_value = pdfioArrayGetBinary(id_array, 0, &id_len)) == NULL)
     {
       *ivlen = 0;
@@ -451,6 +453,8 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
 
     if (memcmp(own_user_key, pdf->user_key, sizeof(own_user_key)))
     {
+      PDFIO_DEBUG("_pdfioCryptoMakeReader: Not user password, trying owner password.\n");
+
       make_file_key(pdf->encryption, pdf->permissions, id_value, id_len, pdf->password, pdf->owner_key, temp_key);
       make_user_key(id_value, id_len, own_user_key);
 
@@ -648,6 +652,8 @@ _pdfioCryptoUnlock(
   revision = (int)pdfioDictGetNumber(encrypt_dict, "R");
   length   = (int)pdfioDictGetNumber(encrypt_dict, "Length");
 
+  PDFIO_DEBUG("_pdfioCryptoUnlock: handler=%p(%s), version=%d, revision=%d, length=%d\n", (void *)handler, handler ? handler : "(null)", version, revision, length);
+
   if (!handler || strcmp(handler, "Standard"))
   {
     _pdfioFileError(pdf, "Unsupported security handler '%s'.", handler ? handler : "(null)");
@@ -696,6 +702,8 @@ _pdfioCryptoUnlock(
     }
     else
     {
+      PDFIO_DEBUG("_pdfioCryptoUnlock: CFM=\"%s\"\n", cfm);
+
       if (length < 40 || length > 128)
 	length = 128;			// Default to 128 bits
 

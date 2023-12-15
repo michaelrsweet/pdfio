@@ -453,9 +453,7 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
     return (false);
   }
 
-  PDFIO_DEBUG("_pdfioObjLoad: tb.bufptr=%p, tb.bufend=%p, tb.bufptr[0]=0x%02x, tb.bufptr[0]=0x%02x\n", tb.bufptr, tb.bufend, tb.bufptr[0], tb.bufptr[1]);
-  if (tb.bufptr && tb.bufptr < tb.bufend && (tb.bufptr[0] == 0x0d || tb.bufptr[0] == 0x0a))
-    tb.bufptr ++;			// Skip trailing CR or LF after token
+  PDFIO_DEBUG("_pdfioObjLoad: tb.bufptr=%p, tb.bufend=%p, tb.bufptr[0]=0x%02x, tb.bufptr[1]=0x%02x\n", tb.bufptr, tb.bufend, tb.bufptr[0], tb.bufptr[1]);
 
   _pdfioTokenFlush(&tb);
 

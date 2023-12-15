@@ -447,6 +447,13 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	    return (false);
 	  }
 	}
+
+	if (ch == '\r')
+	{
+	  // Look for a trailing LF
+	  if ((ch = get_char(tb)) != EOF && ch != '\n')
+	    tb->bufptr --;
+	}
 	break;
 
     case 'N' : // number
