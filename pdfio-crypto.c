@@ -399,7 +399,7 @@ _pdfioCryptoMakeRandom(uint8_t *buffer,	// I - Buffer
 //
 
 _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
- _pdfioCryptoMakeReader(
+_pdfioCryptoMakeReader(
      pdfio_file_t        *pdf,		// I  - PDF file
      pdfio_obj_t         *obj,		// I  - PDF object
      _pdfio_crypto_ctx_t *ctx,		// I  - Pointer to crypto context
@@ -551,7 +551,7 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
 //
 
 _pdfio_crypto_cb_t			// O  - Encryption callback or `NULL` for none
- _pdfioCryptoMakeWriter(
+_pdfioCryptoMakeWriter(
      pdfio_file_t        *pdf,		// I  - PDF file
      pdfio_obj_t         *obj,		// I  - PDF object
      _pdfio_crypto_ctx_t *ctx,		// I  - Pointer to crypto context
