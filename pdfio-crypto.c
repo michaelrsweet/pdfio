@@ -409,11 +409,13 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
   uint8_t	data[21];		// Key data
   _pdfio_md5_t	md5;			// MD5 state
   uint8_t	digest[16];		// MD5 digest value
+#if PDFIO_OBJ_CRYPT
   pdfio_array_t	*id_array;		// Object ID array
   unsigned char	*id_value;		// Object ID value
   size_t	id_len;			// Length of object ID
-  uint8_t	*file_key,		// Computed file key to use
-		temp_key[16];		// File key for object
+  uint8_t	temp_key[16];		// File key for object
+#endif // PDFIO_OBJ_CRYPT
+  uint8_t	*file_key;		// Computed file key to use
 
 
   PDFIO_DEBUG("_pdfioCryptoMakeReader(pdf=%p, obj=%p(%d), ctx=%p, iv=%p, ivlen=%p(%d))\n", pdf, obj, (int)obj->number, ctx, iv, ivlen, (int)*ivlen);
@@ -425,6 +427,7 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
     return (NULL);
   }
 
+#if PDFIO_OBJ_CRYPT
   if ((id_array = pdfioDictGetArray(pdfioObjGetDict(obj), "ID")) != NULL)
   {
     // Object has its own ID that will get used for encryption...
@@ -471,6 +474,7 @@ _pdfio_crypto_cb_t			// O  - Decryption callback or `NULL` for none
     file_key = temp_key;
   }
   else
+#endif // PDFIO_OBJ_CRYPT
   {
     // Use the default file key...
     file_key = pdf->file_key;
