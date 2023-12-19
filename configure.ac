@@ -88,9 +88,6 @@ AC_SUBST([INSTALL])
 AC_MSG_RESULT([using $INSTALL])
 
 
-dnl Check for pkg-config, which is used for some other tests later on...
-AC_PATH_TOOL([PKGCONFIG], [pkg-config])
-
 PKGCONFIG_CFLAGS="-I\${includedir}"
 PKGCONFIG_LIBS="-L\${libdir} -lpdfio"
 PKGCONFIG_LIBS_PRIVATE="-lm"
@@ -102,13 +99,10 @@ AC_SUBST([PKGCONFIG_REQUIRES])
 
 
 dnl ZLIB
-AC_MSG_CHECKING([for zlib via pkg-config])
-AS_IF([$PKGCONFIG --exists zlib], [
-    AC_MSG_RESULT([yes])
-    LIBS="$($PKGCONFIG --libs zlib) $LIBS"
-    CPPFLAGS="$($PKGCONFIG --cflags zlib) $CPPFLAGS"
-],[
-    AC_MSG_RESULT([no])
+PKG_CHECK_MODULES([ZLIB], [zlib >= 1.1], [
+    LIBS="$ZLIB_LIBS $LIBS"
+    CPPFLAGS="$ZLIB_CFLAGS $CPPFLAGS"
+], [
     AC_CHECK_HEADER([zlib.h])
     AC_CHECK_LIB([z], [inflateCopy])
 
