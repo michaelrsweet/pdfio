@@ -1131,20 +1131,20 @@ pdfioContentTextMeasure(
       if (ch < 128)
       {
         // ASCII
-	*tempptr++ = ch;
+	*tempptr++ = (char)ch;
       }
       else if (ch < 2048)
       {
         // 2-byte UTF-8
-        *tempptr++ = 0xc0 | ((ch >> 6) & 0x1f);
-        *tempptr++ = 0x80 | (ch & 0x3f);
+        *tempptr++ = (char)(0xc0 | ((ch >> 6) & 0x1f));
+        *tempptr++ = (char)(0x80 | (ch & 0x3f));
       }
       else
       {
         // 3-byte UTF-8
-        *tempptr++ = 0xe0 | ((ch >> 12) & 0x0f);
-        *tempptr++ = 0x80 | ((ch >> 6) & 0x3f);
-        *tempptr++ = 0x80 | (ch & 0x3f);
+        *tempptr++ = (char)(0xe0 | ((ch >> 12) & 0x0f));
+        *tempptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+        *tempptr++ = (char)(0x80 | (ch & 0x3f));
       }
     }
 
@@ -1152,7 +1152,7 @@ pdfioContentTextMeasure(
     s        = temp;
   }
 
-  ttfGetExtents(ttf, size, s, &extents);
+  ttfGetExtents(ttf, (float)size, s, &extents);
 
   return (extents.right - extents.left);
 }
@@ -1642,7 +1642,7 @@ pdfioFileCreateFontObjFromFile(
         *bufptr++ = (unsigned char)(cmap[i] >> 8);
         *bufptr++ = (unsigned char)(cmap[i] & 255);
 
-        glyphs[cmap[i]] = i;
+        glyphs[cmap[i]] = (unsigned short)i;
         if (cmap[i] < min_glyph)
           min_glyph = cmap[i];
         if (cmap[i] > max_glyph)
@@ -1727,9 +1727,9 @@ pdfioFileCreateFontObjFromFile(
     if ((w_array = pdfioArrayCreate(pdf)) == NULL)
       goto done;
 
-    for (start = 0, w0 = ttfGetWidth(font, 0), i = 1; i < 65536; start = i, w0 = w1, i ++)
+    for (start = 0, w0 = ttfGetWidth(font, 0), w1 = 0, i = 1; i < 65536; start = i, w0 = w1, i ++)
     {
-      while (i < 65536 && (w1 = ttfGetWidth(font, i)) == w0)
+      while (i < 65536 && (w1 = ttfGetWidth(font, (int)i)) == w0)
         i ++;
 
       if ((i - start) > 1)
@@ -1750,7 +1750,7 @@ pdfioFileCreateFontObjFromFile(
         pdfioArrayAppendNumber(temp_array, w0);
         for (w0 = w1, i ++; i < 65536; w0 = w1, i ++)
         {
-          if ((w1 = ttfGetWidth(font, i)) == w0 && i < 65535)
+          if ((w1 = ttfGetWidth(font, (int)i)) == w0 && i < 65535)
             break;
 
 	  pdfioArrayAppendNumber(temp_array, w0);

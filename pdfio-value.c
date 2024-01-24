@@ -138,6 +138,10 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
 
   switch (v->type)
   {
+    default :
+        // Do nothing
+        break;
+
     case PDFIO_VALTYPE_ARRAY :
         return (_pdfioArrayDecrypt(pdf, obj, v->value.array, depth + 1));
         break;

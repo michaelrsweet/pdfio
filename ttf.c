@@ -1307,7 +1307,7 @@ read_cmap(ttf_t *font)			// I - Font
               {
                 // Use an "obscure indexing trick" (words from the spec, not
                 // mine) to look up the glyph index...
-                temp = segment->idRangeOffset / 2 - segCount + (ch - segment->startCode) + (segment - segments);
+                temp = (int)(segment->idRangeOffset / 2 - segCount + (ch - segment->startCode) + (segment - segments));
 
                 TTF_DEBUG("read_cmap: ch=%d, temp=%d\n", ch, temp);
                 if (temp < 0 || temp >= numGlyphIdArray)
