@@ -2,8 +2,8 @@ Changes in PDFio
 ================
 
 
-v1.2.0 (Month DD, YYYY)
------------------------
+v1.2.0 (January 24, 2024)
+-------------------------
 
 - Now use autoconf to configure the PDFio sources (Issue #54)
 - Added `pdfioFileCreateNumberObj` and `pdfioFileCreateStringObj` functions

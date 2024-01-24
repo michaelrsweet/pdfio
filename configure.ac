@@ -1,7 +1,7 @@
 dnl
 dnl Configuration script for PDFio
 dnl
-dnl Copyright © 2023 by Michael R Sweet
+dnl Copyright © 2023-2024 by Michael R Sweet
 dnl
 dnl Licensed under Apache License v2.0.  See the file "LICENSE" for more
 dnl information.
@@ -105,8 +105,8 @@ dnl ZLIB
 AC_MSG_CHECKING([for zlib via pkg-config])
 AS_IF([$PKGCONFIG --exists zlib], [
     AC_MSG_RESULT([yes])
-    LIBS="$($PKGCONFIG --libs zlib) $LIBS"
     CPPFLAGS="$($PKGCONFIG --cflags zlib) $CPPFLAGS"
+    LIBS="$($PKGCONFIG --libs zlib) $LIBS"
 ],[
     AC_MSG_RESULT([no])
     AC_CHECK_HEADER([zlib.h])
@@ -116,6 +116,7 @@ AS_IF([$PKGCONFIG --exists zlib], [
 	AC_MSG_ERROR([Sorry, this software requires zlib 1.1 or higher.])
     ])
 
+    PKGCONFIG_REQUIRES=""
     PKGCONFIG_LIBS_PRIVATE="-lz $PKGCONFIG_LIBS_PRIVATE"
 ])
 

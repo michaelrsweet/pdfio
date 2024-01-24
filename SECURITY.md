@@ -54,7 +54,7 @@ starting at 0.  A feature release has a "PATCH" value of 0, for example:
     1.1.0
     2.0.0
 
-Beta releases and release candidates are *not* prodution releases and use
+Beta releases and release candidates are *not* production releases and use
 semantic version numbers of the form:
 
     MAJOR.MINORbNUMBER
