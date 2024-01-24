@@ -172,6 +172,7 @@ valgrind:	testpdfio
 # pdfio library
 libpdfio.a:		$(LIBOBJS)
 	echo Archiving $@...
+	$(RM) $@
 	$(AR) $(ARFLAGS) $@ $(LIBOBJS)
 	$(RANLIB) $@
 
@@ -226,7 +227,7 @@ ttf.o:			ttf.h
 # Make documentation using Codedoc <https://www.msweet.org/codedoc>
 DOCFLAGS	=	\
 			--author "Michael R Sweet" \
-			--copyright "Copyright (c) 2021-2023 by Michael R Sweet" \
+			--copyright "Copyright (c) 2021-2024 by Michael R Sweet" \
 			--docversion $(PDFIO_VERSION)
 
 .PHONY: doc
