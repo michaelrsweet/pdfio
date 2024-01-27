@@ -1,7 +1,7 @@
 //
 // Public header file for PDFio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -23,7 +23,7 @@ extern "C" {
 // Version number...
 //
 
-#  define PDFIO_VERSION		"1.2.0"
+#  define PDFIO_VERSION		"1.2.1"
 
 
 //
