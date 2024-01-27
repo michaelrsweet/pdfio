@@ -1,7 +1,7 @@
 //
 // PDF file functions for PDFio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -20,6 +20,7 @@
 static pdfio_obj_t	*add_obj(pdfio_file_t *pdf, size_t number, unsigned short generation, off_t offset);
 static int		compare_objmaps(_pdfio_objmap_t *a, _pdfio_objmap_t *b);
 static const char	*get_info_string(pdfio_file_t *pdf, const char *key);
+static struct lconv	*get_lconv(void);
 static bool		load_obj_stream(pdfio_obj_t *obj);
 static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj, size_t depth);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset, pdfio_password_cb_t password_cb, void *password_data);
@@ -217,6 +218,7 @@ pdfioFileCreate(
     return (NULL);
   }
 
+  pdf->loc         = get_lconv();
   pdf->filename    = strdup(filename);
   pdf->version     = strdup(version);
   pdf->mode        = _PDFIO_MODE_WRITE;
@@ -259,7 +261,7 @@ pdfioFileCreate(
   }
 
   // Write a standard PDF header...
-  if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
+  if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%PDF\303\254o\n", version))
     goto error;
 
   // Create the pages object...
@@ -1218,6 +1220,7 @@ pdfioFileOpen(
     return (NULL);
   }
 
+  pdf->loc         = get_lconv();
   pdf->filename    = strdup(filename);
   pdf->mode        = _PDFIO_MODE_READ;
   pdf->error_cb    = error_cb;
@@ -1573,6 +1576,26 @@ get_info_string(pdfio_file_t *pdf,	// I - PDF file
     // Something else that is not a string...
     return (NULL);
   }
+}
+
+
+//
+// 'get_lconv()' - Get any locale-specific numeric information.
+//
+
+static struct lconv *			// O - Locale information or `NULL`
+get_lconv(void)
+{
+  struct lconv	*loc;			// Locale information
+
+
+  if ((loc = localeconv()) != NULL)
+  {
+    if (!loc->decimal_point || !strcmp(loc->decimal_point, "."))
+      loc = NULL;
+  }
+
+  return (loc);
 }
 
 

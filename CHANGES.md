@@ -2,6 +2,12 @@ Changes in PDFio
 ================
 
 
+v1.2.1 (Month DD, YYYY)
+-----------------------
+
+- Updated number support to avoid locale issues (Issue #61)
+
+
 v1.2.0 (January 24, 2024)
 -------------------------
 

@@ -1,7 +1,7 @@
 //
 // PDF stream functions for PDFio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -687,7 +687,7 @@ pdfioStreamPrintf(
 
   // Format the string...
   va_start(ap, format);
-  vsnprintf(buffer, sizeof(buffer), format, ap);
+  _pdfio_vsnprintf(st->pdf, buffer, sizeof(buffer), format, ap);
   va_end(ap);
 
   // Write the string...

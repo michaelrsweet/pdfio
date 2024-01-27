@@ -1,7 +1,7 @@
 //
 // Common support functions for pdfio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -261,7 +261,7 @@ _pdfioFilePrintf(pdfio_file_t *pdf,	// I - PDF file
 
   // Format the string...
   va_start(ap, format);
-  vsnprintf(buffer, sizeof(buffer), format, ap);
+  _pdfio_vsnprintf(pdf, buffer, sizeof(buffer), format, ap);
   va_end(ap);
 
   // Write it...

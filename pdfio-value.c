@@ -1,7 +1,7 @@
 //
 // PDF value functions for PDFio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -497,7 +497,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 
     // If we get here, we have a number...
     v->type         = PDFIO_VALTYPE_NUMBER;
-    v->value.number = (double)strtod(token, NULL);
+    v->value.number = _pdfio_strtod(pdf, token);
   }
   else if (!strcmp(token, "true") || !strcmp(token, "false"))
   {

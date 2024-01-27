@@ -1,7 +1,7 @@
 //
 // Private header file for PDFio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -20,6 +20,7 @@
 #  include <errno.h>
 #  include <inttypes.h>
 #  include <fcntl.h>
+#  include <locale.h>
 #  ifdef _WIN32
 #    include <io.h>
 #    include <direct.h>
@@ -224,6 +225,7 @@ typedef struct _pdfio_objmap_s		// PDF object map
 struct _pdfio_file_s			// PDF file structure
 {
   char		*filename;		// Filename
+  struct lconv	*loc;			// Locale data
   char		*version;		// Version number
   pdfio_rect_t	media_box,		// Default MediaBox value
 		crop_box;		// Default CropBox value
@@ -321,6 +323,9 @@ struct _pdfio_stream_s			// Stream
 //
 // Functions...
 //
+
+extern double		_pdfio_strtod(pdfio_file_t *pdf, const char *s) _PDFIO_INTERNAL;
+extern ssize_t		_pdfio_vsnprintf(pdfio_file_t *pdf, char *buffer, size_t bufsize, const char *format, va_list ap) _PDFIO_INTERNAL;
 
 extern bool		_pdfioArrayDecrypt(pdfio_file_t *pdf, pdfio_obj_t *obj, pdfio_array_t *a, size_t depth) _PDFIO_INTERNAL;
 extern void		_pdfioArrayDebug(pdfio_array_t *a, FILE *fp) _PDFIO_INTERNAL;
