@@ -14,7 +14,7 @@
 // Local functions...
 //
 
-static int	compare_strings(char **a, char **b);
+static size_t	find_string(pdfio_file_t *pdf, const char *s, int *rdiff);
 
 
 //
@@ -385,8 +385,9 @@ pdfioStringCreate(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *s)			// I - Nul-terminated string
 {
-  char	*news;				// New string
-  char	**match;			// Matching string
+  char		*news;			// New string
+  size_t	idx;			// Index into strings
+  int		diff;			// Different
 
 
   PDFIO_DEBUG("pdfioStringCreate(pdf=%p, s=\"%s\")\n", pdf, s);
@@ -396,8 +397,17 @@ pdfioStringCreate(
     return (NULL);
 
   // See if the string has already been added...
-  if (pdf->num_strings > 0 && (match = (char **)bsearch(&s, pdf->strings, pdf->num_strings, sizeof(char *), (int (*)(const void *, const void *))compare_strings)) != NULL)
-    return (*match);
+  if (pdf->num_strings > 0)
+  {
+    idx = find_string(pdf, s, &diff);
+    if (diff == 0)
+      return (pdf->strings[idx]);
+  }
+  else
+  {
+    idx  = 0;
+    diff = -1;
+  }
 
   // Not already added, so add it...
   if ((news = strdup(s)) == NULL)
@@ -418,11 +428,17 @@ pdfioStringCreate(
     pdf->alloc_strings += 128;
   }
 
-  // TODO: Change to insertion sort as needed...
-  pdf->strings[pdf->num_strings ++] = news;
+  // Insert the string...
+  if (diff > 0)
+    idx ++;
 
-  if (pdf->num_strings > 1)
-    qsort(pdf->strings, pdf->num_strings, sizeof(char *), (int (*)(const void *, const void *))compare_strings);
+  PDFIO_DEBUG("pdfioStringCreate: Inserting \"%s\" at %u\n", news, (unsigned)idx);
+
+  if (idx < pdf->num_strings)
+    memmove(pdf->strings + idx + 1, pdf->strings + idx, (pdf->num_strings - idx) * sizeof(char *));
+
+  pdf->strings[idx] = news;
+  pdf->num_strings ++;
 
   PDFIO_DEBUG("pdfioStringCreate: %lu strings\n", (unsigned long)pdf->num_strings);
 
@@ -473,17 +489,67 @@ _pdfioStringIsAllocated(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *s)			// I - String
 {
-  return (pdf->num_strings > 0 && bsearch(&s, pdf->strings, pdf->num_strings, sizeof(char *), (int (*)(const void *, const void *))compare_strings) != NULL);
+  int	diff;				// Difference
+
+
+  if (pdf->num_strings == 0)
+    return (false);
+
+  find_string(pdf, s, &diff);
+
+  return (diff == 0);
 }
 
 
 //
-// 'compare_strings()' - Compare two strings.
+// 'find_string()' - Find an element in the array.
 //
 
-static int				// O - Result of comparison
-compare_strings(char **a,		// I - First string
-                char **b)		// I - Second string
+static size_t				// O - Index of match
+find_string(pdfio_file_t *pdf,		// I - PDF file
+	    const char   *s,		// I - String to find
+	    int          *rdiff)	// O - Difference of match
 {
-  return (strcmp(*a, *b));
+  size_t	left,			// Left side of search
+		right,			// Right side of search
+		current;		// Current element
+  int		diff;			// Comparison with current element
+
+
+  // Do a binary search for the string...
+  left  = 0;
+  right = pdf->num_strings - 1;
+
+  do
+  {
+    current = (left + right) / 2;
+    diff    = strcmp(s, pdf->strings[current]);
+
+    if (diff == 0)
+      break;
+    else if (diff < 0)
+      right = current;
+    else
+      left = current;
+  }
+  while ((right - left) > 1);
+
+  if (diff != 0)
+  {
+    // Check the last 1 or 2 elements...
+    if ((diff = strcmp(s, pdf->strings[left])) <= 0)
+    {
+      current = left;
+    }
+    else
+    {
+      diff    = strcmp(s, pdf->strings[right]);
+      current = right;
+    }
+  }
+
+  // Return the closest string and the difference...
+  *rdiff = diff;
+
+  return (current);
 }
