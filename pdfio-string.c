@@ -238,6 +238,7 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
 	    if ((decptr = strstr(temp, dec)) != NULL)
 	    {
 	      // Convert locale decimal point to "."
+	      PDFIO_DEBUG("_pdfio_vsnprintf: Before \"%s\"\n", temp);
 	      tempptr = decptr + strlen(dec);
 	      if (tempptr > (decptr + 1))
 	        memmove(decptr + 1, tempptr, strlen(tempptr) + 1);
@@ -249,6 +250,8 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
 
 	      if (*tempptr == '.')
 		*tempptr = '\0';	// Strip trailing decimal point
+
+	      PDFIO_DEBUG("_pdfio_vsnprintf: After \"%s\"\n", temp);
 	    }
 
             // Copy to the output buffer
@@ -361,7 +364,7 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
     *bufptr = '\0';
   }
 
-  fprintf(stderr, "_pdfio_vsnprintf: %ld \"%s\"\n", (long)bytes, buffer);
+  PDFIO_DEBUG("_pdfio_vsnprintf: Returning %ld \"%s\"\n", (long)bytes, buffer);
 
   return (bytes);
 }

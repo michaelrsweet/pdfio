@@ -1,7 +1,7 @@
 //
 // Test program for PDFio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -16,6 +16,7 @@
 #include "pdfio-private.h"
 #include "pdfio-content.h"
 #include <math.h>
+#include <locale.h>
 #ifndef M_PI
 #  define M_PI	3.14159265358979323846264338327950288
 #endif // M_PI
@@ -60,6 +61,8 @@ main(int  argc,				// I - Number of command-line arguments
 {
   int	ret = 0;			// Return value
 
+
+  fprintf(stderr, "testpdfio: Test locale is \"%s\".\n", setlocale(LC_ALL, getenv("LANG")));
 
   if (argc > 1)
   {

@@ -264,6 +264,9 @@ pdfioFileCreate(
   if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%PDF\303\254o\n", version))
     goto error;
 
+  if (pdf->loc)
+    _pdfioFilePrintf(pdf, "%%decimal_point=\"%s\"\n", pdf->loc->decimal_point);
+
   // Create the pages object...
   if ((dict = pdfioDictCreate(pdf)) == NULL)
     goto error;
@@ -510,6 +513,7 @@ pdfioFileCreateOutput(
     return (NULL);
   }
 
+  pdf->loc         = get_lconv();
   pdf->filename    = strdup("output.pdf");
   pdf->version     = strdup(version);
   pdf->mode        = _PDFIO_MODE_WRITE;
@@ -789,6 +793,7 @@ pdfioFileCreateTemporary(
       break;
   }
 
+  pdf->loc      = get_lconv();
   pdf->filename = strdup(buffer);
 
   if (i >= 1000)
@@ -1591,6 +1596,8 @@ get_lconv(void)
 
   if ((loc = localeconv()) != NULL)
   {
+    PDFIO_DEBUG("get_lconv: loc=%p, loc->decimal_point=\"%s\"\n", loc, loc->decimal_point);
+
     if (!loc->decimal_point || !strcmp(loc->decimal_point, "."))
       loc = NULL;
   }
