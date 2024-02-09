@@ -123,6 +123,12 @@ typedef enum pdfio_valtype_e		// PDF value types
   PDFIO_VALTYPE_NUMBER,			// Number (integer or real)
   PDFIO_VALTYPE_STRING			// String
 } pdfio_valtype_t;
+				// Alternative PDF dict key enumeration
+typedef struct pdfio_dictKey_s
+{
+  const char *key;
+  pdfio_valtype_t **type;
+} pdfio_dictKey_t;
 
 
 //
@@ -165,6 +171,8 @@ extern pdfio_obj_t	*pdfioDictGetObj(pdfio_dict_t *dict, const char *key) _PDFIO_
 extern pdfio_rect_t	*pdfioDictGetRect(pdfio_dict_t *dict, const char *key, pdfio_rect_t *rect) _PDFIO_PUBLIC;
 extern const char	*pdfioDictGetString(pdfio_dict_t *dict, const char *key) _PDFIO_PUBLIC;
 extern pdfio_valtype_t	pdfioDictGetType(pdfio_dict_t *dict, const char *key) _PDFIO_PUBLIC;
+extern size_t pdfioDictGetNumKeys(pdfio_dict_t *dict) _PDFIO_PUBLIC;
+extern bool pdfioDictGetKeyByIndex(pdfio_dict_t *dict, size_t index, pdfio_dictKey_t *keyData) _PDFIO_PUBLIC;
 extern void		pdfioDictIterateKeys(pdfio_dict_t *dict, pdfio_dict_cb_t cb, void *cb_data) _PDFIO_PUBLIC;
 extern bool		pdfioDictSetArray(pdfio_dict_t *dict, const char *key, pdfio_array_t *value) _PDFIO_PUBLIC;
 extern bool		pdfioDictSetBinary(pdfio_dict_t *dict, const char *key, const unsigned char *value, size_t valuelen) _PDFIO_PUBLIC;

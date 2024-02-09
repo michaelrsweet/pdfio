@@ -524,6 +524,36 @@ pdfioDictIterateKeys(
   }
 }
 
+//
+// 'pdfioDictGetNumKeys()' - Get the number of keys on the selected dictionary
+//
+
+size_t									// O - Number of keys
+pdfioDictGetNumKeys(pdfio_dict_t  *dict) // I - Dictionary
+{
+	return (dict->num_pairs);
+}
+
+//
+// 'pdfioDictGetKeyByIndex()' - Get name and type of a key by index from a dictionary
+//
+// Alternative form to enumerate the keys of a dictionary
+
+bool								// O - Value
+pdfioDictGetKeyByIndex(pdfio_dict_t  *dict, // I - Dictionary
+						size_t index,		// I - Index
+						pdfio_dictKey_t *key) // I - struct pointer
+{
+if (index < dict->num_pairs)
+ {
+ 	if (key){
+ 		key->key = dict->pairs[index].key;
+ 		key->type = (pdfio_valtype_t **)(dict->pairs[index].value.type);
+ 		return (true);
+ 	}
+ }
+ return (false);
+}
 
 //
 // '_pdfioDictRead()' - Read a dictionary from a PDF file.
