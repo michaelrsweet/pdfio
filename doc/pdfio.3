@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2024-01-24" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2024-06-24" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -2148,7 +2148,7 @@ pdfio_file_t * pdfioFileCreate (
     pdfio_rect_t *media_box,
     pdfio_rect_t *crop_box,
     pdfio_error_cb_t error_cb,
-    void *error_data
+    void *error_cbdata
 );
 .fi
 .PP
@@ -2162,7 +2162,7 @@ The "media_box" and "crop_box" arguments specify the default MediaBox and
 CropBox for pages in the PDF file - if \fBNULL\fR then a default "Universal" size
 of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 .PP
-The "error_cb" and "error_data" arguments specify an error handler callback
+The "error_cb" and "error_cbdata" arguments specify an error handler callback
 and its data pointer - if \fBNULL\fR the default error handler is used that
 writes error messages to \fBstderr\fR.
 .SS pdfioFileCreateArrayObj
@@ -2325,23 +2325,23 @@ Create a PDF file through an output callback.
 .nf
 pdfio_file_t * pdfioFileCreateOutput (
     pdfio_output_cb_t output_cb,
-    void *output_ctx,
+    void *output_cbdata,
     const char *version,
     pdfio_rect_t *media_box,
     pdfio_rect_t *crop_box,
     pdfio_error_cb_t error_cb,
-    void *error_data
+    void *error_cbdata
 );
 .fi
 .PP
 This function creates a new PDF file that is streamed though an output
-callback.  The "output_cb" and "output_ctx" arguments specify the output
-callback and its context pointer which is called whenever data needs to be
+callback.  The "output_cb" and "output_cbdata" arguments specify the output
+callback and its data pointer which is called whenever data needs to be
 written:
 .PP
 .nf
     ssize_t
-    output_cb(void *output_ctx, const void *buffer, size_t bytes)
+    output_cb(void *output_cbdata, const void *buffer, size_t bytes)
     {
       // Write buffer to output and return the number of bytes written
     }
@@ -2355,7 +2355,7 @@ The "media_box" and "crop_box" arguments specify the default MediaBox and
 CropBox for pages in the PDF file - if \fBNULL\fR then a default "Universal" size
 of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 .PP
-The "error_cb" and "error_data" arguments specify an error handler callback
+The "error_cb" and "error_cbdata" arguments specify an error handler callback
 and its data pointer - if \fBNULL\fR the default error handler is used that
 writes error messages to \fBstderr\fR.
 .PP
@@ -2397,7 +2397,7 @@ pdfio_file_t * pdfioFileCreateTemporary (
     pdfio_rect_t *media_box,
     pdfio_rect_t *crop_box,
     pdfio_error_cb_t error_cb,
-    void *error_data
+    void *error_cbdata
 );
 .fi
 .SS pdfioFileFindObj
@@ -2420,6 +2420,16 @@ const char * pdfioFileGetAuthor (
     pdfio_file_t *pdf
 );
 .fi
+.SS pdfioFileGetCatalog
+Get the document catalog dictionary.
+.PP
+.nf
+pdfio_dict_t * pdfioFileGetCatalog (
+    pdfio_file_t *pdf
+);
+.fi
+.PP
+
 .SS pdfioFileGetCreationDate
 Get the creation date for a PDF file.
 .PP
@@ -2545,22 +2555,22 @@ Open a PDF file for reading.
 pdfio_file_t * pdfioFileOpen (
     const char *filename,
     pdfio_password_cb_t password_cb,
-    void *password_data,
+    void *password_cbdata,
     pdfio_error_cb_t error_cb,
-    void *error_data
+    void *error_cbdata
 );
 .fi
 .PP
 This function opens an existing PDF file.  The "filename" argument specifies
 the name of the PDF file to create.
 .PP
-The "password_cb" and "password_data" arguments specify a password callback
+The "password_cb" and "password_cbdata" arguments specify a password callback
 and its data pointer for PDF files that use one of the standard Adobe
 "security" handlers.  The callback returns a password string or \fBNULL\fR to
 cancel the open.  If \fBNULL\fR is specified for the callback function and the
 PDF file requires a password, the open will always fail.
 .PP
-The "error_cb" and "error_data" arguments specify an error handler callback
+The "error_cb" and "error_cbdata" arguments specify an error handler callback
 and its data pointer - if \fBNULL\fR the default error handler is used that
 writes error messages to \fBstderr\fR.
 .SS pdfioFileSetAuthor
