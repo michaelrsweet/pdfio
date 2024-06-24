@@ -2,7 +2,7 @@ Changes in PDFio
 ================
 
 
-v1.2.1 (Month DD, YYYY)
+v1.3.0 (Month DD, YYYY)
 -----------------------
 
 - Updated number support to avoid locale issues (Issue #61)
