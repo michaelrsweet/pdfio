@@ -19,12 +19,12 @@
 
 static pdfio_obj_t	*add_obj(pdfio_file_t *pdf, size_t number, unsigned short generation, off_t offset);
 static int		compare_objmaps(_pdfio_objmap_t *a, _pdfio_objmap_t *b);
+static pdfio_file_t	*create_common(const char *filename, int fd, pdfio_output_cb_t output_cb, void *output_cbdata, const char *version, pdfio_rect_t *media_box, pdfio_rect_t *crop_box, pdfio_error_cb_t error_cb, void *error_cbdata);
 static const char	*get_info_string(pdfio_file_t *pdf, const char *key);
 static struct lconv	*get_lconv(void);
 static bool		load_obj_stream(pdfio_obj_t *obj);
 static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj, size_t depth);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset, pdfio_password_cb_t password_cb, void *password_data);
-static bool		write_catalog(pdfio_file_t *pdf);
 static bool		write_pages(pdfio_file_t *pdf);
 static bool		write_trailer(pdfio_file_t *pdf);
 
@@ -120,11 +120,8 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
   {
     ret = false;
 
-    if (pdfioObjClose(pdf->info_obj))
-      if (write_pages(pdf))
-	if (write_catalog(pdf))
-	  if (write_trailer(pdf))
-	    ret = _pdfioFileFlush(pdf);
+    if (pdfioObjClose(pdf->info_obj) && write_pages(pdf) && pdfioObjClose(pdf->root_obj) && write_trailer(pdf))
+      ret = _pdfioFileFlush(pdf);
   }
 
   if (pdf->fd >= 0 && close(pdf->fd) < 0)
@@ -173,7 +170,7 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
 // CropBox for pages in the PDF file - if `NULL` then a default "Universal" size
 // of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 //
-// The "error_cb" and "error_data" arguments specify an error handler callback
+// The "error_cb" and "error_cbdata" arguments specify an error handler callback
 // and its data pointer - if `NULL` the default error handler is used that
 // writes error messages to `stderr`.
 //
@@ -185,126 +182,37 @@ pdfioFileCreate(
     pdfio_rect_t     *media_box,	// I - Default MediaBox for pages
     pdfio_rect_t     *crop_box,		// I - Default CropBox for pages
     pdfio_error_cb_t error_cb,		// I - Error callback or `NULL` for default
-    void             *error_data)	// I - Error callback data, if any
+    void             *error_cbdata)	// I - Error callback data, if any
 {
   pdfio_file_t	*pdf;			// PDF file
-  pdfio_dict_t	*dict;			// Dictionary for pages object
-  pdfio_dict_t	*info_dict;		// Dictionary for information object
-  unsigned char	id_value[16];		// File ID value
+  int		fd;			// File descriptor
 
 
   // Range check input...
   if (!filename)
     return (NULL);
 
-  if (!version)
-    version = "2.0";
-
-  if (!error_cb)
-  {
-    error_cb   = _pdfioFileDefaultError;
-    error_data = NULL;
-  }
-
-  // Allocate a PDF file structure...
-  if ((pdf = (pdfio_file_t *)calloc(1, sizeof(pdfio_file_t))) == NULL)
+  // Create the file...
+  if ((fd = open(filename, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC, 0666)) < 0)
   {
     pdfio_file_t temp;			// Dummy file
     char	message[8192];		// Message string
 
     temp.filename = (char *)filename;
-    snprintf(message, sizeof(message), "Unable to allocate memory for PDF file - %s", strerror(errno));
-    (error_cb)(&temp, message, error_data);
+    snprintf(message, sizeof(message), "Unable to create '%s': %s", filename, strerror(errno));
+    (error_cb)(&temp, message, error_cbdata);
+
     return (NULL);
   }
 
-  pdf->loc         = get_lconv();
-  pdf->filename    = strdup(filename);
-  pdf->version     = strdup(version);
-  pdf->mode        = _PDFIO_MODE_WRITE;
-  pdf->error_cb    = error_cb;
-  pdf->error_data  = error_data;
-  pdf->permissions = PDFIO_PERMISSION_ALL;
-  pdf->bufptr      = pdf->buffer;
-  pdf->bufend      = pdf->buffer + sizeof(pdf->buffer);
-
-  if (media_box)
+  if ((pdf = create_common(filename, fd, /*output_cb*/NULL, /*output_cbdata*/NULL, version, media_box, crop_box, error_cb, error_cbdata)) == NULL)
   {
-    pdf->media_box = *media_box;
-  }
-  else
-  {
-    // Default to "universal" size (intersection of A4 and US Letter)
-    pdf->media_box.x2 = 210.0 * 72.0f / 25.4f;
-    pdf->media_box.y2 = 11.0f * 72.0f;
-  }
-
-  if (crop_box)
-  {
-    pdf->crop_box = *crop_box;
-  }
-  else
-  {
-    // Default to "universal" size (intersection of A4 and US Letter)
-    pdf->crop_box.x2 = 210.0 * 72.0f / 25.4f;
-    pdf->crop_box.y2 = 11.0f * 72.0f;
-  }
-
-  // Create the file...
-  if ((pdf->fd = open(filename, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC, 0666)) < 0)
-  {
-    _pdfioFileError(pdf, "Unable to create file - %s", strerror(errno));
-    free(pdf->filename);
-    free(pdf->version);
-    free(pdf);
-    return (NULL);
-  }
-
-  // Write a standard PDF header...
-  if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%PDF\303\254o\n", version))
-    goto error;
-
-  if (pdf->loc)
-    _pdfioFilePrintf(pdf, "%%decimal_point=\"%s\"\n", pdf->loc->decimal_point);
-
-  // Create the pages object...
-  if ((dict = pdfioDictCreate(pdf)) == NULL)
-    goto error;
-
-  pdfioDictSetName(dict, "Type", "Pages");
-
-  if ((pdf->pages_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
-    goto error;
-
-  // Create the info object...
-  if ((info_dict = pdfioDictCreate(pdf)) == NULL)
-    goto error;
-
-  pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
-  pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
-
-  if ((pdf->info_obj = pdfioFileCreateObj(pdf, info_dict)) == NULL)
-    goto error;
-
-  // Create random file ID values...
-  _pdfioCryptoMakeRandom(id_value, sizeof(id_value));
-
-  if ((pdf->id_array = pdfioArrayCreate(pdf)) != NULL)
-  {
-    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
-    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
+    // Remove the newly created file if we can't create the PDF file object...
+    close(fd);
+    unlink(filename);
   }
 
   return (pdf);
-
-  // Common error handling code...
-  error:
-
-  pdfioFileClose(pdf);
-
-  unlink(filename);
-
-  return (NULL);
 }
 
 
@@ -444,13 +352,13 @@ _pdfioFileCreateObj(
 // 'pdfioFileCreateOutput()' - Create a PDF file through an output callback.
 //
 // This function creates a new PDF file that is streamed though an output
-// callback.  The "output_cb" and "output_ctx" arguments specify the output
-// callback and its context pointer which is called whenever data needs to be
+// callback.  The "output_cb" and "output_cbdata" arguments specify the output
+// callback and its data pointer which is called whenever data needs to be
 // written:
 //
 // ```
 // ssize_t
-// output_cb(void *output_ctx, const void *buffer, size_t bytes)
+// output_cb(void *output_cbdata, const void *buffer, size_t bytes)
 // {
 //   // Write buffer to output and return the number of bytes written
 // }
@@ -463,7 +371,7 @@ _pdfioFileCreateObj(
 // CropBox for pages in the PDF file - if `NULL` then a default "Universal" size
 // of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 //
-// The "error_cb" and "error_data" arguments specify an error handler callback
+// The "error_cb" and "error_cbdata" arguments specify an error handler callback
 // and its data pointer - if `NULL` the default error handler is used that
 // writes error messages to `stderr`.
 //
@@ -474,122 +382,15 @@ _pdfioFileCreateObj(
 
 pdfio_file_t *				// O - PDF file or `NULL` on error
 pdfioFileCreateOutput(
-    pdfio_output_cb_t output_cb,	// I - Output callback
-    void              *output_ctx,	// I - Output context
+    pdfio_output_cb_t output_cb,	// I - Output callback function
+    void              *output_cbdata,	// I - Output callback data
     const char        *version,		// I - PDF version number or `NULL` for default (2.0)
     pdfio_rect_t      *media_box,	// I - Default MediaBox for pages
     pdfio_rect_t      *crop_box,	// I - Default CropBox for pages
     pdfio_error_cb_t  error_cb,		// I - Error callback or `NULL` for default
-    void              *error_data)	// I - Error callback data, if any
+    void              *error_cbdata)	// I - Error callback data, if any
 {
-  pdfio_file_t	*pdf;			// PDF file
-  pdfio_dict_t	*dict;			// Dictionary for pages object
-  pdfio_dict_t	*info_dict;		// Dictionary for information object
-  unsigned char	id_value[16];		// File ID value
-
-
-  // Range check input...
-  if (!output_cb)
-    return (NULL);
-
-  if (!version)
-    version = "2.0";
-
-  if (!error_cb)
-  {
-    error_cb   = _pdfioFileDefaultError;
-    error_data = NULL;
-  }
-
-  // Allocate a PDF file structure...
-  if ((pdf = (pdfio_file_t *)calloc(1, sizeof(pdfio_file_t))) == NULL)
-  {
-    pdfio_file_t temp;			// Dummy file
-    char	message[8192];		// Message string
-
-    temp.filename = (char *)"output.pdf";
-    snprintf(message, sizeof(message), "Unable to allocate memory for PDF file - %s", strerror(errno));
-    (error_cb)(&temp, message, error_data);
-    return (NULL);
-  }
-
-  pdf->loc         = get_lconv();
-  pdf->filename    = strdup("output.pdf");
-  pdf->version     = strdup(version);
-  pdf->mode        = _PDFIO_MODE_WRITE;
-  pdf->error_cb    = error_cb;
-  pdf->error_data  = error_data;
-  pdf->permissions = PDFIO_PERMISSION_ALL;
-  pdf->bufptr      = pdf->buffer;
-  pdf->bufend      = pdf->buffer + sizeof(pdf->buffer);
-
-  if (media_box)
-  {
-    pdf->media_box = *media_box;
-  }
-  else
-  {
-    // Default to "universal" size (intersection of A4 and US Letter)
-    pdf->media_box.x2 = 210.0 * 72.0f / 25.4f;
-    pdf->media_box.y2 = 11.0f * 72.0f;
-  }
-
-  if (crop_box)
-  {
-    pdf->crop_box = *crop_box;
-  }
-  else
-  {
-    // Default to "universal" size (intersection of A4 and US Letter)
-    pdf->crop_box.x2 = 210.0 * 72.0f / 25.4f;
-    pdf->crop_box.y2 = 11.0f * 72.0f;
-  }
-
-  // Save output callback...
-  pdf->fd         = -1;
-  pdf->output_cb  = output_cb;
-  pdf->output_ctx = output_ctx;
-
-  // Write a standard PDF header...
-  if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
-    goto error;
-
-  // Create the pages object...
-  if ((dict = pdfioDictCreate(pdf)) == NULL)
-    goto error;
-
-  pdfioDictSetName(dict, "Type", "Pages");
-
-  if ((pdf->pages_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
-    goto error;
-
-  // Create the info object...
-  if ((info_dict = pdfioDictCreate(pdf)) == NULL)
-    goto error;
-
-  pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
-  pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
-
-  if ((pdf->info_obj = pdfioFileCreateObj(pdf, info_dict)) == NULL)
-    goto error;
-
-  // Create random file ID values...
-  _pdfioCryptoMakeRandom(id_value, sizeof(id_value));
-
-  if ((pdf->id_array = pdfioArrayCreate(pdf)) != NULL)
-  {
-    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
-    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
-  }
-
-  return (pdf);
-
-  // Common error handling code...
-  error:
-
-  pdfioFileClose(pdf);
-
-  return (NULL);
+  return (create_common("output.pdf", /*fd*/-1, output_cb, output_cbdata, version, media_box, crop_box, error_cb, error_cbdata));
 }
 
 
@@ -711,13 +512,11 @@ pdfioFileCreateTemporary(
     pdfio_rect_t     *media_box,	// I - Default MediaBox for pages
     pdfio_rect_t     *crop_box,		// I - Default CropBox for pages
     pdfio_error_cb_t error_cb,		// I - Error callback or `NULL` for default
-    void             *error_data)	// I - Error callback data, if any
+    void             *error_cbdata)	// I - Error callback data, if any
 {
   pdfio_file_t	*pdf;			// PDF file
-  pdfio_dict_t	*dict;			// Dictionary for pages object
-  pdfio_dict_t	*info_dict;		// Dictionary for information object
-  unsigned char	id_value[16];		// File ID value
-  int		i;			// Looping var
+  int		i,			// Looping var
+		fd;			// File descriptor
   const char	*tmpdir;		// Temporary directory
 #if _WIN32 || defined(__APPLE__)
   char		tmppath[256];		// Temporary directory path
@@ -733,31 +532,7 @@ pdfioFileCreateTemporary(
     return (NULL);
   }
 
-  if (!version)
-    version = "2.0";
-
-  if (!error_cb)
-  {
-    error_cb   = _pdfioFileDefaultError;
-    error_data = NULL;
-  }
-
-  // Allocate a PDF file structure...
-  if ((pdf = (pdfio_file_t *)calloc(1, sizeof(pdfio_file_t))) == NULL)
-  {
-    pdfio_file_t temp;			// Dummy file
-    char	message[8192];		// Message string
-
-    temp.filename = (char *)"temporary.pdf";
-    snprintf(message, sizeof(message), "Unable to allocate memory for PDF file - %s", strerror(errno));
-    (error_cb)(&temp, message, error_data);
-
-    *buffer = '\0';
-
-    return (NULL);
-  }
-
-  // Create the file...
+  // Create the temporary PDF file...
 #if _WIN32
   if ((tmpdir = getenv("TEMP")) == NULL)
   {
@@ -785,99 +560,35 @@ pdfioFileCreateTemporary(
     tmpdir = "/tmp";
 #endif // _WIN32
 
-  for (i = 0; i < 1000; i ++)
+  for (i = 0, fd = -1; i < 1000; i ++)
   {
     _pdfioCryptoMakeRandom((uint8_t *)&tmpnum, sizeof(tmpnum));
     snprintf(buffer, bufsize, "%s/%08x.pdf", tmpdir, tmpnum);
-    if ((pdf->fd = open(buffer, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC | O_EXCL, 0666)) >= 0)
+    if ((fd = open(buffer, O_WRONLY | O_BINARY | O_CREAT | O_TRUNC | O_EXCL, 0666)) >= 0)
       break;
   }
 
-  pdf->loc      = get_lconv();
-  pdf->filename = strdup(buffer);
-
-  if (i >= 1000)
+  if (fd < 0)
   {
-    _pdfioFileError(pdf, "Unable to create file - %s", strerror(errno));
-    free(pdf->filename);
-    free(pdf);
-    *buffer = '\0';
+    pdfio_file_t temp;			// Dummy file
+    char	message[8192];		// Message string
+
+    temp.filename = (char *)"<temporary>";
+    snprintf(message, sizeof(message), "Unable to create temporary PDF file: %s", strerror(errno));
+    (error_cb)(&temp, message, error_cbdata);
+
     return (NULL);
   }
 
-  pdf->version     = strdup(version);
-  pdf->mode        = _PDFIO_MODE_WRITE;
-  pdf->error_cb    = error_cb;
-  pdf->error_data  = error_data;
-  pdf->permissions = PDFIO_PERMISSION_ALL;
-  pdf->bufptr      = pdf->buffer;
-  pdf->bufend      = pdf->buffer + sizeof(pdf->buffer);
-
-  if (media_box)
+  if ((pdf = create_common(buffer, fd, /*output_cb*/NULL, /*output_cbdata*/NULL, version, media_box, crop_box, error_cb, error_cbdata)) == NULL)
   {
-    pdf->media_box = *media_box;
-  }
-  else
-  {
-    // Default to "universal" size (intersection of A4 and US Letter)
-    pdf->media_box.x2 = 210.0 * 72.0f / 25.4f;
-    pdf->media_box.y2 = 11.0f * 72.0f;
-  }
-
-  if (crop_box)
-  {
-    pdf->crop_box = *crop_box;
-  }
-  else
-  {
-    // Default to "universal" size (intersection of A4 and US Letter)
-    pdf->crop_box.x2 = 210.0 * 72.0f / 25.4f;
-    pdf->crop_box.y2 = 11.0f * 72.0f;
-  }
-
-  // Write a standard PDF header...
-  if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
-    goto error;
-
-  // Create the pages object...
-  if ((dict = pdfioDictCreate(pdf)) == NULL)
-    goto error;
-
-  pdfioDictSetName(dict, "Type", "Pages");
-
-  if ((pdf->pages_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
-    goto error;
-
-  // Create the info object...
-  if ((info_dict = pdfioDictCreate(pdf)) == NULL)
-    goto error;
-
-  pdfioDictSetDate(info_dict, "CreationDate", time(NULL));
-  pdfioDictSetString(info_dict, "Producer", "pdfio/" PDFIO_VERSION);
-
-  if ((pdf->info_obj = pdfioFileCreateObj(pdf, info_dict)) == NULL)
-    goto error;
-
-  // Create random file ID values...
-  _pdfioCryptoMakeRandom(id_value, sizeof(id_value));
-
-  if ((pdf->id_array = pdfioArrayCreate(pdf)) != NULL)
-  {
-    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
-    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
+    // Remove the temporary file if we can't create the PDF file object...
+    close(fd);
+    unlink(buffer);
+    *buffer = '\0';
   }
 
   return (pdf);
-
-  // Common error handling code...
-  error:
-
-  pdfioFileClose(pdf);
-
-  unlink(buffer);
-  *buffer = '\0';
-
-  return (NULL);
 }
 
 
@@ -984,6 +695,19 @@ const char *				// O - Author or `NULL` for none
 pdfioFileGetAuthor(pdfio_file_t *pdf)	// I - PDF file
 {
   return (get_info_string(pdf, "Author"));
+}
+
+
+//
+// 'pdfioFileGetCatalog()' - Get the document catalog dictionary.
+//
+// @since PDFio 1.3@
+//
+
+pdfio_dict_t *				// O - Catalog dictionary
+pdfioFileGetCatalog(pdfio_file_t *pdf)	// I - PDF file
+{
+  return (pdf ? pdfioObjGetDict(pdf->root_obj) : NULL);
 }
 
 
@@ -1176,13 +900,13 @@ pdfioFileGetVersion(
 // This function opens an existing PDF file.  The "filename" argument specifies
 // the name of the PDF file to create.
 //
-// The "password_cb" and "password_data" arguments specify a password callback
+// The "password_cb" and "password_cbdata" arguments specify a password callback
 // and its data pointer for PDF files that use one of the standard Adobe
 // "security" handlers.  The callback returns a password string or `NULL` to
 // cancel the open.  If `NULL` is specified for the callback function and the
 // PDF file requires a password, the open will always fail.
 //
-// The "error_cb" and "error_data" arguments specify an error handler callback
+// The "error_cb" and "error_cbdata" arguments specify an error handler callback
 // and its data pointer - if `NULL` the default error handler is used that
 // writes error messages to `stderr`.
 //
@@ -1191,9 +915,10 @@ pdfio_file_t *				// O - PDF file
 pdfioFileOpen(
     const char          *filename,	// I - Filename
     pdfio_password_cb_t password_cb,	// I - Password callback or `NULL` for none
-    void                *password_data,	// I - Password callback data, if any
+    void                *password_cbdata,
+					// I - Password callback data, if any
     pdfio_error_cb_t    error_cb,	// I - Error callback or `NULL` for default
-    void                *error_data)	// I - Error callback data, if any
+    void                *error_cbdata)	// I - Error callback data, if any
 {
   pdfio_file_t	*pdf;			// PDF file
   char		line[1025],		// Line from file
@@ -1209,8 +934,8 @@ pdfioFileOpen(
 
   if (!error_cb)
   {
-    error_cb   = _pdfioFileDefaultError;
-    error_data = NULL;
+    error_cb     = _pdfioFileDefaultError;
+    error_cbdata = NULL;
   }
 
   // Allocate a PDF file structure...
@@ -1221,7 +946,7 @@ pdfioFileOpen(
 
     temp.filename = (char *)filename;
     snprintf(message, sizeof(message), "Unable to allocate memory for PDF file - %s", strerror(errno));
-    (error_cb)(&temp, message, error_data);
+    (error_cb)(&temp, message, error_cbdata);
     return (NULL);
   }
 
@@ -1229,7 +954,7 @@ pdfioFileOpen(
   pdf->filename    = strdup(filename);
   pdf->mode        = _PDFIO_MODE_READ;
   pdf->error_cb    = error_cb;
-  pdf->error_data  = error_data;
+  pdf->error_data  = error_cbdata;
   pdf->permissions = PDFIO_PERMISSION_ALL;
 
   // Open the file...
@@ -1285,7 +1010,7 @@ pdfioFileOpen(
 
   xref_offset = (off_t)strtol(ptr + 9, NULL, 10);
 
-  if (!load_xref(pdf, xref_offset, password_cb, password_data))
+  if (!load_xref(pdf, xref_offset, password_cb, password_cbdata))
     goto error;
 
   return (pdf);
@@ -1377,7 +1102,7 @@ pdfioFileSetPermissions(
   if (!pdf)
     return (false);
 
-  if (pdf->num_objs > 2)		// First two objects are pages and info
+  if (pdf->num_objs > 3)		// First three objects are pages, info, and root
   {
     _pdfioFileError(pdf, "You must call pdfioFileSetPermissions before adding any objects.");
     return (false);
@@ -1536,6 +1261,142 @@ compare_objmaps(_pdfio_objmap_t *a,	// I - First object map
     return (1);
   else
     return (0);
+}
+
+
+//
+// 'create_common()' - Allocate and initialize a pdfio_file_t object for writing.
+//
+
+static pdfio_file_t *			// O - New PDF file
+create_common(
+    const char        *filename,	// I - Filename
+    int               fd,		// I - File descriptor, if any
+    pdfio_output_cb_t output_cb,	// I - Output callback function, if any
+    void              *output_cbdata,	// I - Output callback data, if any
+    const char        *version,		// I - PDF version
+    pdfio_rect_t      *media_box,	// I - Media box or `NULL` for default
+    pdfio_rect_t      *crop_box,	// I - Crop box of `NULL` for default
+    pdfio_error_cb_t  error_cb,		// I - Error callback function
+    void              *error_cbdata)	// I - Error callback data
+{
+  pdfio_file_t	*pdf;			// New PDF file
+  pdfio_dict_t	*dict;			// Dictionary
+  unsigned char	id_value[16];		// File ID value
+
+
+  // Range check input...
+  if (!filename || (fd < 0 && !output_cb))
+    return (NULL);
+
+  if (!version)
+    version = "2.0";
+
+  if (!error_cb)
+  {
+    error_cb     = _pdfioFileDefaultError;
+    error_cbdata = NULL;
+  }
+
+  // Allocate a PDF file structure...
+  if ((pdf = (pdfio_file_t *)calloc(1, sizeof(pdfio_file_t))) == NULL)
+  {
+    pdfio_file_t temp;			// Dummy file
+    char	message[8192];		// Message string
+
+    temp.filename = (char *)filename;
+    snprintf(message, sizeof(message), "Unable to allocate memory for PDF file: %s", strerror(errno));
+    (error_cb)(&temp, message, error_cbdata);
+
+    return (NULL);
+  }
+
+  // Initialize PDF object...
+  pdf->loc         = get_lconv();
+  pdf->fd          = fd;
+  pdf->output_cb   = output_cb;
+  pdf->output_ctx  = output_cbdata;
+  pdf->filename    = strdup(filename);
+  pdf->version     = strdup(version);
+  pdf->mode        = _PDFIO_MODE_WRITE;
+  pdf->error_cb    = error_cb;
+  pdf->error_data  = error_cbdata;
+  pdf->permissions = PDFIO_PERMISSION_ALL;
+  pdf->bufptr      = pdf->buffer;
+  pdf->bufend      = pdf->buffer + sizeof(pdf->buffer);
+
+  if (media_box)
+  {
+    pdf->media_box = *media_box;
+  }
+  else
+  {
+    // Default to "universal" size (intersection of A4 and US Letter)
+    pdf->media_box.x2 = 210.0 * 72.0f / 25.4f;
+    pdf->media_box.y2 = 11.0f * 72.0f;
+  }
+
+  if (crop_box)
+  {
+    pdf->crop_box = *crop_box;
+  }
+  else
+  {
+    // Default to "universal" size (intersection of A4 and US Letter)
+    pdf->crop_box.x2 = 210.0 * 72.0f / 25.4f;
+    pdf->crop_box.y2 = 11.0f * 72.0f;
+  }
+
+  // Write a standard PDF header...
+  if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
+    goto error;
+
+  // Create the pages object...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+    goto error;
+
+  pdfioDictSetName(dict, "Type", "Pages");
+
+  if ((pdf->pages_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+    goto error;
+
+  // Create the info object...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+    goto error;
+
+  pdfioDictSetDate(dict, "CreationDate", time(NULL));
+  pdfioDictSetString(dict, "Producer", "pdfio/" PDFIO_VERSION);
+
+  if ((pdf->info_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+    goto error;
+
+  // Create the root object...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+    goto error;
+
+  pdfioDictSetName(dict, "Type", "Catalog");
+  pdfioDictSetObj(dict, "Pages", pdf->pages_obj);
+
+  if ((pdf->root_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+    goto error;
+
+  // Create random file ID values...
+  _pdfioCryptoMakeRandom(id_value, sizeof(id_value));
+
+  if ((pdf->id_array = pdfioArrayCreate(pdf)) != NULL)
+  {
+    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
+    pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
+  }
+
+  return (pdf);
+
+  // Common error handling code...
+  error:
+
+  pdfioFileClose(pdf);
+
+  return (NULL);
 }
 
 
@@ -2245,30 +2106,6 @@ load_xref(
   PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
 
   return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages"), 0));
-}
-
-
-//
-// 'write_catalog()' - Write the PDF root object/catalog.
-//
-
-static bool				// O - `true` on success, `false` on failure
-write_catalog(pdfio_file_t *pdf)	// I - PDF file
-{
-  pdfio_dict_t	*dict;			// Dictionary for catalog...
-
-
-  if ((dict = pdfioDictCreate(pdf)) == NULL)
-    return (false);
-
-  pdfioDictSetName(dict, "Type", "Catalog");
-  pdfioDictSetObj(dict, "Pages", pdf->pages_obj);
-  // TODO: Add support for all of the root object dictionary keys
-
-  if ((pdf->root_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
-    return (false);
-  else
-    return (pdfioObjClose(pdf->root_obj));
 }
 
 

@@ -5,6 +5,8 @@ Changes in PDFio
 v1.3.0 (Month DD, YYYY)
 -----------------------
 
+- Added `pdfioFileGetCatalog` API for accessing the root/catalog object of a
+  PDF file (Issue #67)
 - Updated number support to avoid locale issues (Issue #61)
 - Optimized string pool code.
 

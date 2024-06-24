@@ -191,6 +191,7 @@ extern pdfio_obj_t	*pdfioFileCreateStringObj(pdfio_file_t *pdf, const char *s) _
 extern pdfio_file_t	*pdfioFileCreateTemporary(char *buffer, size_t bufsize, const char *version, pdfio_rect_t *media_box, pdfio_rect_t *crop_box, pdfio_error_cb_t error_cb, void *error_data) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileFindObj(pdfio_file_t *pdf, size_t number) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetAuthor(pdfio_file_t *pdf) _PDFIO_PUBLIC;
+extern pdfio_dict_t	*pdfioFileGetCatalog(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern time_t		pdfioFileGetCreationDate(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetCreator(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioFileGetID(pdfio_file_t *pdf) _PDFIO_PUBLIC;

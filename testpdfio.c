@@ -48,7 +48,7 @@ static int	write_images_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_jpeg_test(pdfio_file_t *pdf, const char *title, int number, pdfio_obj_t *font, pdfio_obj_t *image);
 static int	write_png_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_text_test(pdfio_file_t *pdf, int first_page, pdfio_obj_t *font, const char *filename);
-static int	write_unit_file(pdfio_file_t *inpdf, pdfio_file_t *outpdf, size_t *num_pages, size_t *first_image);
+static int	write_unit_file(pdfio_file_t *inpdf, const char *outname, pdfio_file_t *outpdf, size_t *num_pages, size_t *first_image);
 
 
 //
@@ -1044,7 +1044,7 @@ do_unit_tests(void)
   else
     goto fail;
 
-  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "testpdfio-out.pdf", outpdf, &num_pages, &first_image))
     goto fail;
 
   if (read_unit_file("testpdfio-out.pdf", num_pages, first_image, false))
@@ -1063,7 +1063,7 @@ do_unit_tests(void)
   else
     goto fail;
 
-  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "testpdfio-out2.pdf", outpdf, &num_pages, &first_image))
     goto fail;
 
   close(outfd);
@@ -1084,7 +1084,7 @@ do_unit_tests(void)
   else
     return (1);
 
-  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "testpdfio-rc4.pdf", outpdf, &num_pages, &first_image))
     return (1);
 
   if (read_unit_file("testpdfio-rc4.pdf", num_pages, first_image, false))
@@ -1103,7 +1103,7 @@ do_unit_tests(void)
   else
     return (1);
 
-  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "testpdfio-rc4p.pdf", outpdf, &num_pages, &first_image))
     return (1);
 
   if (read_unit_file("testpdfio-rc4p.pdf", num_pages, first_image, false))
@@ -1121,7 +1121,7 @@ do_unit_tests(void)
   else
     return (1);
 
-  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "testpdfio-aes.pdf", outpdf, &num_pages, &first_image))
     return (1);
 
   if (read_unit_file("testpdfio-aes.pdf", num_pages, first_image, false))
@@ -1139,7 +1139,7 @@ do_unit_tests(void)
   else
     return (1);
 
-  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "testpdfio-aesp.pdf", outpdf, &num_pages, &first_image))
     return (1);
 
   if (read_unit_file("testpdfio-aesp.pdf", num_pages, first_image, false))
@@ -1151,7 +1151,7 @@ do_unit_tests(void)
   else
     return (1);
 
-  if (write_unit_file(inpdf, outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "<temporary>", outpdf, &num_pages, &first_image))
     return (1);
 
   if (read_unit_file(temppdf, num_pages, first_image, false))
@@ -3246,6 +3246,7 @@ write_text_test(pdfio_file_t *pdf,		// I - PDF file
 static int				// O - Exit status
 write_unit_file(
     pdfio_file_t *inpdf,		// I - Input PDF file
+    const char   *outname,		// I - Output PDF file name
     pdfio_file_t *outpdf,		// I - Output PDF file
     size_t       *num_pages,		// O - Number of pages
     size_t       *first_image)		// O - First image object
@@ -3440,7 +3441,7 @@ write_unit_file(
   }
 
   // Close the new PDF file...
-  fputs("pdfioFileClose(...): ", stdout);
+  printf("pdfioFileClose(\"%s\"): ", outname);
   if (pdfioFileClose(outpdf))
     puts("PASS");
   else
