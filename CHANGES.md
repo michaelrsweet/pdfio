@@ -8,6 +8,8 @@ v1.3.0 (Month DD, YYYY)
 - Added `pdfioFileGetCatalog` API for accessing the root/catalog object of a
   PDF file (Issue #67)
 - Updated number support to avoid locale issues (Issue #61)
+- Updated the PDFio private header to allow compilation with MingW; note that
+  MingW is NOT a supported toolchain for PDFio (Issue #66)
 - Optimized string pool code.
 
 

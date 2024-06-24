@@ -38,9 +38,11 @@
 #    define unlink	_unlink
 #    define vsnprintf	_vsnprintf
 #    define write	_write
-#    define F_OK	00		// POSIX parameters/flags
-#    define W_OK	02
-#    define R_OK	04
+#    ifndef F_OK
+#      define F_OK	00		// POSIX parameters/flags
+#      define W_OK	02
+#      define R_OK	04
+#    endif // !F_OK
 #    define O_RDONLY	_O_RDONLY	// Map standard POSIX open flags
 #    define O_WRONLY	_O_WRONLY
 #    define O_CREAT	_O_CREAT
