@@ -1412,36 +1412,13 @@ get_info_string(pdfio_file_t *pdf,	// I - PDF file
                 const char   *key)	// I - Dictionary key
 {
   pdfio_dict_t	*dict;			// Info dictionary
-  _pdfio_value_t *value;		// Value
+
 
   // Range check input...
-  if (!pdf || !pdf->info_obj || (dict = pdfioObjGetDict(pdf->info_obj)) == NULL || (value = _pdfioDictGetValue(dict, key)) == NULL)
+  if (!pdf || !pdf->info_obj || (dict = pdfioObjGetDict(pdf->info_obj)) == NULL)
     return (NULL);
-
-  // If we already have a value, return it...
-  if (value->type == PDFIO_VALTYPE_NAME || value->type == PDFIO_VALTYPE_STRING)
-  {
-    return (value->value.string);
-  }
-  else if (value->type == PDFIO_VALTYPE_BINARY && value->value.binary.datalen < 4096)
-  {
-    // Convert binary string to regular string...
-    char	temp[4096];		// Temporary string
-
-    memcpy(temp, value->value.binary.data, value->value.binary.datalen);
-    temp[value->value.binary.datalen] = '\0';
-
-    free(value->value.binary.data);
-    value->type         = PDFIO_VALTYPE_STRING;
-    value->value.string = pdfioStringCreate(pdf, temp);
-
-    return (value->value.string);
-  }
   else
-  {
-    // Something else that is not a string...
-    return (NULL);
-  }
+    return (pdfioDictGetString(dict, key));
 }
 
 
