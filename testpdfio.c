@@ -1308,6 +1308,7 @@ read_unit_file(const char *filename,	// I - File to read
 	       bool       is_output)	// I - File written with output callback?
 {
   pdfio_file_t	*pdf;			// PDF file
+  pdfio_dict_t	*catalog;		// Catalog dictionary
   size_t	i;			// Looping var
   const char	*s;			// String
   bool		error = false;		// Error callback data
@@ -1319,6 +1320,83 @@ read_unit_file(const char *filename,	// I - File to read
     puts("PASS");
   else
     return (1);
+
+  // Get the root object/catalog dictionary
+  fputs("pdfioFileGetCatalog: ", stdout);
+  if ((catalog = pdfioFileGetCatalog(pdf)) != NULL)
+  {
+    puts("PASS");
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected dictionary)");
+    return (1);
+  }
+
+  // Verify some catalog values...
+  fputs("pdfioDictGetName(PageLayout): ", stdout);
+  if ((s = pdfioDictGetName(catalog, "PageLayout")) != NULL && !strcmp(s, "SinglePage"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'SinglePage')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'SinglePage')");
+    return (1);
+  }
+
+  fputs("pdfioDictGetName(PageLayout): ", stdout);
+  if ((s = pdfioDictGetName(catalog, "PageLayout")) != NULL && !strcmp(s, "SinglePage"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'SinglePage')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'SinglePage')");
+    return (1);
+  }
+
+  fputs("pdfioDictGetName(PageMode): ", stdout);
+  if ((s = pdfioDictGetName(catalog, "PageMode")) != NULL && !strcmp(s, "UseThumbs"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'UseThumbs')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'UseThumbs')");
+    return (1);
+  }
+
+  fputs("pdfioDictGetString(Lang): ", stdout);
+  if ((s = pdfioDictGetString(catalog, "Lang")) != NULL && !strcmp(s, "en"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'en')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'en')");
+    return (1);
+  }
 
   // Verify metadata...
   fputs("pdfioFileGetAuthor: ", stdout);
@@ -3256,7 +3334,25 @@ write_unit_file(
 			*gray_jpg,	// gray.jpg image
 			*helvetica,	// Helvetica font
 			*page;		// Page from test PDF file
+  pdfio_dict_t		*catalog;	// Catalog dictionary
 
+
+  // Get the root object/catalog dictionary
+  fputs("pdfioFileGetCatalog: ", stdout);
+  if ((catalog = pdfioFileGetCatalog(outpdf)) != NULL)
+  {
+    puts("PASS");
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected dictionary)");
+    return (1);
+  }
+
+  // Set some catalog values...
+  pdfioDictSetName(catalog, "PageLayout", "SinglePage");
+  pdfioDictSetName(catalog, "PageMode", "UseThumbs");
+  pdfioDictSetString(catalog, "Lang", "en");
 
   // Set info values...
   fputs("pdfioFileGet/SetAuthor: ", stdout);

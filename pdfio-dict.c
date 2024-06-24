@@ -426,9 +426,27 @@ pdfioDictGetString(pdfio_dict_t *dict,	// I - Dictionary
 
 
   if (value && value->type == PDFIO_VALTYPE_STRING)
+  {
     return (value->value.string);
+  }
+  else if (value && value->type == PDFIO_VALTYPE_BINARY && value->value.binary.datalen < 4096)
+  {
+    // Convert binary string to regular string...
+    char	temp[4096];		// Temporary string
+
+    memcpy(temp, value->value.binary.data, value->value.binary.datalen);
+    temp[value->value.binary.datalen] = '\0';
+
+    free(value->value.binary.data);
+    value->type         = PDFIO_VALTYPE_STRING;
+    value->value.string = pdfioStringCreate(dict->pdf, temp);
+
+    return (value->value.string);
+  }
   else
+  {
     return (NULL);
+  }
 }
 
 
