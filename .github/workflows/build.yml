@@ -60,3 +60,5 @@ jobs:
       run: nuget restore pdfio.sln
     - name: Build PDFio
       run: msbuild pdfio.sln
+    - name: Test PDFio
+      run: .\runtests.bat x64\Debug
