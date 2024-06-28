@@ -2,8 +2,8 @@ Changes in PDFio
 ================
 
 
-v1.3.0 (Month DD, YYYY)
------------------------
+v1.3.0 (June 28, 2024)
+----------------------
 
 - Added `pdfioFileGetCatalog` API for accessing the root/catalog object of a
   PDF file (Issue #67)
