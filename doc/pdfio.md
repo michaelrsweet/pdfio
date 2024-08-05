@@ -345,7 +345,7 @@ to the stream:
 The [PDF content helper functions](@) provide additional functions for writing
 specific PDF page stream commands.
 
-When you are done writing the stream, call [`pdfioStreamCLose`](@@) to close
+When you are done writing the stream, call [`pdfioStreamClose`](@@) to close
 both the stream and the object.
 
 

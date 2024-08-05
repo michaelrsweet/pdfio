@@ -2349,7 +2349,7 @@ pdfioPageDictAddColorSpace(
 bool					// O - `true` on success, `false` on failure
 pdfioPageDictAddFont(
     pdfio_dict_t *dict,			// I - Page dictionary
-    const char   *name,			// I - Font name
+    const char   *name,			// I - Font name; must not contain spaces
     pdfio_obj_t  *obj)			// I - Font object
 {
   pdfio_dict_t	*resources;		// Resource dictionary
