@@ -273,6 +273,10 @@ span.string {
 <li><a href="#pdf-streams">PDF Streams</a></li>
 <li><a href="#pdf-content-helper-functions">PDF Content Helper Functions</a></li>
 </ul></li>
+<li><a href="#examples">Examples</a><ul class="subcontents">
+<li><a href="#read-pdf-metadata">Read PDF Metadata</a></li>
+<li><a href="#create-pdf-file-with-text-and-image">Create PDF File With Text and Image</a></li>
+</ul></li>
 <li><a href="#FUNCTIONS">Functions</a><ul class="subcontents">
 <li><a href="#pdfioArrayAppendArray">pdfioArrayAppendArray</a></li>
 <li><a href="#pdfioArrayAppendBinary">pdfioArrayAppendBinary</a></li>
@@ -709,7 +713,7 @@ pdfio_stream_t *st = pdfioFileCreatePage(pdf, dict);
 </li>
 </ul>
 <p>The <a href="#pdf-content-helper-functions">PDF content helper functions</a> provide additional functions for writing specific PDF page stream commands.</p>
-<p>When you are done writing the stream, call <a href="#pdfioStreamCLose"><code>pdfioStreamCLose</code></a> to close both the stream and the object.</p>
+<p>When you are done writing the stream, call <a href="#pdfioStreamClose"><code>pdfioStreamClose</code></a> to close both the stream and the object.</p>
 <h3 class="title" id="pdf-content-helper-functions">PDF Content Helper Functions</h3>
 <p>PDFio includes many helper functions for embedding or writing specific kinds of content to a PDF file. These functions can be roughly grouped into five categories:</p>
 <ul>
@@ -943,6 +947,119 @@ pdfio_obj_t *img = pdfioFileCreateImageObjFromFile(pdf, <span class="string">&qu
 <li><p><a href="#pdfioContentTextShowJustified"><code>pdfioContentTextShowJustified</code></a> draws an array of literal strings with offsets between them</p>
 </li>
 </ul>
+<h2 class="title" id="examples">Examples</h2>
+<h3 class="title" id="read-pdf-metadata">Read PDF Metadata</h3>
+<p>The following example function will open a PDF file and print the title, author, creation date, and number of pages:</p>
+<pre><code class="language-c"><span class="directive">#include &lt;pdfio.h&gt;</span>
+<span class="directive">#include &lt;time.h&gt;</span>
+
+
+<span class="reserved">void</span>
+show_pdf_info(<span class="reserved">const</span> <span class="reserved">char</span> *filename)
+{
+  pdfio_file_t *pdf;
+  time_t       creation_date;
+  <span class="reserved">struct</span> tm    *creation_tm;
+  <span class="reserved">char</span>         creation_text[<span class="number">256</span>];
+
+
+  <span class="comment">// Open the PDF file with the default callbacks...</span>
+  pdf = pdfioFileOpen(filename, <span class="comment">/*password_cb*/</span>NULL, <span class="comment">/*password_cbdata*/</span>NULL, <span class="comment">/*error_cb*/</span>NULL, <span class="comment">/*error_cbdata*/</span>NULL);
+  <span class="reserved">if</span> (pdf == NULL)
+    <span class="reserved">return</span>;
+
+  <span class="comment">// Get the creation date and convert to a string...</span>
+  creation_date = pdfioFileGetCreationDate(pdf);
+  creation_tm   = localtime(&amp;creation_date);
+  strftime(creation_text, <span class="reserved">sizeof</span>(creation_text), <span class="string">&quot;%c&quot;</span>, &amp;creation_tm);
+
+  <span class="comment">// Print file information to stdout...</span>
+  printf(<span class="string">&quot;%s:\n&quot;</span>, filename);
+  printf(<span class="string">&quot;         Title: %s\n&quot;</span>, pdfioFileGetTitle(pdf));
+  printf(<span class="string">&quot;        Author: %s\n&quot;</span>, pdfioFileGetAuthor(pdf));
+  printf(<span class="string">&quot;    Created On: %s\n&quot;</span>, creation_text);
+  printf(<span class="string">&quot;  Number Pages: %u\n&quot;</span>, (<span class="reserved">unsigned</span>)pdfioFileGetNumPages(pdf));
+
+  <span class="comment">// Close the PDF file...</span>
+  pdfioFileClose(pdf);
+}
+</code></pre>
+<h3 class="title" id="create-pdf-file-with-text-and-image">Create PDF File With Text and Image</h3>
+<p>The following example function will create a PDF file, embed a base font and the named JPEG or PNG image file, and then creates a page with the image centered on the page with the text centered below:</p>
+<pre><code class="language-c"><span class="directive">#include &lt;pdfio.h&gt;</span>
+<span class="directive">#include &lt;pdfio-content.h&gt;</span>
+<span class="directive">#include &lt;string.h&gt;</span>
+
+
+<span class="reserved">void</span>
+create_pdf_image_file(<span class="reserved">const</span> <span class="reserved">char</span> *pdfname, <span class="reserved">const</span> <span class="reserved">char</span> *imagename, <span class="reserved">const</span> <span class="reserved">char</span> *caption)
+{
+  pdfio_file_t   *pdf;
+  pdfio_obj_t    *font;
+  pdfio_obj_t    *image;
+  pdfio_dict_t   *dict;
+  pdfio_stream_t *page;
+  <span class="reserved">double</span>         width, height;
+  <span class="reserved">double</span>         swidth, sheight;
+  <span class="reserved">double</span>         tx, ty;
+
+
+  <span class="comment">// Create the PDF file...</span>
+  pdf = pdfioFileCreate(pdfname, <span class="comment">/*version*/</span>NULL, <span class="comment">/*media_box*/</span>NULL, <span class="comment">/*crop_box*/</span>NULL, <span class="comment">/*error_cb*/</span>NULL, <span class="comment">/*error_cbdata*/</span>NULL);
+
+  <span class="comment">// Create a Courier base font for the caption</span>
+  font = pdfioFileCreateFontObjFromBase(pdf, <span class="string">&quot;Courier&quot;</span>);
+
+  <span class="comment">// Create an image object from the JPEG/PNG image file...</span>
+  image = pdfioFileCreateImageObjFromFile(pdf, imagename, <span class="reserved">true</span>);
+
+  <span class="comment">// Create a page dictionary with the font and image...</span>
+  dict = pdfioDictCreate(pdf);
+  pdfioPageDictAddFont(dict, <span class="string">&quot;F1&quot;</span>, font);
+  pdfioPageDictAddImage(dict, <span class="string">&quot;IM1&quot;</span>, image);
+
+  <span class="comment">// Create the page and its content stream...</span>
+  page = pdfioFileCreatePage(pdf, dict);
+
+  <span class="comment">// Position and scale the image on the page...</span>
+  width  = pdfioImageGetWidth(image);
+  height = pdfioImageGetHeight(image);
+
+  <span class="comment">// Default media_box is &quot;universal&quot; 595.28x792 points (8.27x11in or 210x279mm)</span>
+  <span class="comment">// Use margins of 36 points (0.5in or 12.7mm) with another 36 points for the</span>
+  <span class="comment">// caption underneath...</span>
+  swidth  = <span class="number">595.28</span> - <span class="number">72.0</span>;
+  sheight = swidth * height / width;
+  <span class="reserved">if</span> (sheight &gt; (<span class="number">792.0</span> - <span class="number">36.0</span> - <span class="number">72.0</span>))
+  {
+    sheight = <span class="number">792.0</span> - <span class="number">36.0</span> - <span class="number">72.0</span>;
+    swidth  = sheight * width / height;
+  }
+
+  tx = <span class="number">0.5</span> * (<span class="number">595.28</span> - swidth);
+  ty = <span class="number">0.5</span> * (<span class="number">792</span> - <span class="number">36</span> - sheight);
+
+  pdfioContentDrawImage(page, <span class="string">&quot;IM1&quot;</span>, tx, ty + <span class="number">36.0</span>, swidth, sheight);
+
+  <span class="comment">// Draw the caption in black...</span>
+  pdfioContentSetFillColorDeviceGray(page, <span class="number">0.0</span>);
+
+  <span class="comment">// Compute the starting point for the text - Courier is monospaced with a</span>
+  <span class="comment">// nominal width of 0.6 times the text height...</span>
+  tx = <span class="number">0.5</span> * (<span class="number">595.28</span> - <span class="number">18.0</span> * <span class="number">0.6</span> * strlen(caption));
+
+  <span class="comment">// Position and draw the caption underneath...</span>
+  pdfioContentTextBegin(page);
+  pdfioContentSetTextFont(page, <span class="string">&quot;F1&quot;</span>, <span class="number">18.0</span>);
+  pdfioContentTextMoveTo(page, tx, ty);
+  pdfioContentTextShow(page, <span class="comment">/*unicode*/</span><span class="reserved">false</span>, caption);
+  pdfioContentTextEnd(page);
+
+  <span class="comment">// Close the page stream and the PDF file...</span>
+  pdfioStreamClose(page);
+  pdfioFileClose(pdf);
+}
+</code></pre>
 <h2 class="title"><a id="FUNCTIONS">Functions</a></h2>
 <h3 class="function"><a id="pdfioArrayAppendArray">pdfioArrayAppendArray</a></h3>
 <p class="description">Add an array value to an array.</p>
@@ -3447,7 +3564,7 @@ array that was created using the
 <tr><th>dict</th>
 <td class="description">Page dictionary</td></tr>
 <tr><th>name</th>
-<td class="description">Font name</td></tr>
+<td class="description">Font name; must not contain spaces</td></tr>
 <tr><th>obj</th>
 <td class="description">Font object</td></tr>
 </tbody></table>

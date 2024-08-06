@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2024-06-24" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2024-08-05" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -361,7 +361,7 @@ pdfioStreamWrite writes a buffer of data to the stream
 .PP
 The PDF content helper functions provide additional functions for writing specific PDF page stream commands.
 .PP
-When you are done writing the stream, call pdfioStreamCLose to close both the stream and the object.
+When you are done writing the stream, call pdfioStreamClose to close both the stream and the object.
 .SS PDF Content Helper Functions
 .PP
 PDFio includes many helper functions for embedding or writing specific kinds of content to a PDF file. These functions can be roughly grouped into five categories:
@@ -787,6 +787,125 @@ pdfioContentTextShowf draws a formatted string in a text block
 pdfioContentTextShowJustified draws an array of literal strings with offsets between them
 
 
+.SH Examples
+.SS Read PDF Metadata
+.PP
+The following example function will open a PDF file and print the title, author, creation date, and number of pages:
+.nf
+
+    #include <pdfio.h>
+    #include <time.h>
+    
+    
+    void
+    show_pdf_info(const char *filename)
+    {
+      pdfio_file_t *pdf;
+      time_t       creation_date;
+      struct tm    *creation_tm;
+      char         creation_text[256];
+    
+    
+      // Open the PDF file with the default callbacks...
+      pdf = pdfioFileOpen(filename, /*password_cb*/NULL, /*password_cbdata*/NULL, /*error_cb*/NULL, /*error_cbdata*/NULL);
+      if (pdf == NULL)
+        return;
+    
+      // Get the creation date and convert to a string...
+      creation_date = pdfioFileGetCreationDate(pdf);
+      creation_tm   = localtime(&creation_date);
+      strftime(creation_text, sizeof(creation_text), "%c", &creation_tm);
+    
+      // Print file information to stdout...
+      printf("%s:\\n", filename);
+      printf("         Title: %s\\n", pdfioFileGetTitle(pdf));
+      printf("        Author: %s\\n", pdfioFileGetAuthor(pdf));
+      printf("    Created On: %s\\n", creation_text);
+      printf("  Number Pages: %u\\n", (unsigned)pdfioFileGetNumPages(pdf));
+    
+      // Close the PDF file...
+      pdfioFileClose(pdf);
+    }
+.fi
+.SS Create PDF File With Text and Image
+.PP
+The following example function will create a PDF file, embed a base font and the named JPEG or PNG image file, and then creates a page with the image centered on the page with the text centered below:
+.nf
+
+    #include <pdfio.h>
+    #include <pdfio\-content.h>
+    #include <string.h>
+    
+    
+    void
+    create_pdf_image_file(const char *pdfname, const char *imagename, const char *caption)
+    {
+      pdfio_file_t   *pdf;
+      pdfio_obj_t    *font;
+      pdfio_obj_t    *image;
+      pdfio_dict_t   *dict;
+      pdfio_stream_t *page;
+      double         width, height;
+      double         swidth, sheight;
+      double         tx, ty;
+    
+    
+      // Create the PDF file...
+      pdf = pdfioFileCreate(pdfname, /*version*/NULL, /*media_box*/NULL, /*crop_box*/NULL, /*error_cb*/NULL, /*error_cbdata*/NULL);
+    
+      // Create a Courier base font for the caption
+      font = pdfioFileCreateFontObjFromBase(pdf, "Courier");
+    
+      // Create an image object from the JPEG/PNG image file...
+      image = pdfioFileCreateImageObjFromFile(pdf, imagename, true);
+    
+      // Create a page dictionary with the font and image...
+      dict = pdfioDictCreate(pdf);
+      pdfioPageDictAddFont(dict, "F1", font);
+      pdfioPageDictAddImage(dict, "IM1", image);
+    
+      // Create the page and its content stream...
+      page = pdfioFileCreatePage(pdf, dict);
+    
+      // Position and scale the image on the page...
+      width  = pdfioImageGetWidth(image);
+      height = pdfioImageGetHeight(image);
+    
+      // Default media_box is "universal" 595.28x792 points (8.27x11in or 210x279mm)
+      // Use margins of 36 points (0.5in or 12.7mm) with another 36 points for the
+      // caption underneath...
+      swidth  = 595.28 \- 72.0;
+      sheight = swidth * height / width;
+      if (sheight > (792.0 \- 36.0 \- 72.0))
+      {
+        sheight = 792.0 \- 36.0 \- 72.0;
+        swidth  = sheight * width / height;
+      }
+    
+      tx = 0.5 * (595.28 \- swidth);
+      ty = 0.5 * (792 \- 36 \- sheight);
+    
+      pdfioContentDrawImage(page, "IM1", tx, ty + 36.0, swidth, sheight);
+    
+      // Draw the caption in black...
+      pdfioContentSetFillColorDeviceGray(page, 0.0);
+    
+      // Compute the starting point for the text \- Courier is monospaced with a
+      // nominal width of 0.6 times the text height...
+      tx = 0.5 * (595.28 \- 18.0 * 0.6 * strlen(caption));
+    
+      // Position and draw the caption underneath...
+      pdfioContentTextBegin(page);
+      pdfioContentSetTextFont(page, "F1", 18.0);
+      pdfioContentTextMoveTo(page, tx, ty);
+      pdfioContentTextShow(page, /*unicode*/false, caption);
+      pdfioContentTextEnd(page);
+    
+      // Close the page stream and the PDF file...
+      pdfioStreamClose(page);
+      pdfioFileClose(pdf);
+    }
+.fi
 
 .SH ENUMERATIONS
 .SS pdfio_cs_e
