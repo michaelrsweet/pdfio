@@ -3,7 +3,7 @@
 //
 //     https://github.com/michaelrsweet/ttf
 //
-// Copyright © 2018-2023 by Michael R Sweet.
+// Copyright © 2018-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -99,7 +99,7 @@ typedef __int64 ssize_t;		// POSIX type not present on Windows...
 //
 
 #define TTF_FONT_MAX_CHAR	262144	// Maximum number of character values
-
+#define TTF_FONT_MAX_GROUPS	65536	// Maximum number of sub-groups
 
 //
 // TTF/OFF tag constants...
@@ -1285,7 +1285,14 @@ read_cmap(ttf_t *font)			// I - Font
 //          segCount --;			// Last segment is not used (sigh)
 
 	  font->num_cmap = segments[segCount - 1].endCode + 1;
-	  font->cmap     = cmapptr = (int *)malloc(font->num_cmap * sizeof(int));
+
+	  if (font->num_cmap > TTF_FONT_MAX_CHAR)
+	  {
+	    errorf(font, "Invalid cmap table with %u characters.", (unsigned)font->num_cmap);
+	    return (false);
+	  }
+
+	  font->cmap = cmapptr = (int *)malloc(font->num_cmap * sizeof(int));
 
 	  if (!font->cmap)
           {
@@ -1356,6 +1363,12 @@ read_cmap(ttf_t *font)			// I - Font
 
 	  TTF_DEBUG("read_cmap: nGroups=%u\n", nGroups);
 
+	  if (nGroups > TTF_FONT_MAX_GROUPS)
+	  {
+	    errorf(font, "Invalid cmap table with %u groups.", nGroups);
+	    return (false);
+	  }
+
 	  if ((groups = (_ttf_off_cmap12_t *)calloc(nGroups, sizeof(_ttf_off_cmap12_t))) == NULL)
           {
             errorf(font, "Unable to allocate memory for cmap.");
@@ -1376,6 +1389,13 @@ read_cmap(ttf_t *font)			// I - Font
 	  // Based on the end code of the segent table, allocate space for the
 	  // uncompressed cmap table...
           TTF_DEBUG("read_cmap: num_cmap=%u\n", (unsigned)font->num_cmap);
+
+	  if (font->num_cmap > TTF_FONT_MAX_CHAR)
+	  {
+	    errorf(font, "Invalid cmap table with %u characters.", (unsigned)font->num_cmap);
+	    return (false);
+	  }
+
 	  font->cmap = cmapptr = (int *)malloc(font->num_cmap * sizeof(int));
 
 	  if (!font->cmap)
@@ -1426,6 +1446,12 @@ read_cmap(ttf_t *font)			// I - Font
 
 	  TTF_DEBUG("read_cmap: nGroups=%u\n", nGroups);
 
+	  if (nGroups > TTF_FONT_MAX_GROUPS)
+	  {
+	    errorf(font, "Invalid cmap table with %u groups.", nGroups);
+	    return (false);
+	  }
+
 	  if ((groups = (_ttf_off_cmap13_t *)calloc(nGroups, sizeof(_ttf_off_cmap13_t))) == NULL)
 	  {
 	    errorf(font, "Unable to allocate memory for cmap.");
@@ -1446,6 +1472,13 @@ read_cmap(ttf_t *font)			// I - Font
 	  // Based on the end code of the segent table, allocate space for the
 	  // uncompressed cmap table...
           TTF_DEBUG("read_cmap: num_cmap=%u\n", (unsigned)font->num_cmap);
+
+	  if (font->num_cmap > TTF_FONT_MAX_CHAR)
+	  {
+	    errorf(font, "Invalid cmap table with %u characters.", (unsigned)font->num_cmap);
+	    return (false);
+	  }
+
 	  font->cmap = cmapptr = (int *)malloc(font->num_cmap * sizeof(int));
 
 	  if (!font->cmap)

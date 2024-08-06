@@ -2,6 +2,13 @@ Changes in PDFio
 ================
 
 
+v1.3.1 (August DD, 2024)
+------------------------
+
+- CVE 2024-42358: Updated TrueType font reader to avoid large memory
+  allocations.
+
+
 v1.3.0 (June 28, 2024)
 ----------------------
 
