@@ -2,6 +2,12 @@ Changes in PDFio
 ================
 
 
+v1.3.2 (Month DD, YYYY)
+-----------------------
+
+- Added some more sanity checks to the TrueType font reader.
+
+
 v1.3.1 (August 5, 2024)
 -----------------------
 

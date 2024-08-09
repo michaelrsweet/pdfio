@@ -100,6 +100,8 @@ typedef __int64 ssize_t;		// POSIX type not present on Windows...
 
 #define TTF_FONT_MAX_CHAR	262144	// Maximum number of character values
 #define TTF_FONT_MAX_GROUPS	65536	// Maximum number of sub-groups
+#define TTF_FONT_MAX_NAMES	16777216// Maximum size of names table we support
+
 
 //
 // TTF/OFF tag constants...
@@ -254,7 +256,7 @@ typedef struct _ttf_off_hhea_s		// Horizontal header
 {
   short		ascender,		// Ascender
 		descender;		// Descender
-  int		numberOfHMetrics;	// Number of horizontal metrics
+  unsigned short numberOfHMetrics;	// Number of horizontal metrics
 } _ttf_off_hhea_t;
 
 typedef struct _ttf_off_os_2_s		// OS/2 information
@@ -1272,19 +1274,26 @@ read_cmap(ttf_t *font)			// I - Font
           for (i = 0; i < numGlyphIdArray; i ++)
             glyphIdArray[i] = read_ushort(font);
 
-#ifdef DEBUG
-          for (i = 0; i < segCount; i ++)
-            TTF_DEBUG("read_cmap: segment[%d].startCode=%d, endCode=%d, idDelta=%d, idRangeOffset=%d\n", i, segments[i].startCode, segments[i].endCode, segments[i].idDelta, segments[i].idRangeOffset);
+          for (i = 0, segment = segments; i < segCount; i ++, segment ++)
+          {
+            TTF_DEBUG("read_cmap: segment[%d].startCode=%d, endCode=%d, idDelta=%d, idRangeOffset=%d\n", i, segment->startCode, segment->endCode, segment->idDelta, segment->idRangeOffset);
 
+            if (segment->startCode > segment->endCode)
+            {
+	      errorf(font, "Bad cmap table segment %u to %u.", segments->startCode, segment->endCode);
+	      return (false);
+            }
+
+            // Based on the end code of the segment table, allocate space for the
+            // uncompressed cmap table...
+            if (segment->endCode >= font->num_cmap)
+	      font->num_cmap = segment->endCode + 1;
+          }
+
+#ifdef DEBUG
           for (i = 0; i < numGlyphIdArray; i ++)
             TTF_DEBUG("read_cmap: glyphIdArray[%d]=%d\n", i, glyphIdArray[i]);
 #endif /* DEBUG */
-
-          // Based on the end code of the segent table, allocate space for the
-          // uncompressed cmap table...
-//          segCount --;			// Last segment is not used (sigh)
-
-	  font->num_cmap = segments[segCount - 1].endCode + 1;
 
 	  if (font->num_cmap > TTF_FONT_MAX_CHAR)
 	  {
@@ -1382,6 +1391,12 @@ read_cmap(ttf_t *font)			// I - Font
 	    group->startGlyphID  = read_ulong(font);
 	    TTF_DEBUG("read_cmap: [%u] startCharCode=%u, endCharCode=%u, startGlyphID=%u\n", gidx, group->startCharCode, group->endCharCode, group->startGlyphID);
 
+            if (group->startCharCode > group->endCharCode)
+            {
+	      errorf(font, "Bad cmap table segment %u to %u.", group->startCharCode, group->endCharCode);
+	      return (false);
+            }
+
             if (group->endCharCode >= font->num_cmap)
               font->num_cmap = group->endCharCode + 1;
 	  }
@@ -1464,6 +1479,12 @@ read_cmap(ttf_t *font)			// I - Font
 	    group->endCharCode   = read_ulong(font);
 	    group->glyphID       = read_ulong(font);
 	    TTF_DEBUG("read_cmap: [%u] startCharCode=%u, endCharCode=%u, glyphID=%u\n", gidx, group->startCharCode, group->endCharCode, group->glyphID);
+
+            if (group->startCharCode > group->endCharCode)
+            {
+	      errorf(font, "Bad cmap table segment %u to %u.", group->startCharCode, group->endCharCode);
+	      return (false);
+            }
 
             if (group->endCharCode >= font->num_cmap)
               font->num_cmap = group->endCharCode + 1;
@@ -1598,7 +1619,7 @@ read_hmtx(ttf_t           *font,	// I - Font
           _ttf_off_hhea_t *hhea)	// O - hhea table data
 {
   unsigned	length;			// Length of hmtx table
-  int		i;			// Looping var
+  unsigned	i;			// Looping var
   _ttf_metric_t	*widths;		// Glyph metrics array
 
 
@@ -1677,8 +1698,15 @@ read_names(ttf_t *font)			// I - Font
     return (false);
 
   font->names.storage_size = length - (unsigned)offset;
+  if (font->names.storage_size > TTF_FONT_MAX_NAMES)
+  {
+    errorf(font, "Name table too large - %u bytes.", (unsigned)font->names.storage_size);
+    return (false);
+  }
+
   if ((font->names.storage = malloc(font->names.storage_size)) == NULL)
     return (false);
+
   memset(font->names.storage, 'A', font->names.storage_size);
 
   for (i = font->names.num_names, name = font->names.names; i > 0; i --, name ++)
