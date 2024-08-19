@@ -3,7 +3,7 @@
 //
 //     https://github.com/michaelrsweet/ttf
 //
-// Copyright © 2018-2023 by Michael R Sweet.
+// Copyright © 2018-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -120,6 +120,7 @@ test_font(const char *filename)		// I - Font filename
 
 
   printf("ttfCreate(\"%s\"): ", filename);
+  fflush(stdout);
   if ((font = ttfCreate(filename, 0, error_cb, NULL)) != NULL)
     puts("PASS");
   else
