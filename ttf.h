@@ -3,7 +3,7 @@
 //
 //     https://github.com/michaelrsweet/ttf
 //
-// Copyright © 2018-2023 by Michael R Sweet.
+// Copyright © 2018-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -22,12 +22,12 @@ extern "C" {
 // Types...
 //
 
-typedef struct _ttf_s ttf_t;	//// Font object
+typedef struct _ttf_s ttf_t;	// Font object
 
 typedef void (*ttf_err_cb_t)(void *data, const char *message);
-				//// Font error callback
+				// Font error callback
 
-typedef enum ttf_stretch_e	//// Font stretch
+typedef enum ttf_stretch_e	// Font stretch
 {
   TTF_STRETCH_NORMAL,		// normal
   TTF_STRETCH_ULTRA_CONDENSED,	// ultra-condensed
@@ -40,20 +40,20 @@ typedef enum ttf_stretch_e	//// Font stretch
   TTF_STRETCH_ULTRA_EXPANDED	// ultra-expanded
 } ttf_stretch_t;
 
-typedef enum ttf_style_e	//// Font style
+typedef enum ttf_style_e	// Font style
 {
   TTF_STYLE_NORMAL,		// Normal font
   TTF_STYLE_ITALIC,		// Italic font
   TTF_STYLE_OBLIQUE		// Oblique (angled) font
 } ttf_style_t;
 
-typedef enum ttf_variant_e	//// Font variant
+typedef enum ttf_variant_e	// Font variant
 {
   TTF_VARIANT_NORMAL,		// Normal font
   TTF_VARIANT_SMALL_CAPS	// Font whose lowercase letters are small capitals
 } ttf_variant_t;
 
-typedef enum ttf_weight_e	//// Font weight
+typedef enum ttf_weight_e	// Font weight
 {
   TTF_WEIGHT_100 = 100,		// Weight 100 (Thin)
   TTF_WEIGHT_200 = 200,		// Weight 200 (Extra/Ultra-Light)
@@ -66,7 +66,7 @@ typedef enum ttf_weight_e	//// Font weight
   TTF_WEIGHT_900 = 900		// Weight 900 (Black/Heavy)
 } ttf_weight_t;
 
-typedef struct ttf_rect_s	//// Bounding rectangle
+typedef struct ttf_rect_s	// Bounding rectangle
 {
   float	left;			// Left offset
   float	top;			// Top offset

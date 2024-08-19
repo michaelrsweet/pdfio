@@ -62,7 +62,7 @@
 #  define O_CREAT	_O_CREAT
 #  define O_TRUNC	_O_TRUNC
 
-typedef __int64 ssize_t;		// POSIX type not present on Windows...
+typedef __int64 ssize_t;		// POSIX type not present on Windows... @private@
 
 #else
 #  include <unistd.h>
@@ -299,7 +299,28 @@ static unsigned	seek_table(ttf_t *font, unsigned tag, unsigned offset, bool requ
 
 
 //
-// 'ttfCreate()' - Create a new font object for the named font family.
+// 'ttfCreate()' - Create a new font object for the named font file.
+//
+// This function creates a new font object for the named TrueType or OpenType
+// font file or collection.  The "filename" argument specifies the name of the
+// file to read.
+//
+// The "idx" argument specifies the font to load from a collection - the first
+// font is number `0`.  Once created, you can call the @link ttfGetNumFonts@
+// function to determine whether the loaded font file is a collection with more
+// than one font.
+//
+// The "err_cb" and "err_data" arguments specify a callback function and data
+// pointer for receiving error messages.  If `NULL`, errors are sent to the
+// `stderr` file.  The callback function receives the data pointer and a text
+// message string, for example:
+//
+// ```
+// void my_err_cb(void *err_data, const char *message)
+// {
+//   fprintf(stderr, "ERROR: %s\n", message);
+// }
+// ```
 //
 
 ttf_t *					// O - New font object
@@ -552,6 +573,10 @@ ttfGetAscent(ttf_t *font)		// I - Font
 //
 // 'ttfGetBounds()' - Get the bounds of all characters in a font.
 //
+// This function gets the bounds of all characters in a font.  The "bounds"
+// argument is a pointer to a `ttf_rect_t` structure that will be filled with
+// the limits for characters in the font scaled to a 1000x1000 unit square.
+//
 
 ttf_rect_t *				// O - Bounds or `NULL` on error
 ttfGetBounds(ttf_t      *font,		// I - Font
@@ -633,8 +658,11 @@ ttfGetDescent(ttf_t *font)		// I - Font
 //
 // 'ttfGetExtents()' - Get the extents of a UTF-8 string.
 //
-// This function computes the extents of a UTF-8 string when rendered using the
-// specified font and size.
+// This function computes the extents of the UTF-8 string "s" when rendered
+// using the specified font "font" and size "size".  The "extents" argument is
+// a pointer to a `ttf_rect_t` structure that is filled with the extents of a
+// simple rendering of the string with no kerning or rewriting applied.  The
+// values are scaled using the specified font size.
 //
 
 ttf_rect_t *				// O - Pointer to extents or `NULL` on error
