@@ -27,7 +27,7 @@
 //
 
 static int	do_crypto_tests(void);
-static int	do_test_file(const char *filename, int objnum, bool verbose);
+static int	do_test_file(const char *filename, int objnum, const char *password, bool verbose);
 static int	do_unit_tests(void);
 static int	draw_image(pdfio_stream_t *st, const char *name, double x, double y, double w, double h, const char *label);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
@@ -37,6 +37,7 @@ static const char *password_cb(void *data, const char *filename);
 static int	read_unit_file(const char *filename, size_t num_pages, size_t first_image, bool is_output);
 static ssize_t	token_consume_cb(const char **s, size_t bytes);
 static ssize_t	token_peek_cb(const char **s, char *buffer, size_t bytes);
+static int	usage(FILE *fp);
 static int	verify_image(pdfio_file_t *pdf, size_t number);
 static int	write_alpha_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_color_patch(pdfio_stream_t *st, bool device);
@@ -59,22 +60,33 @@ int					// O - Exit status
 main(int  argc,				// I - Number of command-line arguments
      char *argv[])			// I - Command-line arguments
 {
-  int	ret = 0;			// Return value
+  int		ret = 0;		// Return value
 
-
-  fprintf(stderr, "testpdfio: Test locale is \"%s\".\n", setlocale(LC_ALL, getenv("LANG")));
 
   if (argc > 1)
   {
     int		i;			// Looping var
+    const char	*password = NULL;	// Password
     bool	verbose = false;	// Be verbose?
 
     for (i = 1; i < argc; i ++)
     {
       if (!strcmp(argv[i], "--help"))
       {
-        puts("Usage: ./testpdfio [--help] [--verbose] [filename [objnum] ...]");
-        return (0);
+        return (usage(stdout));
+      }
+      else if (!strcmp(argv[i], "--password"))
+      {
+        i ++;
+        if (i < argc)
+        {
+          password = argv[i];
+        }
+        else
+        {
+          fputs("testpdfio: Missing password after '--password'.\n", stderr);
+          return (usage(stderr));
+        }
       }
       else if (!strcmp(argv[i], "--verbose"))
       {
@@ -82,24 +94,27 @@ main(int  argc,				// I - Number of command-line arguments
       }
       else if (argv[i][0] == '-')
       {
-        printf("Unknown option '%s'.\n\n", argv[i]);
-        puts("Usage: ./testpdfio [--help] [--verbose] [filename [objnum] ...]");
-        return (1);
+        fprintf(stderr, "testpdfio: Unknown option '%s'.\n", argv[i]);
+        return (usage(stderr));
       }
       else if ((i + 1) < argc && isdigit(argv[i + 1][0] & 255))
       {
         // filename.pdf object-number
-        if (do_test_file(argv[i], atoi(argv[i + 1]), verbose))
+        if (do_test_file(argv[i], atoi(argv[i + 1]), password, verbose))
 	  ret = 1;
 
 	i ++;
       }
-      else if (do_test_file(argv[i], 0, verbose))
+      else if (do_test_file(argv[i], 0, password, verbose))
+      {
         ret = 1;
+      }
     }
   }
   else
   {
+    fprintf(stderr, "testpdfio: Test locale is \"%s\".\n", setlocale(LC_ALL, getenv("LANG")));
+
 #if _WIN32
     // Windows puts executables in Platform/Configuration subdirs...
     if (!_access("../../testfiles", 0))
@@ -363,6 +378,7 @@ do_crypto_tests(void)
 static int				// O - Exit status
 do_test_file(const char *filename,	// I - PDF filename
              int        objnum,		// I - Object number to dump, if any
+             const char *password,	// I - Password for file
              bool       verbose)	// I - Be verbose?
 {
   bool		error = false;		// Have we shown an error yet?
@@ -381,7 +397,7 @@ do_test_file(const char *filename,	// I - PDF filename
     fflush(stdout);
   }
 
-  if ((pdf = pdfioFileOpen(filename, /*password_cb*/NULL, /*password_data*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((pdf = pdfioFileOpen(filename, password_cb, (void *)password, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
     if (objnum)
     {
@@ -1556,6 +1572,23 @@ token_peek_cb(const char **s,		// IO - Test string
     memcpy(buffer, *s, bytes);
 
   return ((ssize_t)bytes);
+}
+
+
+//
+// 'usage()' - Show program usage.
+//
+
+static int				// O - Exit status
+usage(FILE *fp)				// I - Output file
+{
+  fputs("Usage: ./testpdfio [OPTIONS] [FILENAME [OBJNUM]] ...\n", fp);
+  fputs("Options:\n", fp);
+  fputs("  --help               Show program help.\n", fp);
+  fputs("  --password PASSWORD  Set PDF password.\n", fp);
+  fputs("  --verbose            Be verbose.\n", fp);
+
+  return (fp != stdout);
 }
 
 
