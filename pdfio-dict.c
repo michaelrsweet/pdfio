@@ -194,6 +194,9 @@ _pdfioDictDebug(pdfio_dict_t *dict,	// I - Dictionary
   _pdfio_pair_t	*pair;			// Current pair
 
 
+  if (!dict)
+    return;
+
   for (i = dict->num_pairs, pair = dict->pairs; i > 0; i --, pair ++)
   {
     fprintf(fp, "/%s", pair->key);

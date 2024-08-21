@@ -363,6 +363,9 @@ _pdfioArrayDebug(pdfio_array_t *a,	// I - Array
   _pdfio_value_t	*v;		// Current value
 
 
+  if (!a)
+    return;
+
   putc('[', fp);
   for (i = a->num_values, v = a->values; i > 0; i --, v ++)
     _pdfioValueDebug(v, fp);

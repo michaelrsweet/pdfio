@@ -215,6 +215,9 @@ void
 _pdfioValueDebug(_pdfio_value_t *v,	// I - Value
 		 FILE           *fp)	// I - Output file
 {
+  if (!v)
+    return;
+
   switch (v->type)
   {
     case PDFIO_VALTYPE_ARRAY :
