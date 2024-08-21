@@ -408,6 +408,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
   pdfio_stream_t	*st;		// Stream
   pdfio_dict_t		*dict = pdfioObjGetDict(obj);
 					// Object dictionary
+  const char		*type;		// Object type
 
 
   PDFIO_DEBUG("_pdfioStreamOpen(obj=%p(%u), decode=%s)\n", obj, (unsigned)obj->number, decode ? "true" : "false");
@@ -434,7 +435,9 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
     return (NULL);
   }
 
-  if (obj->pdf->encryption)
+  type = pdfioObjGetType(obj);
+
+  if (obj->pdf->encryption && (!type || strcmp(type, "XRef")))
   {
     uint8_t	iv[64];			// Initialization vector
     size_t	ivlen;			// Length of initialization vector, if any
@@ -1067,11 +1070,6 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
       {
 	_pdfioFileError(st->pdf, "Unable to decompress stream data for object %ld: %s", (long)st->obj->number, zstrerror(status));
-	return (-1);
-      }
-      else if (avail_in == st->flate.avail_in && avail_out == st->flate.avail_out)
-      {
-	_pdfioFileError(st->pdf, "Corrupt stream data.");
 	return (-1);
       }
 
