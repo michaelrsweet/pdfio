@@ -1323,7 +1323,7 @@ read_cmap(ttf_t *font)			// I - Font
             TTF_DEBUG("read_cmap: glyphIdArray[%d]=%d\n", i, glyphIdArray[i]);
 #endif /* DEBUG */
 
-	  if (font->num_cmap > TTF_FONT_MAX_CHAR)
+	  if (font->num_cmap == 0 || font->num_cmap > TTF_FONT_MAX_CHAR)
 	  {
 	    errorf(font, "Invalid cmap table with %u characters.", (unsigned)font->num_cmap);
 	    return (false);
@@ -1433,7 +1433,7 @@ read_cmap(ttf_t *font)			// I - Font
 	  // uncompressed cmap table...
           TTF_DEBUG("read_cmap: num_cmap=%u\n", (unsigned)font->num_cmap);
 
-	  if (font->num_cmap > TTF_FONT_MAX_CHAR)
+	  if (font->num_cmap == 0 || font->num_cmap > TTF_FONT_MAX_CHAR)
 	  {
 	    errorf(font, "Invalid cmap table with %u characters.", (unsigned)font->num_cmap);
 	    return (false);
@@ -1522,7 +1522,7 @@ read_cmap(ttf_t *font)			// I - Font
 	  // uncompressed cmap table...
           TTF_DEBUG("read_cmap: num_cmap=%u\n", (unsigned)font->num_cmap);
 
-	  if (font->num_cmap > TTF_FONT_MAX_CHAR)
+	  if (font->num_cmap == 0 || font->num_cmap > TTF_FONT_MAX_CHAR)
 	  {
 	    errorf(font, "Invalid cmap table with %u characters.", (unsigned)font->num_cmap);
 	    return (false);
