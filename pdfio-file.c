@@ -188,6 +188,8 @@ pdfioFileCreate(
   int		fd;			// File descriptor
 
 
+  PDFIO_DEBUG("pdfioFileCreate(filename=\"%s\", version=\"%s\", media_box=%p, crop_box=%p, error_cb=%p, error_cbdata=%p)\n", filename, version, (void *)media_box, (void *)crop_box, (void *)error_cb, (void *)error_cbdata);
+
   // Range check input...
   if (!filename)
     return (NULL);
@@ -390,6 +392,8 @@ pdfioFileCreateOutput(
     pdfio_error_cb_t  error_cb,		// I - Error callback or `NULL` for default
     void              *error_cbdata)	// I - Error callback data, if any
 {
+  PDFIO_DEBUG("pdfioFileCreate(output_cb=%p, output_cbdata=%p, version=\"%s\", media_box=%p, crop_box=%p, error_cb=%p, error_cbdata=%p)\n", (void *)output_cb, (void *)output_cbdata, version, (void *)media_box, (void *)crop_box, (void *)error_cb, (void *)error_cbdata);
+
   return (create_common("output.pdf", /*fd*/-1, output_cb, output_cbdata, version, media_box, crop_box, error_cb, error_cbdata));
 }
 
@@ -523,6 +527,8 @@ pdfioFileCreateTemporary(
 #endif // _WIN32 || __APPLE__
   unsigned	tmpnum;			// Temporary filename number
 
+
+  PDFIO_DEBUG("pdfioFileCreate(buffer=%p, bufsize=%lu, version=\"%s\", media_box=%p, crop_box=%p, error_cb=%p, error_cbdata=%p)\n", (void *)buffer, (unsigned long)bufsize, version, (void *)media_box, (void *)crop_box, (void *)error_cb, (void *)error_cbdata);
 
   // Range check input...
   if (!buffer || bufsize < 32)
@@ -938,6 +944,8 @@ pdfioFileOpen(
   off_t		xref_offset;		// Offset to xref table
 
 
+  PDFIO_DEBUG("pdfioFileOpen(filename=\"%s\", password_cb=%p, password_cbdata=%p, error_cb=%p, error_cbdata=%p)\n", filename, (void *)password_cb, (void *)password_cbdata, (void *)error_cb, (void *)error_cbdata);
+
   // Range check input...
   if (!filename)
     return (NULL);
@@ -1294,6 +1302,8 @@ create_common(
   pdfio_dict_t	*dict;			// Dictionary
   unsigned char	id_value[16];		// File ID value
 
+
+  PDFIO_DEBUG("create_common(filename=\"%s\", fd=%d, output_cb=%p, output_cbdata=%p, version=\"%s\", media_box=%p, crop_box=%p, error_cb=%p, error_cbdata=%p)\n", filename, fd, (void *)output_cb, (void *)output_cbdata, version, (void *)media_box, (void *)crop_box, (void *)error_cb, (void *)error_cbdata);
 
   // Range check input...
   if (!filename || (fd < 0 && !output_cb))
