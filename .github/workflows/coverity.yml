@@ -34,7 +34,7 @@ jobs:
           tar czvf cov.tgz cov-int
           curl \
             --form token=$TOKEN \
-            --form email=michael.r.sweet@gmail.com \
+            --form email=kanno41@gmail.com \
             --form file=@cov.tgz \
             --form version="$GITHUB_REF" \
             --form description="$GITHUB_SHA" \

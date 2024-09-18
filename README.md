@@ -3,8 +3,8 @@ pdfio - PDF Read/Write Library
 
 ![Version](https://img.shields.io/github/v/release/michaelrsweet/pdfio?include_prereleases)
 ![Apache 2.0](https://img.shields.io/github/license/michaelrsweet/pdfio)
-[![Build Status](https://img.shields.io/github/workflow/status/michaelrsweet/pdfio/Build)](https://github.com/michaelrsweet/pdfio/actions/workflows/build.yml)
-[![Coverity Scan Status](https://img.shields.io/coverity/scan/22385.svg)](https://scan.coverity.com/projects/michaelrsweet-pdfio)
+[![Build Status](https://img.shields.io/github/workflow/status/michaelrsweet/pdfio/Build)](https://github.com/aixcc-finals/exp-1-002/actions/workflows/build.yml)
+[![Coverity Scan Status](https://img.shields.io/coverity/scan/22385.svg)](https://scan.coverity.com/projects/aixcc-finals-exp-1-002)
 
 PDFio is a simple C library for reading and writing PDF files.  The primary
 goals of PDFio are:
