@@ -182,6 +182,7 @@ extern bool		pdfioDictSetStringf(pdfio_dict_t *dict, const char *key, const char
 extern bool		pdfioFileClose(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern pdfio_file_t	*pdfioFileCreate(const char *filename, const char *version, pdfio_rect_t *media_box, pdfio_rect_t *crop_box, pdfio_error_cb_t error_cb, void *error_data) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateArrayObj(pdfio_file_t *pdf, pdfio_array_t *array) _PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateNameObj(pdfio_file_t *pdf, const char* name) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateNumberObj(pdfio_file_t *pdf, double number) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateObj(pdfio_file_t *pdf, pdfio_dict_t *dict) _PDFIO_PUBLIC;
 extern pdfio_file_t	*pdfioFileCreateOutput(pdfio_output_cb_t output_cb, void *output_ctx, const char *version, pdfio_rect_t *media_box, pdfio_rect_t *crop_box, pdfio_error_cb_t error_cb, void *error_data) _PDFIO_PUBLIC;
