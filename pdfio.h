@@ -220,6 +220,8 @@ extern pdfio_obj_t	*pdfioObjCopy(pdfio_file_t *pdf, pdfio_obj_t *srcobj) _PDFIO_
 extern pdfio_stream_t	*pdfioObjCreateStream(pdfio_obj_t *obj, pdfio_filter_t compression) _PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioObjGetArray(pdfio_obj_t *obj) _PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioObjGetDict(pdfio_obj_t *obj) _PDFIO_PUBLIC;
+extern const char *pdfioObjGetName(pdfio_obj_t *obj) _PDFIO_PUBLIC;
+
 extern unsigned short	pdfioObjGetGeneration(pdfio_obj_t *obj) _PDFIO_PUBLIC;
 extern size_t		pdfioObjGetLength(pdfio_obj_t *obj) _PDFIO_PUBLIC;
 extern size_t		pdfioObjGetNumber(pdfio_obj_t *obj) _PDFIO_PUBLIC;
