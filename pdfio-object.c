@@ -267,6 +267,7 @@ pdfioObjGetDict(pdfio_obj_t *obj)	// I - Object
     return (NULL);
 }
 
+
 //
 // 'pdfioObjGetName()' - Get the name value associated with an object.
 //
@@ -285,7 +286,6 @@ pdfioObjGetName(pdfio_obj_t *obj)	// I - Object
   else
     return (NULL);
 }
-
 
 
 //
