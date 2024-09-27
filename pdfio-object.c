@@ -269,26 +269,6 @@ pdfioObjGetDict(pdfio_obj_t *obj)	// I - Object
 
 
 //
-// 'pdfioObjGetName()' - Get the name value associated with an object.
-//
-
-const char *				// O - Dictionary or `NULL` on error
-pdfioObjGetName(pdfio_obj_t *obj)	// I - Object
-{
-  if (!obj)
-    return (NULL);
-
-  if (obj->value.type == PDFIO_VALTYPE_NONE)
-    _pdfioObjLoad(obj);
-
-  if (obj->value.type == PDFIO_VALTYPE_NAME)
-    return (obj->value.value.name);
-  else
-    return (NULL);
-}
-
-
-//
 // '_pdfioObjGetExtension()' - Get the extension pointer for an object.
 //
 
@@ -350,6 +330,26 @@ pdfioObjGetLength(pdfio_obj_t *obj)	// I - Object
   PDFIO_DEBUG("pdfioObjGetLength(obj=%p) returning %lu.\n", obj, (unsigned long)lenobj->value.value.number);
 
   return ((size_t)lenobj->value.value.number);
+}
+
+
+//
+// 'pdfioObjGetName()' - Get the name value associated with an object.
+//
+
+const char *				// O - Dictionary or `NULL` on error
+pdfioObjGetName(pdfio_obj_t *obj)	// I - Object
+{
+  if (!obj)
+    return (NULL);
+
+  if (obj->value.type == PDFIO_VALTYPE_NONE)
+    _pdfioObjLoad(obj);
+
+  if (obj->value.type == PDFIO_VALTYPE_NAME)
+    return (obj->value.value.name);
+  else
+    return (NULL);
 }
 
 
