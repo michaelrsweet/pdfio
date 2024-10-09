@@ -1,7 +1,7 @@
 //
 // PDF object functions for PDFio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -347,8 +347,21 @@ pdfioObjGetNumber(pdfio_obj_t *obj)	// I - Object
 //
 // 'pdfioObjGetSubtype()' - Get an object's subtype.
 //
+// This function returns an object's PDF subtype name, if any.  Common subtype
+// names include:
+//
+// - "CIDFontType0": A CID Type0 font
+// - "CIDFontType2": A CID TrueType font
+// - "Image": An image or image mask
+// - "Form": A fillable form
+// - "OpenType": An OpenType font
+// - "Type0": A composite font
+// - "Type1": A PostScript Type1 font
+// - "Type3": A PDF Type3 font
+// - "TrueType": A TrueType font
+//
 
-const char *				// O - Object subtype
+const char *				// O - Object subtype name or `NULL` for none
 pdfioObjGetSubtype(pdfio_obj_t *obj)	// I - Object
 {
   pdfio_dict_t	*dict;			// Object dictionary
@@ -364,8 +377,21 @@ pdfioObjGetSubtype(pdfio_obj_t *obj)	// I - Object
 //
 // 'pdfioObjGetType()' - Get an object's type.
 //
+// This function returns an object's PDF type name, if any. Common type names
+// include:
+//
+// - "CMap": A character map for composite fonts
+// - "Font": An embedded font (@link pdfioObjGetSubtype@ will tell you the
+//   font format)
+// - "FontDescriptor": A font descriptor
+// - "Page": A (visible) page
+// - "Pages": A page tree node
+// - "Template": An invisible template page
+// - "XObject": An image, image mask, or form (@link pdfioObjGetSubtype@ will
+//   tell you which)
+//
 
-const char *				// O - Object type
+const char *				// O - Object type name or `NULL` for none
 pdfioObjGetType(pdfio_obj_t *obj)	// I - Object
 {
   pdfio_dict_t	*dict;			// Object dictionary

@@ -6,6 +6,7 @@ v1.3.2 - YYYY-MM-DD
 -------------------
 
 - Added some more sanity checks to the TrueType font reader.
+- Updated documentation (Issue #77)
 - Fixed an issue when opening certain encrypted PDF files (Issue #62)
 
 

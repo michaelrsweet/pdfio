@@ -202,7 +202,74 @@ Each page is represented by a "page tree" object (what [`pdfioFileGetPage`](@@)
 returns) that specifies information about the page and one or more "content"
 objects that contain the images, fonts, text, and graphics that appear on the
 page.  Use the [`pdfioPageGetNumStreams`](@@) and [`pdfioPageOpenStream`](@@)
-functions to access the content streams for each page.
+functions to access the content streams for each page, and
+[`pdfioObjGetDict`](@@) to get the associated page object dictionary.  For
+example, if you want to display the media and crop boxes for a given page:
+
+```c
+pdfio_file_t  *pdf;             // PDF file
+size_t        i;                // Looping var
+size_t        count;            // Number of pages
+pdfio_obj_t   *page;            // Current page
+pdfio_dict_t  *dict;            // Current page dictionary
+pdfio_array_t *media_box;       // MediaBox array
+double        media_values[4];  // MediaBox values
+pdfio_array_t *crop_box;        // CropBox array
+double        crop_values[4];   // CropBox values
+
+// Iterate the pages in the PDF file
+for (i = 0, count = pdfioFileGetNumPages(pdf); i < count; i ++)
+{
+  page = pdfioFileGetPage(pdf, i);
+  dict = pdfioObjGetDict(page);
+
+  media_box       = pdfioDictGetArray(dict, "MediaBox");
+  media_values[0] = pdfioArrayGetNumber(media_box, 0);
+  media_values[1] = pdfioArrayGetNumber(media_box, 1);
+  media_values[2] = pdfioArrayGetNumber(media_box, 2);
+  media_values[3] = pdfioArrayGetNumber(media_box, 3);
+
+  crop_box       = pdfioDictGetArray(dict, "CropBox");
+  crop_values[0] = pdfioArrayGetNumber(crop_box, 0);
+  crop_values[1] = pdfioArrayGetNumber(crop_box, 1);
+  crop_values[2] = pdfioArrayGetNumber(crop_box, 2);
+  crop_values[3] = pdfioArrayGetNumber(crop_box, 3);
+
+  printf("Page %u: MediaBox=[%g %g %g %g], CropBox=[%g %g %g %g]\n",
+         (unsigned)(i + 1),
+         media_values[0], media_values[1], media_values[2], media_values[3],
+         crop_values[0], crop_values[1], crop_values[2], crop_values[3]);
+}
+```
+
+Page object dictionaries have several (mostly optional) key/value pairs,
+including:
+
+- "Annots": An array of annotation dictionaries for the page; use
+  [`pdfioDictGetArray`](@@) to get the array
+- "CropBox": The crop box as an array of four numbers for the left, bottom,
+  right, and top coordinates of the target media; use [`pdfioDictGetArray`](@@)
+  to get a pointer to the array of numbers
+- "Dur": The number of seconds the page should be displayed; use
+  [`pdfioDictGetNumber`](@@) to get the page duration value
+- "Group": The dictionary of transparency group values for the page; use
+  [`pdfioDictGetDict`](@@) to get a pointer to the resources dictionary
+- "LastModified": The date and time when this page was last modified; use
+  [`pdfioDictGetDate`](@@) to get the Unix `time_t` value
+- "Parent": The parent page tree node object for this page; use
+  [`pdfioDictGetObj`](@@) to get a pointer to the object
+- "MediaBox": The media box as an array of four numbers for the left, bottom,
+  right, and top coordinates of the target media; use [`pdfioDictGetArray`](@@)
+  to get a pointer to the array of numbers
+- "Resources": The dictionary of resources for the page; use
+  [`pdfioDictGetDict`](@@) to get a pointer to the resources dictionary
+- "Rotate": A number indicating the number of degrees of counter-clockwise
+  rotation to apply to the page when viewing; use [`pdfioDictGetNumber`](@@)
+  to get the rotation angle
+- "Thumb": A thumbnail image object for the page; use [`pdfioDictGetObj`](@@)
+  to get a pointer to the thumbnail image object
+- "Trans": The page transition dictionary; use [`pdfioDictGetDict`](@@) to get
+  a pointer to the dictionary
 
 The [`pdfioFileClose`](@@) function closes a PDF file and frees all memory that
 was used for it:
