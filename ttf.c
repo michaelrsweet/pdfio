@@ -1309,6 +1309,8 @@ read_cmap(ttf_t *font)			// I - Font
             if (segment->startCode > segment->endCode)
             {
 	      errorf(font, "Bad cmap table segment %u to %u.", segments->startCode, segment->endCode);
+	      free(segments);
+	      free(glyphIdArray);
 	      return (false);
             }
 
@@ -1326,6 +1328,8 @@ read_cmap(ttf_t *font)			// I - Font
 	  if (font->num_cmap == 0 || font->num_cmap > TTF_FONT_MAX_CHAR)
 	  {
 	    errorf(font, "Invalid cmap table with %u characters.", (unsigned)font->num_cmap);
+	    free(segments);
+	    free(glyphIdArray);
 	    return (false);
 	  }
 
@@ -1422,6 +1426,7 @@ read_cmap(ttf_t *font)			// I - Font
             if (group->startCharCode > group->endCharCode)
             {
 	      errorf(font, "Bad cmap table segment %u to %u.", group->startCharCode, group->endCharCode);
+	      free(groups);
 	      return (false);
             }
 
@@ -1436,6 +1441,7 @@ read_cmap(ttf_t *font)			// I - Font
 	  if (font->num_cmap == 0 || font->num_cmap > TTF_FONT_MAX_CHAR)
 	  {
 	    errorf(font, "Invalid cmap table with %u characters.", (unsigned)font->num_cmap);
+	    free(groups);
 	    return (false);
 	  }
 
@@ -1511,6 +1517,7 @@ read_cmap(ttf_t *font)			// I - Font
             if (group->startCharCode > group->endCharCode)
             {
 	      errorf(font, "Bad cmap table segment %u to %u.", group->startCharCode, group->endCharCode);
+	      free(groups);
 	      return (false);
             }
 
@@ -1525,6 +1532,7 @@ read_cmap(ttf_t *font)			// I - Font
 	  if (font->num_cmap == 0 || font->num_cmap > TTF_FONT_MAX_CHAR)
 	  {
 	    errorf(font, "Invalid cmap table with %u characters.", (unsigned)font->num_cmap);
+	    free(groups);
 	    return (false);
 	  }
 

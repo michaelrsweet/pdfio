@@ -1064,9 +1064,6 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       st->flate.next_out  = (Bytef *)buffer;
       st->flate.avail_out = (uInt)bytes;
 
-      avail_in  = st->flate.avail_in;
-      avail_out = st->flate.avail_out;
-
       if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
       {
 	_pdfioFileError(st->pdf, "Unable to decompress stream data for object %ld: %s", (long)st->obj->number, zstrerror(status));
