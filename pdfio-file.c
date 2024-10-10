@@ -245,6 +245,35 @@ pdfioFileCreateArrayObj(
 
 
 //
+// 'pdfioFileCreateNameObj()' - Create a new object in a PDF file containing a name.
+//
+// This function creates a new object with a name value in a PDF file.
+// You must call @link pdfioObjClose@ to write the object to the file.
+//
+
+pdfio_obj_t *				// O - New object
+pdfioFileCreateNameObj(
+    pdfio_file_t *pdf,			// I - PDF file
+    const char   *name)			// I - Name value
+{
+  _pdfio_value_t	value;		// Object value
+
+
+  // Range check input...
+  if (!pdf || !name)
+    return (NULL);
+
+  value.type         = PDFIO_VALTYPE_NAME;
+  value.value.name   = pdfioStringCreate(pdf, name);
+
+  if (!value.value.name)
+    return (NULL);
+
+  return (_pdfioFileCreateObj(pdf, NULL, &value));
+}
+
+
+//
 // 'pdfioFileCreateNumberObj()' - Create a new object in a PDF file containing a number.
 //
 // This function creates a new object with a number value in a PDF file.
