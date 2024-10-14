@@ -135,21 +135,21 @@ PDFio exposes several types:
 Understanding PDF Files
 -----------------------
 
-A PDF file is structure in a way, so that it would be displayed in the same way across multiple devices and platforms.
-The basic structure of PDF File is as follows:
+A PDF file is structure in a way, so that it would be displayed in the same way 
+across multiple devices and platforms. The basic structure of PDF File is as follows:
 
-###Header
-- This is the first line of a PDF File. This specifies the version of PDF Format used.
+### Header
+This is the first line of a PDF File. This specifies the version of PDF Format used.
 - Example: '%PDF-1.0'
 
-- Since PDF files almost always contain binary data, they can become corrupted if line endings are changed (for example, if the file is transferred over FTP in text mode). To allow legacy file transfer programs to determine that the file is binary, it is usual to include some bytes withcharacter codes higher than 127 in the header.
+Since PDF files almost always contain binary data, they can become corrupted if line endings are changed (for example, if the file is transferred over FTP in text mode). To allow legacy file transfer programs to determine that the file is binary, it is usual to include some bytes withcharacter codes higher than 127 in the header.
 - For example: %âãÏÓ
 - The percent sign indicates another header line, the other few bytes are arbitrary character codes in excess of 127. So, the whole header in our example is:
 
 %PDF-1.0
 %âãÏÓ
 
-###Body
+### Body
 - The file body consists of a sequence of objects, each preceded by an object number, generation number, and the obj keyword on one line, and followed by the endobj keyword on another.
 - For Example
 '''
@@ -163,7 +163,7 @@ endobj
 '''
 - Here, the object number is 1, and the generation number is 0 (it almost always is). The content for object 1 is in between the two lines 1 0 obj and endobj. In this case, it’s the dictionary <</Kids [2 0 R] /Count 1 /Type /Pages>>
 
-###Cross-Reference Table
+### Cross-Reference Table
 - The cross-reference table lists the byte offset of each object in the file body.
 - This allows random access to objects, meaning they don't have to be read in order.
 - Objects that are not used are never read, making the process efficient.
@@ -176,21 +176,21 @@ endobj
   - Special entry (the first entry).
   - One line for each of the object in the file body.
 
- '''
-0 6 Six entries in table, starting at 0
+'''
+**0 6 Six entries in table, starting at 0**
 0000000000 65535 **f Special entry**
 0000000015 00000 **n Object 1 is at byte offset 15**
 0000000074 00000 **n Object 2 is at byte offset 74**
 0000000192 00000 **n etc...**
 0000000291 00000 **n**
 0000000409 00000 **n Object 5 is at byte offset 409**
- '''
+'''
 
- ###Trailer
+### Trailer
 - The first line of the trailer is just the trailer keyword. This is followed by the trailer dictionary, which contains at least the /Size entry (which gives the number of entries in the cross-reference table) and the /Root entry (which gives the object number of the document catalog, which is the root element of the graph of objects in the body).
 - There follows a line with just the startxref keyword, a line with a single number (the byte offset of the start of the cross-reference table within the file), and then the line %%EOF, which signals the end of the PDF file.
 '''
-trailer Trailer **keyword**
+trailer **Trailer keyword**
 << **The trailer dictinonary**
 /Root 5 0 R
 /Size 6
