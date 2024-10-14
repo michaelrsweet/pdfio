@@ -132,6 +132,9 @@ PDFio exposes several types:
 - `pdfio_stream_t`: An object stream
 
 
+Understanding PDF Files
+-----------------
+
 Reading PDF Files
 -----------------
 
