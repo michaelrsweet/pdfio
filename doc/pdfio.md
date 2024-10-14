@@ -179,8 +179,8 @@ endobj
 stream
 1. 0. 0. 1. 50. 700. cm
 BT
-/F0 36. Tf
-(Hello, World!) Tj
+  /F0 36. Tf
+  (Hello, World!) Tj
 ET
 endstream
 endobj
@@ -212,9 +212,13 @@ startxref
 This is the first line of a PDF File. This specifies the version of PDF Format used.
 - Example: '%PDF-1.0'
 
-Since PDF files almost always contain binary data, they can become corrupted if line endings are changed (for example, if the file is transferred over FTP in text mode). To allow legacy file transfer programs to determine that the file is binary, it is usual to include some bytes withcharacter codes higher than 127 in the header.
+Since PDF files almost always contain binary data, they can become corrupted if line 
+endings are changed (for example, if the file is transferred over FTP in text mode). 
+To allow legacy file transfer programs to determine that the file is binary, it is 
+usual to include some bytes withcharacter codes higher than 127 in the header.
 - For example: %âãÏÓ
-- The percent sign indicates another header line, the other few bytes are arbitrary character codes in excess of 127. So, the whole header in our example is:
+- The percent sign indicates another header line, the other few bytes are arbitrary
+character codes in excess of 127. So, the whole header in our example is:
 
 ```
 %PDF-1.0  
@@ -222,7 +226,9 @@ Since PDF files almost always contain binary data, they can become corrupted if 
 ```
 
 ### Body
-The file body consists of a sequence of objects, each preceded by an object number, generation number, and the obj keyword on one line, and followed by the endobj keyword on another.
+The file body consists of a sequence of objects, each preceded by an object number, 
+generation number, and the obj keyword on one line, and followed by the endobj keyword 
+on another.
 - For Example:
 
 ```  
@@ -235,7 +241,8 @@ The file body consists of a sequence of objects, each preceded by an object numb
 endobj
 ```
 
-Here, the object number is 1, and the generation number is 0 (it almost always is). The content for object 1 is in between the two lines 1 0 obj and endobj.  
+Here, the object number is 1, and the generation number is 0 (it almost always is). 
+The content for object 1 is in between the two lines 1 0 obj and endobj.  
 In this case, it’s the dictionary <</Kids [2 0 R] /Count 1 /Type /Pages>>
 
 ### Cross-Reference Table
@@ -262,8 +269,13 @@ The cross-reference table consists of:
 ```
 
 ### Trailer
-- The first line of the trailer is just the trailer keyword. This is followed by the trailer dictionary, which contains at least the /Size entry (which gives the number of entries in the cross-reference table) and the /Root entry (which gives the object number of the document catalog, which is the root element of the graph of objects in the body).
-- There follows a line with just the startxref keyword, a line with a single number (the byte offset of the start of the cross-reference table within the file), and then the line %%EOF, which signals the end of the PDF file.
+The first line of the trailer is just the trailer keyword. This is followed by the trailer dictionary, 
+which contains at least the /Size entry (which gives the number of entries in the cross-reference table) 
+and the /Root entry (which gives the object number of the document catalog, which is the root element 
+of the graph of objects in the body).  
+There follows a line with just the startxref keyword, a line with a single number (the byte offset of 
+the start of the cross-reference table within the file), and then the line %%EOF, which signals the 
+end of the PDF file.
 
 ```
 trailer        **Trailer keyword**
@@ -275,6 +287,40 @@ startxref      **startxref keyword**
 459            **Byte offset of cross-reference table**
 %%EOF          **End-of-file marker**
 ```
+
+How a PDF File is Read
+----------------------
+
+To read a PDF file, converting it from a flat series of bytes into a graph of objects in memory, 
+the following steps might typically occur:
+1. Read the PDF header from the beginning of the file, checking that this is, indeed, a PDF
+document and retrieving its version number.
+3. The end-of-file marker is now found, by searching backward from the end of the file.
+The trailer dictionary can now be read, and the byte offset of the start of the cross-reference
+table retrieved.
+5. The cross-reference table can now be read. We now know where each object in the file is.
+6. At this stage, all the objects can be read and parsed, or we can leave this process until each
+object is actually needed, reading it on demand.
+8. We can now use the data, extracting the pages, parsing graphical content, extracting metadata,
+and so on. This is not an exhaustive description, since there are many possible complications
+(encryption, linearization, objects, and cross reference streams).
+
+How a PDF File is Written
+-------------------------
+
+Writing a PDF document to a series of bytes in a file is much simpler than
+reading it—we don’t need to support all of the PDF format, just the subset
+we intend to use. Writing a PDF file is very fast, since it amounts to little
+more than flattening the object graph to a series of bytes.
+1. Output the header.
+2. Remove any objects which are not referenced by any other object in the
+PDF. This avoids writing objects which are no longer needed.
+3. Renumber the objects so they run from 1 to n where n is the number of
+objects in the file.
+4. Output the objects one by one, starting with object number one,
+recording the byte offset of each for the cross-reference table.
+5. Write the cross-reference table.
+6. Write the trailer, trailer dictionary, and end-of-file marker.
 
 Reading PDF Files
 -----------------
