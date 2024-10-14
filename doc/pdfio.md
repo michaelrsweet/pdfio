@@ -146,12 +146,12 @@ Since PDF files almost always contain binary data, they can become corrupted if 
 - For example: %âãÏÓ
 - The percent sign indicates another header line, the other few bytes are arbitrary character codes in excess of 127. So, the whole header in our example is:
 
-%PDF-1.0
+%PDF-1.0  
 %âãÏÓ
 
 ### Body
-- The file body consists of a sequence of objects, each preceded by an object number, generation number, and the obj keyword on one line, and followed by the endobj keyword on another.
-- For Example
+The file body consists of a sequence of objects, each preceded by an object number, generation number, and the obj keyword on one line, and followed by the endobj keyword on another.
+- For Example:
 '''
 1 0 obj
 <<
@@ -164,11 +164,11 @@ endobj
 - Here, the object number is 1, and the generation number is 0 (it almost always is). The content for object 1 is in between the two lines 1 0 obj and endobj. In this case, it’s the dictionary <</Kids [2 0 R] /Count 1 /Type /Pages>>
 
 ### Cross-Reference Table
-- The cross-reference table lists the byte offset of each object in the file body.
-- This allows random access to objects, meaning they don't have to be read in order.
-- Objects that are not used are never read, making the process efficient.
-- Operations like counting the number of pages in a PDF document are fast, even in large files.
-- Each object has an object number and a generation number.
+The cross-reference table lists the byte offset of each object in the file body.
+This allows random access to objects, meaning they don't have to be read in order.  
+Objects that are not used are never read, making the process efficient.
+Operations like counting the number of pages in a PDF document are fast, even in large files.
+Each object has an object number and a generation number.
   - Generation numbers are used when a cross-reference table entry is reused.
   - For simplicity, we would assume generation numbers to be always zero and ignore them.
 - The cross-reference table consists of:
