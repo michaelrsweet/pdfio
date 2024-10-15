@@ -135,15 +135,14 @@ PDFio exposes several types:
 Understanding PDF Files
 -----------------------
 
-A PDF file is structure in a way, so that it would be displayed in the same way 
-across multiple devices and platforms. The basic structure of PDF File is as follows:
-
-### A small PDF File
-The following is a PDF which says "Hello, World" on one page:
+A PDF file provides data and commands for displaying pages of graphics and text, 
+and is structured in a way that allows it to be displayed in the same way across 
+multiple devices and platforms.  
+The following is a PDF which shows "Hello, World!" on one page:
 ```
-%PDF-1.0                            **Header starts here**
+%PDF-1.0                              %Header starts here
 %âãÏÓ
-1 0 obj                             **Body starts here**
+1 0 obj                               %Body starts here
 <<
 /Kids [2 0 R]
 /Count 1
@@ -190,7 +189,7 @@ endobj
 /Type /Catalog
 >>
 endobj
-xref                          **Cross-reference table starts here**
+xref                               %Cross-reference table starts here
 0 6
 0000000000 65535 f
 0000000015 00000 n
@@ -198,7 +197,7 @@ xref                          **Cross-reference table starts here**
 0000000192 00000 n
 0000000291 00000 n
 0000000409 00000 n
-trailer                       **Trailer starts here**
+trailer                            %Trailer starts here
 <<
 /Root 5 0 R
 /Size 6
@@ -209,8 +208,8 @@ startxref
 ```
 
 ### Header
-This is the first line of a PDF File. This specifies the version of PDF Format used.
-- Example: '%PDF-1.0'
+This is the first line of a PDF File. This specifies the version of PDF Format used.  
+For Example: '%PDF-1.0'
 
 Since PDF files almost always contain binary data, they can become corrupted if line 
 endings are changed (for example, if the file is transferred over FTP in text mode). 
@@ -228,8 +227,7 @@ character codes in excess of 127. So, the whole header in our example is:
 ### Body
 The file body consists of a sequence of objects, each preceded by an object number, 
 generation number, and the obj keyword on one line, and followed by the endobj keyword 
-on another.
-- For Example:
+on another. For Example:
 
 ```  
 1 0 obj
@@ -252,40 +250,40 @@ Objects that are not used are never read, making the process efficient.
 Operations like counting the number of pages in a PDF document are fast, even in large files.
 Each object has an object number and a generation number.
   - Generation numbers are used when a cross-reference table entry is reused.
-  - For simplicity, we would assume generation numbers to be always zero and ignore them.  
+  - For simplicity, we will assume generation numbers to be always zero and ignore them.  
 The cross-reference table consists of:
   - Header line that indicates the number of entries.
   - Special entry (the first entry).
   - One line for each of the object in the file body.
 
 ```
-0 6                **Six entries in table, starting at 0**
-0000000000 65535   **f Special entry**
-0000000015 00000   **n Object 1 is at byte offset 15**
-0000000074 00000   **n Object 2 is at byte offset 74**
-0000000192 00000   **n etc...**
-0000000291 00000   **n**
-0000000409 00000   **n Object 5 is at byte offset 409**
+0 6                  %Six entries in table, starting at 0
+0000000000 65535 f   %Special entry
+0000000015 00000 n   %Object 1 is at byte offset 15
+0000000074 00000 n   %Object 2 is at byte offset 74
+0000000192 00000 n   %etc...
+0000000291 00000 n  
+0000000409 00000 n   %Object 5 is at byte offset 409
 ```
 
 ### Trailer
 The first line of the trailer is just the trailer keyword. This is followed by the trailer dictionary, 
-which contains at least the /Size entry (which gives the number of entries in the cross-reference table) 
-and the /Root entry (which gives the object number of the document catalog, which is the root element 
+which contains at least the /Size entry (Number of entries in the cross-reference table) 
+and the /Root entry (Object number of the document catalog, which is the root element 
 of the graph of objects in the body).  
 There follows a line with just the startxref keyword, a line with a single number (the byte offset of 
 the start of the cross-reference table within the file), and then the line %%EOF, which signals the 
 end of the PDF file.
 
 ```
-trailer        **Trailer keyword**
-<<             **The trailer dictinonary**
+trailer          %Trailer keyword
+<<               %The trailer dictinonary
 /Root 5 0 R
 /Size 6
 >>
-startxref      **startxref keyword**
-459            **Byte offset of cross-reference table**
-%%EOF          **End-of-file marker**
+startxref        %startxref keyword
+459              %Byte offset of cross-reference table
+%%EOF            %End-of-file marker
 ```
 
 How a PDF File is Read
@@ -302,7 +300,8 @@ table retrieved.
 6. At this stage, all the objects can be read and parsed, or we can leave this process until each
 object is actually needed, reading it on demand.
 8. We can now use the data, extracting the pages, parsing graphical content, extracting metadata,
-and so on. This is not an exhaustive description, since there are many possible complications
+and so on.  
+This is not an exhaustive description, since there are many possible complications
 (encryption, linearization, objects, and cross reference streams).
 
 How a PDF File is Written
