@@ -118,20 +118,6 @@ that are defined in a separate header file:
 ```c
 #include <pdfio-content.h>
 ```
-
-
-API Overview
-============
-
-PDFio exposes several types:
-
-- `pdfio_file_t`: A PDF file (for reading or writing)
-- `pdfio_array_t`: An array of values
-- `pdfio_dict_t`: A dictionary of key/value pairs in a PDF file, object, etc.
-- `pdfio_obj_t`: An object in a PDF file
-- `pdfio_stream_t`: An object stream
-
-
 Understanding PDF Files
 -----------------------
 
@@ -285,6 +271,19 @@ startxref        %startxref keyword
 459              %Byte offset of cross-reference table
 %%EOF            %End-of-file marker
 ```
+
+
+API Overview
+============
+
+PDFio exposes several types:
+
+- `pdfio_file_t`: A PDF file (for reading or writing)
+- `pdfio_array_t`: An array of values
+- `pdfio_dict_t`: A dictionary of key/value pairs in a PDF file, object, etc.
+- `pdfio_obj_t`: An object in a PDF file
+- `pdfio_stream_t`: An object stream
+
 
 
 Reading PDF Files
