@@ -286,40 +286,6 @@ startxref        %startxref keyword
 %%EOF            %End-of-file marker
 ```
 
-How a PDF File is Read
-----------------------
-
-To read a PDF file, converting it from a flat series of bytes into a graph of objects in memory, 
-the following steps might typically occur:
-1. Read the PDF header from the beginning of the file, checking that this is, indeed, a PDF
-document and retrieving its version number.
-3. The end-of-file marker is now found, by searching backward from the end of the file.
-The trailer dictionary can now be read, and the byte offset of the start of the cross-reference
-table retrieved.
-5. The cross-reference table can now be read. We now know where each object in the file is.
-6. At this stage, all the objects can be read and parsed, or we can leave this process until each
-object is actually needed, reading it on demand.
-8. We can now use the data, extracting the pages, parsing graphical content, extracting metadata,
-and so on.  
-This is not an exhaustive description, since there are many possible complications
-(encryption, linearization, objects, and cross reference streams).
-
-How a PDF File is Written
--------------------------
-
-Writing a PDF document to a series of bytes in a file is much simpler than
-reading it—we don’t need to support all of the PDF format, just the subset
-we intend to use. Writing a PDF file is very fast, since it amounts to little
-more than flattening the object graph to a series of bytes.
-1. Output the header.
-2. Remove any objects which are not referenced by any other object in the
-PDF. This avoids writing objects which are no longer needed.
-3. Renumber the objects so they run from 1 to n where n is the number of
-objects in the file.
-4. Output the objects one by one, starting with object number one,
-recording the byte offset of each for the cross-reference table.
-5. Write the cross-reference table.
-6. Write the trailer, trailer dictionary, and end-of-file marker.
 
 Reading PDF Files
 -----------------
