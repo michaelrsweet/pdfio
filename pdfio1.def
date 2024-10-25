@@ -1,5 +1,5 @@
 LIBRARY pdfio1
-VERSION 1.3
+VERSION 1.4
 EXPORTS
 _pdfioArrayDebug
 _pdfioArrayDecrypt
@@ -23,7 +23,6 @@ _pdfioCryptoSHA256Append
 _pdfioCryptoSHA256Finish
 _pdfioCryptoSHA256Init
 _pdfioCryptoUnlock
-_pdfioDictClear
 _pdfioDictDebug
 _pdfioDictDecrypt
 _pdfioDictDelete
@@ -96,6 +95,7 @@ pdfioArrayGetObj
 pdfioArrayGetSize
 pdfioArrayGetString
 pdfioArrayGetType
+pdfioArrayRemove
 pdfioContentClip
 pdfioContentDrawImage
 pdfioContentFill
@@ -153,6 +153,7 @@ pdfioContentTextNextLine
 pdfioContentTextShow
 pdfioContentTextShowJustified
 pdfioContentTextShowf
+pdfioDictClear
 pdfioDictCopy
 pdfioDictCreate
 pdfioDictGetArray
@@ -160,7 +161,9 @@ pdfioDictGetBinary
 pdfioDictGetBoolean
 pdfioDictGetDate
 pdfioDictGetDict
+pdfioDictGetKey
 pdfioDictGetName
+pdfioDictGetNumPairs
 pdfioDictGetNumber
 pdfioDictGetObj
 pdfioDictGetRect
@@ -187,6 +190,7 @@ pdfioFileCreateFontObjFromFile
 pdfioFileCreateICCObjFromFile
 pdfioFileCreateImageObjFromData
 pdfioFileCreateImageObjFromFile
+pdfioFileCreateNameObj
 pdfioFileCreateNumberObj
 pdfioFileCreateObj
 pdfioFileCreateOutput
@@ -228,6 +232,7 @@ pdfioObjGetArray
 pdfioObjGetDict
 pdfioObjGetGeneration
 pdfioObjGetLength
+pdfioObjGetName
 pdfioObjGetNumber
 pdfioObjGetSubtype
 pdfioObjGetType
