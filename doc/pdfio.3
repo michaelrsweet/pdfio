@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2024-10-09" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2024-10-25" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -138,6 +138,121 @@ PDFio also provides PDF content helper functions for producing PDF content that 
 
     #include <pdfio\-content.h>
 .fi
+.SS Understanding PDF Files
+.PP
+A PDF file provides data and commands for displaying pages of graphics and text, and is structured in a way that allows it to be displayed in the same way across multiple devices and platforms. The following is a PDF which shows "Hello, World!" on one page:
+.nf
+
+    %PDF\-1.0                        % Header starts here
+    %âãÏÓ
+    1 0 obj                         % Body starts here
+    <<
+    /Kids [2 0 R]
+    /Count 1
+    /Type /Pages
+.fi
+.PP
+> endobj 2 0 obj <
+/Rotate 0
+/Parent 1 0 R
+/Resources 3 0 R
+/MediaBox [0 0 612 792]
+/Contents [4 0 R]/Type /Page
+ endobj 3 0 obj <
+/Font
+<<
+/F0
+<<
+/BaseFont /Times\-Italic
+/Subtype /Type1
+/Type /Font
+ > > endobj 4 0 obj <
+/Length 65
+ stream
+
+.IP \(bu 5
+.PP
+0. 0. 1. 50. 700. cm BT /F0 36. Tf (Hello, World!) Tj ET endstream endobj 5 0 obj << /Pages 1 0 R /Type /Catalog
+
+
+.PP
+> endobj xref % Cross\-reference table starts here 0 6 0000000000 65535 f 0000000015 00000 n 0000000074 00000 n 0000000192 00000 n 0000000291 00000 n 0000000409 00000 n trailer % Trailer starts here << /Root 5 0 R /Size 6 > startxref 459 %%EOF
+.nf
+
+.fi
+
+.PP
+Header
+.PP
+The header is the first line of a PDF file that specifies the version of the PDF format that has been used, for example %PDF\-1.0\.
+.PP
+Since PDF files almost always contain binary data, they can become corrupted if line endings are changed. For example, if the file is transferred using FTP in text mode or is edited in Notepad on Windows. To allow legacy file transfer programs to determine that the file is binary, the PDF standard recommends including some bytes with character codes higher than 127 in the header, for example:
+.nf
+
+    %âãÏÓ
+.fi
+.PP
+The percent sign indicates a comment line while the other few bytes are arbitrary character codes in excess of 127. So, the whole header in our example is:
+.nf
+
+    %PDF\-1.0
+    %âãÏÓ
+.fi
+.PP
+Body
+.PP
+The file body consists of a sequence of objects, each preceded by an object number, generation number, and the obj keyword on one line, and followed by the endobj keyword on another. For example:
+.nf
+
+    1 0 obj
+    <<
+    /Kids [2 0 R]
+    /Count 1
+    /Type /Pages
+.fi
+.PP
+> endobj
+.nf
+
+.fi
+
+.PP
+In this example, the object number is 1 and the generation number is 0, meaning it is the first version of the object. The content for object 1 is between the initial 1 0 obj and trailing endobj lines. In this case, the content is the dictionary <</Kids [2 0 R] /Count 1 /Type /Pages>>\.
+.PP
+Cross\-Reference Table
+.PP
+The cross\-reference table lists the byte offset of each object in the file body. This allows random access to objects, meaning they don't have to be read in order. Objects that are not used are never read, making the process efficient. Operations like counting the number of pages in a PDF document are fast, even in large files.
+.PP
+Each object has an object number and a generation number. Generation numbers are used when a cross\-reference table entry is reused. For simplicity, we will assume generation numbers to be always zero and ignore them. The cross\-reference table consists of a header line that indicates the number of entries, a free entry line for object 0, and a line for each of the objects in the file body. For example:
+.nf
+
+    0 6                             % Six entries in table, starting at 0
+    0000000000 65535 f              % Free entry for object 0
+    0000000015 00000 n              % Object 1 is at byte offset 15
+    0000000074 00000 n              % Object 2 is at byte offset 74
+    0000000192 00000 n              % etc...
+    0000000291 00000 n
+    0000000409 00000 n              % Object 5 is at byte offset 409
+.fi
+.PP
+Trailer
+.PP
+The first line of the trailer is just the trailer keyword. This is followed by the trailer dictionary which contains at least the /Size entry specifying the number of entries in the cross\-reference table and the /Root entry which references the object for the document catalog which is the root element of the graph of objects in the body.
+.PP
+There follows a line with just the startxref keyword, a line with a single number specifying the byte offset of the start of the cross\-reference table within the file, and then the line %%EOF which signals the end of the PDF file.
+.nf
+
+    trailer                         % Trailer keyword
+    <<                              % The trailer dictinonary
+    /Root 5 0 R
+    /Size 6
+.fi
+.PP
+> startxref % startxref keyword 459 % Byte offset of cross\-reference table %%EOF % End\-of\-file marker
+.nf
+
+.fi
+
 .SH API Overview
 .PP
 PDFio exposes several types:
@@ -1487,6 +1602,15 @@ pdfio_valtype_t  pdfioArrayGetType (
     size_t n
 );
 .fi
+.SS pdfioArrayRemove
+Remove an array entry.
+.PP
+.nf
+bool  pdfioArrayRemove (
+    pdfio_array_t *a,
+    size_t n
+);
+.fi
 .SS pdfioContentClip
 Clip output to the current path.
 .PP
@@ -2067,6 +2191,15 @@ bool  pdfioContentTextShowf (
     ...
 );
 .fi
+.SS pdfioDictClear
+Remove a key/value pair from a dictionary.
+.PP
+.nf
+bool  pdfioDictClear (
+    pdfio_dict_t *dict,
+    const char *key
+);
+.fi
 .SS pdfioDictCopy
 Copy a dictionary to a PDF file.
 .PP
@@ -2130,6 +2263,15 @@ pdfio_dict_t * pdfioDictGetDict (
     const char *key
 );
 .fi
+.SS pdfioDictGetKey
+Get the key for the specified pair.
+.PP
+.nf
+const char * pdfioDictGetKey (
+    pdfio_dict_t *dict,
+    size_t n
+);
+.fi
 .SS pdfioDictGetName
 Get a key name value from a dictionary.
 .PP
@@ -2137,6 +2279,14 @@ Get a key name value from a dictionary.
 const char * pdfioDictGetName (
     pdfio_dict_t *dict,
     const char *key
+);
+.fi
+.SS pdfioDictGetNumPairs
+Get the number of key/value pairs in a dictionary.
+.PP
+.nf
+size_t  pdfioDictGetNumPairs (
+    pdfio_dict_t *dict
 );
 .fi
 .SS pdfioDictGetNumber
@@ -2500,6 +2650,18 @@ Note: Currently PNG support is limited to grayscale, RGB, or indexed files
 without interlacing or alpha.  Transparency (masking) based on color/index
 .IP 5
 is supported.
+.SS pdfioFileCreateNameObj
+Create a new object in a PDF file containing a name.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateNameObj (
+    pdfio_file_t *pdf,
+    const char *name
+);
+.fi
+.PP
+This function creates a new object with a name value in a PDF file.
+You must call \fIpdfioObjClose\fR to write the object to the file.
 .SS pdfioFileCreateNumberObj
 Create a new object in a PDF file containing a number.
 .PP
@@ -2933,6 +3095,14 @@ Get the length of the object's (data) stream.
 .PP
 .nf
 size_t  pdfioObjGetLength (
+    pdfio_obj_t *obj
+);
+.fi
+.SS pdfioObjGetName
+Get the name value associated with an object.
+.PP
+.nf
+const char * pdfioObjGetName (
     pdfio_obj_t *obj
 );
 .fi

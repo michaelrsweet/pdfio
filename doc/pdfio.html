@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<title>PDFio Programming Manual v1.3.2</title>
+<title>PDFio Programming Manual v1.4.0</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.7">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
 <meta name="copyright" content="Copyright © 2021-2024 by Michael R Sweet">
-<meta name="version" content="1.3.2">
+<meta name="version" content="1.4.0">
 <style type="text/css"><!--
 body {
   background: white;
@@ -251,7 +251,7 @@ span.string {
 <body>
 <div class="header">
 <p><img class="title" src="pdfio-512.png"></p>
-<h1 class="title">PDFio Programming Manual v1.3.2</h1>
+<h1 class="title">PDFio Programming Manual v1.4.0</h1>
 <p>Michael R Sweet</p>
 <p>Copyright © 2021-2024 by Michael R Sweet</p>
 </div>
@@ -265,6 +265,7 @@ span.string {
 <li><a href="#xcode-project">Xcode Project</a></li>
 <li><a href="#detecting-pdfio">Detecting PDFio</a></li>
 <li><a href="#header-files">Header Files</a></li>
+<li><a href="#understanding-pdf-files">Understanding PDF Files</a></li>
 </ul></li>
 <li><a href="#api-overview">API Overview</a><ul class="subcontents">
 <li><a href="#reading-pdf-files">Reading PDF Files</a></li>
@@ -305,6 +306,7 @@ span.string {
 <li><a href="#pdfioArrayGetSize">pdfioArrayGetSize</a></li>
 <li><a href="#pdfioArrayGetString">pdfioArrayGetString</a></li>
 <li><a href="#pdfioArrayGetType">pdfioArrayGetType</a></li>
+<li><a href="#pdfioArrayRemove">pdfioArrayRemove</a></li>
 <li><a href="#pdfioContentClip">pdfioContentClip</a></li>
 <li><a href="#pdfioContentDrawImage">pdfioContentDrawImage</a></li>
 <li><a href="#pdfioContentFill">pdfioContentFill</a></li>
@@ -361,6 +363,7 @@ span.string {
 <li><a href="#pdfioContentTextShow">pdfioContentTextShow</a></li>
 <li><a href="#pdfioContentTextShowJustified">pdfioContentTextShowJustified</a></li>
 <li><a href="#pdfioContentTextShowf">pdfioContentTextShowf</a></li>
+<li><a href="#pdfioDictClear">pdfioDictClear</a></li>
 <li><a href="#pdfioDictCopy">pdfioDictCopy</a></li>
 <li><a href="#pdfioDictCreate">pdfioDictCreate</a></li>
 <li><a href="#pdfioDictGetArray">pdfioDictGetArray</a></li>
@@ -368,7 +371,9 @@ span.string {
 <li><a href="#pdfioDictGetBoolean">pdfioDictGetBoolean</a></li>
 <li><a href="#pdfioDictGetDate">pdfioDictGetDate</a></li>
 <li><a href="#pdfioDictGetDict">pdfioDictGetDict</a></li>
+<li><a href="#pdfioDictGetKey">pdfioDictGetKey</a></li>
 <li><a href="#pdfioDictGetName">pdfioDictGetName</a></li>
+<li><a href="#pdfioDictGetNumPairs">pdfioDictGetNumPairs</a></li>
 <li><a href="#pdfioDictGetNumber">pdfioDictGetNumber</a></li>
 <li><a href="#pdfioDictGetObj">pdfioDictGetObj</a></li>
 <li><a href="#pdfioDictGetRect">pdfioDictGetRect</a></li>
@@ -395,6 +400,7 @@ span.string {
 <li><a href="#pdfioFileCreateICCObjFromFile">pdfioFileCreateICCObjFromFile</a></li>
 <li><a href="#pdfioFileCreateImageObjFromData">pdfioFileCreateImageObjFromData</a></li>
 <li><a href="#pdfioFileCreateImageObjFromFile">pdfioFileCreateImageObjFromFile</a></li>
+<li><a href="#pdfioFileCreateNameObj">pdfioFileCreateNameObj</a></li>
 <li><a href="#pdfioFileCreateNumberObj">pdfioFileCreateNumberObj</a></li>
 <li><a href="#pdfioFileCreateObj">pdfioFileCreateObj</a></li>
 <li><a href="#pdfioFileCreateOutput">pdfioFileCreateOutput</a></li>
@@ -436,6 +442,7 @@ span.string {
 <li><a href="#pdfioObjGetDict">pdfioObjGetDict</a></li>
 <li><a href="#pdfioObjGetGeneration">pdfioObjGetGeneration</a></li>
 <li><a href="#pdfioObjGetLength">pdfioObjGetLength</a></li>
+<li><a href="#pdfioObjGetName">pdfioObjGetName</a></li>
 <li><a href="#pdfioObjGetNumber">pdfioObjGetNumber</a></li>
 <li><a href="#pdfioObjGetSubtype">pdfioObjGetSubtype</a></li>
 <li><a href="#pdfioObjGetType">pdfioObjGetType</a></li>
@@ -572,6 +579,104 @@ LIBS    +=      `pkg-config --libs pdfio`
 <p>PDFio also provides <a href="#pdf-content-helper-functions">PDF content helper functions</a> for producing PDF content that are defined in a separate header file:</p>
 <pre><code class="language-c"><span class="directive">#include &lt;pdfio-content.h&gt;</span>
 </code></pre>
+<h3 class="title" id="understanding-pdf-files">Understanding PDF Files</h3>
+<p>A PDF file provides data and commands for displaying pages of graphics and text, and is structured in a way that allows it to be displayed in the same way across multiple devices and platforms. The following is a PDF which shows &quot;Hello, World!&quot; on one page:</p>
+<pre><code>%PDF-1.0                        % Header starts here
+%âãÏÓ
+1 0 obj                         % Body starts here
+&lt;&lt;
+/Kids [2 0 R]
+/Count 1
+/Type /Pages
+</code></pre>
+<blockquote>
+<p>&gt; endobj 2 0 obj <a href="<
+/Rotate 0
+/Parent 1 0 R
+/Resources 3 0 R
+/MediaBox [0 0 612 792]
+/Contents [4 0 R]/Type /Page
+">&lt;
+/Rotate 0
+/Parent 1 0 R
+/Resources 3 0 R
+/MediaBox [0 0 612 792]
+/Contents [4 0 R]/Type /Page
+</a> endobj 3 0 obj <a href="<
+/Font
+<<
+/F0
+<<
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Type /Font
+">&lt;
+/Font
+&lt;&lt;
+/F0
+&lt;&lt;
+/BaseFont /Times-Italic
+/Subtype /Type1
+/Type /Font
+</a> &gt; &gt; endobj 4 0 obj <a href="<
+/Length 65
+">&lt;
+/Length 65
+</a> stream</p>
+</blockquote>
+<ol>
+<li><p>0. 0. 1. 50. 700. cm BT /F0 36. Tf (Hello, World!) Tj ET endstream endobj 5 0 obj &lt;&lt; /Pages 1 0 R /Type /Catalog</p>
+</li>
+</ol>
+<blockquote>
+<p>&gt; endobj xref % Cross-reference table starts here 0 6 0000000000 65535 f 0000000015 00000 n 0000000074 00000 n 0000000192 00000 n 0000000291 00000 n 0000000409 00000 n trailer % Trailer starts here &lt;&lt; /Root 5 0 R /Size 6 &gt; startxref 459 %%EOF</p>
+<pre><code></code></pre>
+</blockquote>
+<h4 id="header">Header</h4>
+<p>The header is the first line of a PDF file that specifies the version of the PDF format that has been used, for example <code>%PDF-1.0</code>.</p>
+<p>Since PDF files almost always contain binary data, they can become corrupted if line endings are changed. For example, if the file is transferred using FTP in text mode or is edited in Notepad on Windows. To allow legacy file transfer programs to determine that the file is binary, the PDF standard recommends including some bytes with character codes higher than 127 in the header, for example:</p>
+<pre><code>%âãÏÓ
+</code></pre>
+<p>The percent sign indicates a comment line while the other few bytes are arbitrary character codes in excess of 127. So, the whole header in our example is:</p>
+<pre><code>%PDF-1.0
+%âãÏÓ
+</code></pre>
+<h4 id="body">Body</h4>
+<p>The file body consists of a sequence of objects, each preceded by an object number, generation number, and the obj keyword on one line, and followed by the endobj keyword on another. For example:</p>
+<pre><code>1 0 obj
+&lt;&lt;
+/Kids [2 0 R]
+/Count 1
+/Type /Pages
+</code></pre>
+<blockquote>
+<p>&gt; endobj</p>
+<pre><code></code></pre>
+</blockquote>
+<p>In this example, the object number is 1 and the generation number is 0, meaning it is the first version of the object. The content for object 1 is between the initial <code>1 0 obj</code> and trailing <code>endobj</code> lines. In this case, the content is the dictionary <code>&lt;&lt;/Kids [2 0 R] /Count 1 /Type /Pages&gt;&gt;</code>.</p>
+<h4 id="cross-reference-table">Cross-Reference Table</h4>
+<p>The cross-reference table lists the byte offset of each object in the file body. This allows random access to objects, meaning they don't have to be read in order. Objects that are not used are never read, making the process efficient. Operations like counting the number of pages in a PDF document are fast, even in large files.</p>
+<p>Each object has an object number and a generation number. Generation numbers are used when a cross-reference table entry is reused. For simplicity, we will assume generation numbers to be always zero and ignore them. The cross-reference table consists of a header line that indicates the number of entries, a free entry line for object 0, and a line for each of the objects in the file body. For example:</p>
+<pre><code>0 6                             % Six entries in table, starting at 0
+0000000000 65535 f              % Free entry for object 0
+0000000015 00000 n              % Object 1 is at byte offset 15
+0000000074 00000 n              % Object 2 is at byte offset 74
+0000000192 00000 n              % etc...
+0000000291 00000 n
+0000000409 00000 n              % Object 5 is at byte offset 409
+</code></pre>
+<h4 id="trailer">Trailer</h4>
+<p>The first line of the trailer is just the <code>trailer</code> keyword. This is followed by the trailer dictionary which contains at least the <code>/Size</code> entry specifying the number of entries in the cross-reference table and the <code>/Root</code> entry which references the object for the document catalog which is the root element of the graph of objects in the body.</p>
+<p>There follows a line with just the <code>startxref</code> keyword, a line with a single number specifying the byte offset of the start of the cross-reference table within the file, and then the line <code>%%EOF</code> which signals the end of the PDF file.</p>
+<pre><code>trailer                         % Trailer keyword
+&lt;&lt;                              % The trailer dictinonary
+/Root 5 0 R
+/Size 6
+</code></pre>
+<blockquote>
+<p>&gt; startxref % startxref keyword 459 % Byte offset of cross-reference table %%EOF % End-of-file marker</p>
+<pre><code></code></pre>
+</blockquote>
 <h2 class="title" id="api-overview">API Overview</h2>
 <p>PDFio exposes several types:</p>
 <ul>
@@ -1502,6 +1607,19 @@ size_t pdfioArrayGetSize(<a href="#pdfio_array_t">pdfio_array_t</a> *a);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Value type</p>
+<h3 class="function"><a id="pdfioArrayRemove">pdfioArrayRemove</a></h3>
+<p class="description">Remove an array entry.</p>
+<p class="code">
+<span class="reserved">bool</span> pdfioArrayRemove(<a href="#pdfio_array_t">pdfio_array_t</a> *a, size_t n);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>a</th>
+<td class="description">Array</td></tr>
+<tr><th>n</th>
+<td class="description">Index</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> on success, <code>false</code> otherwise</p>
 <h3 class="function"><a id="pdfioContentClip">pdfioContentClip</a></h3>
 <p class="description">Clip output to the current path.</p>
 <p class="code">
@@ -2356,6 +2474,19 @@ argument specifies an array of UTF-8 encoded strings.</p>
 <p class="discussion">This function shows some formatted text in a PDF content stream. The
 &quot;unicode&quot; argument specifies that the current font maps to full Unicode.
 The &quot;format&quot; argument specifies a UTF-8 encoded <code>printf</code>-style format string.</p>
+<h3 class="function"><a id="pdfioDictClear">pdfioDictClear</a></h3>
+<p class="description">Remove a key/value pair from a dictionary.</p>
+<p class="code">
+<span class="reserved">bool</span> pdfioDictClear(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>dict</th>
+<td class="description">Dictionary</td></tr>
+<tr><th>key</th>
+<td class="description">Key</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> if cleared, <code>false</code> otherwise</p>
 <h3 class="function"><a id="pdfioDictCopy">pdfioDictCopy</a></h3>
 <p class="description">Copy a dictionary to a PDF file.</p>
 <p class="code">
@@ -2447,6 +2578,19 @@ time_t pdfioDictGetDate(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, <span cl
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Value</p>
+<h3 class="function"><a id="pdfioDictGetKey">pdfioDictGetKey</a></h3>
+<p class="description">Get the key for the specified pair.</p>
+<p class="code">
+<span class="reserved">const</span> <span class="reserved">char</span> *pdfioDictGetKey(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, size_t n);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>dict</th>
+<td class="description">Dictionary</td></tr>
+<tr><th>n</th>
+<td class="description">Pair index (<code>0</code>-based)</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Key for specified pair</p>
 <h3 class="function"><a id="pdfioDictGetName">pdfioDictGetName</a></h3>
 <p class="description">Get a key name value from a dictionary.</p>
 <p class="code">
@@ -2460,6 +2604,17 @@ time_t pdfioDictGetDate(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, <span cl
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Value</p>
+<h3 class="function"><a id="pdfioDictGetNumPairs">pdfioDictGetNumPairs</a></h3>
+<p class="description">Get the number of key/value pairs in a dictionary.</p>
+<p class="code">
+size_t pdfioDictGetNumPairs(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>dict</th>
+<td class="description">Dictionary</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Number of pairs</p>
 <h3 class="function"><a id="pdfioDictGetNumber">pdfioDictGetNumber</a></h3>
 <p class="description">Get a key number value from a dictionary.</p>
 <p class="code">
@@ -2947,6 +3102,22 @@ image on the page.<br>
 Note: Currently PNG support is limited to grayscale, RGB, or indexed files
 without interlacing or alpha.  Transparency (masking) based on color/index
 is supported.</blockquote>
+<h3 class="function"><a id="pdfioFileCreateNameObj">pdfioFileCreateNameObj</a></h3>
+<p class="description">Create a new object in a PDF file containing a name.</p>
+<p class="code">
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateNameObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *name);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>name</th>
+<td class="description">Name value</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">New object</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function creates a new object with a name value in a PDF file.
+You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write the object to the file.</p>
 <h3 class="function"><a id="pdfioFileCreateNumberObj">pdfioFileCreateNumberObj</a></h3>
 <p class="description">Create a new object in a PDF file containing a number.</p>
 <p class="code">
@@ -3528,6 +3699,17 @@ size_t pdfioObjGetLength(<a href="#pdfio_obj_t">pdfio_obj_t</a> *obj);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Length in bytes or <code>0</code> for none</p>
+<h3 class="function"><a id="pdfioObjGetName">pdfioObjGetName</a></h3>
+<p class="description">Get the name value associated with an object.</p>
+<p class="code">
+<span class="reserved">const</span> <span class="reserved">char</span> *pdfioObjGetName(<a href="#pdfio_obj_t">pdfio_obj_t</a> *obj);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>obj</th>
+<td class="description">Object</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Dictionary or <code>NULL</code> on error</p>
 <h3 class="function"><a id="pdfioObjGetNumber">pdfioObjGetNumber</a></h3>
 <p class="description">Get the object's number.</p>
 <p class="code">
