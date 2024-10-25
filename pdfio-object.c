@@ -99,7 +99,7 @@ pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
     return (NULL);
 
   if (dstobj->value.type == PDFIO_VALTYPE_DICT)
-    _pdfioDictClear(dstobj->value.value.dict, "Length");
+    pdfioDictClear(dstobj->value.value.dict, "Length");
 
   if (srcobj->stream_offset)
   {

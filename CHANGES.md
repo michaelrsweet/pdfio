@@ -5,6 +5,8 @@ Changes in PDFio
 v1.4.0 - YYYY-MM-DD
 -------------------
 
+- Added new `pdfioDictGetKey` and `pdfioDictGetNumPairs` APIs (Issue #63)
+- Added new `pdfioArrayRemove` and `pdfioDictClear` APIs (Issue #74)
 - Added new `pdfioFileCreateNameObj` and `pdfioObjGetName` APIs for creating and
   getting name object values (Issue #76)
 - Updated documentation (Issue #78)

@@ -151,7 +151,9 @@ extern pdfio_obj_t	*pdfioArrayGetObj(pdfio_array_t *a, size_t n) _PDFIO_PUBLIC;
 extern size_t		pdfioArrayGetSize(pdfio_array_t *a) _PDFIO_PUBLIC;
 extern const char	*pdfioArrayGetString(pdfio_array_t *a, size_t n) _PDFIO_PUBLIC;
 extern pdfio_valtype_t	pdfioArrayGetType(pdfio_array_t *a, size_t n) _PDFIO_PUBLIC;
+extern bool		pdfioArrayRemove(pdfio_array_t *a, size_t n) _PDFIO_PUBLIC;
 
+extern bool		pdfioDictClear(pdfio_dict_t *dict, const char *key) _PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioDictCopy(pdfio_file_t *pdf, pdfio_dict_t *dict) _PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioDictCreate(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioDictGetArray(pdfio_dict_t *dict, const char *key) _PDFIO_PUBLIC;
@@ -159,7 +161,9 @@ extern unsigned char	*pdfioDictGetBinary(pdfio_dict_t *dict, const char *key, si
 extern bool		pdfioDictGetBoolean(pdfio_dict_t *dict, const char *key) _PDFIO_PUBLIC;
 extern time_t		pdfioDictGetDate(pdfio_dict_t *dict, const char *key) _PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioDictGetDict(pdfio_dict_t *dict, const char *key) _PDFIO_PUBLIC;
+extern const char	*pdfioDictGetKey(pdfio_dict_t *dict, size_t n) _PDFIO_PUBLIC;
 extern const char	*pdfioDictGetName(pdfio_dict_t *dict, const char *key) _PDFIO_PUBLIC;
+extern size_t		pdfioDictGetNumPairs(pdfio_dict_t *dict) _PDFIO_PUBLIC;
 extern double		pdfioDictGetNumber(pdfio_dict_t *dict, const char *key) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioDictGetObj(pdfio_dict_t *dict, const char *key) _PDFIO_PUBLIC;
 extern pdfio_rect_t	*pdfioDictGetRect(pdfio_dict_t *dict, const char *key, pdfio_rect_t *rect) _PDFIO_PUBLIC;

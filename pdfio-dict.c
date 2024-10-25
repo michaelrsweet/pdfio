@@ -1,7 +1,7 @@
 //
 // PDF dictionary functions for PDFio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -18,19 +18,22 @@ static int	compare_pairs(_pdfio_pair_t *a, _pdfio_pair_t *b);
 
 
 //
-// '_pdfioDictClear()' - Remove a key/value pair from a dictionary.
+// 'pdfioDictClear()' - Remove a key/value pair from a dictionary.
 //
 
-void
-_pdfioDictClear(pdfio_dict_t *dict,	// I - Dictionary
-                const char   *key)	// I - Key
+bool					// O - `true` if cleared, `false` otherwise
+pdfioDictClear(pdfio_dict_t *dict,	// I - Dictionary
+               const char   *key)	// I - Key
 {
   size_t	idx;			// Index into pairs
   _pdfio_pair_t	*pair,			// Current pair
 		pkey;			// Search key
 
 
-  PDFIO_DEBUG("_pdfioDictClear(dict=%p, key=\"%s\")\n", dict, key);
+  PDFIO_DEBUG("pdfioDictClear(dict=%p, key=\"%s\")\n", dict, key);
+
+  if (!dict || !key)
+    return (false);
 
   // See if the key is already set...
   if (dict->num_pairs > 0)
@@ -48,8 +51,12 @@ _pdfioDictClear(pdfio_dict_t *dict,	// I - Dictionary
 
       if (idx < dict->num_pairs)
         memmove(pair, pair + 1, (dict->num_pairs - idx) * sizeof(_pdfio_pair_t));
+
+      return (true);
     }
   }
+
+  return (false);
 }
 
 
@@ -336,6 +343,18 @@ pdfioDictGetDict(pdfio_dict_t *dict,	// I - Dictionary
 
 
 //
+// 'pdfioDictGetKey()' - Get the key for the specified pair.
+//
+
+const char *				// O - Key for specified pair
+pdfioDictGetKey(pdfio_dict_t *dict,	// I - Dictionary
+                size_t       n)		// I - Pair index (`0`-based)
+{
+  return ((dict && n < dict->num_pairs) ? dict->pairs[n].key : NULL);
+}
+
+
+//
 // 'pdfioDictGetName()' - Get a key name value from a dictionary.
 //
 
@@ -350,6 +369,17 @@ pdfioDictGetName(pdfio_dict_t *dict,	// I - Dictionary
     return (value->value.name);
   else
     return (NULL);
+}
+
+
+//
+// 'pdfioDictGetNumPairs()' - Get the number of key/value pairs in a dictionary.
+//
+
+size_t					// O - Number of pairs
+pdfioDictGetNumPairs(pdfio_dict_t *dict)// I - Dictionary
+{
+  return (dict ? dict->num_pairs : 0);
 }
 
 

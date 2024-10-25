@@ -1,7 +1,7 @@
 //
 // PDF array functions for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -634,6 +634,28 @@ _pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
   }
 
   return (NULL);
+}
+
+
+//
+// 'pdfioArrayRemove()' - Remove an array entry.
+//
+
+bool					// O - `true` on success, `false` otherwise
+pdfioArrayRemove(pdfio_array_t *a,	// I - Array
+                 size_t        n)	// I - Index
+{
+  if (!a || n >= a->num_values)
+    return (false);
+
+  if (a->values[n].type == PDFIO_VALTYPE_BINARY)
+    free(a->values[n].value.binary.data);
+
+  a->num_values --;
+  if (n < a->num_values)
+    memmove(a->values + n, a->values + n + 1, (a->num_values - n) * sizeof(_pdfio_value_t));
+
+  return (true);
 }
 
 
