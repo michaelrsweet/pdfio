@@ -10,6 +10,7 @@ v1.4.0 - YYYY-MM-DD
 - Added new `pdfioFileCreateNameObj` and `pdfioObjGetName` APIs for creating and
   getting name object values (Issue #76)
 - Updated documentation (Issue #78)
+- Fixed reading of PDF files whose trailer is missing a newline (Issue #80)
 
 
 v1.3.2 - 2024-08-15

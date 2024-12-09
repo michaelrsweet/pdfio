@@ -1977,7 +1977,7 @@ load_xref(
       {
         PDFIO_DEBUG("load_xref: '%s' at offset %lu\n", line, (unsigned long)trailer_offset);
 
-	if (!strncmp(line, "trailer", 7) && (!line[7] || isspace(line[7] & 255)))
+	if (!strncmp(line, "trailer", 7) && (!line[7] || isspace(line[7] & 255) || line[7] == '<'))
 	{
 	  if (line[7])
 	  {
