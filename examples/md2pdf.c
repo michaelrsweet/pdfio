@@ -572,6 +572,7 @@ main(int  argc,				// I - Number of command-line arguments
   docdata_t	dd;			// Document data
   docfont_t	fontface;		// Current font
   mmd_t		*doc;			// Markdown document
+  const char	*value;			// Metadata value
 
 
   // Get the markdown file from the command-line...
@@ -609,6 +610,20 @@ main(int  argc,				// I - Number of command-line arguments
 
   if ((dd.pdf = pdfioFileCreateOutput(output_cb, /*output_cbdata*/NULL, /*version*/NULL, /*media_box*/NULL, /*crop_box*/NULL, /*error_cb*/NULL, /*error_data*/NULL)) == NULL)
     return (1);
+
+  if ((value = mmdGetMetadata(doc, "author")) != NULL)
+    pdfioFileSetAuthor(dd.pdf, value);
+
+  if ((value = mmdGetMetadata(doc, "keywords")) != NULL)
+    pdfioFileSetKeywords(dd.pdf, value);
+
+  if ((value = mmdGetMetadata(doc, "subject")) != NULL)
+    pdfioFileSetSubject(dd.pdf, value);
+  else if ((value = mmdGetMetadata(doc, "copyright")) != NULL)
+    pdfioFileSetSubject(dd.pdf, value);
+
+  if (dd.title)
+    pdfioFileSetTitle(dd.pdf, dd.title);
 
   // Add fonts...
   for (fontface = DOCFONT_REGULAR; fontface < DOCFONT_MAX; fontface ++)
