@@ -8,7 +8,9 @@
 /autom4te.cache
 /config.log
 /config.status
+/configure~
 /doc/pdfio.epub
+/examples/code128
 /Makefile
 /packages
 /pdfio.pc
