@@ -31,7 +31,7 @@ make_code128(char       *dst,		// I - Destination buffer
 {
   char		*dstptr,		// Pointer into destination buffer
 		*dstend;		// End of destination buffer
-  int		sum = 0;		// Weighted sum
+  int		sum;			// Weighted sum
   static const char *code128_chars =	// Code 128 characters
 		" !\"#$%&'()*+,-./0123456789:;<=>?"
 		"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"

@@ -1,5 +1,6 @@
 *.1.dylib
 *.a
+*.dSYM
 *.log
 *.o
 *.so.1
@@ -11,6 +12,7 @@
 /configure~
 /doc/pdfio.epub
 /examples/code128
+/examples/md2pdf
 /Makefile
 /packages
 /pdfio.pc

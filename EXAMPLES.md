@@ -9,3 +9,10 @@ code128.c
 ---------
 
 This example shows how to embed and use a barcode font.
+
+
+md2pdf.c
+--------
+
+This example shows how to generate pages with multiple fonts, embedded images,
+and headers and footers.
