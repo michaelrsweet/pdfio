@@ -29,6 +29,15 @@
 // Types...
 //
 
+typedef enum doccolor_e			// Document color enumeration
+{
+  DOCCOLOR_BLACK,			// #000
+  DOCCOLOR_RED,				// #900
+  DOCCOLOR_GREEN,			// #090
+  DOCCOLOR_BLUE,			// #00C
+  DOCCOLOR_GRAY				// #555
+} doccolor_t;
+
 typedef enum docfont_e			// Document font enumeration
 {
   DOCFONT_REGULAR,			// Roboto-Regular
@@ -59,6 +68,7 @@ typedef struct docdata_s		// Document formatting data
   char		*heading;		// Current document heading
   pdfio_stream_t *st;			// Current page stream
   double	y;			// Current position on page
+  doccolor_t	color;			// Current color
 } docdata_t;
 
 
@@ -90,17 +100,18 @@ static const char * const docfont_names[] =
   "FM"
 };
 
-#define LINE_HEIGHT	1.2		// Multiplier for line height
+#define LINE_HEIGHT	1.4		// Multiplier for line height
 
 #define SIZE_BODY	11.0		// Size of body text (points)
-#define SIZE_HEADFOOT	9.0		// Size of header/footer text
-#define SIZE_HEADING_1	18.0		// Size of first level heading
-#define SIZE_HEADING_2	16.0		// Size of top level heading
-#define SIZE_HEADING_3	15.0		// Size of top level heading
-#define SIZE_HEADING_4	14.0		// Size of top level heading
-#define SIZE_HEADING_5	13.0		// Size of top level heading
-#define SIZE_HEADING_6	12.0		// Size of top level heading
-#define SIZE_TABLE	10.0		// Size of table text
+#define SIZE_CODEBLOCK	10.0		// Size of code block text (points)
+#define SIZE_HEADFOOT	9.0		// Size of header/footer text (points)
+#define SIZE_HEADING_1	18.0		// Size of first level heading (points)
+#define SIZE_HEADING_2	16.0		// Size of top level heading (points)
+#define SIZE_HEADING_3	15.0		// Size of top level heading (points)
+#define SIZE_HEADING_4	14.0		// Size of top level heading (points)
+#define SIZE_HEADING_5	13.0		// Size of top level heading (points)
+#define SIZE_HEADING_6	12.0		// Size of top level heading (points)
+#define SIZE_TABLE	10.0		// Size of table text (points)
 
 #define PAGE_WIDTH	mm2pt(210)	// Page width in points
 #define PAGE_LENGTH	in2pt(11)	// Page length in points
@@ -113,6 +124,44 @@ static const char * const docfont_names[] =
 #define PAGE_HEADER	(PAGE_LENGTH - in2pt(0.5))
 					// Vertical position of header
 #define PAGE_FOOTER	in2pt(0.5)	// Vertical position of footer
+
+#define UNICODE_VALUE	true		// `true` for Unicode text, `false` for ISO-8859-1
+
+
+//
+// 'set_color()' - Set the stroke and fill color.
+//
+
+static void
+set_color(docdata_t  *dd,		// I - Document data
+          doccolor_t color)		// I - Document color
+{
+  switch (color)
+  {
+    case DOCCOLOR_BLACK :
+        pdfioContentSetFillColorDeviceGray(dd->st, 0.0);
+        pdfioContentSetStrokeColorDeviceGray(dd->st, 0.0);
+        break;
+    case DOCCOLOR_RED :
+        pdfioContentSetFillColorDeviceRGB(dd->st, 0.6, 0.0, 0.0);
+        pdfioContentSetStrokeColorDeviceRGB(dd->st, 0.6, 0.0, 0.0);
+        break;
+    case DOCCOLOR_GREEN :
+        pdfioContentSetFillColorDeviceRGB(dd->st, 0.0, 0.6, 0.0);
+        pdfioContentSetStrokeColorDeviceRGB(dd->st, 0.0, 0.6, 0.0);
+        break;
+    case DOCCOLOR_BLUE :
+        pdfioContentSetFillColorDeviceRGB(dd->st, 0.0, 0.0, 0.8);
+        pdfioContentSetStrokeColorDeviceRGB(dd->st, 0.0, 0.0, 0.8);
+        break;
+    case DOCCOLOR_GRAY :
+        pdfioContentSetFillColorDeviceGray(dd->st, 0.333);
+        pdfioContentSetStrokeColorDeviceGray(dd->st, 0.333);
+        break;
+  }
+
+  dd->color = color;
+}
 
 
 //
@@ -151,8 +200,7 @@ new_page(docdata_t *dd)			// I - Document data
   dd->st = pdfioFileCreatePage(dd->pdf, page_dict);
 
   // Add header/footer text
-  pdfioContentSetFillColorGray(dd->st, 0.333);
-  pdfioContentSetStrokeColorGray(dd->st, 0.333);
+  set_color(dd, DOCCOLOR_GRAY);
   pdfioContentSetTextFont(dd->st, docfont_names[DOCFONT_REGULAR], SIZE_HEADFOOT);
 
   if (pdfioFileGetNumPages(dd->pdf) > 1 && dd->title)
@@ -162,7 +210,7 @@ new_page(docdata_t *dd)			// I - Document data
 
     pdfioContentTextBegin(dd->st);
     pdfioContentTextMoveTo(dd->st, dd->crop_box.x1 + 0.5 * (dd->crop_box.x2 - dd->crop_box.x1 - width), dd->crop_box.y2 - SIZE_HEADFOOT);
-    pdfioContentTextShow(dd->st, /*unicode*/true, dd->title);
+    pdfioContentTextShow(dd->st, UNICODE_VALUE, dd->title);
     pdfioContentTextEnd(dd->st);
 
     pdfioContentPathMoveTo(dd->st, dd->crop_box.x1, dd->crop_box.y2 - 2 * SIZE_HEADFOOT * LINE_HEIGHT + SIZE_HEADFOOT);
@@ -189,12 +237,13 @@ new_page(docdata_t *dd)			// I - Document data
     pdfioContentTextMoveTo(dd->st, dd->crop_box.x1, dd->crop_box.y1);
   }
 
-  pdfioContentTextShow(dd->st, /*unicode*/true, temp);
+  pdfioContentTextShow(dd->st, UNICODE_VALUE, temp);
   pdfioContentTextEnd(dd->st);
 
   if (dd->heading)
   {
     pdfioContentTextBegin(dd->st);
+
     if (pdfioFileGetNumPages(dd->pdf) & 1)
     {
       // Current heading on left...
@@ -206,13 +255,12 @@ new_page(docdata_t *dd)			// I - Document data
       pdfioContentTextMoveTo(dd->st, dd->crop_box.x2 - width, dd->crop_box.y1);
     }
 
-    pdfioContentTextShow(dd->st, /*unicode*/true, dd->heading);
+    pdfioContentTextShow(dd->st, UNICODE_VALUE, dd->heading);
     pdfioContentTextEnd(dd->st);
   }
 
   // The rest of the text will be full black...
-  pdfioContentSetFillColorGray(dd->st, 0.0);
-  pdfioContentSetStrokeColorGray(dd->st, 0.0);
+  set_color(dd, DOCCOLOR_BLACK);
 
   dd->y = dd->art_box.y2;
 }
@@ -242,7 +290,9 @@ format_block(docdata_t  *dd,		// I - Document data
 		prevface;		// Previous font face
   double	x, y;			// Current position
   double	width,			// Width of current fragment
+		lwidth,			// Leader width
 		wswidth;		// Width of whitespace
+  doccolor_t	color;			// Color of text
 
 
   blocktype = mmdGetType(block);
@@ -261,16 +311,17 @@ format_block(docdata_t  *dd,		// I - Document data
     // Add leader text on first line...
     pdfioContentSetTextFont(dd->st, docfont_names[prevface = fontface], fontsize);
 
-    width = pdfioContentTextMeasure(dd->fonts[fontface], leader, fontsize);
+    lwidth = pdfioContentTextMeasure(dd->fonts[fontface], leader, fontsize);
 
     pdfioContentTextBegin(dd->st);
-    pdfioContentTextMoveTo(dd->st, left - width, y);
-    pdfioContentTextShow(dd->st, /*unicode*/true, leader);
+    pdfioContentTextMoveTo(dd->st, left - lwidth, y);
+    pdfioContentTextShow(dd->st, UNICODE_VALUE, leader);
   }
   else
   {
     // No leader text...
     prevface = DOCFONT_MAX;
+    lwidth   = 0.0;
   }
 
   for (current = mmdGetFirstChild(block), x = left; current; current = next)
@@ -314,6 +365,13 @@ format_block(docdata_t  *dd,		// I - Document data
     else
       curface = fontface;
 
+    if (curtype == MMD_TYPE_CODE_TEXT)
+      color = DOCCOLOR_RED;
+    else if (curtype == MMD_TYPE_LINKED_TEXT)
+      color = DOCCOLOR_BLUE;
+    else
+      color = DOCCOLOR_BLACK;
+
     width = pdfioContentTextMeasure(dd->fonts[curface], curtext, fontsize);
     if (curws)
       wswidth = pdfioContentTextMeasure(dd->fonts[curface], " ", fontsize);
@@ -326,38 +384,48 @@ format_block(docdata_t  *dd,		// I - Document data
       x = left;
       y -= fontsize * LINE_HEIGHT;
 
-      if (prevface != DOCFONT_MAX)
-	pdfioContentTextEnd(dd->st);
-
-      prevface = DOCFONT_MAX;
-
       if (y < dd->art_box.y1)
       {
         // New page...
+	if (prevface != DOCFONT_MAX)
+	{
+	  pdfioContentTextEnd(dd->st);
+	  prevface = DOCFONT_MAX;
+	}
+
         new_page(dd);
 
         y = dd->y - fontsize * LINE_HEIGHT;
+      }
+      else
+      {
+	pdfioContentTextMoveTo(dd->st, lwidth, -fontsize * LINE_HEIGHT);
+	lwidth = 0.0;
       }
     }
 
     if (curface != prevface)
     {
-      if (prevface != DOCFONT_MAX)
-        pdfioContentTextEnd(dd->st);
+      if (prevface == DOCFONT_MAX)
+      {
+	pdfioContentTextBegin(dd->st);
+	pdfioContentTextMoveTo(dd->st, x, y);
+      }
 
       pdfioContentSetTextFont(dd->st, docfont_names[prevface = curface], fontsize);
-      pdfioContentTextBegin(dd->st);
-      pdfioContentTextMoveTo(dd->st, x, y);
     }
+
+    if (color != dd->color)
+      set_color(dd, color);
 
     if (x > left && curws)
     {
-      pdfioContentTextShowf(dd->st, /*unicode*/true, " %s", curtext);
+      pdfioContentTextShowf(dd->st, UNICODE_VALUE, " %s", curtext);
       x += width + wswidth;
     }
     else
     {
-      pdfioContentTextShow(dd->st, /*unicode*/true, curtext);
+      pdfioContentTextShow(dd->st, UNICODE_VALUE, curtext);
       x += width;
     }
 
@@ -367,17 +435,23 @@ format_block(docdata_t  *dd,		// I - Document data
       x = left;
       y -= fontsize * LINE_HEIGHT;
 
-      if (prevface != DOCFONT_MAX)
-	pdfioContentTextEnd(dd->st);
-
-      prevface = DOCFONT_MAX;
-
       if (y < dd->art_box.y1)
       {
         // New page...
+	if (prevface != DOCFONT_MAX)
+	{
+	  pdfioContentTextEnd(dd->st);
+	  prevface = DOCFONT_MAX;
+	}
+
         new_page(dd);
 
         y = dd->y - fontsize * LINE_HEIGHT;
+      }
+      else
+      {
+	pdfioContentTextMoveTo(dd->st, lwidth, -fontsize * LINE_HEIGHT);
+	lwidth = 0.0;
       }
     }
   }
@@ -539,7 +613,7 @@ main(int  argc,				// I - Number of command-line arguments
   // Add fonts...
   for (fontface = DOCFONT_REGULAR; fontface < DOCFONT_MAX; fontface ++)
   {
-    if ((dd.fonts[fontface] = pdfioFileCreateFontObjFromFile(dd.pdf, docfont_filenames[fontface], /*unicode*/true)) == NULL)
+    if ((dd.fonts[fontface] = pdfioFileCreateFontObjFromFile(dd.pdf, docfont_filenames[fontface], UNICODE_VALUE)) == NULL)
       return (1);
   }
 
