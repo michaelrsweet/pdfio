@@ -20,6 +20,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#  include <io.h>
+#else
+#  include <unistd.h>
+#endif // _WIN32
 #include "mmd.h"
 #include <pdfio.h>
 #include <pdfio-content.h>
@@ -55,6 +60,14 @@ typedef struct docimage_s		// Document image info
 
 #define DOCIMAGE_MAX	1000		// Maximum number of images
 
+typedef struct doclink_s		// Document link info
+{
+  const char	*url;			// Reference URL
+  pdfio_rect_t	box;			// Link box
+} doclink_t;
+
+#define DOCLINK_MAX	1000		// Maximum number of links/page
+
 typedef struct docdata_s		// Document formatting data
 {
   pdfio_file_t	*pdf;			// PDF file
@@ -69,6 +82,9 @@ typedef struct docdata_s		// Document formatting data
   pdfio_stream_t *st;			// Current page stream
   double	y;			// Current position on page
   doccolor_t	color;			// Current color
+  pdfio_obj_t	*annots;		// Annotations object (for links)
+  size_t	num_links;		// Number of links for this page
+  doclink_t	links[DOCLINK_MAX];	// Links for this page
 } docdata_t;
 
 
@@ -126,6 +142,90 @@ static const char * const docfont_names[] =
 #define PAGE_FOOTER	in2pt(0.5)	// Vertical position of footer
 
 #define UNICODE_VALUE	true		// `true` for Unicode text, `false` for ISO-8859-1
+
+
+//
+// 'mmd_walk_next()' - Find the next markdown node.
+//
+
+static mmd_t *				// O - Next node or `NULL` at end
+mmd_walk_next(mmd_t *top,		// I - Top node
+              mmd_t *node)		// I - Current node
+{
+  mmd_t	*next,				// Next node
+	*parent;			// Parent node
+
+
+  // Figure out the next node under "top"...
+  if ((next = mmdGetFirstChild(node)) == NULL)
+  {
+    if ((next = mmdGetNextSibling(node)) == NULL)
+    {
+      if ((parent = mmdGetParent(node)) != top)
+      {
+	while ((next = mmdGetNextSibling(parent)) == NULL)
+	{
+	  if ((parent = mmdGetParent(parent)) == top)
+	    break;
+	}
+      }
+    }
+  }
+
+  return (next);
+}
+
+
+//
+// 'add_images()' - Scan the markdown document for images.
+//
+
+static void
+add_images(docdata_t *dd,		// I - Document data
+           mmd_t     *doc)		// I - Markdown document
+{
+  mmd_t	*current,			// Current node
+	*next;				// Next node
+
+
+  // Scan the entire document for images...
+  for (current = mmdGetFirstChild(doc); current; current = next)
+  {
+    // Get next node
+    next = mmd_walk_next(doc, current);
+
+    // Look for image nodes...
+    if (mmdGetType(current) == MMD_TYPE_IMAGE)
+    {
+      const char	*url,		// URL for image
+			*ext;		// Extension
+
+      url = mmdGetURL(current);
+      ext = strrchr(url, '.');
+
+      fprintf(stderr, "IMAGE(%s), ext=\"%s\"\n", url, ext);
+
+      if (!access(url, 0) && ext && (!strcmp(ext, ".png") || !strcmp(ext, ".jpg") || !strcmp(ext, ".jpeg")))
+      {
+        // Local JPEG or PNG file, so add it if we haven't already...
+        size_t		i;		// Looping var
+
+        for (i = 0; i < dd->num_images; i ++)
+        {
+          if (!strcmp(dd->images[i].url, url))
+            break;
+        }
+
+        if (i >= dd->num_images && dd->num_images < DOCIMAGE_MAX)
+        {
+          dd->images[i].url = url;
+          if ((dd->images[i].obj = pdfioFileCreateImageObjFromFile(dd->pdf, url, false)) != NULL)
+	    dd->num_images ++;
+        }
+      }
+    }
+  }
+}
 
 
 //
@@ -286,10 +386,13 @@ format_block(docdata_t  *dd,		// I - Document data
   const char	*curtext,		// Current text
 		*cururl;		// Current URL, if any
   bool		curws;			// Current whitespace
+  pdfio_obj_t	*curimage;		// Current image, if any
+  char		curimagename[32];	// Current image name
   docfont_t	curface,		// Current font face
 		prevface;		// Previous font face
   double	x, y;			// Current position
   double	width,			// Width of current fragment
+		height,			// Height of current fragment
 		lwidth,			// Leader width
 		wswidth;		// Width of whitespace
   doccolor_t	color;			// Color of text
@@ -327,34 +430,37 @@ format_block(docdata_t  *dd,		// I - Document data
   for (current = mmdGetFirstChild(block), x = left; current; current = next)
   {
     // Get information about the current node...
-    curtype = mmdGetType(current);
-    curtext = mmdGetText(current);
-    cururl  = mmdGetURL(current);
-    curws   = mmdGetWhitespace(current);
-
-//    fprintf(stderr, "current=%p, curtype=%d, curtext=\"%s\", cururl=\"%s\", curws=%s\n", (void *)current, curtype, curtext, cururl, curws ? "true" : "false");
-
-    // Figure out the next node under this block...
-    if ((next = mmdGetFirstChild(current)) == NULL)
-    {
-      if ((next = mmdGetNextSibling(current)) == NULL)
-      {
-        mmd_t *parent;			// Parent node
-
-        if ((parent = mmdGetParent(current)) != block)
-        {
-          while ((next = mmdGetNextSibling(parent)) == NULL)
-          {
-            if ((parent = mmdGetParent(parent)) == block)
-              break;
-          }
-        }
-      }
-    }
+    curtype         = mmdGetType(current);
+    curtext         = mmdGetText(current);
+    curimage        = NULL;
+    curimagename[0] = '\0';
+    cururl          = mmdGetURL(current);
+    curws           = mmdGetWhitespace(current);
+    next            = mmd_walk_next(block, current);
 
     // Process the node...
-    if (!curtext)
+    if (curtype == MMD_TYPE_IMAGE && cururl)
+    {
+      // Embed an image
+      size_t	i;			// Looping var
+
+      for (i = 0; i < dd->num_images; i ++)
+      {
+        if (!strcmp(dd->images[i].url, cururl))
+        {
+          curimage = dd->images[i].obj;
+          snprintf(curimagename, sizeof(curimagename), "I%u", (unsigned)i);
+          break;
+        }
+      }
+
+      if (!curimage)
+        continue;
+    }
+    else if (!curtext)
+    {
       continue;
+    }
 
     if (curtype == MMD_TYPE_EMPHASIZED_TEXT)
       curface = DOCFONT_ITALIC;
@@ -372,7 +478,52 @@ format_block(docdata_t  *dd,		// I - Document data
     else
       color = DOCCOLOR_BLACK;
 
-    width = pdfioContentTextMeasure(dd->fonts[curface], curtext, fontsize);
+    if (curimage)
+    {
+      // Image - treat as 100dpi
+      width  = 72.0 * pdfioImageGetWidth(curimage) / 100.0;
+      height = 72.0 * pdfioImageGetHeight(curimage) / 100.0;
+
+      if (width > (right - left))
+      {
+        // Too wide, scale to width...
+        width  = right - left;
+        height = width * pdfioImageGetHeight(curimage) / pdfioImageGetWidth(curimage);
+      }
+      else if (height > (dd->art_box.y2 - dd->art_box.y1))
+      {
+        // Too tall, scale to height...
+        height = dd->art_box.y2 - dd->art_box.y1;
+        width  = height * pdfioImageGetWidth(curimage) / pdfioImageGetHeight(curimage);
+      }
+
+      if (x <= left)
+      {
+        y -= height - fontsize * LINE_HEIGHT;
+
+	if (prevface != DOCFONT_MAX)
+	{
+	  pdfioContentTextEnd(dd->st);
+	  prevface = DOCFONT_MAX;
+	}
+
+	if (y < dd->art_box.y1)
+	{
+	  // New page...
+	  new_page(dd);
+
+	  x = left;
+	  y = dd->y - height;
+	}
+      }
+    }
+    else
+    {
+      // Text fragment...
+      width  = pdfioContentTextMeasure(dd->fonts[curface], curtext, fontsize);
+      height = fontsize * LINE_HEIGHT;
+    }
+
     if (curws)
       wswidth = pdfioContentTextMeasure(dd->fonts[curface], " ", fontsize);
     else
@@ -382,7 +533,7 @@ format_block(docdata_t  *dd,		// I - Document data
     {
       // New line...
       x = left;
-      y -= fontsize * LINE_HEIGHT;
+      y -= height;
 
       if (y < dd->art_box.y1)
       {
@@ -395,7 +546,7 @@ format_block(docdata_t  *dd,		// I - Document data
 
         new_page(dd);
 
-        y = dd->y - fontsize * LINE_HEIGHT;
+        y = dd->y - height;
       }
       else
       {
@@ -404,29 +555,46 @@ format_block(docdata_t  *dd,		// I - Document data
       }
     }
 
-    if (curface != prevface)
+    fprintf(stderr, "curtext=\"%s\", curimage=\"%s\", x=%g, y=%g, width=%g, height=%g\n", curtext, curimagename, x, y, width, height);
+
+    if (curimage)
     {
-      if (prevface == DOCFONT_MAX)
+      // Image
+      if (prevface != DOCFONT_MAX)
       {
-	pdfioContentTextBegin(dd->st);
-	pdfioContentTextMoveTo(dd->st, x, y);
+	pdfioContentTextEnd(dd->st);
+	prevface = DOCFONT_MAX;
       }
 
-      pdfioContentSetTextFont(dd->st, docfont_names[prevface = curface], fontsize);
-    }
-
-    if (color != dd->color)
-      set_color(dd, color);
-
-    if (x > left && curws)
-    {
-      pdfioContentTextShowf(dd->st, UNICODE_VALUE, " %s", curtext);
-      x += width + wswidth;
+      pdfioContentDrawImage(dd->st, curimagename, x, y, width, height);
     }
     else
     {
-      pdfioContentTextShow(dd->st, UNICODE_VALUE, curtext);
-      x += width;
+      // Text
+      if (curface != prevface)
+      {
+	if (prevface == DOCFONT_MAX)
+	{
+	  pdfioContentTextBegin(dd->st);
+	  pdfioContentTextMoveTo(dd->st, x, y);
+	}
+
+	pdfioContentSetTextFont(dd->st, docfont_names[prevface = curface], fontsize);
+      }
+
+      if (color != dd->color)
+	set_color(dd, color);
+
+      if (x > left && curws)
+      {
+	pdfioContentTextShowf(dd->st, UNICODE_VALUE, " %s", curtext);
+	x += width + wswidth;
+      }
+      else
+      {
+	pdfioContentTextShow(dd->st, UNICODE_VALUE, curtext);
+	x += width;
+      }
     }
 
     if (blocktype == MMD_TYPE_CODE_BLOCK)
@@ -631,6 +799,9 @@ main(int  argc,				// I - Number of command-line arguments
     if ((dd.fonts[fontface] = pdfioFileCreateFontObjFromFile(dd.pdf, docfont_filenames[fontface], UNICODE_VALUE)) == NULL)
       return (1);
   }
+
+  // Add images...
+  add_images(&dd, doc);
 
   // Parse the markdown document...
   format_doc(&dd, doc, dd.art_box.x1, dd.art_box.x2);
