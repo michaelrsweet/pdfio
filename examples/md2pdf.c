@@ -41,6 +41,7 @@ typedef enum doccolor_e			// Document color enumeration
   DOCCOLOR_RED,				// #900
   DOCCOLOR_GREEN,			// #090
   DOCCOLOR_BLUE,			// #00C
+  DOCCOLOR_LTGRAY,			// #EEE
   DOCCOLOR_GRAY				// #555
 } doccolor_t;
 
@@ -220,7 +221,7 @@ add_images(docdata_t *dd,		// I - Document data
       url = mmdGetURL(current);
       ext = strrchr(url, '.');
 
-      fprintf(stderr, "IMAGE(%s), ext=\"%s\"\n", url, ext);
+//      fprintf(stderr, "IMAGE(%s), ext=\"%s\"\n", url, ext);
 
       if (!access(url, 0) && ext && (!strcmp(ext, ".png") || !strcmp(ext, ".jpg") || !strcmp(ext, ".jpeg")))
       {
@@ -274,6 +275,10 @@ set_color(docdata_t  *dd,		// I - Document data
         pdfioContentSetFillColorDeviceRGB(dd->st, 0.0, 0.0, 0.8);
         pdfioContentSetStrokeColorDeviceRGB(dd->st, 0.0, 0.0, 0.8);
         break;
+    case DOCCOLOR_LTGRAY :
+        pdfioContentSetFillColorDeviceGray(dd->st, 0.933);
+        pdfioContentSetStrokeColorDeviceGray(dd->st, 0.933);
+        break;
     case DOCCOLOR_GRAY :
         pdfioContentSetFillColorDeviceGray(dd->st, 0.333);
         pdfioContentSetStrokeColorDeviceGray(dd->st, 0.333);
@@ -300,6 +305,9 @@ set_font(docdata_t *dd,			// I - Document data
     return;
 
   pdfioContentSetTextFont(dd->st, docfont_names[font], fsize);
+
+  if (fabs(fsize - dd->fsize) >= 0.1)
+    pdfioContentSetTextLeading(dd->st, fsize * LINE_HEIGHT);
 
   dd->font  = font;
   dd->fsize = fsize;
@@ -431,14 +439,14 @@ render_line(docdata_t  *dd,		// I - Document data
     dd->y -= lineheight;
   }
 
-  fprintf(stderr, "num_frags=%u, y=%g\n", (unsigned)num_frags, dd->y);
+//  fprintf(stderr, "num_frags=%u, y=%g\n", (unsigned)num_frags, dd->y);
 
   for (i = 0, frag = frags; i < num_frags; i ++, frag ++)
   {
     if (frag->text)
     {
       // Draw text
-      fprintf(stderr, "    text=\"%s\", font=%d, color=%d, x=%g\n", frag->text, frag->font, frag->color, frag->x);
+//      fprintf(stderr, "    text=\"%s\", font=%d, color=%d, x=%g\n", frag->text, frag->font, frag->color, frag->x);
 
       set_color(dd, frag->color);
       set_font(dd, frag->font, frag->height);
@@ -461,7 +469,7 @@ render_line(docdata_t  *dd,		// I - Document data
       // Draw image
       char	imagename[32];		// Current image name
 
-      fprintf(stderr, "    imagenum=%u, x=%g, width=%g, height=%g\n", (unsigned)frag->imagenum, frag->x, frag->width, frag->height);
+//      fprintf(stderr, "    imagenum=%u, x=%g, width=%g, height=%g\n", (unsigned)frag->imagenum, frag->x, frag->width, frag->height);
 
       if (in_text)
       {
@@ -552,6 +560,9 @@ format_block(docdata_t  *dd,		// I - Document data
     wswidth  = 0.0;
     next     = mmd_walk_next(block, current);
 
+    if (type == MMD_TYPE_CHECKBOX)
+      text = text ? "[x]" : "[ ]";
+
     // Process the node...
     if (type == MMD_TYPE_IMAGE && url)
     {
@@ -588,6 +599,18 @@ format_block(docdata_t  *dd,		// I - Document data
         height = dd->art_box.y2 - dd->art_box.y1;
         width  = height * pdfioImageGetWidth(image) / pdfioImageGetHeight(image);
       }
+    }
+    else if (type == MMD_TYPE_HARD_BREAK && num_frags > 0)
+    {
+      render_line(dd, margin_top, lineheight, num_frags, frags);
+
+      num_frags  = 0;
+      frag       = frags;
+      x          = left;
+      lineheight = 0.0;
+      margin_top = 0.0;
+
+      continue;
     }
     else if (!text)
     {
@@ -634,7 +657,10 @@ format_block(docdata_t  *dd,		// I - Document data
 
     // Add the current node to the fragment list
     if (num_frags == 0)
+    {
+      ws      = false;
       wswidth = 0.0;
+    }
 
     frag->x          = x;
     frag->width      = width + wswidth;
@@ -654,6 +680,69 @@ format_block(docdata_t  *dd,		// I - Document data
 
   if (num_frags > 0)
     render_line(dd, margin_top, lineheight, num_frags, frags);
+}
+
+
+//
+// 'format_code()' - Format a code block...
+//
+
+static void
+format_code(docdata_t *dd,		// I - Document data
+            mmd_t     *block,		// I - Code block
+            double    left,		// I - Left margin
+            double    right)		// I - Right margin
+{
+  mmd_t		*code;			// Current code block
+  double	lineheight;		// Line height
+
+
+  // Start a new page as needed...
+  if (!dd->st)
+    new_page(dd);
+
+  lineheight = SIZE_CODEBLOCK * LINE_HEIGHT;
+  dd->y      -= 2.0 * lineheight;
+  if (dd->y < dd->art_box.y1)
+  {
+    new_page(dd);
+
+    dd->y -= lineheight;
+  }
+
+  // Start a code text block...
+  set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
+  pdfioContentTextBegin(dd->st);
+  pdfioContentTextMoveTo(dd->st, left, dd->y);
+
+  for (code = mmdGetFirstChild(block); code; code = mmdGetNextSibling(code))
+  {
+    set_color(dd, DOCCOLOR_LTGRAY);
+    pdfioContentPathRect(dd->st, left - 3.0, dd->y - (LINE_HEIGHT - 1.0) * SIZE_CODEBLOCK, right - left + 3.0, lineheight);
+    pdfioContentFillAndStroke(dd->st, false);
+
+    set_color(dd, DOCCOLOR_RED);
+    pdfioContentTextShow(dd->st, UNICODE_VALUE, mmdGetText(code));
+    dd->y -= lineheight;
+
+    if (dd->y < dd->art_box.y1)
+    {
+      // End the current text block...
+      pdfioContentTextEnd(dd->st);
+
+      // Start a new page...
+      new_page(dd);
+      set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
+
+      dd->y -= lineheight;
+
+      pdfioContentTextBegin(dd->st);
+      pdfioContentTextMoveTo(dd->st, left, dd->y);
+    }
+  }
+
+  // End the current text block...
+  pdfioContentTextEnd(dd->st);
 }
 
 
@@ -732,29 +821,7 @@ format_doc(docdata_t *dd,		// I - Document data
           break;
 
       case MMD_TYPE_CODE_BLOCK :
-          {
-            mmd_t	*code;		// Current code block
-            linefrag_t	frag;		// Line fragment
-            double	margin_top;	// Top margin
-
-            frag.x        = left + 36.0;
-            frag.width    = 0.0;
-            frag.height   = SIZE_CODEBLOCK;
-            frag.imagenum = 0;
-            frag.ws       = false;
-            frag.font     = DOCFONT_MONOSPACE;
-            frag.color    = DOCCOLOR_RED;
-            margin_top    = SIZE_CODEBLOCK * LINE_HEIGHT;
-
-            for (code = mmdGetFirstChild(current); code; code = mmdGetNextSibling(code))
-            {
-              frag.text = mmdGetText(code);
-
-              render_line(dd, margin_top, SIZE_CODEBLOCK * LINE_HEIGHT, 1, &frag);
-
-              margin_top = 0.0;
-            }
-          }
+          format_code(dd, current, left + 36.0, right - 36.0);
           break;
     }
   }
