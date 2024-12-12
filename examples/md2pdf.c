@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #ifdef _WIN32
 #  include <io.h>
 #else
@@ -81,11 +82,27 @@ typedef struct docdata_s		// Document formatting data
   char		*heading;		// Current document heading
   pdfio_stream_t *st;			// Current page stream
   double	y;			// Current position on page
+  docfont_t	font;			// Current font
+  double	fsize;			// Current font size
   doccolor_t	color;			// Current color
   pdfio_obj_t	*annots;		// Annotations object (for links)
   size_t	num_links;		// Number of links for this page
   doclink_t	links[DOCLINK_MAX];	// Links for this page
 } docdata_t;
+
+typedef struct linefrag_s		// Line fragment
+{
+  double	x,			// X position of item
+		width,			// Width of item
+		height;			// Height of item
+  size_t	imagenum;		// Image number
+  const char	*text;			// Text string
+  bool		ws;			// Whitespace before text?
+  docfont_t	font;			// Text font
+  doccolor_t	color;			// Text color
+} linefrag_t;
+
+#define LINEFRAG_MAX	200		// Maximum number of fragments on a line
 
 
 //
@@ -229,13 +246,16 @@ add_images(docdata_t *dd,		// I - Document data
 
 
 //
-// 'set_color()' - Set the stroke and fill color.
+// 'set_color()' - Set the stroke and fill color as needed.
 //
 
 static void
 set_color(docdata_t  *dd,		// I - Document data
           doccolor_t color)		// I - Document color
 {
+  if (color == dd->color)
+    return;
+
   switch (color)
   {
     case DOCCOLOR_BLACK :
@@ -261,6 +281,28 @@ set_color(docdata_t  *dd,		// I - Document data
   }
 
   dd->color = color;
+}
+
+
+//
+// 'set_font()' - Set the font typeface and size as needed.
+//
+
+static void
+set_font(docdata_t *dd,			// I - Document data
+         docfont_t font,		// I - Font
+         double    fsize)		// I - Font size
+{
+  if (font == dd->font && fabs(fsize - dd->fsize) < 0.1)
+    return;
+
+  if (font == DOCFONT_MAX)
+    return;
+
+  pdfioContentSetTextFont(dd->st, docfont_names[font], fsize);
+
+  dd->font  = font;
+  dd->fsize = fsize;
 }
 
 
@@ -297,11 +339,15 @@ new_page(docdata_t *dd)			// I - Document data
     pdfioPageDictAddImage(page_dict, temp, dd->images[i].obj);
   }
 
-  dd->st = pdfioFileCreatePage(dd->pdf, page_dict);
+  dd->st    = pdfioFileCreatePage(dd->pdf, page_dict);
+  dd->color = DOCCOLOR_BLACK;
+  dd->font  = DOCFONT_MAX;
+  dd->fsize = 0.0;
+  dd->y     = dd->art_box.y2;
 
   // Add header/footer text
   set_color(dd, DOCCOLOR_GRAY);
-  pdfioContentSetTextFont(dd->st, docfont_names[DOCFONT_REGULAR], SIZE_HEADFOOT);
+  set_font(dd, DOCFONT_REGULAR, SIZE_HEADFOOT);
 
   if (pdfioFileGetNumPages(dd->pdf) > 1 && dd->title)
   {
@@ -358,11 +404,81 @@ new_page(docdata_t *dd)			// I - Document data
     pdfioContentTextShow(dd->st, UNICODE_VALUE, dd->heading);
     pdfioContentTextEnd(dd->st);
   }
+}
 
-  // The rest of the text will be full black...
-  set_color(dd, DOCCOLOR_BLACK);
 
-  dd->y = dd->art_box.y2;
+//
+// 'render_line()' - Render a line of text/graphics.
+//
+
+static void
+render_line(docdata_t  *dd,		// I - Document data
+            double     margin_top,	// I - Top margin
+            double     lineheight,	// I - Height of line
+            size_t     num_frags,	// I - Number of line fragments
+            linefrag_t *frags)		// I - Line fragments
+{
+  size_t	i;			// Looping var
+  linefrag_t	*frag;			// Current line fragment
+  bool		in_text = false;	// Are we in a text block?
+
+
+  if (!dd->st)
+    new_page(dd);
+
+  dd->y -= margin_top + lineheight;
+  if (dd->y < dd->art_box.y1)
+  {
+    new_page(dd);
+
+    dd->y -= lineheight;
+  }
+
+  fprintf(stderr, "num_frags=%u, y=%g\n", (unsigned)num_frags, dd->y);
+
+  for (i = 0, frag = frags; i < num_frags; i ++, frag ++)
+  {
+    if (frag->text)
+    {
+      // Draw text
+      fprintf(stderr, "    text=\"%s\", font=%d, color=%d, x=%g\n", frag->text, frag->font, frag->color, frag->x);
+
+      set_color(dd, frag->color);
+      set_font(dd, frag->font, frag->height);
+
+      if (!in_text)
+      {
+	pdfioContentTextBegin(dd->st);
+	pdfioContentTextMoveTo(dd->st, frag->x, dd->y);
+
+	in_text = true;
+      }
+
+      if (frag->ws)
+	pdfioContentTextShowf(dd->st, UNICODE_VALUE, " %s", frag->text);
+      else
+	pdfioContentTextShow(dd->st, UNICODE_VALUE, frag->text);
+    }
+    else
+    {
+      // Draw image
+      char	imagename[32];		// Current image name
+
+      fprintf(stderr, "    imagenum=%u, x=%g, width=%g, height=%g\n", (unsigned)frag->imagenum, frag->x, frag->width, frag->height);
+
+      if (in_text)
+      {
+	pdfioContentTextEnd(dd->st);
+	in_text = false;
+      }
+
+      snprintf(imagename, sizeof(imagename), "I%u", (unsigned)frag->imagenum);
+      pdfioContentDrawImage(dd->st, imagename, frag->x, dd->y, frag->width, frag->height);
+    }
+  }
+
+  if (in_text)
+    pdfioContentTextEnd(dd->st);
 }
 
 
@@ -373,8 +489,8 @@ new_page(docdata_t *dd)			// I - Document data
 static void
 format_block(docdata_t  *dd,		// I - Document data
              mmd_t      *block,		// I - Block to format
-             docfont_t  fontface,	// I - Default font
-             double     fontsize,	// I - Size of font
+             docfont_t  deffont,	// I - Default font
+             double     fsize,		// I - Size of font
              double     left,		// I - Left margin
              double     right,		// I - Right margin
              const char *leader)	// I - Leader text on the first line
@@ -382,253 +498,165 @@ format_block(docdata_t  *dd,		// I - Document data
   mmd_type_t	blocktype;		// Block type
   mmd_t		*current,		// Current node
 		*next;			// Next node
-  mmd_type_t	curtype;		// Current node type
-  const char	*curtext,		// Current text
-		*cururl;		// Current URL, if any
-  bool		curws;			// Current whitespace
-  pdfio_obj_t	*curimage;		// Current image, if any
-  char		curimagename[32];	// Current image name
-  docfont_t	curface,		// Current font face
-		prevface;		// Previous font face
-  double	x, y;			// Current position
-  double	width,			// Width of current fragment
+  size_t	num_frags;		// Number of line fragments
+  linefrag_t	frags[LINEFRAG_MAX],	// Line fragments
+		*frag;			// Current fragment
+  mmd_type_t	type;			// Current node type
+  const char	*text,			// Current text
+		*url;			// Current URL, if any
+  bool		ws;			// Current whitespace
+  pdfio_obj_t	*image;			// Current image, if any
+  size_t	imagenum;		// Current image number
+  doccolor_t	color = DOCCOLOR_BLACK;	// Current text color
+  docfont_t	font = deffont;		// Current text font
+  double	x,			// Current position
+		width,			// Width of current fragment
+		wswidth,		// Width of whitespace
+		margin_top,		// Top margin
 		height,			// Height of current fragment
-		lwidth,			// Leader width
-		wswidth;		// Width of whitespace
-  doccolor_t	color;			// Color of text
+		lineheight;		// Height of current line
 
 
-  blocktype = mmdGetType(block);
-
-  if (!dd->st)
-    new_page(dd);
-
-  if ((y = dd->y - 2.0 * fontsize * LINE_HEIGHT) < dd->art_box.y1)
-  {
-    new_page(dd);
-    y = dd->y - fontsize;
-  }
+  blocktype  = mmdGetType(block);
+  margin_top = fsize * LINE_HEIGHT;
 
   if (leader)
   {
     // Add leader text on first line...
-    pdfioContentSetTextFont(dd->st, docfont_names[prevface = fontface], fontsize);
+    frags[0].width  = pdfioContentTextMeasure(dd->fonts[deffont], leader, fsize);
+    frags[0].height = fsize;
+    frags[0].x      = left - frags[0].width;
+    frags[0].text   = leader;
+    frags[0].font   = deffont;
+    frags[0].color  = DOCCOLOR_BLACK;
 
-    lwidth = pdfioContentTextMeasure(dd->fonts[fontface], leader, fontsize);
-
-    pdfioContentTextBegin(dd->st);
-    pdfioContentTextMoveTo(dd->st, left - lwidth, y);
-    pdfioContentTextShow(dd->st, UNICODE_VALUE, leader);
+    num_frags  = 1;
+    lineheight = fsize * LINE_HEIGHT;
   }
   else
   {
     // No leader text...
-    prevface = DOCFONT_MAX;
-    lwidth   = 0.0;
+    num_frags  = 0;
+    lineheight = 0.0;
   }
 
+  frag = frags + num_frags;
+
+  // Loop through the block and render lines...
   for (current = mmdGetFirstChild(block), x = left; current; current = next)
   {
     // Get information about the current node...
-    curtype         = mmdGetType(current);
-    curtext         = mmdGetText(current);
-    curimage        = NULL;
-    curimagename[0] = '\0';
-    cururl          = mmdGetURL(current);
-    curws           = mmdGetWhitespace(current);
-    next            = mmd_walk_next(block, current);
+    type     = mmdGetType(current);
+    text     = mmdGetText(current);
+    image    = NULL;
+    imagenum = 0;
+    url      = mmdGetURL(current);
+    ws       = mmdGetWhitespace(current);
+    wswidth  = 0.0;
+    next     = mmd_walk_next(block, current);
 
     // Process the node...
-    if (curtype == MMD_TYPE_IMAGE && cururl)
+    if (type == MMD_TYPE_IMAGE && url)
     {
       // Embed an image
       size_t	i;			// Looping var
 
       for (i = 0; i < dd->num_images; i ++)
       {
-        if (!strcmp(dd->images[i].url, cururl))
+        if (!strcmp(dd->images[i].url, url))
         {
-          curimage = dd->images[i].obj;
-          snprintf(curimagename, sizeof(curimagename), "I%u", (unsigned)i);
+          image    = dd->images[i].obj;
+          imagenum = i;
           break;
         }
       }
 
-      if (!curimage)
+      if (!image)
         continue;
-    }
-    else if (!curtext)
-    {
-      continue;
-    }
 
-    if (curtype == MMD_TYPE_EMPHASIZED_TEXT)
-      curface = DOCFONT_ITALIC;
-    else if (curtype == MMD_TYPE_STRONG_TEXT)
-      curface = DOCFONT_BOLD;
-    else  if (curtype == MMD_TYPE_CODE_TEXT)
-      curface = DOCFONT_MONOSPACE;
-    else
-      curface = fontface;
-
-    if (curtype == MMD_TYPE_CODE_TEXT)
-      color = DOCCOLOR_RED;
-    else if (curtype == MMD_TYPE_LINKED_TEXT)
-      color = DOCCOLOR_BLUE;
-    else
-      color = DOCCOLOR_BLACK;
-
-    if (curimage)
-    {
       // Image - treat as 100dpi
-      width  = 72.0 * pdfioImageGetWidth(curimage) / 100.0;
-      height = 72.0 * pdfioImageGetHeight(curimage) / 100.0;
+      width  = 72.0 * pdfioImageGetWidth(image) / 100.0;
+      height = 72.0 * pdfioImageGetHeight(image) / 100.0;
+      text   = NULL;
 
       if (width > (right - left))
       {
         // Too wide, scale to width...
         width  = right - left;
-        height = width * pdfioImageGetHeight(curimage) / pdfioImageGetWidth(curimage);
+        height = width * pdfioImageGetHeight(image) / pdfioImageGetWidth(image);
       }
       else if (height > (dd->art_box.y2 - dd->art_box.y1))
       {
         // Too tall, scale to height...
         height = dd->art_box.y2 - dd->art_box.y1;
-        width  = height * pdfioImageGetWidth(curimage) / pdfioImageGetHeight(curimage);
+        width  = height * pdfioImageGetWidth(image) / pdfioImageGetHeight(image);
       }
-
-      if (x <= left)
-      {
-        y -= height - fontsize * LINE_HEIGHT;
-
-	if (prevface != DOCFONT_MAX)
-	{
-	  pdfioContentTextEnd(dd->st);
-	  prevface = DOCFONT_MAX;
-	}
-
-	if (y < dd->art_box.y1)
-	{
-	  // New page...
-	  new_page(dd);
-
-	  x = left;
-	  y = dd->y - height;
-	}
-      }
+    }
+    else if (!text)
+    {
+      continue;
     }
     else
     {
       // Text fragment...
-      width  = pdfioContentTextMeasure(dd->fonts[curface], curtext, fontsize);
-      height = fontsize * LINE_HEIGHT;
+      if (type == MMD_TYPE_EMPHASIZED_TEXT)
+	font = DOCFONT_ITALIC;
+      else if (type == MMD_TYPE_STRONG_TEXT)
+	font = DOCFONT_BOLD;
+      else  if (type == MMD_TYPE_CODE_TEXT)
+	font = DOCFONT_MONOSPACE;
+      else
+	font = deffont;
+
+      if (type == MMD_TYPE_CODE_TEXT)
+	color = DOCCOLOR_RED;
+      else if (type == MMD_TYPE_LINKED_TEXT)
+	color = DOCCOLOR_BLUE;
+      else
+	color = DOCCOLOR_BLACK;
+
+      width  = pdfioContentTextMeasure(dd->fonts[font], text, fsize);
+      height = fsize * LINE_HEIGHT;
+
+      if (ws)
+	wswidth = pdfioContentTextMeasure(dd->fonts[font], " ", fsize);
     }
 
-    if (curws)
-      wswidth = pdfioContentTextMeasure(dd->fonts[curface], " ", fontsize);
-    else
+    // See if this node will fit on the current line...
+    if ((num_frags > 0 && (x + width + wswidth) >= right) || num_frags == LINEFRAG_MAX)
+    {
+      // No, render this line and start over...
+      render_line(dd, margin_top, lineheight, num_frags, frags);
+
+      num_frags  = 0;
+      frag       = frags;
+      x          = left;
+      lineheight = 0.0;
+      margin_top = 0.0;
+    }
+
+    // Add the current node to the fragment list
+    if (num_frags == 0)
       wswidth = 0.0;
 
-    if (x > left && (x + width + wswidth) >= right)
-    {
-      // New line...
-      x = left;
-      y -= height;
+    frag->x          = x;
+    frag->width      = width + wswidth;
+    frag->height     = text ? fsize : height;
+    frag->imagenum   = imagenum;
+    frag->text       = text;
+    frag->ws         = ws;
+    frag->font       = font;
+    frag->color      = color;
 
-      if (y < dd->art_box.y1)
-      {
-        // New page...
-	if (prevface != DOCFONT_MAX)
-	{
-	  pdfioContentTextEnd(dd->st);
-	  prevface = DOCFONT_MAX;
-	}
-
-        new_page(dd);
-
-        y = dd->y - height;
-      }
-      else
-      {
-	pdfioContentTextMoveTo(dd->st, lwidth, -fontsize * LINE_HEIGHT);
-	lwidth = 0.0;
-      }
-    }
-
-    fprintf(stderr, "curtext=\"%s\", curimage=\"%s\", x=%g, y=%g, width=%g, height=%g\n", curtext, curimagename, x, y, width, height);
-
-    if (curimage)
-    {
-      // Image
-      if (prevface != DOCFONT_MAX)
-      {
-	pdfioContentTextEnd(dd->st);
-	prevface = DOCFONT_MAX;
-      }
-
-      pdfioContentDrawImage(dd->st, curimagename, x, y, width, height);
-    }
-    else
-    {
-      // Text
-      if (curface != prevface)
-      {
-	if (prevface == DOCFONT_MAX)
-	{
-	  pdfioContentTextBegin(dd->st);
-	  pdfioContentTextMoveTo(dd->st, x, y);
-	}
-
-	pdfioContentSetTextFont(dd->st, docfont_names[prevface = curface], fontsize);
-      }
-
-      if (color != dd->color)
-	set_color(dd, color);
-
-      if (x > left && curws)
-      {
-	pdfioContentTextShowf(dd->st, UNICODE_VALUE, " %s", curtext);
-	x += width + wswidth;
-      }
-      else
-      {
-	pdfioContentTextShow(dd->st, UNICODE_VALUE, curtext);
-	x += width;
-      }
-    }
-
-    if (blocktype == MMD_TYPE_CODE_BLOCK)
-    {
-      // Force a new line...
-      x = left;
-      y -= fontsize * LINE_HEIGHT;
-
-      if (y < dd->art_box.y1)
-      {
-        // New page...
-	if (prevface != DOCFONT_MAX)
-	{
-	  pdfioContentTextEnd(dd->st);
-	  prevface = DOCFONT_MAX;
-	}
-
-        new_page(dd);
-
-        y = dd->y - fontsize * LINE_HEIGHT;
-      }
-      else
-      {
-	pdfioContentTextMoveTo(dd->st, lwidth, -fontsize * LINE_HEIGHT);
-	lwidth = 0.0;
-      }
-    }
+    num_frags ++;
+    frag ++;
+    x += width + wswidth;
+    if (height > lineheight)
+      lineheight = height;
   }
 
-  // End the current text block and save out position on the page...
-  if (prevface != DOCFONT_MAX)
-    pdfioContentTextEnd(dd->st);
-
-  dd->y = y;
+  if (num_frags > 0)
+    render_line(dd, margin_top, lineheight, num_frags, frags);
 }
 
 
@@ -707,7 +735,29 @@ format_doc(docdata_t *dd,		// I - Document data
           break;
 
       case MMD_TYPE_CODE_BLOCK :
-          format_block(dd, current, DOCFONT_MONOSPACE, SIZE_BODY, left + 36.0, right, /*leader*/NULL);
+          {
+            mmd_t	*code;		// Current code block
+            linefrag_t	frag;		// Line fragment
+            double	margin_top;	// Top margin
+
+            frag.x        = left + 36.0;
+            frag.width    = 0.0;
+            frag.height   = SIZE_CODEBLOCK;
+            frag.imagenum = 0;
+            frag.ws       = false;
+            frag.font     = DOCFONT_MONOSPACE;
+            frag.color    = DOCCOLOR_RED;
+            margin_top    = SIZE_CODEBLOCK * LINE_HEIGHT;
+
+            for (code = mmdGetFirstChild(current); code; code = mmdGetNextSibling(code))
+            {
+              frag.text = mmdGetText(code);
+
+              render_line(dd, margin_top, SIZE_CODEBLOCK * LINE_HEIGHT, 1, &frag);
+
+              margin_top = 0.0;
+            }
+          }
           break;
     }
   }
@@ -742,6 +792,8 @@ main(int  argc,				// I - Number of command-line arguments
   mmd_t		*doc;			// Markdown document
   const char	*value;			// Metadata value
 
+
+  setbuf(stderr, NULL);
 
   // Get the markdown file from the command-line...
   if (argc != 2)
