@@ -93,6 +93,7 @@ typedef struct docdata_s		// Document formatting data
 
 typedef struct linefrag_s		// Line fragment
 {
+  mmd_type_t	type;			// Type of fragment
   double	x,			// X position of item
 		width,			// Width of item
 		height;			// Height of item
@@ -443,7 +444,33 @@ render_line(docdata_t  *dd,		// I - Document data
 
   for (i = 0, frag = frags; i < num_frags; i ++, frag ++)
   {
-    if (frag->text)
+    if (frag->type == MMD_TYPE_CHECKBOX)
+    {
+      // Draw checkbox...
+      set_color(dd, frag->color);
+
+      if (in_text)
+      {
+	pdfioContentTextEnd(dd->st);
+	in_text = false;
+      }
+
+      // Add box
+      pdfioContentPathRect(dd->st, frag->x + 1.0, dd->y, frag->width - 3.0, frag->height - 3.0);
+
+      if (frag->text)
+      {
+        // Add check
+        pdfioContentPathMoveTo(dd->st, frag->x + 3.0, dd->y + 2.0);
+        pdfioContentPathLineTo(dd->st, frag->x + frag->width - 4.0, dd->y + frag->height - 5.0);
+
+        pdfioContentPathMoveTo(dd->st, frag->x + 3.0, dd->y + frag->height - 5.0);
+        pdfioContentPathLineTo(dd->st, frag->x + frag->width - 4.0, dd->y + 2.0);
+      }
+
+      pdfioContentStroke(dd->st);
+    }
+    else if (frag->text)
     {
       // Draw text
 //      fprintf(stderr, "    text=\"%s\", font=%d, color=%d, x=%g\n", frag->text, frag->font, frag->color, frag->x);
@@ -560,9 +587,6 @@ format_block(docdata_t  *dd,		// I - Document data
     wswidth  = 0.0;
     next     = mmd_walk_next(block, current);
 
-    if (type == MMD_TYPE_CHECKBOX)
-      text = text ? "[x]" : "[ ]";
-
     // Process the node...
     if (type == MMD_TYPE_IMAGE && url)
     {
@@ -611,6 +635,11 @@ format_block(docdata_t  *dd,		// I - Document data
       margin_top = 0.0;
 
       continue;
+    }
+    else if (type == MMD_TYPE_CHECKBOX)
+    {
+      // Checkbox
+      width = height = fsize;
     }
     else if (!text)
     {
@@ -662,6 +691,7 @@ format_block(docdata_t  *dd,		// I - Document data
       wswidth = 0.0;
     }
 
+    frag->type       = type;
     frag->x          = x;
     frag->width      = width + wswidth;
     frag->height     = text ? fsize : height;
