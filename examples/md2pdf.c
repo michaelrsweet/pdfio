@@ -334,10 +334,7 @@ new_page(docdata_t *dd)			// I - Document data
     pdfioPageDictAddFont(page_dict, docfont_names[fontface], dd->fonts[fontface]);
 
   for (i = 0; i < dd->num_images; i ++)
-  {
-    snprintf(temp, sizeof(temp), "I%u", (unsigned)i);
-    pdfioPageDictAddImage(page_dict, temp, dd->images[i].obj);
-  }
+    pdfioPageDictAddImage(page_dict, pdfioStringCreatef(dd->pdf, "I%u", (unsigned)i), dd->images[i].obj);
 
   dd->st    = pdfioFileCreatePage(dd->pdf, page_dict);
   dd->color = DOCCOLOR_BLACK;
