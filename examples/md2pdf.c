@@ -138,6 +138,10 @@ typedef struct tablerow_s		// Table row
 // Constants...
 //
 
+#define USE_TRUETYPE	1		// Set to 1 to use Roboto TrueType fonts
+
+#if USE_TRUETYPE
+#  define UNICODE_VALUE	true		// `true` for Unicode text, `false` for ISO-8859-1
 static const char * const docfont_filenames[] =
 {
   "Roboto-Regular.ttf",
@@ -145,6 +149,16 @@ static const char * const docfont_filenames[] =
   "Roboto-Italic.ttf",
   "RobotoMono-Regular.ttf"
 };
+#else
+#  define UNICODE_VALUE	false		// `true` for Unicode text, `false` for ISO-8859-1
+static const char * const docfont_filenames[] =
+{
+  "Helvetica",
+  "Helvetica-Bold",
+  "Helvetica-Oblique",
+  "Courier"
+};
+#endif // USE_TRUETYPE
 
 static const char * const docfont_names[] =
 {
@@ -182,8 +196,6 @@ static const char * const docfont_names[] =
 #define PAGE_FOOTER	in2pt(0.5)	// Vertical position of footer
 
 #define TABLE_PADDING	4.5		// Table padding value
-
-#define UNICODE_VALUE	true		// `true` for Unicode text, `false` for ISO-8859-1
 
 
 //
@@ -1333,8 +1345,13 @@ main(int  argc,				// I - Number of command-line arguments
   // Add fonts...
   for (fontface = DOCFONT_REGULAR; fontface < DOCFONT_MAX; fontface ++)
   {
+#if USE_TRUETYPE
     if ((dd.fonts[fontface] = pdfioFileCreateFontObjFromFile(dd.pdf, docfont_filenames[fontface], UNICODE_VALUE)) == NULL)
       return (1);
+#else
+    if ((dd.fonts[fontface] = pdfioFileCreateFontObjFromBase(dd.pdf, docfont_filenames[fontface])) == NULL)
+      return (1);
+#endif // USE_TRUETYPE
   }
 
   // Add images...

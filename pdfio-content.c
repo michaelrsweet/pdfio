@@ -1,7 +1,7 @@
 //
 // Content helper functions for PDFio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -9,6 +9,7 @@
 
 #include "pdfio-private.h"
 #include "pdfio-content.h"
+#include "pdfio-base-font-widths.h"
 #include "ttf.h"
 #include <math.h>
 #ifndef M_PI
@@ -1074,7 +1075,7 @@ pdfioContentTextMeasure(
     const char  *s,			// I - UTF-8 string
     double      size)			// I - Font size/height
 {
-  const char	*subtype;		// Font sub-type
+  const char	*basefont;		// Base font name
   ttf_t		*ttf = (ttf_t *)_pdfioObjGetExtension(font);
 					// TrueType font data
   ttf_rect_t	extents;		// Text extents
@@ -1083,75 +1084,124 @@ pdfioContentTextMeasure(
 		*tempptr;		// Pointer into temporary string
 
 
-  if ((subtype = pdfioObjGetSubtype(font)) == NULL || strcmp(subtype, "Type0"))
+  if (!ttf && (basefont = pdfioDictGetName(pdfioObjGetDict(font), "BaseFont")) != NULL)
   {
-    // Map non-CP1282 characters to '?', everything else as-is...
-    tempptr = temp;
+    // Measure the width using the compiled-in base font tables...
+    const short	*widths;		// Widths
+    int		width = 0;		// Current width
 
-    while (*s && tempptr < (temp + sizeof(temp) - 3))
+    if (strcmp(basefont, "Symbol") && strcmp(basefont, "Zapf-Dingbats"))
     {
-      if ((*s & 0xe0) == 0xc0)
-      {
-	// Two-byte UTF-8
-        ch = ((s[0] & 0x1f) << 6) | (s[1] & 0x3f);
-	s += 2;
-      }
-      else if ((*s & 0xf0) == 0xe0)
-      {
-	// Three-byte UTF-8
-        ch = ((s[0] & 0x0f) << 12) | ((s[1] & 0x3f) << 6) | (s[2] & 0x3f);
-	s += 3;
-      }
-      else if ((*s & 0xf8) == 0xf0)
-      {
-	// Four-byte UTF-8
-        ch = ((s[0] & 0x07) << 18) | ((s[1] & 0x3f) << 12) | ((s[2] & 0x3f) << 6) | (s[3] & 0x3f);
-	s += 4;
-      }
-      else
-      {
-	ch = *s++;
-      }
+      // Map non-CP1282 characters to '?', everything else as-is...
+      tempptr = temp;
 
-      if (ch > 255)
+      while (*s && tempptr < (temp + sizeof(temp) - 3))
       {
-	// Try mapping from Unicode to CP1252...
-	size_t i;			// Looping var
-
-	for (i = 0; i < (sizeof(_pdfio_cp1252) / sizeof(_pdfio_cp1252[0])); i ++)
+	if ((*s & 0xe0) == 0xc0)
 	{
-	  if (ch == _pdfio_cp1252[i])
-	    break;
+	  // Two-byte UTF-8
+	  ch = ((s[0] & 0x1f) << 6) | (s[1] & 0x3f);
+	  s += 2;
+	}
+	else if ((*s & 0xf0) == 0xe0)
+	{
+	  // Three-byte UTF-8
+	  ch = ((s[0] & 0x0f) << 12) | ((s[1] & 0x3f) << 6) | (s[2] & 0x3f);
+	  s += 3;
+	}
+	else if ((*s & 0xf8) == 0xf0)
+	{
+	  // Four-byte UTF-8
+	  ch = ((s[0] & 0x07) << 18) | ((s[1] & 0x3f) << 12) | ((s[2] & 0x3f) << 6) | (s[3] & 0x3f);
+	  s += 4;
+	}
+	else
+	{
+	  ch = *s++;
 	}
 
-	if (i >= (sizeof(_pdfio_cp1252) / sizeof(_pdfio_cp1252[0])))
-	  ch = '?';			// Unsupported chars map to ?
+	if (ch > 255)
+	{
+	  // Try mapping from Unicode to CP1252...
+	  size_t i;			// Looping var
+
+	  for (i = 0; i < (sizeof(_pdfio_cp1252) / sizeof(_pdfio_cp1252[0])); i ++)
+	  {
+	    if (ch == _pdfio_cp1252[i])
+	      break;
+	  }
+
+	  if (i >= (sizeof(_pdfio_cp1252) / sizeof(_pdfio_cp1252[0])))
+	    ch = '?';			// Unsupported chars map to ?
+	}
+
+	if (ch < 128)
+	{
+	  // ASCII
+	  *tempptr++ = (char)ch;
+	}
+	else if (ch < 2048)
+	{
+	  // 2-byte UTF-8
+	  *tempptr++ = (char)(0xc0 | ((ch >> 6) & 0x1f));
+	  *tempptr++ = (char)(0x80 | (ch & 0x3f));
+	}
+	else
+	{
+	  // 3-byte UTF-8
+	  *tempptr++ = (char)(0xe0 | ((ch >> 12) & 0x0f));
+	  *tempptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+	  *tempptr++ = (char)(0x80 | (ch & 0x3f));
+	}
       }
 
-      if (ch < 128)
-      {
-        // ASCII
-	*tempptr++ = (char)ch;
-      }
-      else if (ch < 2048)
-      {
-        // 2-byte UTF-8
-        *tempptr++ = (char)(0xc0 | ((ch >> 6) & 0x1f));
-        *tempptr++ = (char)(0x80 | (ch & 0x3f));
-      }
-      else
-      {
-        // 3-byte UTF-8
-        *tempptr++ = (char)(0xe0 | ((ch >> 12) & 0x0f));
-        *tempptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
-        *tempptr++ = (char)(0x80 | (ch & 0x3f));
-      }
+      *tempptr = '\0';
+      s        = temp;
     }
 
-    *tempptr = '\0';
-    s        = temp;
+    // Choose the appropriate table...
+    if (!strcmp(basefont, "Courier"))
+      widths = courier_widths;
+    else if (!strcmp(basefont, "Courier-Bold"))
+      widths = courier_bold_widths;
+    else if (!strcmp(basefont, "Courier-BoldOblique"))
+      widths = courier_boldoblique_widths;
+    else if (!strcmp(basefont, "Courier-Oblique"))
+      widths = courier_oblique_widths;
+    else if (!strcmp(basefont, "Helvetica"))
+      widths = helvetica_widths;
+    else if (!strcmp(basefont, "Helvetica-Bold"))
+      widths = helvetica_bold_widths;
+    else if (!strcmp(basefont, "Helvetica-BoldOblique"))
+      widths = helvetica_boldoblique_widths;
+    else if (!strcmp(basefont, "Helvetica-Oblique"))
+      widths = helvetica_oblique_widths;
+    else if (!strcmp(basefont, "Symbol"))
+      widths = symbol_widths;
+    else if (!strcmp(basefont, "Times-Bold"))
+      widths = times_bold_widths;
+    else if (!strcmp(basefont, "Times-BoldItalic"))
+      widths = times_bolditalic_widths;
+    else if (!strcmp(basefont, "Times-Italic"))
+      widths = times_italic_widths;
+    else if (!strcmp(basefont, "Times-Roman"))
+      widths = times_roman_widths;
+    else if (!strcmp(basefont, "Zapf-Dingbats"))
+      widths = zapf_dingbats_widths;
+    else
+      return (0.0);
+
+    // Calculate the width using the corresponding table...
+    while (*s)
+    {
+      width += widths[*s & 255];
+      s ++;
+    }
+
+    return (size * 0.001 * width);
   }
 
+  // If we get here then we need to measure using the TrueType library...
   ttfGetExtents(ttf, (float)size, s, &extents);
 
   return (extents.right - extents.left);
@@ -1421,8 +1471,9 @@ pdfioContentTextShowJustified(
 // - "Times-Roman"
 // - "ZapfDingbats"
 //
-// Base fonts always use the Windows CP1252 (ISO-8859-1 with additional
-// characters such as the Euro symbol) subset of Unicode.
+// Aside from "Symbol" and "Zapf-Dingbats", Base fonts use the Windows CP1252
+// (ISO-8859-1 with additional characters such as the Euro symbol) subset of
+// Unicode.
 //
 
 pdfio_obj_t *				// O - Font object

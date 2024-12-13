@@ -10,6 +10,8 @@ v1.4.0 - YYYY-MM-DD
 - Added new `pdfioFileCreateNameObj` and `pdfioObjGetName` APIs for creating and
   getting name object values (Issue #76)
 - Updated documentation (Issue #78)
+- Updated `pdfioContentTextMeasure` to support measuring PDF base fonts created
+  with `pdfioFileCreateFontObjFromBase` (Issue #84)
 - Fixed reading of PDF files whose trailer is missing a newline (Issue #80)
 - Fixed builds with some versions of VC++ (Issue #81)
 
