@@ -106,6 +106,25 @@ typedef struct linefrag_s		// Line fragment
 
 #define LINEFRAG_MAX	200		// Maximum number of fragments on a line
 
+typedef struct tablecol_s		// Table column data
+{
+  double	min_width,		// Minimum required width of column
+		max_width,		// Maximum required width of column
+		width,			// Width of column
+		left,			// Left edge
+		right;			// Right edge
+} tablecol_t;
+
+#define TABLECOL_MAX	20		// Maximum number of table columns
+
+typedef struct tablerow_s		// Table row
+{
+  mmd_t		*cells[TABLECOL_MAX];	// Cells in row
+  double	height;			// Row height
+} tablerow_t;
+
+#define TABLEROW_MAX	1000		// Maximum number of table rows
+
 
 //
 // Macros...
@@ -135,6 +154,8 @@ static const char * const docfont_names[] =
   "FM"
 };
 
+#define IMAGE_PPI	100.0		// Pixels per inch for images
+
 #define LINE_HEIGHT	1.4		// Multiplier for line height
 
 #define SIZE_BODY	11.0		// Size of body text (points)
@@ -159,6 +180,8 @@ static const char * const docfont_names[] =
 #define PAGE_HEADER	(PAGE_LENGTH - in2pt(0.5))
 					// Vertical position of header
 #define PAGE_FOOTER	in2pt(0.5)	// Vertical position of footer
+
+#define TABLE_PADDING	4.5		// Table padding value
 
 #define UNICODE_VALUE	true		// `true` for Unicode text, `false` for ISO-8859-1
 
@@ -222,8 +245,6 @@ add_images(docdata_t *dd,		// I - Document data
       url = mmdGetURL(current);
       ext = strrchr(url, '.');
 
-//      fprintf(stderr, "IMAGE(%s), ext=\"%s\"\n", url, ext);
-
       if (!access(url, 0) && ext && (!strcmp(ext, ".png") || !strcmp(ext, ".jpg") || !strcmp(ext, ".jpeg")))
       {
         // Local JPEG or PNG file, so add it if we haven't already...
@@ -244,6 +265,38 @@ add_images(docdata_t *dd,		// I - Document data
       }
     }
   }
+}
+
+
+//
+// 'find_image()' - Find an image in the document.
+//
+
+static pdfio_obj_t *			// O - Image object or `NULL` if none
+find_image(docdata_t  *dd,		// I - Document data
+           const char *url,		// I - Image URL
+           size_t     *imagenum)	// O - Image number
+{
+  size_t	i;			// Looping var
+
+
+  // Look for a matching URL...
+  for (i = 0; i < dd->num_images; i ++)
+  {
+    if (!strcmp(dd->images[i].url, url))
+    {
+      if (imagenum)
+        *imagenum = i;
+
+      return (dd->images[i].obj);
+    }
+  }
+
+  // Not found, return NULL...
+  if (imagenum)
+    *imagenum = 0;
+
+  return (NULL);
 }
 
 
@@ -419,6 +472,7 @@ new_page(docdata_t *dd)			// I - Document data
 
 static void
 render_line(docdata_t  *dd,		// I - Document data
+            double     margin_left,	// I - Left margin
             double     margin_top,	// I - Top margin
             double     lineheight,	// I - Height of line
             size_t     num_frags,	// I - Number of line fragments
@@ -440,8 +494,6 @@ render_line(docdata_t  *dd,		// I - Document data
     dd->y -= lineheight;
   }
 
-//  fprintf(stderr, "num_frags=%u, y=%g\n", (unsigned)num_frags, dd->y);
-
   for (i = 0, frag = frags; i < num_frags; i ++, frag ++)
   {
     if (frag->type == MMD_TYPE_CHECKBOX)
@@ -456,16 +508,16 @@ render_line(docdata_t  *dd,		// I - Document data
       }
 
       // Add box
-      pdfioContentPathRect(dd->st, frag->x + 1.0, dd->y, frag->width - 3.0, frag->height - 3.0);
+      pdfioContentPathRect(dd->st, frag->x + 1.0 + margin_left, dd->y, frag->width - 3.0, frag->height - 3.0);
 
       if (frag->text)
       {
         // Add check
-        pdfioContentPathMoveTo(dd->st, frag->x + 3.0, dd->y + 2.0);
-        pdfioContentPathLineTo(dd->st, frag->x + frag->width - 4.0, dd->y + frag->height - 5.0);
+        pdfioContentPathMoveTo(dd->st, frag->x + 3.0 + margin_left, dd->y + 2.0);
+        pdfioContentPathLineTo(dd->st, frag->x + frag->width - 4.0 + margin_left, dd->y + frag->height - 5.0);
 
-        pdfioContentPathMoveTo(dd->st, frag->x + 3.0, dd->y + frag->height - 5.0);
-        pdfioContentPathLineTo(dd->st, frag->x + frag->width - 4.0, dd->y + 2.0);
+        pdfioContentPathMoveTo(dd->st, frag->x + 3.0 + margin_left, dd->y + frag->height - 5.0);
+        pdfioContentPathLineTo(dd->st, frag->x + frag->width - 4.0 + margin_left, dd->y + 2.0);
       }
 
       pdfioContentStroke(dd->st);
@@ -473,15 +525,13 @@ render_line(docdata_t  *dd,		// I - Document data
     else if (frag->text)
     {
       // Draw text
-//      fprintf(stderr, "    text=\"%s\", font=%d, color=%d, x=%g\n", frag->text, frag->font, frag->color, frag->x);
-
       set_color(dd, frag->color);
       set_font(dd, frag->font, frag->height);
 
       if (!in_text)
       {
 	pdfioContentTextBegin(dd->st);
-	pdfioContentTextMoveTo(dd->st, frag->x, dd->y);
+	pdfioContentTextMoveTo(dd->st, frag->x + margin_left, dd->y);
 
 	in_text = true;
       }
@@ -496,8 +546,6 @@ render_line(docdata_t  *dd,		// I - Document data
       // Draw image
       char	imagename[32];		// Current image name
 
-//      fprintf(stderr, "    imagenum=%u, x=%g, width=%g, height=%g\n", (unsigned)frag->imagenum, frag->x, frag->width, frag->height);
-
       if (in_text)
       {
 	pdfioContentTextEnd(dd->st);
@@ -505,7 +553,7 @@ render_line(docdata_t  *dd,		// I - Document data
       }
 
       snprintf(imagename, sizeof(imagename), "I%u", (unsigned)frag->imagenum);
-      pdfioContentDrawImage(dd->st, imagename, frag->x, dd->y, frag->width, frag->height);
+      pdfioContentDrawImage(dd->st, imagename, frag->x + margin_left, dd->y, frag->width, frag->height);
     }
   }
 
@@ -544,13 +592,18 @@ format_block(docdata_t  *dd,		// I - Document data
   double	x,			// Current position
 		width,			// Width of current fragment
 		wswidth,		// Width of whitespace
+		margin_left,		// Left margin
 		margin_top,		// Top margin
 		height,			// Height of current fragment
 		lineheight;		// Height of current line
 
 
   blocktype  = mmdGetType(block);
-  margin_top = fsize * LINE_HEIGHT;
+
+  if (blocktype >= MMD_TYPE_TABLE_HEADER_CELL && blocktype <= MMD_TYPE_TABLE_BODY_CELL_RIGHT)
+    margin_top = 0.0;
+  else
+    margin_top = fsize * LINE_HEIGHT;
 
   if (leader)
   {
@@ -591,24 +644,12 @@ format_block(docdata_t  *dd,		// I - Document data
     if (type == MMD_TYPE_IMAGE && url)
     {
       // Embed an image
-      size_t	i;			// Looping var
-
-      for (i = 0; i < dd->num_images; i ++)
-      {
-        if (!strcmp(dd->images[i].url, url))
-        {
-          image    = dd->images[i].obj;
-          imagenum = i;
-          break;
-        }
-      }
-
-      if (!image)
+      if ((image = find_image(dd, url, &imagenum)) == NULL)
         continue;
 
       // Image - treat as 100dpi
-      width  = 72.0 * pdfioImageGetWidth(image) / 100.0;
-      height = 72.0 * pdfioImageGetHeight(image) / 100.0;
+      width  = 72.0 * pdfioImageGetWidth(image) / IMAGE_PPI;
+      height = 72.0 * pdfioImageGetHeight(image) / IMAGE_PPI;
       text   = NULL;
 
       if (width > (right - left))
@@ -626,7 +667,14 @@ format_block(docdata_t  *dd,		// I - Document data
     }
     else if (type == MMD_TYPE_HARD_BREAK && num_frags > 0)
     {
-      render_line(dd, margin_top, lineheight, num_frags, frags);
+      if (blocktype == MMD_TYPE_TABLE_HEADER_CELL || blocktype == MMD_TYPE_TABLE_BODY_CELL_CENTER)
+        margin_left = 0.5 * (right - x);
+      else if (blocktype == MMD_TYPE_TABLE_BODY_CELL_RIGHT)
+        margin_left = right - x;
+      else
+        margin_left = 0.0;
+
+      render_line(dd, margin_left, margin_top, lineheight, num_frags, frags);
 
       num_frags  = 0;
       frag       = frags;
@@ -675,7 +723,14 @@ format_block(docdata_t  *dd,		// I - Document data
     if ((num_frags > 0 && (x + width + wswidth) >= right) || num_frags == LINEFRAG_MAX)
     {
       // No, render this line and start over...
-      render_line(dd, margin_top, lineheight, num_frags, frags);
+      if (blocktype == MMD_TYPE_TABLE_HEADER_CELL || blocktype == MMD_TYPE_TABLE_BODY_CELL_CENTER)
+        margin_left = 0.5 * (right - x);
+      else if (blocktype == MMD_TYPE_TABLE_BODY_CELL_RIGHT)
+        margin_left = right - x;
+      else
+        margin_left = 0.0;
+
+      render_line(dd, margin_left, margin_top, lineheight, num_frags, frags);
 
       num_frags  = 0;
       frag       = frags;
@@ -709,7 +764,16 @@ format_block(docdata_t  *dd,		// I - Document data
   }
 
   if (num_frags > 0)
-    render_line(dd, margin_top, lineheight, num_frags, frags);
+  {
+    if (blocktype == MMD_TYPE_TABLE_HEADER_CELL || blocktype == MMD_TYPE_TABLE_BODY_CELL_CENTER)
+      margin_left = 0.5 * (right - x);
+    else if (blocktype == MMD_TYPE_TABLE_BODY_CELL_RIGHT)
+      margin_left = right - x;
+    else
+      margin_left = 0.0;
+
+    render_line(dd, margin_left, margin_top, lineheight, num_frags, frags);
+  }
 }
 
 
@@ -773,6 +837,329 @@ format_code(docdata_t *dd,		// I - Document data
 
   // End the current text block...
   pdfioContentTextEnd(dd->st);
+}
+
+
+//
+// 'measure_cell()' - Measure the dimensions of a table cell.
+//
+
+static double				// O - Formatted height
+measure_cell(docdata_t  *dd,		// I - Document data
+             mmd_t      *cell,		// I - Cell node
+             tablecol_t *col)		// O - Column data
+{
+  mmd_t		*current,		// Current node
+		*next;			// Next node
+  mmd_type_t	type;			// Node type
+  const char	*text,			// Current text
+		*url;			// Current URL, if any
+  bool		ws;			// Current whitespace
+  docfont_t	font;			// Current font
+  double	x = 0.0,		// Current X position
+		width,			// Width of node
+		wswidth,		// Width of whitespace
+		height,			// Height of node
+		lineheight = 0.0,	// Height of line
+		cellheight = 0.0;	// Height of cell
+
+
+  for (current = mmdGetFirstChild(cell); current; current = next)
+  {
+    next    = mmd_walk_next(cell, current);
+    type    = mmdGetType(current);
+    text    = mmdGetText(current);
+    url     = mmdGetURL(current);
+    ws      = mmdGetWhitespace(current);
+    wswidth = 0.0;
+
+    if (type == MMD_TYPE_IMAGE && url)
+    {
+      // Embed an image
+      pdfio_obj_t *image = find_image(dd, url, /*imagenum*/NULL);
+					// Image object
+
+      if (!image)
+        continue;
+
+      // Image - treat as 100dpi
+      width  = 72.0 * pdfioImageGetWidth(image) / IMAGE_PPI;
+      height = 72.0 * pdfioImageGetHeight(image) / IMAGE_PPI;
+
+      if (col->width > 0.0 && width > col->width)
+      {
+	// Too wide, scale to width...
+	width  = col->width;
+	height = width * pdfioImageGetHeight(image) / pdfioImageGetWidth(image);
+      }
+      else if (height > (dd->art_box.y2 - dd->art_box.y1))
+      {
+	// Too tall, scale to height...
+	height = dd->art_box.y2 - dd->art_box.y1;
+	width  = height * pdfioImageGetWidth(image) / pdfioImageGetHeight(image);
+      }
+    }
+    else if (type == MMD_TYPE_HARD_BREAK && x > 0.0)
+    {
+      // Hard break...
+      if (x > col->max_width)
+        col->max_width = x;
+
+      cellheight += lineheight;
+      x          = 0.0;
+      lineheight = 0.0;
+      continue;
+    }
+    else if (type == MMD_TYPE_CHECKBOX)
+    {
+      // Checkbox...
+      width = height = SIZE_TABLE;
+    }
+    else if (!text)
+    {
+      continue;
+    }
+    else
+    {
+      // Text fragment...
+      if (type == MMD_TYPE_EMPHASIZED_TEXT)
+	font = DOCFONT_ITALIC;
+      else if (type == MMD_TYPE_STRONG_TEXT)
+	font = DOCFONT_BOLD;
+      else  if (type == MMD_TYPE_CODE_TEXT)
+	font = DOCFONT_MONOSPACE;
+      else if (mmdGetType(cell) == MMD_TYPE_TABLE_HEADER_CELL)
+        font = DOCFONT_BOLD;
+      else
+	font = DOCFONT_REGULAR;
+
+      width  = pdfioContentTextMeasure(dd->fonts[font], text, SIZE_TABLE);
+      height = SIZE_TABLE * LINE_HEIGHT;
+
+      if (ws && x > 0.0)
+	wswidth = pdfioContentTextMeasure(dd->fonts[font], " ", SIZE_TABLE);
+    }
+
+    if (width > col->min_width)
+      col->min_width = width;
+
+    // See if this node will fit on the current line
+    if (col->width > 0.0 && (x + width + wswidth) >= col->width)
+    {
+      // No, record the new line...
+      if (x > col->max_width)
+        col->max_width = x;
+
+      cellheight += lineheight;
+      x          = 0.0;
+      lineheight = 0.0;
+      wswidth    = 0.0;
+    }
+
+    x += width + wswidth;
+
+    if (height > lineheight)
+      lineheight = height;
+  }
+
+  // Capture the last line's measurements...
+  if (x > col->max_width)
+    col->max_width = x;
+
+  if (x > 0.0)
+    cellheight += lineheight;
+
+  // Return the total height...
+  return (cellheight);
+}
+
+
+//
+// 'render_row()' - Render a table row...
+//
+
+static void
+render_row(docdata_t  *dd,		// I - Document data
+           size_t     num_cols,		// I - Number of columns
+           tablecol_t *cols,		// I - Column information
+           tablerow_t *row)		// I - Row
+{
+  size_t	col;			// Current column
+  double	row_y;			// Start of row
+  docfont_t	deffont;		// Default font
+
+
+  // Start a new page as needed...
+  if (!dd->st)
+    new_page(dd);
+
+  if ((dd->y - row->height) < dd->art_box.y1)
+    new_page(dd);
+
+  if (mmdGetType(row->cells[0]) == MMD_TYPE_TABLE_HEADER_CELL)
+  {
+    // Header row, no border...
+    deffont = DOCFONT_BOLD;
+  }
+  else
+  {
+    // Regular body row, add borders...
+    deffont = DOCFONT_REGULAR;
+
+    set_color(dd, DOCCOLOR_GRAY);
+    pdfioContentPathRect(dd->st, cols[0].left - TABLE_PADDING, dd->y - row->height, cols[num_cols - 1].right - cols[0].left + 2.0 * TABLE_PADDING, row->height);
+    for (col = 1; col < num_cols; col ++)
+    {
+      pdfioContentPathMoveTo(dd->st, cols[col].left - TABLE_PADDING, dd->y);
+      pdfioContentPathLineTo(dd->st, cols[col].left - TABLE_PADDING, dd->y - row->height);
+    }
+    pdfioContentStroke(dd->st);
+  }
+
+  row_y = dd->y;
+
+  for (col = 0; col < num_cols; col ++)
+  {
+    dd->y = row_y;
+
+    format_block(dd, row->cells[col], deffont, SIZE_TABLE, cols[col].left, cols[col].right, /*leader*/NULL);
+  }
+
+  dd->y = row_y - row->height;
+}
+
+
+//
+// 'format_table()' - Format a table...
+//
+
+static void
+format_table(docdata_t *dd,		// I - Document data
+             mmd_t     *table,		// I - Table node
+             double    left,		// I - Left margin
+             double    right)		// I - Right margin
+{
+  mmd_t		*current,		// Current node
+		*next;			// Next node
+  mmd_type_t	type;			// Node type
+  size_t	col,			// Current column
+		num_cols;		// Number of columns
+  tablecol_t	cols[TABLECOL_MAX];	// Columns
+  size_t	row,			// Current row
+		num_rows;		// Number of rows
+  tablerow_t	rows[TABLEROW_MAX],	// Rows
+		*rowptr;		// Pointer to current row
+  double	x,			// Current X position
+		height,			// Height of cell
+		format_width,		// Maximum format width of table
+		table_width;		// Total width of table
+
+
+  // Find all of the rows and columns in the table...
+  num_cols = num_rows = 0;
+
+  memset(cols, 0, sizeof(cols));
+  memset(rows, 0, sizeof(rows));
+
+  rowptr = rows;
+
+  for (current = mmdGetFirstChild(table); current && num_rows < TABLEROW_MAX; current = next)
+  {
+    next = mmd_walk_next(table, current);
+    type = mmdGetType(current);
+
+    if (type == MMD_TYPE_TABLE_ROW)
+    {
+      // Parse row...
+      for (col = 0, current = mmdGetFirstChild(current); current && num_cols < TABLECOL_MAX; current = mmdGetNextSibling(current), col ++)
+      {
+        rowptr->cells[col] = current;
+
+        measure_cell(dd, current, cols + col);
+
+        if (col >= num_cols)
+          num_cols = col + 1;
+      }
+
+      rowptr ++;
+      num_rows ++;
+    }
+  }
+
+  // Figure out the width of each column...
+  for (col = 0, table_width = 0.0; col < num_cols; col ++)
+  {
+    cols[col].max_width += 2.0 * TABLE_PADDING;
+
+    table_width += cols[col].max_width;
+    cols[col].width = cols[col].max_width;
+  }
+
+  format_width = right - left - 2.0 * TABLE_PADDING * num_cols;
+
+  if (table_width > format_width)
+  {
+    // Content too wide, try scaling the widths...
+    double	avg_width,		// Average column width
+		base_width,		// Base width
+		remaining_width,	// Remaining width
+		scale_width;		// Width for scaling
+    size_t	num_remaining_cols = 0;	// Number of remaining columns
+
+    // First mark any columns that are narrower than the average width...
+    avg_width = format_width / num_cols;
+
+    for (col = 0, base_width = 0.0, remaining_width = 0.0; col < num_cols; col ++)
+    {
+      if (cols[col].width > avg_width)
+      {
+        remaining_width += cols[col].width;
+        num_remaining_cols ++;
+      }
+      else
+      {
+        base_width += cols[col].width;
+      }
+    }
+
+    // Then proportionately distribute the remaining width to the other columns...
+    format_width -= base_width;
+
+    for (col = 0, table_width = 0.0; col < num_cols; col ++)
+    {
+      if (cols[col].width > avg_width)
+        cols[col].width = cols[col].width * format_width / remaining_width;
+
+      table_width += cols[col].width;
+    }
+  }
+
+  // Calculate the margins of each column in preparation for formatting
+  for (col = 0, x = left + TABLE_PADDING; col < num_cols; col ++)
+  {
+    cols[col].left  = x;
+    cols[col].right = x + cols[col].width;
+
+    x += cols[col].width + 2.0 * TABLE_PADDING;
+  }
+
+  // Calculate the height of each row and cell in preparation for formatting
+  for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
+  {
+    for (col = 0; col < num_cols; col ++)
+    {
+      height = measure_cell(dd, rowptr->cells[col], cols + col) + 2.0 * TABLE_PADDING;
+      if (height > rowptr->height)
+        rowptr->height = height;
+    }
+  }
+
+  // Render each table row...
+  if (dd->st)
+    dd->y -= SIZE_TABLE * LINE_HEIGHT;
+
+  for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
+    render_row(dd, num_cols, cols, rowptr);
 }
 
 
@@ -848,6 +1235,10 @@ format_doc(docdata_t *dd,		// I - Document data
 
       case MMD_TYPE_PARAGRAPH :
           format_block(dd, current, DOCFONT_REGULAR, SIZE_BODY, left, right, /*leader*/NULL);
+          break;
+
+      case MMD_TYPE_TABLE :
+          format_table(dd, current, left, right);
           break;
 
       case MMD_TYPE_CODE_BLOCK :
