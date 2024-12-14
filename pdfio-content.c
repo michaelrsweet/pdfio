@@ -1131,28 +1131,13 @@ pdfioContentTextMeasure(
 	      break;
 	  }
 
-	  if (i >= (sizeof(_pdfio_cp1252) / sizeof(_pdfio_cp1252[0])))
+	  if (i < (sizeof(_pdfio_cp1252) / sizeof(_pdfio_cp1252[0])))
+	    ch = i + 0x80;		// Extra characters from 0x80 to 0x9f
+	  else
 	    ch = '?';			// Unsupported chars map to ?
 	}
 
-	if (ch < 128)
-	{
-	  // ASCII
-	  *tempptr++ = (char)ch;
-	}
-	else if (ch < 2048)
-	{
-	  // 2-byte UTF-8
-	  *tempptr++ = (char)(0xc0 | ((ch >> 6) & 0x1f));
-	  *tempptr++ = (char)(0x80 | (ch & 0x3f));
-	}
-	else
-	{
-	  // 3-byte UTF-8
-	  *tempptr++ = (char)(0xe0 | ((ch >> 12) & 0x0f));
-	  *tempptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
-	  *tempptr++ = (char)(0x80 | (ch & 0x3f));
-	}
+	*tempptr++ = (char)ch;
       }
 
       *tempptr = '\0';

@@ -138,7 +138,7 @@ typedef struct tablerow_s		// Table row
 // Constants...
 //
 
-#define USE_TRUETYPE	1		// Set to 1 to use Roboto TrueType fonts
+#define USE_TRUETYPE	0		// Set to 1 to use Roboto TrueType fonts
 
 #if USE_TRUETYPE
 #  define UNICODE_VALUE	true		// `true` for Unicode text, `false` for ISO-8859-1
