@@ -780,7 +780,7 @@ format_code(docdata_t *dd,		// I - Document data
 
   lineheight = SIZE_CODEBLOCK * LINE_HEIGHT;
   dd->y      -= 2.0 * lineheight;
-  if (dd->y < dd->art_box.y1)
+  if ((dd->y - lineheight) < dd->art_box.y1)
   {
     new_page(dd);
 
@@ -1397,7 +1397,7 @@ render_line(docdata_t  *dd,		// I - Document data
   }
 
   dd->y -= margin_top + lineheight;
-  if (dd->y < dd->art_box.y1)
+  if ((dd->y - (margin_top > 0.0 ? lineheight : 0.0)) < dd->art_box.y1)
   {
     new_page(dd);
 

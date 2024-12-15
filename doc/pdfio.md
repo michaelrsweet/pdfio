@@ -763,6 +763,9 @@ pdfio_obj_t *img =
                                     /*interpolate*/true);
 ```
 
+> Note: Currently `pdfioFileCreateImageObjFromFile` does not support 12 bit JPEG
+> files or PNG files with an alpha channel.
+
 
 ### Page Dictionary Functions
 
