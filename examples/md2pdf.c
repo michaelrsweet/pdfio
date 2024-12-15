@@ -231,7 +231,7 @@ static void	add_links(docdata_t *dd);
 static pdfio_obj_t *find_image(docdata_t  *dd, const char *url, size_t *imagenum);
 static void	format_block(docdata_t *dd, mmd_t *block, docfont_t deffont, double fsize, double left, double right, const char *leader);
 static void	format_code(docdata_t *dd, mmd_t *block, double left, double right);
-static void	format_doc(docdata_t *dd, mmd_t *doc, double left, double right);
+static void	format_doc(docdata_t *dd, mmd_t *doc, docfont_t deffont, double left, double right);
 static void	format_table(docdata_t *dd, mmd_t *table, double left, double right);
 static void	make_target_name(char *dst, const char *src, size_t dstsize);
 static double	measure_cell(docdata_t *dd, mmd_t *cell, tablecol_t *col);
@@ -327,7 +327,7 @@ main(int  argc,				// I - Number of command-line arguments
   add_images(&dd, doc);
 
   // Parse the markdown document...
-  format_doc(&dd, doc, dd.art_box.x1, dd.art_box.x2);
+  format_doc(&dd, doc, DOCFONT_REGULAR, dd.art_box.x1, dd.art_box.x2);
 
   // Close the PDF and return...
   if (dd.st)
@@ -622,6 +622,15 @@ format_block(docdata_t  *dd,		// I - Document data
 
       render_line(dd, margin_left, margin_top, lineheight, num_frags, frags);
 
+      if (deffont == DOCFONT_ITALIC)
+      {
+        // Add a gray bar to the left of block quotes...
+        set_color(dd, DOCCOLOR_GREEN);
+        pdfioContentPathMoveTo(dd->st, left - 6.0, dd->y - (LINE_HEIGHT - 1.0) * fsize);
+        pdfioContentPathLineTo(dd->st, left - 6.0, dd->y + fsize);
+        pdfioContentStroke(dd->st);
+      }
+
       num_frags  = 0;
       frag       = frags;
       x          = left;
@@ -678,6 +687,15 @@ format_block(docdata_t  *dd,		// I - Document data
 
       render_line(dd, margin_left, margin_top, lineheight, num_frags, frags);
 
+      if (deffont == DOCFONT_ITALIC)
+      {
+        // Add a gray bar to the left of block quotes...
+        set_color(dd, DOCCOLOR_GREEN);
+        pdfioContentPathMoveTo(dd->st, left - 6.0, dd->y - (LINE_HEIGHT - 1.0) * fsize);
+        pdfioContentPathLineTo(dd->st, left - 6.0, dd->y + fsize);
+        pdfioContentStroke(dd->st);
+      }
+
       num_frags  = 0;
       frag       = frags;
       x          = left;
@@ -720,6 +738,15 @@ format_block(docdata_t  *dd,		// I - Document data
       margin_left = 0.0;
 
     render_line(dd, margin_left, margin_top, lineheight, num_frags, frags);
+
+    if (deffont == DOCFONT_ITALIC)
+    {
+      // Add a gray bar to the left of block quotes...
+      set_color(dd, DOCCOLOR_GREEN);
+      pdfioContentPathMoveTo(dd->st, left - 6.0, dd->y - (LINE_HEIGHT - 1.0) * fsize);
+      pdfioContentPathLineTo(dd->st, left - 6.0, dd->y + fsize);
+      pdfioContentStroke(dd->st);
+    }
   }
 }
 
@@ -794,6 +821,7 @@ format_code(docdata_t *dd,		// I - Document data
 static void
 format_doc(docdata_t *dd,		// I - Document data
            mmd_t     *doc,		// I - Document node to format
+           docfont_t deffont,		// I - Default font
            double    left,		// I - Left margin
            double    right)		// I - Right margin
 {
@@ -823,7 +851,7 @@ format_doc(docdata_t *dd,		// I - Document data
           break;
 
       case MMD_TYPE_BLOCK_QUOTE :
-          format_doc(dd, current, left + 36.0, right - 36.0);
+          format_doc(dd, current, DOCFONT_ITALIC, left + 36.0, right - 36.0);
           break;
 
       case MMD_TYPE_ORDERED_LIST :
@@ -831,18 +859,18 @@ format_doc(docdata_t *dd,		// I - Document data
           if (dd->st)
             dd->y -= SIZE_BODY * LINE_HEIGHT;
 
-          format_doc(dd, current, left + 36.0, right);
+          format_doc(dd, current, deffont, left + 36.0, right);
           break;
 
       case MMD_TYPE_LIST_ITEM :
           if (doctype == MMD_TYPE_ORDERED_LIST)
           {
             snprintf(leader, sizeof(leader), "%d. ", i);
-            format_block(dd, current, DOCFONT_REGULAR, SIZE_BODY, left, right, leader);
+            format_block(dd, current, deffont, SIZE_BODY, left, right, leader);
           }
           else
           {
-            format_block(dd, current, DOCFONT_REGULAR, SIZE_BODY, left, right, /*leader*/"• ");
+            format_block(dd, current, deffont, SIZE_BODY, left, right, /*leader*/"• ");
           }
           break;
 
@@ -873,7 +901,7 @@ format_doc(docdata_t *dd,		// I - Document data
           break;
 
       case MMD_TYPE_PARAGRAPH :
-          format_block(dd, current, DOCFONT_REGULAR, SIZE_BODY, left, right, /*leader*/NULL);
+          format_block(dd, current, deffont, SIZE_BODY, left, right, /*leader*/NULL);
           break;
 
       case MMD_TYPE_TABLE :
