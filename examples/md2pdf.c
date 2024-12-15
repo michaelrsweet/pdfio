@@ -86,7 +86,8 @@ typedef struct docdata_s		// Document formatting data
   docfont_t	font;			// Current font
   double	fsize;			// Current font size
   doccolor_t	color;			// Current color
-  pdfio_obj_t	*annots;		// Annotations object (for links)
+  pdfio_array_t	*annots_array;		// Annotations array (for links)
+  pdfio_obj_t	*annots_obj;		// Annotations object (for links)
   size_t	num_links;		// Number of links for this page
   doclink_t	links[DOCLINK_MAX];	// Links for this page
 } docdata_t;
@@ -99,6 +100,7 @@ typedef struct linefrag_s		// Line fragment
 		height;			// Height of item
   size_t	imagenum;		// Image number
   const char	*text;			// Text string
+  const char	*url;			// Link URL string
   bool		ws;			// Whitespace before text?
   docfont_t	font;			// Text font
   doccolor_t	color;			// Text color
@@ -203,6 +205,7 @@ static const char * const docfont_names[] =
 //
 
 static void	add_images(docdata_t *dd, mmd_t *doc);
+static void	add_links(docdata_t *dd);
 static pdfio_obj_t *find_image(docdata_t  *dd, const char *url, size_t *imagenum);
 static void	format_block(docdata_t *dd, mmd_t *block, docfont_t deffont, double fsize, double left, double right, const char *leader);
 static void	format_code(docdata_t *dd, mmd_t *block, double left, double right);
@@ -303,7 +306,11 @@ main(int  argc,				// I - Number of command-line arguments
   format_doc(&dd, doc, dd.art_box.x1, dd.art_box.x2);
 
   // Close the PDF and return...
-  pdfioStreamClose(dd.st);
+  if (dd.st)
+  {
+    pdfioStreamClose(dd.st);
+    add_links(&dd);
+  }
   pdfioFileClose(dd.pdf);
 
   mmdFree(doc);
@@ -391,6 +398,59 @@ find_image(docdata_t  *dd,		// I - Document data
     *imagenum = 0;
 
   return (NULL);
+}
+
+
+//
+// 'add_links()' - Add the page links, if any.
+//
+
+static void
+add_links(docdata_t *dd)		// I - Document data
+{
+  size_t	i;			// Looping var
+  doclink_t	*l;			// Current link
+  pdfio_dict_t	*dict;			// Object dictionary
+  pdfio_obj_t	*aobj,			// Annotation object
+		*lobj;			// Link object
+  pdfio_array_t	*border;		// Border values
+
+
+  // Add any links we have...
+  for (i = 0, l = dd->links; i < dd->num_links; i ++, l ++)
+  {
+    // Create the link action (remote URL)
+    dict = pdfioDictCreate(dd->pdf);
+    pdfioDictSetName(dict, "S", "URI");
+    pdfioDictSetString(dict, "URI", pdfioStringCreate(dd->pdf, l->url));
+
+    aobj = pdfioFileCreateObj(dd->pdf, dict);
+    pdfioObjClose(aobj);
+
+    // Create the annotation object pointing to the action...
+    dict = pdfioDictCreate(dd->pdf);
+    pdfioDictSetName(dict, "Subtype", "Link");
+    pdfioDictSetRect(dict, "Rect", &l->box);
+    border = pdfioArrayCreate(dd->pdf);
+    pdfioArrayAppendNumber(border, 0.0);
+    pdfioArrayAppendNumber(border, 0.0);
+    pdfioArrayAppendNumber(border, 0.0);
+    pdfioDictSetArray(dict, "Border", border);
+    pdfioDictSetObj(dict, "A", aobj);
+
+    lobj = pdfioFileCreateObj(dd->pdf, dict);
+    pdfioObjClose(lobj);
+
+    pdfioArrayAppendObj(dd->annots_array, lobj);
+  }
+
+  // Close the Annots array object...
+  pdfioObjClose(dd->annots_obj);
+
+  // Reset links...
+  dd->annots_array = NULL;
+  dd->annots_obj   = NULL;
+  dd->num_links    = 0;
 }
 
 
@@ -584,6 +644,7 @@ format_block(docdata_t  *dd,		// I - Document data
     frag->height     = text ? fsize : height;
     frag->imagenum   = imagenum;
     frag->text       = text;
+    frag->url        = url;
     frag->ws         = ws;
     frag->font       = font;
     frag->color      = color;
@@ -1076,14 +1137,22 @@ new_page(docdata_t *dd)			// I - Document data
 
 
   // Close the current page...
-  pdfioStreamClose(dd->st);
+  if (dd->st)
+  {
+    pdfioStreamClose(dd->st);
+    add_links(dd);
+  }
 
   // Prep the new page...
   page_dict = pdfioDictCreate(dd->pdf);
+  dd->annots_array = pdfioArrayCreate(dd->pdf);
+  dd->annots_obj   = pdfioFileCreateArrayObj(dd->pdf, dd->annots_array);
 
   pdfioDictSetRect(page_dict, "MediaBox", &dd->media_box);
 //  pdfioDictSetRect(page_dict, "CropBox", &dd->crop_box);
   pdfioDictSetRect(page_dict, "ArtBox", &dd->art_box);
+
+  pdfioDictSetObj(page_dict, "Annots", dd->annots_obj);
 
   for (fontface = DOCFONT_REGULAR; fontface < DOCFONT_MAX; fontface ++)
     pdfioPageDictAddFont(page_dict, docfont_names[fontface], dd->fonts[fontface]);
@@ -1248,6 +1317,20 @@ render_line(docdata_t  *dd,		// I - Document data
 	pdfioContentTextShowf(dd->st, UNICODE_VALUE, " %s", frag->text);
       else
 	pdfioContentTextShow(dd->st, UNICODE_VALUE, frag->text);
+
+      if (frag->type == MMD_TYPE_LINKED_TEXT && frag->url && dd->num_links < DOCLINK_MAX && (!strncmp(frag->url, "http://", 7) || !strncmp(frag->url, "https://", 8)))
+      {
+        doclink_t *l = dd->links + dd->num_links;
+					// Pointer to this link record
+
+        l->url = frag->url;
+        l->box.x1 = frag->x;
+        l->box.y1 = dd->y;
+        l->box.x2 = frag->x + frag->width;
+        l->box.y2 = dd->y + frag->height;
+
+        dd->num_links ++;
+      }
     }
     else
     {

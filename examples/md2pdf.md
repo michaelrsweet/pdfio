@@ -19,9 +19,9 @@ Source Files
 ------------
 
 The `md2pdf` program is organized into three source files: `md2pdf.c` which
-contains the code to format the markdown content and `mmd.h` and `mmd.c` which
-load the markdown content, which come from the [Miniature Markdown Library][MMD]
-project which is provided under the terms of the Apache License v2.0.
-![Apache License v2.0](apache-badge.png)
+contains the code to format the markdown content and `mmd.h` and `mmd.c` (from
+the [Miniature Markdown Library][MMD] project) which load the markdown content.
 
 [MMD]: https://www.msweet.org/mmd/
+
+
