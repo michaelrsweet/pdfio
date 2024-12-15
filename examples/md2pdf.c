@@ -759,7 +759,7 @@ format_code(docdata_t *dd,		// I - Document data
   for (code = mmdGetFirstChild(block); code; code = mmdGetNextSibling(code))
   {
     set_color(dd, DOCCOLOR_LTGRAY);
-    pdfioContentPathRect(dd->st, left - 3.0, dd->y - (LINE_HEIGHT - 1.0) * SIZE_CODEBLOCK, right - left + 3.0, lineheight);
+    pdfioContentPathRect(dd->st, left - 3.0, dd->y - (LINE_HEIGHT - 1.0) * SIZE_CODEBLOCK, right - left + 6.0, lineheight);
     pdfioContentFillAndStroke(dd->st, false);
 
     set_color(dd, DOCCOLOR_RED);
@@ -1414,7 +1414,7 @@ render_line(docdata_t  *dd,		// I - Document data
       else
 	pdfioContentTextShow(dd->st, UNICODE_VALUE, frag->text);
 
-      if (frag->type == MMD_TYPE_LINKED_TEXT && frag->url && dd->num_links < DOCLINK_MAX)
+      if (frag->url && dd->num_links < DOCLINK_MAX)
       {
         doclink_t *l = dd->links + dd->num_links;
 					// Pointer to this link record
