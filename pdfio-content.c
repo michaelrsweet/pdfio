@@ -1171,8 +1171,8 @@ pdfioContentTextMeasure(
       widths = times_italic_widths;
     else if (!strcmp(basefont, "Times-Roman"))
       widths = times_roman_widths;
-    else if (!strcmp(basefont, "Zapf-Dingbats"))
-      widths = zapf_dingbats_widths;
+    else if (!strcmp(basefont, "ZapfDingbats"))
+      widths = zapfdingbats_widths;
     else
       return (0.0);
 

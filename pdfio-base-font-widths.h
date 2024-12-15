@@ -284,7 +284,7 @@ static short times_roman_widths[256] =
 };
 
 
-static short zapf_dingbats_widths[256] =
+static short zapfdingbats_widths[256] =
 {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
