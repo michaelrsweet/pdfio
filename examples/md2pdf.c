@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <math.h>
 #ifdef _WIN32
 #  include <io.h>
@@ -64,11 +65,28 @@ typedef struct docimage_s		// Document image info
 
 typedef struct doclink_s		// Document link info
 {
-  const char	*url;			// Reference URL
+  const char	*url;			// Target URL
   pdfio_rect_t	box;			// Link box
 } doclink_t;
 
-#define DOCLINK_MAX	1000		// Maximum number of links/page
+#define DOCLINK_MAX	1000		// Maximum number of links per page
+
+typedef struct docaction_s		// Document action info
+{
+  const char	*target;		// Target name
+  pdfio_obj_t	*obj;			// Link object
+} docaction_t;
+
+#define DOCACTION_MAX	10000		// Maximum number of actions per document
+
+typedef struct doctarget_s		// Document target info
+{
+  char		name[128];		// Target name
+  size_t	page;			// Target page
+  double	y;			// Target page position
+} doctarget_t;
+
+#define DOCTARGET_MAX	1000		// Maximum number of targets per document
 
 typedef struct docdata_s		// Document formatting data
 {
@@ -90,6 +108,10 @@ typedef struct docdata_s		// Document formatting data
   pdfio_obj_t	*annots_obj;		// Annotations object (for links)
   size_t	num_links;		// Number of links for this page
   doclink_t	links[DOCLINK_MAX];	// Links for this page
+  size_t	num_actions;		// Number of actions for this document
+  docaction_t	actions[DOCACTION_MAX];	// Actions for this document
+  size_t	num_targets;		// Number of targets for this document
+  doctarget_t	targets[DOCTARGET_MAX];	// Targets for this document
 } docdata_t;
 
 typedef struct linefrag_s		// Line fragment
@@ -211,6 +233,7 @@ static void	format_block(docdata_t *dd, mmd_t *block, docfont_t deffont, double 
 static void	format_code(docdata_t *dd, mmd_t *block, double left, double right);
 static void	format_doc(docdata_t *dd, mmd_t *doc, double left, double right);
 static void	format_table(docdata_t *dd, mmd_t *table, double left, double right);
+static void	make_target_name(char *dst, const char *src, size_t dstsize);
 static double	measure_cell(docdata_t *dd, mmd_t *cell, tablecol_t *col);
 static mmd_t	*mmd_walk_next(mmd_t *top, mmd_t *node);
 static void	new_page(docdata_t *dd);
@@ -219,6 +242,7 @@ static void	render_line(docdata_t *dd, double margin_left, double margin_top, do
 static void	render_row(docdata_t *dd, size_t num_cols, tablecol_t *cols, tablerow_t *row);
 static void	set_color(docdata_t *dd, doccolor_t color);
 static void	set_font(docdata_t *dd, docfont_t font, double fsize);
+static void	write_actions(docdata_t *dd);
 
 
 //
@@ -311,6 +335,7 @@ main(int  argc,				// I - Number of command-line arguments
     pdfioStreamClose(dd.st);
     add_links(&dd);
   }
+  write_actions(&dd);
   pdfioFileClose(dd.pdf);
 
   mmdFree(doc);
@@ -370,6 +395,88 @@ add_images(docdata_t *dd,		// I - Document data
 
 
 //
+// 'add_links()' - Add the page links, if any.
+//
+
+static void
+add_links(docdata_t *dd)		// I - Document data
+{
+  size_t	i;			// Looping var
+  doclink_t	*l;			// Current link
+  pdfio_dict_t	*dict;			// Object dictionary
+  pdfio_obj_t	*aobj,			// Annotation object
+		*lobj;			// Link object
+  pdfio_array_t	*border;		// Border values
+
+
+  // Add any links we have...
+  for (i = 0, l = dd->links; i < dd->num_links; i ++, l ++)
+  {
+    if (l->url[0] == '#')
+    {
+      // No remote action...
+      aobj = NULL;
+    }
+    else
+    {
+      // Create the link action (remote URL)
+      dict = pdfioDictCreate(dd->pdf);
+      pdfioDictSetName(dict, "S", "URI");
+      pdfioDictSetString(dict, "URI", pdfioStringCreate(dd->pdf, l->url));
+
+      aobj = pdfioFileCreateObj(dd->pdf, dict);
+      pdfioObjClose(aobj);
+    }
+
+    // Create the annotation object pointing to the action...
+    dict = pdfioDictCreate(dd->pdf);
+    pdfioDictSetName(dict, "Subtype", "Link");
+    pdfioDictSetRect(dict, "Rect", &l->box);
+    border = pdfioArrayCreate(dd->pdf);
+    pdfioArrayAppendNumber(border, 0.0);
+    pdfioArrayAppendNumber(border, 0.0);
+    pdfioArrayAppendNumber(border, 0.0);
+    pdfioDictSetArray(dict, "Border", border);
+
+    lobj = pdfioFileCreateObj(dd->pdf, dict);
+
+    if (l->url[0] == '#' && dd->num_actions < DOCACTION_MAX)
+    {
+      // Save this link action for later...
+      docaction_t *a = dd->actions + dd->num_actions;
+					// New action
+
+      a->target = l->url + 1;
+      a->obj    = lobj;
+
+      dd->num_actions ++;
+    }
+    else if (aobj)
+    {
+      // Close out this link since we have a remote URL...
+      pdfioDictSetObj(dict, "A", aobj);
+      pdfioObjClose(lobj);
+    }
+    else
+    {
+      // Nothing that can be done for this one...
+      pdfioObjClose(lobj);
+    }
+
+    pdfioArrayAppendObj(dd->annots_array, lobj);
+  }
+
+  // Close the Annots array object...
+  pdfioObjClose(dd->annots_obj);
+
+  // Reset links...
+  dd->annots_array = NULL;
+  dd->annots_obj   = NULL;
+  dd->num_links    = 0;
+}
+
+
+//
 // 'find_image()' - Find an image in the document.
 //
 
@@ -398,59 +505,6 @@ find_image(docdata_t  *dd,		// I - Document data
     *imagenum = 0;
 
   return (NULL);
-}
-
-
-//
-// 'add_links()' - Add the page links, if any.
-//
-
-static void
-add_links(docdata_t *dd)		// I - Document data
-{
-  size_t	i;			// Looping var
-  doclink_t	*l;			// Current link
-  pdfio_dict_t	*dict;			// Object dictionary
-  pdfio_obj_t	*aobj,			// Annotation object
-		*lobj;			// Link object
-  pdfio_array_t	*border;		// Border values
-
-
-  // Add any links we have...
-  for (i = 0, l = dd->links; i < dd->num_links; i ++, l ++)
-  {
-    // Create the link action (remote URL)
-    dict = pdfioDictCreate(dd->pdf);
-    pdfioDictSetName(dict, "S", "URI");
-    pdfioDictSetString(dict, "URI", pdfioStringCreate(dd->pdf, l->url));
-
-    aobj = pdfioFileCreateObj(dd->pdf, dict);
-    pdfioObjClose(aobj);
-
-    // Create the annotation object pointing to the action...
-    dict = pdfioDictCreate(dd->pdf);
-    pdfioDictSetName(dict, "Subtype", "Link");
-    pdfioDictSetRect(dict, "Rect", &l->box);
-    border = pdfioArrayCreate(dd->pdf);
-    pdfioArrayAppendNumber(border, 0.0);
-    pdfioArrayAppendNumber(border, 0.0);
-    pdfioArrayAppendNumber(border, 0.0);
-    pdfioDictSetArray(dict, "Border", border);
-    pdfioDictSetObj(dict, "A", aobj);
-
-    lobj = pdfioFileCreateObj(dd->pdf, dict);
-    pdfioObjClose(lobj);
-
-    pdfioArrayAppendObj(dd->annots_array, lobj);
-  }
-
-  // Close the Annots array object...
-  pdfioObjClose(dd->annots_obj);
-
-  // Reset links...
-  dd->annots_array = NULL;
-  dd->annots_obj   = NULL;
-  dd->num_links    = 0;
 }
 
 
@@ -804,6 +858,18 @@ format_doc(docdata_t *dd,		// I - Document data
           dd->heading = mmdCopyAllText(current);
 
           format_block(dd, current, DOCFONT_BOLD, heading_sizes[curtype - MMD_TYPE_HEADING_1], left, right, /*leader*/NULL);
+
+          if (dd->num_targets < DOCTARGET_MAX)
+          {
+            doctarget_t *t = dd->targets + dd->num_targets;
+					// New target
+
+            make_target_name(t->name, dd->heading, sizeof(t->name));
+            t->page = pdfioFileGetNumPages(dd->pdf) - 1;
+            t->y    = dd->y + heading_sizes[curtype - MMD_TYPE_HEADING_1] * LINE_HEIGHT;
+
+            dd->num_targets ++;
+          }
           break;
 
       case MMD_TYPE_PARAGRAPH :
@@ -953,6 +1019,33 @@ format_table(docdata_t *dd,		// I - Document data
 
   for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
     render_row(dd, num_cols, cols, rowptr);
+}
+
+
+//
+// 'make_target_name()' - Convert text to a target name.
+//
+
+static void
+make_target_name(char       *dst,	// I - Destination buffer
+                 const char *src,	// I - Source text
+                 size_t     dstsize)	// I - Size of destination buffer
+{
+  char	*dstptr = dst,			// Pointer into destination
+	*dstend = dst + dstsize - 1;	// End of destination
+
+
+  while (*src && dstptr < dstend)
+  {
+    if (isalnum(*src) || *src == '.' || *src == '-')
+      *dstptr++ = tolower(*src);
+    else if (*src == ' ')
+      *dstptr++ = '-';
+
+    src ++;
+  }
+
+  *dstptr = '\0';
 }
 
 
@@ -1261,7 +1354,10 @@ render_line(docdata_t  *dd,		// I - Document data
 
 
   if (!dd->st)
+  {
     new_page(dd);
+    margin_top = 0.0;
+  }
 
   dd->y -= margin_top + lineheight;
   if (dd->y < dd->art_box.y1)
@@ -1318,12 +1414,32 @@ render_line(docdata_t  *dd,		// I - Document data
       else
 	pdfioContentTextShow(dd->st, UNICODE_VALUE, frag->text);
 
-      if (frag->type == MMD_TYPE_LINKED_TEXT && frag->url && dd->num_links < DOCLINK_MAX && (!strncmp(frag->url, "http://", 7) || !strncmp(frag->url, "https://", 8)))
+      if (frag->type == MMD_TYPE_LINKED_TEXT && frag->url && dd->num_links < DOCLINK_MAX)
       {
         doclink_t *l = dd->links + dd->num_links;
 					// Pointer to this link record
 
-        l->url = frag->url;
+        if (!strcmp(frag->url, "@"))
+        {
+          // Use mapped text as link target...
+          char	targetlink[129];	// Targeted link
+
+          targetlink[0] = '#';
+          make_target_name(targetlink + 1, frag->text, sizeof(targetlink) - 1);
+
+          l->url = pdfioStringCreate(dd->pdf, targetlink);
+        }
+        else if (!strcmp(frag->url, "@@"))
+        {
+          // Use literal text as anchor...
+          l->url = pdfioStringCreatef(dd->pdf, "#%s", frag->text);
+        }
+        else
+        {
+          // Use URL as-is...
+          l->url = frag->url;
+        }
+
         l->box.x1 = frag->x;
         l->box.y1 = dd->y;
         l->box.x2 = frag->x + frag->width;
@@ -1473,4 +1589,43 @@ set_font(docdata_t *dd,			// I - Document data
 
   dd->font  = font;
   dd->fsize = fsize;
+}
+
+
+//
+// 'write_actions()' - Write remaining actions to the PDF file.
+//
+
+static void
+write_actions(docdata_t *dd)		// I - Document data
+{
+  size_t	i, j;			// Looping vars
+  docaction_t	*a;			// Current action
+  doctarget_t	*t;			// Current target
+
+
+  for (i = 0, a = dd->actions; i < dd->num_actions; i ++, a ++)
+  {
+    for (j = 0, t = dd->targets; j < dd->num_targets; j ++, t ++)
+    {
+      if (!strcmp(a->target, t->name))
+        break;
+    }
+
+    if (j < dd->num_targets)
+    {
+      pdfio_array_t *dest = pdfioArrayCreate(dd->pdf);
+					// Destination array
+
+      pdfioArrayAppendObj(dest, pdfioFileGetPage(dd->pdf, t->page));
+      pdfioArrayAppendName(dest, "XYZ");
+      pdfioArrayAppendNumber(dest, PAGE_LEFT);
+      pdfioArrayAppendNumber(dest, t->y);
+      pdfioArrayAppendNumber(dest, 0.0);
+
+      pdfioDictSetArray(pdfioObjGetDict(a->obj), "Dest", dest);
+    }
+
+    pdfioObjClose(a->obj);
+  }
 }

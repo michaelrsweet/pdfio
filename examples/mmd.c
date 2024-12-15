@@ -544,7 +544,7 @@ mmdLoadIO(mmd_t      *root,		// I - Root node for document or `NULL` for a new d
       block = NULL;
       continue;
     }
-    else if (*lineptr == '>' && (lineptr - linestart) < 4)
+    else if (stackptr->parent->type != MMD_TYPE_CODE_BLOCK && *lineptr == '>' && (lineptr - linestart) < 4)
     {
       // Block quote.  See if there is an existing blockquote...
       DEBUG_printf("	 BLOCKQUOTE (stackptr=%ld)\n", stackptr - stack);

@@ -12,7 +12,7 @@ pages in a PDF file.  It demonstrates how to:
 - Format text,
 - Embed JPEG and PNG images,
 - Add headers and footers, and
-- (Future) Add hyperlinks.
+- Add hyperlinks.
 
 
 Source Files
