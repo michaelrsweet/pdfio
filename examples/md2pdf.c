@@ -40,7 +40,7 @@ typedef enum doccolor_e			// Document color enumeration
 {
   DOCCOLOR_BLACK,			// #000
   DOCCOLOR_RED,				// #900
-  DOCCOLOR_GREEN,			// #090
+  DOCCOLOR_ORANGE,			// #CC0
   DOCCOLOR_BLUE,			// #00C
   DOCCOLOR_LTGRAY,			// #EEE
   DOCCOLOR_GRAY				// #555
@@ -624,11 +624,14 @@ format_block(docdata_t  *dd,		// I - Document data
 
       if (deffont == DOCFONT_ITALIC)
       {
-        // Add a gray bar to the left of block quotes...
-        set_color(dd, DOCCOLOR_GREEN);
+        // Add an orange bar to the left of block quotes...
+        set_color(dd, DOCCOLOR_ORANGE);
+        pdfioContentSave(dd->st);
+        pdfioContentSetLineWidth(dd->st, 3.0);
         pdfioContentPathMoveTo(dd->st, left - 6.0, dd->y - (LINE_HEIGHT - 1.0) * fsize);
         pdfioContentPathLineTo(dd->st, left - 6.0, dd->y + fsize);
         pdfioContentStroke(dd->st);
+        pdfioContentRestore(dd->st);
       }
 
       num_frags  = 0;
@@ -689,11 +692,14 @@ format_block(docdata_t  *dd,		// I - Document data
 
       if (deffont == DOCFONT_ITALIC)
       {
-        // Add a gray bar to the left of block quotes...
-        set_color(dd, DOCCOLOR_GREEN);
+        // Add an orange bar to the left of block quotes...
+        set_color(dd, DOCCOLOR_ORANGE);
+        pdfioContentSave(dd->st);
+        pdfioContentSetLineWidth(dd->st, 3.0);
         pdfioContentPathMoveTo(dd->st, left - 6.0, dd->y - (LINE_HEIGHT - 1.0) * fsize);
         pdfioContentPathLineTo(dd->st, left - 6.0, dd->y + fsize);
         pdfioContentStroke(dd->st);
+        pdfioContentRestore(dd->st);
       }
 
       num_frags  = 0;
@@ -741,11 +747,14 @@ format_block(docdata_t  *dd,		// I - Document data
 
     if (deffont == DOCFONT_ITALIC)
     {
-      // Add a gray bar to the left of block quotes...
-      set_color(dd, DOCCOLOR_GREEN);
+      // Add an orange bar to the left of block quotes...
+      set_color(dd, DOCCOLOR_ORANGE);
+      pdfioContentSave(dd->st);
+      pdfioContentSetLineWidth(dd->st, 3.0);
       pdfioContentPathMoveTo(dd->st, left - 6.0, dd->y - (LINE_HEIGHT - 1.0) * fsize);
       pdfioContentPathLineTo(dd->st, left - 6.0, dd->y + fsize);
       pdfioContentStroke(dd->st);
+      pdfioContentRestore(dd->st);
     }
   }
 }
@@ -1573,9 +1582,9 @@ set_color(docdata_t  *dd,		// I - Document data
         pdfioContentSetFillColorDeviceRGB(dd->st, 0.6, 0.0, 0.0);
         pdfioContentSetStrokeColorDeviceRGB(dd->st, 0.6, 0.0, 0.0);
         break;
-    case DOCCOLOR_GREEN :
-        pdfioContentSetFillColorDeviceRGB(dd->st, 0.0, 0.6, 0.0);
-        pdfioContentSetStrokeColorDeviceRGB(dd->st, 0.0, 0.6, 0.0);
+    case DOCCOLOR_ORANGE :
+        pdfioContentSetFillColorDeviceRGB(dd->st, 1.0, 0.5, 0.0);
+        pdfioContentSetStrokeColorDeviceRGB(dd->st, 1.0, 0.5, 0.0);
         break;
     case DOCCOLOR_BLUE :
         pdfioContentSetFillColorDeviceRGB(dd->st, 0.0, 0.0, 0.8);
