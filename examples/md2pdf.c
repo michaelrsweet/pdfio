@@ -238,7 +238,7 @@ static double	measure_cell(docdata_t *dd, mmd_t *cell, tablecol_t *col);
 static mmd_t	*mmd_walk_next(mmd_t *top, mmd_t *node);
 static void	new_page(docdata_t *dd);
 static ssize_t	output_cb(void *output_cbdata, const void *buffer, size_t bytes);
-static void	render_line(docdata_t *dd, double margin_left, double margin_top, double lineheight, size_t num_frags, linefrag_t *frags);
+static void	render_line(docdata_t *dd, double margin_left, double margin_top, double need_bottom, double lineheight, size_t num_frags, linefrag_t *frags);
 static void	render_row(docdata_t *dd, size_t num_cols, tablecol_t *cols, tablerow_t *row);
 static void	set_color(docdata_t *dd, doccolor_t color);
 static void	set_font(docdata_t *dd, docfont_t font, double fsize);
@@ -540,6 +540,7 @@ format_block(docdata_t  *dd,		// I - Document data
 		wswidth,		// Width of whitespace
 		margin_left,		// Left margin
 		margin_top,		// Top margin
+		need_bottom,		// Space needed after this block
 		height,			// Height of current fragment
 		lineheight;		// Height of current line
 
@@ -550,6 +551,11 @@ format_block(docdata_t  *dd,		// I - Document data
     margin_top = 0.0;
   else
     margin_top = fsize * LINE_HEIGHT;
+
+  if (mmdGetNextSibling(block))
+    need_bottom = 3.0 * SIZE_BODY * LINE_HEIGHT;
+  else
+    need_bottom = 0.0;
 
   if (leader)
   {
@@ -620,7 +626,7 @@ format_block(docdata_t  *dd,		// I - Document data
       else
         margin_left = 0.0;
 
-      render_line(dd, margin_left, margin_top, lineheight, num_frags, frags);
+      render_line(dd, margin_left, margin_top, need_bottom, lineheight, num_frags, frags);
 
       if (deffont == DOCFONT_ITALIC)
       {
@@ -634,11 +640,12 @@ format_block(docdata_t  *dd,		// I - Document data
         pdfioContentRestore(dd->st);
       }
 
-      num_frags  = 0;
-      frag       = frags;
-      x          = left;
-      lineheight = 0.0;
-      margin_top = 0.0;
+      num_frags   = 0;
+      frag        = frags;
+      x           = left;
+      lineheight  = 0.0;
+      margin_top  = 0.0;
+      need_bottom = 0.0;
 
       continue;
     }
@@ -688,7 +695,7 @@ format_block(docdata_t  *dd,		// I - Document data
       else
         margin_left = 0.0;
 
-      render_line(dd, margin_left, margin_top, lineheight, num_frags, frags);
+      render_line(dd, margin_left, margin_top, need_bottom, lineheight, num_frags, frags);
 
       if (deffont == DOCFONT_ITALIC)
       {
@@ -702,11 +709,12 @@ format_block(docdata_t  *dd,		// I - Document data
         pdfioContentRestore(dd->st);
       }
 
-      num_frags  = 0;
-      frag       = frags;
-      x          = left;
-      lineheight = 0.0;
-      margin_top = 0.0;
+      num_frags   = 0;
+      frag        = frags;
+      x           = left;
+      lineheight  = 0.0;
+      margin_top  = 0.0;
+      need_bottom = 0.0;
     }
 
     // Add the current node to the fragment list
@@ -743,7 +751,7 @@ format_block(docdata_t  *dd,		// I - Document data
     else
       margin_left = 0.0;
 
-    render_line(dd, margin_left, margin_top, lineheight, num_frags, frags);
+    render_line(dd, margin_left, margin_top, need_bottom, lineheight, num_frags, frags);
 
     if (deffont == DOCFONT_ITALIC)
     {
@@ -820,6 +828,7 @@ format_code(docdata_t *dd,		// I - Document data
 
   // End the current text block...
   pdfioContentTextEnd(dd->st);
+  dd->y += lineheight;
 }
 
 
@@ -857,6 +866,11 @@ format_doc(docdata_t *dd,		// I - Document data
     switch (curtype = mmdGetType(current))
     {
       default :
+          break;
+
+      case MMD_TYPE_THEMATIC_BREAK :
+          // Force a page break
+          dd->y = dd->art_box.y1;
           break;
 
       case MMD_TYPE_BLOCK_QUOTE :
@@ -1381,6 +1395,7 @@ static void
 render_line(docdata_t  *dd,		// I - Document data
             double     margin_left,	// I - Left margin
             double     margin_top,	// I - Top margin
+            double     need_bottom,	// I - How much space is needed after
             double     lineheight,	// I - Height of line
             size_t     num_frags,	// I - Number of line fragments
             linefrag_t *frags)		// I - Line fragments
@@ -1397,7 +1412,7 @@ render_line(docdata_t  *dd,		// I - Document data
   }
 
   dd->y -= margin_top + lineheight;
-  if ((dd->y - (margin_top > 0.0 ? lineheight : 0.0)) < dd->art_box.y1)
+  if ((dd->y - need_bottom) < dd->art_box.y1)
   {
     new_page(dd);
 
