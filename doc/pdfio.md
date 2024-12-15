@@ -465,7 +465,9 @@ You create a new PDF file using the [`pdfioFileCreate`](@@) function:
 pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
 pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // w/0.5" margins
 
-pdfio_file_t *pdf = pdfioFileCreate("myoutputfile.pdf", "2.0", &media_box, &crop_box, error_cb, error_data);
+pdfio_file_t *pdf = pdfioFileCreate("myoutputfile.pdf", "2.0",
+                                    &media_box, &crop_box,
+                                    error_cb, error_data);
 ```
 
 where the six arguments to the function are the filename ("myoutputfile.pdf"),
@@ -481,7 +483,9 @@ function:
 pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
 pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // w/0.5" margins
 
-pdfio_file_t *pdf = pdfioFileCreateOutput(output_cb, output_ctx, "2.0", &media_box, &crop_box, error_cb, error_data);
+pdfio_file_t *pdf = pdfioFileCreateOutput(output_cb, output_ctx, "2.0",
+                                          &media_box, &crop_box,
+                                          error_cb, error_data);
 ```
 
 Once the file is created, use the [`pdfioFileCreateObj`](@@),
@@ -638,13 +642,16 @@ spaces:
 pdfio_file_t *pdf = pdfioFileCreate(...);
 
 // Create an AdobeRGB color array
-pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_ADOBE);
+pdfio_array_t *adobe_rgb =
+    pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_ADOBE);
 
 // Create an Display P3 color array
-pdfio_array_t *display_p3 = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_P3_D65);
+pdfio_array_t *display_p3 =
+    pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_P3_D65);
 
 // Create an sRGB color array
-pdfio_array_t *srgb = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_SRGB);
+pdfio_array_t *srgb =
+    pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_SRGB);
 ```
 
 
@@ -670,6 +677,7 @@ font object for one of the base PDF fonts:
 - "Times-Roman"
 - "ZapfDingbats"
 
+Except for Symbol and ZapfDingbats (which use a custom 8-bit character set),
 PDFio always uses the Windows CP1252 subset of Unicode for these fonts.
 
 The second function is [`pdfioFileCreateFontObjFromFile`](@@) which creates a
@@ -677,7 +685,8 @@ font object from a TrueType/OpenType font file, for example:
 
 ```c
 pdfio_file_t *pdf = pdfioFileCreate(...);
-pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, "OpenSans-Regular.ttf", false);
+pdfio_obj_t *arial =
+    pdfioFileCreateFontObjFromFile(pdf, "OpenSans-Regular.ttf", false);
 ```
 
 will embed an OpenSans Regular TrueType font using the Windows CP1252 subset of
@@ -686,12 +695,16 @@ instead, for example:
 
 ```c
 pdfio_file_t *pdf = pdfioFileCreate(...);
-pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, "NotoSansJP-Regular.otf", true);
+pdfio_obj_t *arial =
+    pdfioFileCreateFontObjFromFile(pdf, "NotoSansJP-Regular.otf", true);
 ```
 
 will embed the NotoSansJP Regular OpenType font with full support for Unicode.
 
-> Note: Not all fonts support Unicode.
+> Note: Not all fonts support Unicode, and most do not contain a full
+> complement of Unicode characters.  `pdfioFileCreateFontObjFromFile` does not
+> perform any character subsetting, so the entire font file is embedded in the
+> PDF file.
 
 
 ### Image Object Functions
@@ -705,7 +718,11 @@ in memory, for example:
 ```c
 pdfio_file_t *pdf = pdfioFileCreate(...);
 unsigned char data[1024 * 1024 * 4]; // 1024x1024 RGBA image data
-pdfio_obj_t *img = pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024, /*height*/1024, /*num_colors*/3, /*color_data*/NULL, /*alpha*/true, /*interpolate*/false);
+pdfio_obj_t *img =
+    pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024,
+                                    /*height*/1024, /*num_colors*/3,
+                                    /*color_data*/NULL, /*alpha*/true,
+                                    /*interpolate*/false);
 ```
 
 will create an object for a 1024x1024 RGBA image in memory, using the default
@@ -717,11 +734,19 @@ example:
 pdfio_file_t *pdf = pdfioFileCreate(...);
 
 // Create an AdobeRGB color array
-pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint);
+pdfio_array_t *adobe_rgb =
+    pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma,
+                                    pdfioAdobeRGBMatrix,
+                                    pdfioAdobeRGBWhitePoint);
 
 // Create a 1024x1024 RGBA image using AdobeRGB
 unsigned char data[1024 * 1024 * 4]; // 1024x1024 RGBA image data
-pdfio_obj_t *img = pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024, /*height*/1024, /*num_colors*/3, /*color_data*/adobe_rgb, /*alpha*/true, /*interpolate*/false);
+pdfio_obj_t *img =
+    pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024,
+                                    /*height*/1024, /*num_colors*/3,
+                                    /*color_data*/adobe_rgb,
+                                    /*alpha*/true,
+                                    /*interpolate*/false);
 ```
 
 The "interpolate" argument specifies whether the colors in the image should be
@@ -733,7 +758,9 @@ function to copy the image into a PDF image object, for example:
 
 ```c
 pdfio_file_t *pdf = pdfioFileCreate(...);
-pdfio_obj_t *img = pdfioFileCreateImageObjFromFile(pdf, "myphoto.jpg", /*interpolate*/true);
+pdfio_obj_t *img =
+    pdfioFileCreateImageObjFromFile(pdf, "myphoto.jpg",
+                                    /*interpolate*/true);
 ```
 
 
@@ -856,7 +883,9 @@ show_pdf_info(const char *filename)
 
 
   // Open the PDF file with the default callbacks...
-  pdf = pdfioFileOpen(filename, /*password_cb*/NULL, /*password_cbdata*/NULL, /*error_cb*/NULL, /*error_cbdata*/NULL);
+  pdf = pdfioFileOpen(filename, /*password_cb*/NULL,
+                      /*password_cbdata*/NULL, /*error_cb*/NULL,
+                      /*error_cbdata*/NULL);
   if (pdf == NULL)
     return;
 
@@ -892,7 +921,8 @@ the page with the text centered below:
 
 
 void
-create_pdf_image_file(const char *pdfname, const char *imagename, const char *caption)
+create_pdf_image_file(const char *pdfname, const char *imagename,
+                      const char *caption)
 {
   pdfio_file_t   *pdf;
   pdfio_obj_t    *font;
@@ -905,7 +935,9 @@ create_pdf_image_file(const char *pdfname, const char *imagename, const char *ca
 
 
   // Create the PDF file...
-  pdf = pdfioFileCreate(pdfname, /*version*/NULL, /*media_box*/NULL, /*crop_box*/NULL, /*error_cb*/NULL, /*error_cbdata*/NULL);
+  pdf = pdfioFileCreate(pdfname, /*version*/NULL, /*media_box*/NULL,
+                        /*crop_box*/NULL, /*error_cb*/NULL,
+                        /*error_cbdata*/NULL);
 
   // Create a Courier base font for the caption
   font = pdfioFileCreateFontObjFromBase(pdf, "Courier");
@@ -925,9 +957,9 @@ create_pdf_image_file(const char *pdfname, const char *imagename, const char *ca
   width  = pdfioImageGetWidth(image);
   height = pdfioImageGetHeight(image);
 
-  // Default media_box is "universal" 595.28x792 points (8.27x11in or 210x279mm)
-  // Use margins of 36 points (0.5in or 12.7mm) with another 36 points for the
-  // caption underneath...
+  // Default media_box is "universal" 595.28x792 points (8.27x11in or
+  // 210x279mm).  Use margins of 36 points (0.5in or 12.7mm) with another
+  // 36 points for the caption underneath...
   swidth  = 595.28 - 72.0;
   sheight = swidth * height / width;
   if (sheight > (792.0 - 36.0 - 72.0))
@@ -944,8 +976,8 @@ create_pdf_image_file(const char *pdfname, const char *imagename, const char *ca
   // Draw the caption in black...
   pdfioContentSetFillColorDeviceGray(page, 0.0);
 
-  // Compute the starting point for the text - Courier is monospaced with a
-  // nominal width of 0.6 times the text height...
+  // Compute the starting point for the text - Courier is monospaced
+  // with a nominal width of 0.6 times the text height...
   tx = 0.5 * (595.28 - 18.0 * 0.6 * strlen(caption));
 
   // Position and draw the caption underneath...
