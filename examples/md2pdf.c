@@ -8,6 +8,7 @@
 //
 // Usage:
 //
+//   ./md2pdf FILENAME.md FILENAME.pdf
 //   ./md2pdf FILENAME.md >FILENAME.pdf
 //
 // The generated PDF file is formatted for a "universal" paper size (8.27x11",
@@ -262,9 +263,10 @@ main(int  argc,				// I - Number of command-line arguments
   setbuf(stderr, NULL);
 
   // Get the markdown file from the command-line...
-  if (argc != 2)
+  if (argc < 2 || argc > 3)
   {
-    fputs("Usage: md2pdf FILENANE.md >FILENAME.pdf\n", stderr);
+    fputs("Usage: md2pdf FILENANE.md [FILENAME.pdf]\n", stderr);
+    fputs("       md2pdf FILENANE.md >FILENAME.pdf\n", stderr);
     return (1);
   }
 
@@ -289,13 +291,20 @@ main(int  argc,				// I - Number of command-line arguments
 
   dd.title       = mmdGetMetadata(doc, "title");
 
-  // Output a PDF file to the standard output...
+  if (argc == 2)
+  {
+    // Output a PDF file to the standard output...
 #ifdef _WIN32
-  setmode(1, O_BINARY);			// Force binary output on Windows
+    setmode(1, O_BINARY);		// Force binary output on Windows
 #endif // _WIN32
 
-  if ((dd.pdf = pdfioFileCreateOutput(output_cb, /*output_cbdata*/NULL, /*version*/NULL, /*media_box*/NULL, /*crop_box*/NULL, /*error_cb*/NULL, /*error_data*/NULL)) == NULL)
+    if ((dd.pdf = pdfioFileCreateOutput(output_cb, /*output_cbdata*/NULL, /*version*/NULL, /*media_box*/NULL, /*crop_box*/NULL, /*error_cb*/NULL, /*error_data*/NULL)) == NULL)
+      return (1);
+  }
+  else if ((dd.pdf = pdfioFileCreate(argv[2], /*version*/NULL, /*media_box*/NULL, /*crop_box*/NULL, /*error_cb*/NULL, /*error_data*/NULL)) == NULL)
+  {
     return (1);
+  }
 
   if ((value = mmdGetMetadata(doc, "author")) != NULL)
     pdfioFileSetAuthor(dd.pdf, value);

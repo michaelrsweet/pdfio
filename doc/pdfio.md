@@ -33,7 +33,7 @@ PDFio requires the following to build the software:
 IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
 
 
-Installing pdfio
+Installing PDFio
 ----------------
 
 PDFio comes with a configure script that creates a portable makefile that will
@@ -315,8 +315,9 @@ Reading PDF Files
 You open an existing PDF file using the [`pdfioFileOpen`](@@) function:
 
 ```c
-pdfio_file_t *pdf = pdfioFileOpen("myinputfile.pdf", password_cb, password_data,
-                                  error_cb, error_data);
+pdfio_file_t *pdf =
+    pdfioFileOpen("myinputfile.pdf", password_cb, password_data,
+                  error_cb, error_data);
 
 ```
 
@@ -865,6 +866,7 @@ escaping, as needed:
 Examples
 ========
 
+
 Read PDF Metadata
 -----------------
 
@@ -995,3 +997,169 @@ create_pdf_image_file(const char *pdfname, const char *imagename,
   pdfioFileClose(pdf);
 }
 ```
+
+
+Generate a Code 128 Barcode
+---------------------------
+
+One-dimensional barcodes are often rendered using special fonts that map ASCII
+characters to sequences of bars that can be read.  The "examples" directory
+contains such a font to create "Code 128" barcodes, with an accompanying bit of
+example code.
+
+The first thing you need to do is prepare the barcode string to use with the
+font.  Each barcode begins with a start pattern followed by the characters or
+digits you want to encode, a weighted sum digit, and a stop pattern.  The
+`make_code128` function creates this string:
+
+```c
+static char *                           // O - Output string
+make_code128(char       *dst,           // I - Destination buffer
+             const char *src,           // I - Source string
+             size_t     dstsize)        // I - Size of destination buffer
+{
+  char          *dstptr,                // Pointer into destination buffer
+                *dstend;                // End of destination buffer
+  int           sum;                    // Weighted sum
+  static const char *code128_chars =    // Code 128 characters
+                " !\"#$%&'()*+,-./0123456789:;<=>?"
+                "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+                "`abcdefghijklmnopqrstuvwxyz{|}~\303"
+                "\304\305\306\307\310\311\312";
+  static const char code128_start_code_b = '\314';
+                                        // Start code B
+  static const char code128_stop = '\316';
+                                        // Stop pattern
+
+
+  // Start a Code B barcode...
+  dstptr = dst;
+  dstend = dst + dstsize - 3;
+
+  *dstptr++ = code128_start_code_b;
+  sum       = code128_start_code_b - 100;
+
+  while (*src && dstptr < dstend)
+  {
+    if (*src >= ' ' && *src < 0x7f)
+    {
+      sum       += (dstptr - dst) * (*src - ' ');
+      *dstptr++ = *src;
+    }
+
+    src ++;
+  }
+
+  // Add the weighted sum modulo 103
+  *dstptr++ = code128_chars[sum % 103];
+
+  // Add the stop pattern and return...
+  *dstptr++ = code128_stop;
+  *dstptr   = '\0';
+
+  return (dst);
+}
+```
+
+The `main` function does the rest of the work.  The barcode font is imported
+using the [`pdfioFileCreateFontObjFromFile`](@@) function.  We pass `false`
+for the "unicode" argument since we just want the (default) ASCII encoding:
+
+```c
+barcode_font = pdfioFileCreateFontObjFromFile(pdf, "code128.ttf",
+                                              /*unicode*/false);
+```
+
+Since barcodes usually have the number or text represented by the barcode
+printed underneath it, we also need a regular text font, for which we can choose
+one of the standard 14 PostScript base fonts using the
+[`pdfioFIleCreateFontObjFromBase`](@@) function:
+
+```c
+text_font = pdfioFileCreateFontObjFromBase(pdf, "Helvetica");
+```
+
+Once we have these fonts we can measure the barcode and regular text labels
+using the [`pdfioContentTextMeasure`](@@) function to determine how large the
+PDF page needs to be to hold the barcode and text:
+
+```c
+// Compute sizes of the text...
+const char *barcode = argv[1];
+char barcode_temp[256];
+
+if (!(barcode[0] & 0x80))
+  barcode = make_code128(barcode_temp, barcode, sizeof(barcode_temp));
+
+double barcode_height = 36.0;
+double barcode_width =
+    pdfioContentTextMeasure(barcode_font, barcode, barcode_height);
+
+const char *text = argv[2];
+double text_height = 0.0;
+double text_width = 0.0;
+
+if (text && text_font)
+{
+  text_height = 9.0;
+  text_width  = pdfioContentTextMeasure(text_font, text,
+                                        text_height);
+}
+
+// Compute the size of the PDF page...
+pdfio_rect_t media_box;
+
+media_box.x1 = 0.0;
+media_box.y1 = 0.0;
+media_box.x2 = (barcode_width > text_width ?
+                    barcode_width : text_width) + 18.0;
+media_box.y2 = barcode_height + text_height + 18.0;
+```
+
+Finally, we just need to create a page of the specified size that references the
+two fonts:
+
+```c
+// Start a page for the barcode...
+page_dict = pdfioDictCreate(pdf);
+
+pdfioDictSetRect(page_dict, "MediaBox", &media_box);
+pdfioDictSetRect(page_dict, "CropBox", &media_box);
+
+pdfioPageDictAddFont(page_dict, "B128", barcode_font);
+if (text_font)
+  pdfioPageDictAddFont(page_dict, "TEXT", text_font);
+
+page_st = pdfioFileCreatePage(pdf, page_dict);
+```
+
+With the barcode font called "B128" and the text font called "TEXT", we can
+use them to draw two strings:
+
+```c
+// Draw the page...
+pdfioContentSetFillColorGray(page_st, 0.0);
+
+pdfioContentSetTextFont(page_st, "B128", barcode_height);
+pdfioContentTextBegin(page_st);
+pdfioContentTextMoveTo(page_st, 0.5 * (media_box.x2 - barcode_width),
+                       9.0 + text_height);
+pdfioContentTextShow(page_st, /*unicode*/false, barcode);
+pdfioContentTextEnd(page_st);
+
+if (text && text_font)
+{
+  pdfioContentSetTextFont(page_st, "TEXT", text_height);
+  pdfioContentTextBegin(page_st);
+  pdfioContentTextMoveTo(page_st, 0.5 * (media_box.x2 - text_width), 9.0);
+  pdfioContentTextShow(page_st, /*unicode*/false, text);
+  pdfioContentTextEnd(page_st);
+}
+
+pdfioStreamClose(page_st);
+```
+
+
+Convert Markdown to PDF
+-----------------------
+

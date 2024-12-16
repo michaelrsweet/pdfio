@@ -23,7 +23,6 @@
 // extended characters are ignored in the source string.
 //
 
-
 static char *				// O - Output string
 make_code128(char       *dst,		// I - Destination buffer
              const char *src,		// I - Source string
@@ -54,9 +53,9 @@ make_code128(char       *dst,		// I - Destination buffer
   static const char code128_start_code_a = '\313';
 					// Start code A
   static const char code128_start_code_b = '\314';
-					// Start code A
+					// Start code B
   static const char code128_start_code_c = '\315';
-					// Start code A
+					// Start code C
   static const char code128_stop = '\316';
 					// Stop pattern
 
@@ -149,7 +148,7 @@ main(int  argc,				// I - Number of command-line arguments
   // Load fonts...
   barcode_font = pdfioFileCreateFontObjFromFile(pdf, "code128.ttf", /*unicode*/false);
   if (text)
-    text_font = pdfioFileCreateFontObjFromFile(pdf, "../testfiles/OpenSans-Regular.ttf", /*unicode*/true);
+    text_font = pdfioFileCreateFontObjFromBase(pdf, "Helvetica");
 
   // Generate Code128 characters for the desired barcode...
   if (!(barcode[0] & 0x80))
@@ -182,7 +181,7 @@ main(int  argc,				// I - Number of command-line arguments
   page_st = pdfioFileCreatePage(pdf, page_dict);
 
   // Draw the page...
-  pdfioContentSetStrokeColorGray(page_st, 0.0);
+  pdfioContentSetFillColorGray(page_st, 0.0);
 
   pdfioContentSetTextFont(page_st, "B128", barcode_height);
   pdfioContentTextBegin(page_st);
@@ -195,7 +194,7 @@ main(int  argc,				// I - Number of command-line arguments
     pdfioContentSetTextFont(page_st, "TEXT", text_height);
     pdfioContentTextBegin(page_st);
     pdfioContentTextMoveTo(page_st, 0.5 * (media_box.x2 - text_width), 9.0);
-    pdfioContentTextShow(page_st, /*unicode*/true, text);
+    pdfioContentTextShow(page_st, /*unicode*/false, text);
     pdfioContentTextEnd(page_st);
   }
 
