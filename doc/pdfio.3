@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2024-10-25" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2024-12-19" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -57,7 +57,7 @@ ZLIB (https://www.zlib.net) 1.0 or higher
 
 .PP
 IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
-.SS Installing pdfio
+.SS Installing PDFio
 .PP
 PDFio comes with a configure script that creates a portable makefile that will work on any POSIX\-compliant system with ZLIB installed. To make it, run:
 .nf
@@ -150,37 +150,65 @@ A PDF file provides data and commands for displaying pages of graphics and text,
     /Kids [2 0 R]
     /Count 1
     /Type /Pages
+    >>
+    endobj
+    2 0 obj
+    <<
+    /Rotate 0
+    /Parent 1 0 R
+    /Resources 3 0 R
+    /MediaBox [0 0 612 792]
+    /Contents [4 0 R]/Type /Page
+    >>
+    endobj
+    3 0 obj
+    <<
+    /Font
+    <<
+    /F0
+    <<
+    /BaseFont /Times\-Italic
+    /Subtype /Type1
+    /Type /Font
+    >>
+    >>
+    >>
+    endobj
+    4 0 obj
+    <<
+    /Length 65
+    >>
+    stream
+    1. 0. 0. 1. 50. 700. cm
+    BT
+      /F0 36. Tf
+      (Hello, World!) Tj
+    ET
+    endstream
+    endobj
+    5 0 obj
+    <<
+    /Pages 1 0 R
+    /Type /Catalog
+    >>
+    endobj
+    xref                            % Cross\-reference table starts here
+    0 6
+    0000000000 65535 f
+    0000000015 00000 n
+    0000000074 00000 n
+    0000000192 00000 n
+    0000000291 00000 n
+    0000000409 00000 n
+    trailer                         % Trailer starts here
+    <<
+    /Root 5 0 R
+    /Size 6
+    >>
+    startxref
+    459
+    %%EOF
 .fi
-.PP
-> endobj 2 0 obj <
-/Rotate 0
-/Parent 1 0 R
-/Resources 3 0 R
-/MediaBox [0 0 612 792]
-/Contents [4 0 R]/Type /Page
- endobj 3 0 obj <
-/Font
-<<
-/F0
-<<
-/BaseFont /Times\-Italic
-/Subtype /Type1
-/Type /Font
- > > endobj 4 0 obj <
-/Length 65
- stream
-
-.IP \(bu 5
-.PP
-0. 0. 1. 50. 700. cm BT /F0 36. Tf (Hello, World!) Tj ET endstream endobj 5 0 obj << /Pages 1 0 R /Type /Catalog
-
-
-.PP
-> endobj xref % Cross\-reference table starts here 0 6 0000000000 65535 f 0000000015 00000 n 0000000074 00000 n 0000000192 00000 n 0000000291 00000 n 0000000409 00000 n trailer % Trailer starts here << /Root 5 0 R /Size 6 > startxref 459 %%EOF
-.nf
-
-.fi
-
 .PP
 Header
 .PP
@@ -209,13 +237,9 @@ The file body consists of a sequence of objects, each preceded by an object numb
     /Kids [2 0 R]
     /Count 1
     /Type /Pages
+    >>
+    endobj
 .fi
-.PP
-> endobj
-.nf
-
-.fi
-
 .PP
 In this example, the object number is 1 and the generation number is 0, meaning it is the first version of the object. The content for object 1 is between the initial 1 0 obj and trailing endobj lines. In this case, the content is the dictionary <</Kids [2 0 R] /Count 1 /Type /Pages>>\.
 .PP
@@ -246,13 +270,11 @@ There follows a line with just the startxref keyword, a line with a single numbe
     <<                              % The trailer dictinonary
     /Root 5 0 R
     /Size 6
+    >>
+    startxref                       % startxref keyword
+    459                             % Byte offset of cross\-reference table
+    %%EOF                           % End\-of\-file marker
 .fi
-.PP
-> startxref % startxref keyword 459 % Byte offset of cross\-reference table %%EOF % End\-of\-file marker
-.nf
-
-.fi
-
 .SH API Overview
 .PP
 PDFio exposes several types:
@@ -282,8 +304,9 @@ pdfio_stream_t: An object stream
 You open an existing PDF file using the pdfioFileOpen function:
 .nf
 
-    pdfio_file_t *pdf = pdfioFileOpen("myinputfile.pdf", password_cb, password_data,
-                                      error_cb, error_data);
+    pdfio_file_t *pdf =
+        pdfioFileOpen("myinputfile.pdf", password_cb, password_data,
+                      error_cb, error_data);
 .fi
 .PP
 where the five arguments to the function are the filename ("myinputfile.pdf"), an optional password callback function (password_cb) and data pointer value (password_data), and an optional error callback function (error_cb) and data pointer value (error_data). The password callback is called for encrypted PDF files that are not using the default password, for example:
@@ -431,7 +454,9 @@ You create a new PDF file using the pdfioFileCreate function:
     pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
     pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // w/0.5" margins
     
-    pdfio_file_t *pdf = pdfioFileCreate("myoutputfile.pdf", "2.0", &media_box, &crop_box, error_cb, error_data);
+    pdfio_file_t *pdf = pdfioFileCreate("myoutputfile.pdf", "2.0",
+                                        &media_box, &crop_box,
+                                        error_cb, error_data);
 .fi
 .PP
 where the six arguments to the function are the filename ("myoutputfile.pdf"), PDF version ("2.0"), media box (media_box), crop box (crop_box), an optional error callback function (error_cb), and an optional pointer value for the error callback function (error_data). The units for the media and crop boxes are points (1/72nd of an inch).
@@ -442,7 +467,9 @@ Alternately you can stream a PDF file using the pdfioFileCreateOutput function:
     pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
     pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // w/0.5" margins
     
-    pdfio_file_t *pdf = pdfioFileCreateOutput(output_cb, output_ctx, "2.0", &media_box, &crop_box, error_cb, error_data);
+    pdfio_file_t *pdf = pdfioFileCreateOutput(output_cb, output_ctx, "2.0",
+                                              &media_box, &crop_box,
+                                              error_cb, error_data);
 .fi
 .PP
 Once the file is created, use the pdfioFileCreateObj, pdfioFileCreatePage, and pdfioPageCopy functions to create objects and pages in the file.
@@ -625,13 +652,16 @@ PDFio also includes predefined constants for creating a few standard color space
     pdfio_file_t *pdf = pdfioFileCreate(...);
     
     // Create an AdobeRGB color array
-    pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_ADOBE);
+    pdfio_array_t *adobe_rgb =
+        pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_ADOBE);
     
     // Create an Display P3 color array
-    pdfio_array_t *display_p3 = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_P3_D65);
+    pdfio_array_t *display_p3 =
+        pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_P3_D65);
     
     // Create an sRGB color array
-    pdfio_array_t *srgb = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_SRGB);
+    pdfio_array_t *srgb =
+        pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_SRGB);
 .fi
 .PP
 Font Object Functions
@@ -695,25 +725,27 @@ PDF supports many kinds of fonts, including PostScript Type1, PDF Type3, TrueTyp
 
 
 .PP
-PDFio always uses the Windows CP1252 subset of Unicode for these fonts.
+Except for Symbol and ZapfDingbats (which use a custom 8\-bit character set), PDFio always uses the Windows CP1252 subset of Unicode for these fonts.
 .PP
 The second function is pdfioFileCreateFontObjFromFile which creates a font object from a TrueType/OpenType font file, for example:
 .nf
 
     pdfio_file_t *pdf = pdfioFileCreate(...);
-    pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, "OpenSans\-Regular.ttf", false);
+    pdfio_obj_t *arial =
+        pdfioFileCreateFontObjFromFile(pdf, "OpenSans\-Regular.ttf", false);
 .fi
 .PP
 will embed an OpenSans Regular TrueType font using the Windows CP1252 subset of Unicode. Pass true for the third argument to embed it as a Unicode CID font instead, for example:
 .nf
 
     pdfio_file_t *pdf = pdfioFileCreate(...);
-    pdfio_obj_t *arial = pdfioFileCreateFontObjFromFile(pdf, "NotoSansJP\-Regular.otf", true);
+    pdfio_obj_t *arial =
+        pdfioFileCreateFontObjFromFile(pdf, "NotoSansJP\-Regular.otf", true);
 .fi
 .PP
 will embed the NotoSansJP Regular OpenType font with full support for Unicode.
 .PP
-Note: Not all fonts support Unicode.
+Note: Not all fonts support Unicode, and most do not contain a full complement of Unicode characters. pdfioFileCreateFontObjFromFile does not perform any character subsetting, so the entire font file is embedded in the PDF file.
 
 .PP
 Image Object Functions
@@ -723,7 +755,11 @@ PDF supports images with many different color spaces and bit depths with optiona
 
     pdfio_file_t *pdf = pdfioFileCreate(...);
     unsigned char data[1024 * 1024 * 4]; // 1024x1024 RGBA image data
-    pdfio_obj_t *img = pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024, /*height*/1024, /*num_colors*/3, /*color_data*/NULL, /*alpha*/true, /*interpolate*/false);
+    pdfio_obj_t *img =
+        pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024,
+                                        /*height*/1024, /*num_colors*/3,
+                                        /*color_data*/NULL, /*alpha*/true,
+                                        /*interpolate*/false);
 .fi
 .PP
 will create an object for a 1024x1024 RGBA image in memory, using the default color space for 3 colors ("DeviceRGB"). We can use one of the color space functions to use a specific color space for this image, for example:
@@ -732,11 +768,19 @@ will create an object for a 1024x1024 RGBA image in memory, using the default co
     pdfio_file_t *pdf = pdfioFileCreate(...);
     
     // Create an AdobeRGB color array
-    pdfio_array_t *adobe_rgb = pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma, pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint);
+    pdfio_array_t *adobe_rgb =
+        pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma,
+                                        pdfioAdobeRGBMatrix,
+                                        pdfioAdobeRGBWhitePoint);
     
     // Create a 1024x1024 RGBA image using AdobeRGB
     unsigned char data[1024 * 1024 * 4]; // 1024x1024 RGBA image data
-    pdfio_obj_t *img = pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024, /*height*/1024, /*num_colors*/3, /*color_data*/adobe_rgb, /*alpha*/true, /*interpolate*/false);
+    pdfio_obj_t *img =
+        pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024,
+                                        /*height*/1024, /*num_colors*/3,
+                                        /*color_data*/adobe_rgb,
+                                        /*alpha*/true,
+                                        /*interpolate*/false);
 .fi
 .PP
 The "interpolate" argument specifies whether the colors in the image should be smoothed/interpolated when scaling. This is most useful for photographs but should be false for screenshot and barcode images.
@@ -745,8 +789,13 @@ If you have a JPEG or PNG file, use the pdfioFileCreateImageObjFromFile function
 .nf
 
     pdfio_file_t *pdf = pdfioFileCreate(...);
-    pdfio_obj_t *img = pdfioFileCreateImageObjFromFile(pdf, "myphoto.jpg", /*interpolate*/true);
+    pdfio_obj_t *img =
+        pdfioFileCreateImageObjFromFile(pdf, "myphoto.jpg",
+                                        /*interpolate*/true);
 .fi
+.PP
+Note: Currently pdfioFileCreateImageObjFromFile does not support 12 bit JPEG files or PNG files with an alpha channel.
+
 .PP
 Page Dictionary Functions
 .PP
@@ -988,31 +1037,44 @@ pdfioContentTextShowJustified draws an array of literal strings with offsets bet
 .SH Examples
 .SS Read PDF Metadata
 .PP
-The following example function will open a PDF file and print the title, author, creation date, and number of pages:
+The pdfioinfo.c example program opens a PDF file and prints the title, author, creation date, and number of pages:
 .nf
 
     #include <pdfio.h>
     #include <time.h>
     
     
-    void
-    show_pdf_info(const char *filename)
+    int                                     // O \- Exit status
+    main(int  argc,                         // I \- Number of command\-line arguments
+         char *argv[])                      // Command\-line arguments
     {
-      pdfio_file_t *pdf;
-      time_t       creation_date;
-      struct tm    *creation_tm;
-      char         creation_text[256];
+      const char    *filename;              // PDF filename
+      pdfio_file_t  *pdf;                   // PDF file
+      time_t        creation_date;          // Creation date
+      struct tm     *creation_tm;           // Creation date/time information
+      char          creation_text[256];     // Creation date/time as a string
     
+    
+      // Get the filename from the command\-line...
+      if (argc != 2)
+      {
+        fputs("Usage: ./pdfioinfo FILENAME.pdf\\n", stderr);
+        return (1);
+      }
+    
+      filename = argv[1];
     
       // Open the PDF file with the default callbacks...
-      pdf = pdfioFileOpen(filename, /*password_cb*/NULL, /*password_cbdata*/NULL, /*error_cb*/NULL, /*error_cbdata*/NULL);
+      pdf = pdfioFileOpen(filename, /*password_cb*/NULL,
+                          /*password_cbdata*/NULL, /*error_cb*/NULL,
+                          /*error_cbdata*/NULL);
       if (pdf == NULL)
-        return;
+        return (1);
     
       // Get the creation date and convert to a string...
       creation_date = pdfioFileGetCreationDate(pdf);
       creation_tm   = localtime(&creation_date);
-      strftime(creation_text, sizeof(creation_text), "%c", &creation_tm);
+      strftime(creation_text, sizeof(creation_text), "%c", creation_tm);
     
       // Print file information to stdout...
       printf("%s:\\n", filename);
@@ -1023,11 +1085,13 @@ The following example function will open a PDF file and print the title, author,
     
       // Close the PDF file...
       pdfioFileClose(pdf);
+    
+      return (0);
     }
 .fi
 .SS Create PDF File With Text and Image
 .PP
-The following example function will create a PDF file, embed a base font and the named JPEG or PNG image file, and then creates a page with the image centered on the page with the text centered below:
+The image2pdf.c example code creates a PDF file containing a JPEG or PNG image file and optional caption on a single page. The create_pdf_image_file function creates the PDF file, embeds a base font and the named JPEG or PNG image file, and then creates a page with the image centered on the page with any text centered below:
 .nf
 
     #include <pdfio.h>
@@ -1035,27 +1099,46 @@ The following example function will create a PDF file, embed a base font and the
     #include <string.h>
     
     
-    void
-    create_pdf_image_file(const char *pdfname, const char *imagename, const char *caption)
+    bool                                    // O \- True on success, false on failure
+    create_pdf_image_file(
+        const char *pdfname,                // I \- PDF filename
+        const char *imagename,              // I \- Image filename
+        const char *caption)                // I \- Caption filename
     {
-      pdfio_file_t   *pdf;
-      pdfio_obj_t    *font;
-      pdfio_obj_t    *image;
-      pdfio_dict_t   *dict;
-      pdfio_stream_t *page;
-      double         width, height;
-      double         swidth, sheight;
-      double         tx, ty;
+      pdfio_file_t   *pdf;                  // PDF file
+      pdfio_obj_t    *font;                 // Caption font
+      pdfio_obj_t    *image;                // Image
+      pdfio_dict_t   *dict;                 // Page dictionary
+      pdfio_stream_t *page;                 // Page stream
+      double         width, height;         // Width and height of image
+      double         swidth, sheight;       // Scaled width and height on page
+      double         tx, ty;                // Position on page
     
     
       // Create the PDF file...
-      pdf = pdfioFileCreate(pdfname, /*version*/NULL, /*media_box*/NULL, /*crop_box*/NULL, /*error_cb*/NULL, /*error_cbdata*/NULL);
+      pdf = pdfioFileCreate(pdfname, /*version*/NULL, /*media_box*/NULL,
+                            /*crop_box*/NULL, /*error_cb*/NULL,
+                            /*error_cbdata*/NULL);
+      if (!pdf)
+        return (false);
     
       // Create a Courier base font for the caption
       font = pdfioFileCreateFontObjFromBase(pdf, "Courier");
     
+      if (!font)
+      {
+        pdfioFileClose(pdf);
+        return (false);
+      }
+    
       // Create an image object from the JPEG/PNG image file...
       image = pdfioFileCreateImageObjFromFile(pdf, imagename, true);
+    
+      if (!image)
+      {
+        pdfioFileClose(pdf);
+        return (false);
+      }
     
       // Create a page dictionary with the font and image...
       dict = pdfioDictCreate(pdf);
@@ -1069,9 +1152,9 @@ The following example function will create a PDF file, embed a base font and the
       width  = pdfioImageGetWidth(image);
       height = pdfioImageGetHeight(image);
     
-      // Default media_box is "universal" 595.28x792 points (8.27x11in or 210x279mm)
-      // Use margins of 36 points (0.5in or 12.7mm) with another 36 points for the
-      // caption underneath...
+      // Default media_box is "universal" 595.28x792 points (8.27x11in or
+      // 210x279mm).  Use margins of 36 points (0.5in or 12.7mm) with another
+      // 36 points for the caption underneath...
       swidth  = 595.28 \- 72.0;
       sheight = swidth * height / width;
       if (sheight > (792.0 \- 36.0 \- 72.0))
@@ -1088,8 +1171,8 @@ The following example function will create a PDF file, embed a base font and the
       // Draw the caption in black...
       pdfioContentSetFillColorDeviceGray(page, 0.0);
     
-      // Compute the starting point for the text \- Courier is monospaced with a
-      // nominal width of 0.6 times the text height...
+      // Compute the starting point for the text \- Courier is monospaced
+      // with a nominal width of 0.6 times the text height...
       tx = 0.5 * (595.28 \- 18.0 * 0.6 * strlen(caption));
     
       // Position and draw the caption underneath...
@@ -1102,8 +1185,159 @@ The following example function will create a PDF file, embed a base font and the
       // Close the page stream and the PDF file...
       pdfioStreamClose(page);
       pdfioFileClose(pdf);
+    
+      return (true);
     }
 .fi
+.SS Generate a Code 128 Barcode
+.PP
+One\-dimensional barcodes are often rendered using special fonts that map ASCII characters to sequences of bars that can be read. The examples directory contains such a font (code128.ttf) to create "Code 128" barcodes, with an accompanying bit of example code in code128.c\.
+.PP
+The first thing you need to do is prepare the barcode string to use with the font. Each barcode begins with a start pattern followed by the characters or digits you want to encode, a weighted sum digit, and a stop pattern. The make_code128 function creates this string:
+.nf
+
+    static char *                           // O \- Output string
+    make_code128(char       *dst,           // I \- Destination buffer
+                 const char *src,           // I \- Source string
+                 size_t     dstsize)        // I \- Size of destination buffer
+    {
+      char          *dstptr,                // Pointer into destination buffer
+                    *dstend;                // End of destination buffer
+      int           sum;                    // Weighted sum
+      static const char *code128_chars =    // Code 128 characters
+                    " !\\"#$%&'()*+,\-./0123456789:;<=>?"
+                    "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\\\]^_"
+                    "`abcdefghijklmnopqrstuvwxyz{|}~\\303"
+                    "\\304\\305\\306\\307\\310\\311\\312";
+      static const char code128_start_code_b = '\\314';
+                                            // Start code B
+      static const char code128_stop = '\\316';
+                                            // Stop pattern
+    
+    
+      // Start a Code B barcode...
+      dstptr = dst;
+      dstend = dst + dstsize \- 3;
+    
+      *dstptr++ = code128_start_code_b;
+      sum       = code128_start_code_b \- 100;
+    
+      while (*src && dstptr < dstend)
+      {
+        if (*src >= ' ' && *src < 0x7f)
+        {
+          sum       += (dstptr \- dst) * (*src \- ' ');
+          *dstptr++ = *src;
+        }
+    
+        src ++;
+      }
+    
+      // Add the weighted sum modulo 103
+      *dstptr++ = code128_chars[sum % 103];
+    
+      // Add the stop pattern and return...
+      *dstptr++ = code128_stop;
+      *dstptr   = '\\0';
+    
+      return (dst);
+    }
+.fi
+.PP
+The main function does the rest of the work. The barcode font is imported using the pdfioFileCreateFontObjFromFile function. We pass false for the "unicode" argument since we just want the (default) ASCII encoding:
+.nf
+
+    barcode_font = pdfioFileCreateFontObjFromFile(pdf, "code128.ttf",
+                                                  /*unicode*/false);
+.fi
+.PP
+Since barcodes usually have the number or text represented by the barcode printed underneath it, we also need a regular text font, for which we can choose one of the standard 14 PostScript base fonts using the pdfioFIleCreateFontObjFromBase function:
+.nf
+
+    text_font = pdfioFileCreateFontObjFromBase(pdf, "Helvetica");
+.fi
+.PP
+Once we have these fonts we can measure the barcode and regular text labels using the pdfioContentTextMeasure function to determine how large the PDF page needs to be to hold the barcode and text:
+.nf
+
+    // Compute sizes of the text...
+    const char *barcode = argv[1];
+    char barcode_temp[256];
+    
+    if (!(barcode[0] & 0x80))
+      barcode = make_code128(barcode_temp, barcode, sizeof(barcode_temp));
+    
+    double barcode_height = 36.0;
+    double barcode_width =
+        pdfioContentTextMeasure(barcode_font, barcode, barcode_height);
+    
+    const char *text = argv[2];
+    double text_height = 0.0;
+    double text_width = 0.0;
+    
+    if (text && text_font)
+    {
+      text_height = 9.0;
+      text_width  = pdfioContentTextMeasure(text_font, text,
+                                            text_height);
+    }
+    
+    // Compute the size of the PDF page...
+    pdfio_rect_t media_box;
+    
+    media_box.x1 = 0.0;
+    media_box.y1 = 0.0;
+    media_box.x2 = (barcode_width > text_width ?
+                        barcode_width : text_width) + 18.0;
+    media_box.y2 = barcode_height + text_height + 18.0;
+.fi
+.PP
+Finally, we just need to create a page of the specified size that references the two fonts:
+.nf
+
+    // Start a page for the barcode...
+    page_dict = pdfioDictCreate(pdf);
+    
+    pdfioDictSetRect(page_dict, "MediaBox", &media_box);
+    pdfioDictSetRect(page_dict, "CropBox", &media_box);
+    
+    pdfioPageDictAddFont(page_dict, "B128", barcode_font);
+    if (text_font)
+      pdfioPageDictAddFont(page_dict, "TEXT", text_font);
+    
+    page_st = pdfioFileCreatePage(pdf, page_dict);
+.fi
+.PP
+With the barcode font called "B128" and the text font called "TEXT", we can use them to draw two strings:
+.nf
+
+    // Draw the page...
+    pdfioContentSetFillColorGray(page_st, 0.0);
+    
+    pdfioContentSetTextFont(page_st, "B128", barcode_height);
+    pdfioContentTextBegin(page_st);
+    pdfioContentTextMoveTo(page_st, 0.5 * (media_box.x2 \- barcode_width),
+                           9.0 + text_height);
+    pdfioContentTextShow(page_st, /*unicode*/false, barcode);
+    pdfioContentTextEnd(page_st);
+    
+    if (text && text_font)
+    {
+      pdfioContentSetTextFont(page_st, "TEXT", text_height);
+      pdfioContentTextBegin(page_st);
+      pdfioContentTextMoveTo(page_st, 0.5 * (media_box.x2 \- text_width), 9.0);
+      pdfioContentTextShow(page_st, /*unicode*/false, text);
+      pdfioContentTextEnd(page_st);
+    }
+    
+    pdfioStreamClose(page_st);
+.fi
+.SS Convert Markdown to PDF
+.PP
+Markdown is a simple plain text format that supports things like headings, links, character styles, tables, and embedded images. The md2pdf.c example code uses the mmd library to convert markdown to a PDF file that can be distributed.
+.PP
+Note: The md2pdf example is by far the most complex example code included with PDFio and shows how to layout text, add headers and footers, add links, embed images, and format tables.
+
 
 .SH ENUMERATIONS
 .SS pdfio_cs_e
@@ -2571,8 +2805,9 @@ specifies the font nane:
 .IP \(bu 5
 "ZapfDingbats"
 .PP
-Base fonts always use the Windows CP1252 (ISO-8859-1 with additional
-characters such as the Euro symbol) subset of Unicode.
+Aside from "Symbol" and "Zapf-Dingbats", Base fonts use the Windows CP1252
+(ISO-8859-1 with additional characters such as the Euro symbol) subset of
+Unicode.
 .SS pdfioFileCreateFontObjFromFile
 Add a font object to a PDF file.
 .PP

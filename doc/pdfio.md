@@ -870,7 +870,7 @@ Examples
 Read PDF Metadata
 -----------------
 
-The following example function will open a PDF file and print the title, author,
+The `pdfioinfo.c` example program opens a PDF file and prints the title, author,
 creation date, and number of pages:
 
 ```c
@@ -878,26 +878,37 @@ creation date, and number of pages:
 #include <time.h>
 
 
-void
-show_pdf_info(const char *filename)
+int                                     // O - Exit status
+main(int  argc,                         // I - Number of command-line arguments
+     char *argv[])                      // Command-line arguments
 {
-  pdfio_file_t *pdf;
-  time_t       creation_date;
-  struct tm    *creation_tm;
-  char         creation_text[256];
+  const char    *filename;              // PDF filename
+  pdfio_file_t  *pdf;                   // PDF file
+  time_t        creation_date;          // Creation date
+  struct tm     *creation_tm;           // Creation date/time information
+  char          creation_text[256];     // Creation date/time as a string
 
+
+  // Get the filename from the command-line...
+  if (argc != 2)
+  {
+    fputs("Usage: ./pdfioinfo FILENAME.pdf\n", stderr);
+    return (1);
+  }
+
+  filename = argv[1];
 
   // Open the PDF file with the default callbacks...
   pdf = pdfioFileOpen(filename, /*password_cb*/NULL,
                       /*password_cbdata*/NULL, /*error_cb*/NULL,
                       /*error_cbdata*/NULL);
   if (pdf == NULL)
-    return;
+    return (1);
 
   // Get the creation date and convert to a string...
   creation_date = pdfioFileGetCreationDate(pdf);
   creation_tm   = localtime(&creation_date);
-  strftime(creation_text, sizeof(creation_text), "%c", &creation_tm);
+  strftime(creation_text, sizeof(creation_text), "%c", creation_tm);
 
   // Print file information to stdout...
   printf("%s:\n", filename);
@@ -908,6 +919,8 @@ show_pdf_info(const char *filename)
 
   // Close the PDF file...
   pdfioFileClose(pdf);
+
+  return (0);
 }
 ```
 
@@ -915,9 +928,11 @@ show_pdf_info(const char *filename)
 Create PDF File With Text and Image
 -----------------------------------
 
-The following example function will create a PDF file, embed a base font and the
-named JPEG or PNG image file, and then creates a page with the image centered on
-the page with the text centered below:
+The `image2pdf.c` example code creates a PDF file containing a JPEG or PNG
+image file and optional caption on a single page.  The `create_pdf_image_file`
+function creates the PDF file, embeds a base font and the named JPEG or PNG
+image file, and then creates a page with the image centered on the page with any
+text centered below:
 
 ```c
 #include <pdfio.h>
@@ -925,30 +940,46 @@ the page with the text centered below:
 #include <string.h>
 
 
-void
-create_pdf_image_file(const char *pdfname, const char *imagename,
-                      const char *caption)
+bool                                    // O - True on success, false on failure
+create_pdf_image_file(
+    const char *pdfname,                // I - PDF filename
+    const char *imagename,              // I - Image filename
+    const char *caption)                // I - Caption filename
 {
-  pdfio_file_t   *pdf;
-  pdfio_obj_t    *font;
-  pdfio_obj_t    *image;
-  pdfio_dict_t   *dict;
-  pdfio_stream_t *page;
-  double         width, height;
-  double         swidth, sheight;
-  double         tx, ty;
+  pdfio_file_t   *pdf;                  // PDF file
+  pdfio_obj_t    *font;                 // Caption font
+  pdfio_obj_t    *image;                // Image
+  pdfio_dict_t   *dict;                 // Page dictionary
+  pdfio_stream_t *page;                 // Page stream
+  double         width, height;         // Width and height of image
+  double         swidth, sheight;       // Scaled width and height on page
+  double         tx, ty;                // Position on page
 
 
   // Create the PDF file...
   pdf = pdfioFileCreate(pdfname, /*version*/NULL, /*media_box*/NULL,
                         /*crop_box*/NULL, /*error_cb*/NULL,
                         /*error_cbdata*/NULL);
+  if (!pdf)
+    return (false);
 
   // Create a Courier base font for the caption
   font = pdfioFileCreateFontObjFromBase(pdf, "Courier");
 
+  if (!font)
+  {
+    pdfioFileClose(pdf);
+    return (false);
+  }
+
   // Create an image object from the JPEG/PNG image file...
   image = pdfioFileCreateImageObjFromFile(pdf, imagename, true);
+
+  if (!image)
+  {
+    pdfioFileClose(pdf);
+    return (false);
+  }
 
   // Create a page dictionary with the font and image...
   dict = pdfioDictCreate(pdf);
@@ -995,6 +1026,8 @@ create_pdf_image_file(const char *pdfname, const char *imagename,
   // Close the page stream and the PDF file...
   pdfioStreamClose(page);
   pdfioFileClose(pdf);
+
+  return (true);
 }
 ```
 
@@ -1003,9 +1036,9 @@ Generate a Code 128 Barcode
 ---------------------------
 
 One-dimensional barcodes are often rendered using special fonts that map ASCII
-characters to sequences of bars that can be read.  The "examples" directory
-contains such a font to create "Code 128" barcodes, with an accompanying bit of
-example code.
+characters to sequences of bars that can be read.  The `examples` directory
+contains such a font (`code128.ttf`) to create "Code 128" barcodes, with an
+accompanying bit of example code in `code128.c`.
 
 The first thing you need to do is prepare the barcode string to use with the
 font.  Each barcode begins with a start pattern followed by the characters or
@@ -1162,4 +1195,13 @@ pdfioStreamClose(page_st);
 
 Convert Markdown to PDF
 -----------------------
+
+Markdown is a simple plain text format that supports things like headings,
+links, character styles, tables, and embedded images.  The `md2pdf.c` example
+code uses the [mmd](https://www.msweet.org/mmd/) library to convert markdown to
+a PDF file that can be distributed.
+
+> Note: The md2pdf example is by far the most complex example code included with
+> PDFio and shows how to layout text, add headers and footers, add links, embed
+> images, and format tables.
 
