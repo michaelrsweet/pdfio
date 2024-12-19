@@ -14,6 +14,7 @@ v1.4.0 - YYYY-MM-DD
   with `pdfioFileCreateFontObjFromBase` (Issue #84)
 - Fixed reading of PDF files whose trailer is missing a newline (Issue #80)
 - Fixed builds with some versions of VC++ (Issue #81)
+- Fixed validation of date/time values (Issue #83)
 
 
 v1.3.2 - 2024-08-15

@@ -755,6 +755,8 @@ get_date_time(const char *s)		// I - PDF date/time value
   int		offset;			// Date offset
 
 
+  PDFIO_DEBUG("get_date_time(s=\"%s\")\n", s);
+
   // Possible date value of the form:
   //
   //   (D:YYYYMMDDhhmmssZ)
@@ -772,16 +774,23 @@ get_date_time(const char *s)		// I - PDF date/time value
   {
     if (s[i] == 'Z')
     {
+      // UTC...
       i ++;
     }
     else if (s[i] == '-' || s[i] == '+')
     {
+      // Timezone offset from UTC...
       if (isdigit(s[i + 1] & 255) && isdigit(s[i + 2] & 255) && s[i + 3] == '\'' && isdigit(s[i + 4] & 255) && isdigit(s[i + 5] & 255))
       {
 	i += 6;
 	if (s[i] == '\'')
 	  i ++;
       }
+    }
+    else if (!s[i])
+    {
+      // Missing zone info, invalid date string...
+      return (0);
     }
   }
 
