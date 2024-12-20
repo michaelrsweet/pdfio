@@ -13,6 +13,7 @@
 
 # Common options
 CFLAGS		=	-g $(CPPFLAGS)
+#CFLAGS		=	-g -fsanitize=address $(CPPFLAGS)
 CPPFLAGS	=	-I..
 LIBS		=	-L.. -lpdfio -lz
 

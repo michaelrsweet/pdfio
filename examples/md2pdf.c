@@ -89,6 +89,16 @@ typedef struct doctarget_s		// Document target info
 
 #define DOCTARGET_MAX	1000		// Maximum number of targets per document
 
+typedef struct doctoc_s			// Document table-of-contents entry
+{
+  int		level;			// Level
+  int		count;			// Total number of child entries
+  pdfio_obj_t	*obj;			// Dictionary object
+  pdfio_dict_t	*dict;			// Dictionary value
+} doctoc_t;
+
+#define DOCTOC_MAX	1000		// Maximum number of TOC entries
+
 typedef struct docdata_s		// Document formatting data
 {
   pdfio_file_t	*pdf;			// PDF file
@@ -113,6 +123,8 @@ typedef struct docdata_s		// Document formatting data
   docaction_t	actions[DOCACTION_MAX];	// Actions for this document
   size_t	num_targets;		// Number of targets for this document
   doctarget_t	targets[DOCTARGET_MAX];	// Targets for this document
+  size_t	num_toc;		// Number of table-of-contents entries
+  doctoc_t	toc[DOCTOC_MAX];	// Table-of-contents entries
 } docdata_t;
 
 typedef struct linefrag_s		// Line fragment
@@ -244,6 +256,7 @@ static void	render_row(docdata_t *dd, size_t num_cols, tablecol_t *cols, tablero
 static void	set_color(docdata_t *dd, doccolor_t color);
 static void	set_font(docdata_t *dd, docfont_t font, double fsize);
 static void	write_actions(docdata_t *dd);
+static void	write_toc(docdata_t *dd);
 
 
 //
@@ -344,7 +357,12 @@ main(int  argc,				// I - Number of command-line arguments
     pdfioStreamClose(dd.st);
     add_links(&dd);
   }
+
   write_actions(&dd);
+
+  if (dd.num_toc > 0)
+    write_toc(&dd);
+
   pdfioFileClose(dd.pdf);
 
   mmdFree(doc);
@@ -912,12 +930,34 @@ format_doc(docdata_t *dd,		// I - Document data
       case MMD_TYPE_HEADING_4 :
       case MMD_TYPE_HEADING_5 :
       case MMD_TYPE_HEADING_6 :
-          if (dd->heading)
-            free(dd->heading);
+          free(dd->heading);
 
           dd->heading = mmdCopyAllText(current);
 
           format_block(dd, current, DOCFONT_BOLD, heading_sizes[curtype - MMD_TYPE_HEADING_1], left, right, /*leader*/NULL);
+
+          if (dd->num_toc < DOCTOC_MAX)
+          {
+            doctoc_t *t = dd->toc + dd->num_toc;
+					// New TOC
+	    pdfio_array_t *dest;	// Destination array
+
+            t->level = curtype - MMD_TYPE_HEADING_1;
+            t->dict  = pdfioDictCreate(dd->pdf);
+            t->obj   = pdfioFileCreateObj(dd->pdf, t->dict);
+            dest     = pdfioArrayCreate(dd->pdf);
+
+	    pdfioArrayAppendObj(dest, pdfioFileGetPage(dd->pdf, pdfioFileGetNumPages(dd->pdf) - 1));
+	    pdfioArrayAppendName(dest, "XYZ");
+	    pdfioArrayAppendNumber(dest, PAGE_LEFT);
+	    pdfioArrayAppendNumber(dest, dd->y + heading_sizes[curtype - MMD_TYPE_HEADING_1] * LINE_HEIGHT);
+	    pdfioArrayAppendNumber(dest, 0.0);
+
+	    pdfioDictSetArray(t->dict, "Dest", dest);
+	    pdfioDictSetString(t->dict, "Title", pdfioStringCreate(dd->pdf, dd->heading));
+
+            dd->num_toc ++;
+          }
 
           if (dd->num_targets < DOCTARGET_MAX)
           {
@@ -1689,4 +1729,108 @@ write_actions(docdata_t *dd)		// I - Document data
 
     pdfioObjClose(a->obj);
   }
+}
+
+
+//
+// 'write_toc()' - Write the table-of-contents outline.
+//
+
+static void
+write_toc(docdata_t *dd)		// I - Document data
+{
+  size_t	i, j;			// Looping vars
+  doctoc_t	*t,			// Table-of-contents entry
+		*nt,			// Next entry
+		*levels[6];		// Current entries for each level
+  int		level;			// Current level
+  pdfio_dict_t	*dict;			// Outline dictionary
+  pdfio_obj_t	*obj;			// Outline object
+
+
+  // Initialize the various TOC levels...
+  levels[0] = levels[1] = levels[2] = levels[3] = levels[4] = levels[5] = NULL;
+
+  // Scan the table of contents and finalize the dictionaries...
+  for (i = 0, t = dd->toc; i < dd->num_toc; i ++, t ++)
+  {
+    // Set parent, previous, and next entries...
+    if (t->level > 0 && levels[t->level - 1])
+      pdfioDictSetObj(t->dict, "Parent", levels[t->level - 1]->obj);
+
+    if (levels[t->level])
+      pdfioDictSetObj(t->dict, "Prev", levels[t->level]->obj);
+
+    for (j = i + 1, nt = t + 1; j < dd->num_toc; j ++, nt ++)
+    {
+      if (nt->level == t->level)
+      {
+	pdfioDictSetObj(t->dict, "Next", nt->obj);
+        break;
+      }
+      else if (nt->level < t->level)
+      {
+        break;
+      }
+    }
+
+    // First, last, and count...
+    for (level = 0; level < t->level; level ++)
+      levels[level]->count ++;
+
+    levels[t->level] = t;
+
+    if ((i + 1) < dd->num_toc && t[1].level > t->level)
+      pdfioDictSetObj(t->dict, "First", t[1].obj);
+
+    if ((i + 1) >= dd->num_toc)
+    {
+      // Close out all levels...
+      for (level = t->level; level > 0; level --)
+      {
+        pdfioDictSetObj(levels[level - 1]->dict, "Last", levels[level]->obj);
+	levels[level] = NULL;
+      }
+    }
+    else if (t->level > t[1].level)
+    {
+      // Close out N levels...
+      for (level = t->level; level > t[1].level; level --)
+      {
+        pdfioDictSetObj(levels[level - 1]->dict, "Last", levels[level]->obj);
+	levels[level] = NULL;
+      }
+    }
+  }
+
+  // Create the top-level outline object...
+  dict = pdfioDictCreate(dd->pdf);
+  obj  = pdfioFileCreateObj(dd->pdf, dict);
+
+  pdfioDictSetName(dict, "Type", "Outline");
+  pdfioDictSetNumber(dict, "Count", dd->num_toc);
+  pdfioDictSetObj(dict, "First", dd->toc[0].obj);
+
+  // Close the objects for the entries...
+  for (i = 0, t = dd->toc; i < dd->num_toc; i ++, t ++)
+  {
+    if (t->level == 0)
+      pdfioDictSetObj(dict, "Last", t->obj);
+
+    if (t->count)
+    {
+      // Set Count value...
+      if (t->level == 0)
+        pdfioDictSetNumber(t->dict, "Count", t->count);
+      else
+        pdfioDictSetNumber(t->dict, "Count", -t->count);
+    }
+
+    pdfioObjClose(t->obj);
+  }
+
+  // Close the outline object and add it to the document catalog...
+  pdfioObjClose(obj);
+
+  pdfioDictSetObj(pdfioFileGetCatalog(dd->pdf), "Outlines", obj);
 }

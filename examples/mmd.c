@@ -166,7 +166,7 @@ mmdCopyAllText(mmd_t *node)		// I - Parent node
   char		*all = NULL,		// String buffer
 		*allptr = NULL,		// Pointer into string buffer
 		*temp;			// Temporary pointer
-  size_t	allsize = 0,		// Size of "all" buffer
+  size_t	allsize = 1,		// Size of "all" buffer
 		textlen;		// Length of "text" string
   mmd_t		*current,		// Current node
 		*next;			// Next node
