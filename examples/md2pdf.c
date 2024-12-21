@@ -209,6 +209,9 @@ static const char * const docfont_names[] =
   "FM"
 };
 
+#define BQ_PADDING	18.0		// Padding for block quotes
+#define BQ_THICKNESS	3.0		// Thickness of block quote bar
+
 #define CODE_PADDING	4.5		// Padding for code blocks
 
 #define IMAGE_PPI	100.0		// Pixels per inch for images
@@ -672,12 +675,8 @@ format_block(docdata_t  *dd,		// I - Document data
       {
         // Add an orange bar to the left of block quotes...
         set_color(dd, DOCCOLOR_ORANGE);
-        pdfioContentSave(dd->st);
-        pdfioContentSetLineWidth(dd->st, 3.0);
-        pdfioContentPathMoveTo(dd->st, left - 6.0, dd->y - (LINE_HEIGHT - 1.0) * fsize);
-        pdfioContentPathLineTo(dd->st, left - 6.0, dd->y + fsize);
-        pdfioContentStroke(dd->st);
-        pdfioContentRestore(dd->st);
+        pdfioContentPathRect(dd->st, left - BQ_PADDING, dd->y - (LINE_HEIGHT - 1.0) * fsize - BQ_THICKNESS, BQ_THICKNESS, lineheight + 2.0 * BQ_THICKNESS);
+        pdfioContentFill(dd->st, /*even_odd*/false);
       }
 
       num_frags   = 0;
@@ -930,7 +929,7 @@ format_doc(docdata_t *dd,		// I - Document data
           break;
 
       case MMD_TYPE_BLOCK_QUOTE :
-          format_doc(dd, current, DOCFONT_ITALIC, left + 36.0, right - 36.0);
+          format_doc(dd, current, DOCFONT_ITALIC, left + BQ_PADDING, right - BQ_PADDING);
           break;
 
       case MMD_TYPE_ORDERED_LIST :
