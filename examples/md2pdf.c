@@ -209,6 +209,8 @@ static const char * const docfont_names[] =
   "FM"
 };
 
+#define CODE_PADDING	4.5		// Padding for code blocks
+
 #define IMAGE_PPI	100.0		// Pixels per inch for images
 
 #define LINE_HEIGHT	1.4		// Multiplier for line height
@@ -830,14 +832,19 @@ format_code(docdata_t *dd,		// I - Document data
     margin_top = (1.0 - LINE_HEIGHT) * lineheight;
   }
 
-  dd->y -= lineheight + margin_top;
+  dd->y -= lineheight + margin_top + CODE_PADDING;
 
   if ((dd->y - lineheight) < dd->art_box.y1)
   {
     new_page(dd);
 
-    dd->y -= lineheight / LINE_HEIGHT;
+    dd->y -= lineheight / LINE_HEIGHT + CODE_PADDING;
   }
+
+  // Draw the top padding...
+  set_color(dd, DOCCOLOR_LTGRAY);
+  pdfioContentPathRect(dd->st, left - CODE_PADDING, dd->y + SIZE_CODEBLOCK, right - left + 2.0 * CODE_PADDING, CODE_PADDING);
+  pdfioContentFillAndStroke(dd->st, false);
 
   // Start a code text block...
   set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
@@ -847,7 +854,7 @@ format_code(docdata_t *dd,		// I - Document data
   for (code = mmdGetFirstChild(block); code; code = mmdGetNextSibling(code))
   {
     set_color(dd, DOCCOLOR_LTGRAY);
-    pdfioContentPathRect(dd->st, left - 3.0, dd->y - (LINE_HEIGHT - 1.0) * SIZE_CODEBLOCK, right - left + 6.0, lineheight);
+    pdfioContentPathRect(dd->st, left - CODE_PADDING, dd->y - (LINE_HEIGHT - 1.0) * SIZE_CODEBLOCK, right - left + 2.0 * CODE_PADDING, lineheight);
     pdfioContentFillAndStroke(dd->st, false);
 
     set_color(dd, DOCCOLOR_RED);
@@ -863,7 +870,7 @@ format_code(docdata_t *dd,		// I - Document data
       new_page(dd);
       set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
 
-      dd->y -= lineheight;
+      dd->y -= lineheight / LINE_HEIGHT;
 
       pdfioContentTextBegin(dd->st);
       pdfioContentTextMoveTo(dd->st, left, dd->y);
@@ -873,6 +880,11 @@ format_code(docdata_t *dd,		// I - Document data
   // End the current text block...
   pdfioContentTextEnd(dd->st);
   dd->y += lineheight;
+
+  // Draw the bottom padding...
+  set_color(dd, DOCCOLOR_LTGRAY);
+  pdfioContentPathRect(dd->st, left - CODE_PADDING, dd->y - CODE_PADDING - (LINE_HEIGHT - 1.0) * SIZE_CODEBLOCK, right - left + 2.0 * CODE_PADDING, CODE_PADDING);
+  pdfioContentFillAndStroke(dd->st, false);
 }
 
 
@@ -998,7 +1010,7 @@ format_doc(docdata_t *dd,		// I - Document data
           break;
 
       case MMD_TYPE_CODE_BLOCK :
-          format_code(dd, current, left + 36.0, right - 36.0);
+          format_code(dd, current, left + CODE_PADDING, right + CODE_PADDING);
           break;
     }
   }
