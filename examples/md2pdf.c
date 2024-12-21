@@ -101,6 +101,7 @@ typedef struct doctoc_s			// Document table-of-contents entry
 
 typedef struct docdata_s		// Document formatting data
 {
+  // State for the whole document
   pdfio_file_t	*pdf;			// PDF file
   pdfio_rect_t	media_box;		// Media (page) box
   pdfio_rect_t	crop_box;		// Crop box (for margins)
@@ -110,6 +111,14 @@ typedef struct docdata_s		// Document formatting data
   docimage_t	images[DOCIMAGE_MAX];	// Embedded images
   const char	*title;			// Document title
   char		*heading;		// Current document heading
+  size_t	num_actions;		// Number of actions for this document
+  docaction_t	actions[DOCACTION_MAX];	// Actions for this document
+  size_t	num_targets;		// Number of targets for this document
+  doctarget_t	targets[DOCTARGET_MAX];	// Targets for this document
+  size_t	num_toc;		// Number of table-of-contents entries
+  doctoc_t	toc[DOCTOC_MAX];	// Table-of-contents entries
+
+  // State for the current page
   pdfio_stream_t *st;			// Current page stream
   double	y;			// Current position on page
   docfont_t	font;			// Current font
@@ -119,12 +128,6 @@ typedef struct docdata_s		// Document formatting data
   pdfio_obj_t	*annots_obj;		// Annotations object (for links)
   size_t	num_links;		// Number of links for this page
   doclink_t	links[DOCLINK_MAX];	// Links for this page
-  size_t	num_actions;		// Number of actions for this document
-  docaction_t	actions[DOCACTION_MAX];	// Actions for this document
-  size_t	num_targets;		// Number of targets for this document
-  doctarget_t	targets[DOCTARGET_MAX];	// Targets for this document
-  size_t	num_toc;		// Number of table-of-contents entries
-  doctoc_t	toc[DOCTOC_MAX];	// Table-of-contents entries
 } docdata_t;
 
 typedef struct linefrag_s		// Line fragment
@@ -302,7 +305,8 @@ main(int  argc,				// I - Number of command-line arguments
   dd.art_box.x2  = PAGE_RIGHT;
   dd.art_box.y2  = PAGE_TOP;
 
-  dd.title       = mmdGetMetadata(doc, "title");
+  if ((dd.title = mmdGetMetadata(doc, "title")) == NULL)
+    dd.art_box.y2 = PAGE_HEADER;	// No header if there is no title
 
   if (argc == 2)
   {
@@ -587,12 +591,16 @@ format_block(docdata_t  *dd,		// I - Document data
   if (leader)
   {
     // Add leader text on first line...
-    frags[0].width  = pdfioContentTextMeasure(dd->fonts[deffont], leader, fsize);
-    frags[0].height = fsize;
-    frags[0].x      = left - frags[0].width;
-    frags[0].text   = leader;
-    frags[0].font   = deffont;
-    frags[0].color  = DOCCOLOR_BLACK;
+    frags[0].type     = MMD_TYPE_NORMAL_TEXT;
+    frags[0].width    = pdfioContentTextMeasure(dd->fonts[deffont], leader, fsize);
+    frags[0].height   = fsize;
+    frags[0].x        = left - frags[0].width;
+    frags[0].imagenum = 0;
+    frags[0].text     = leader;
+    frags[0].url      = NULL;
+    frags[0].ws       = false;
+    frags[0].font     = deffont;
+    frags[0].color    = DOCCOLOR_BLACK;
 
     num_frags  = 1;
     lineheight = fsize * LINE_HEIGHT;
@@ -806,20 +814,29 @@ format_code(docdata_t *dd,		// I - Document data
             double    right)		// I - Right margin
 {
   mmd_t		*code;			// Current code block
-  double	lineheight;		// Line height
+  double	lineheight,		// Line height
+		margin_top;		// Top margin
 
+
+  // Compute line height and initial top margin...
+  lineheight = SIZE_CODEBLOCK * LINE_HEIGHT;
+  margin_top = lineheight;
 
   // Start a new page as needed...
   if (!dd->st)
+  {
     new_page(dd);
 
-  lineheight = SIZE_CODEBLOCK * LINE_HEIGHT;
-  dd->y      -= 2.0 * lineheight;
+    margin_top = (1.0 - LINE_HEIGHT) * lineheight;
+  }
+
+  dd->y -= lineheight + margin_top;
+
   if ((dd->y - lineheight) < dd->art_box.y1)
   {
     new_page(dd);
 
-    dd->y -= lineheight;
+    dd->y -= lineheight / LINE_HEIGHT;
   }
 
   // Start a code text block...
@@ -1338,14 +1355,14 @@ new_page(docdata_t *dd)			// I - Document data
 
   // Prep the new page...
   page_dict = pdfioDictCreate(dd->pdf);
+
   dd->annots_array = pdfioArrayCreate(dd->pdf);
   dd->annots_obj   = pdfioFileCreateArrayObj(dd->pdf, dd->annots_array);
+  pdfioDictSetObj(page_dict, "Annots", dd->annots_obj);
 
   pdfioDictSetRect(page_dict, "MediaBox", &dd->media_box);
 //  pdfioDictSetRect(page_dict, "CropBox", &dd->crop_box);
   pdfioDictSetRect(page_dict, "ArtBox", &dd->art_box);
-
-  pdfioDictSetObj(page_dict, "Annots", dd->annots_obj);
 
   for (fontface = DOCFONT_REGULAR; fontface < DOCFONT_MAX; fontface ++)
     pdfioPageDictAddFont(page_dict, docfont_names[fontface], dd->fonts[fontface]);
@@ -1452,12 +1469,13 @@ render_line(docdata_t  *dd,		// I - Document data
   size_t	i;			// Looping var
   linefrag_t	*frag;			// Current line fragment
   bool		in_text = false;	// Are we in a text block?
+//  bool		ws_after;		// Do we have whitespace after this fragment?
 
 
   if (!dd->st)
   {
     new_page(dd);
-    margin_top = 0.0;
+    margin_top = (1.0 - LINE_HEIGHT) * lineheight;
   }
 
   dd->y -= margin_top + lineheight;
@@ -1465,7 +1483,7 @@ render_line(docdata_t  *dd,		// I - Document data
   {
     new_page(dd);
 
-    dd->y -= lineheight;
+    dd->y -= lineheight / LINE_HEIGHT;
   }
 
   for (i = 0, frag = frags; i < num_frags; i ++, frag ++)
@@ -1510,10 +1528,20 @@ render_line(docdata_t  *dd,		// I - Document data
 	in_text = true;
       }
 
-      if (frag->ws)
-	pdfioContentTextShowf(dd->st, UNICODE_VALUE, " %s", frag->text);
+#if 0
+      if (frag->font != DOCFONT_MONOSPACE && (i + 1) < num_frags && frag[1].ws && frag[1].font == DOCFONT_MONOSPACE)
+      {
+        // Don't use a monospace space to separate it from non-monospace
+        ws_after   = true;
+        frag[1].ws = false;
+      }
       else
-	pdfioContentTextShow(dd->st, UNICODE_VALUE, frag->text);
+      {
+        ws_after = false;
+      }
+#endif // 0
+
+      pdfioContentTextShowf(dd->st, UNICODE_VALUE, "%s%s%s", frag->ws ? " " : "", frag->text, /*ws_after ? " " :*/ "");
 
       if (frag->url && dd->num_links < DOCLINK_MAX)
       {

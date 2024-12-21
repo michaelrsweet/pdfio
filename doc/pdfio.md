@@ -2,7 +2,7 @@ Introduction
 ============
 
 PDFio is a simple C library for reading and writing PDF files.  The primary
-goals of pdfio are:
+goals of PDFio are:
 
 - Read and write any version of PDF file
 - Provide access to pages, objects, and streams within a PDF file
@@ -1203,5 +1203,228 @@ a PDF file that can be distributed.
 
 > Note: The md2pdf example is by far the most complex example code included with
 > PDFio and shows how to layout text, add headers and footers, add links, embed
-> images, and format tables.
+> images, format tables, and add an outline (table of contents) for navigation.
 
+### Managing Document State
+
+The `md2pdf` program needs to maintain three sets of state - one for the
+markdown document which is represented by nodes of type `mmd_t` and the others
+for the PDF document and current PDF page which are contained in the `docdata_t`
+structure:
+
+```c
+typedef struct docdata_s                // Document formatting data
+{
+  // State for the whole document
+  pdfio_file_t  *pdf;                   // PDF file
+  pdfio_rect_t  media_box;              // Media (page) box
+  pdfio_rect_t  crop_box;               // Crop box (for margins)
+  pdfio_rect_t  art_box;                // Art box (for markdown content)
+  pdfio_obj_t   *fonts[DOCFONT_MAX];    // Embedded fonts
+  size_t        num_images;             // Number of embedded images
+  docimage_t    images[DOCIMAGE_MAX];   // Embedded images
+  const char    *title;                 // Document title
+  char          *heading;               // Current document heading
+  size_t        num_actions;            // Number of actions for this document
+  docaction_t   actions[DOCACTION_MAX]; // Actions for this document
+  size_t        num_targets;            // Number of targets for this document
+  doctarget_t   targets[DOCTARGET_MAX]; // Targets for this document
+  size_t        num_toc;                // Number of table-of-contents entries
+  doctoc_t      toc[DOCTOC_MAX];        // Table-of-contents entries
+
+  // State for the current page
+  pdfio_stream_t *st;                   // Current page stream
+  double        y;                      // Current position on page
+  docfont_t     font;                   // Current font
+  double        fsize;                  // Current font size
+  doccolor_t    color;                  // Current color
+  pdfio_array_t *annots_array;          // Annotations array (for links)
+  pdfio_obj_t   *annots_obj;            // Annotations object (for links)
+  size_t        num_links;              // Number of links for this page
+  doclink_t     links[DOCLINK_MAX];     // Links for this page
+} docdata_t;
+```
+
+
+#### Document State
+
+The output is fixed to the "universal" media size (the intersection of US Letter
+and ISO A4) with 1/2 inch margins - the `PAGE_` constants can be changed to
+select a different size or margins.  The `media_box` member contains the
+"MediaBox" rectangle for the PDF pages, while the `crop_box` and `art_box`
+members contain the "CropBox" and "ArtBox" values, respectively.
+
+Four embedded fonts are used:
+
+- `DOCFONT_REGULAR`: the default font used for text,
+- `DOCFONT_BOLD`: a boldface font used for heading and strong text,
+- `DOCFONT_ITALIC`: an italic/oblique font used for emphasized text, and
+- `DOCFONT_MONOSPACE`: a fixed-width font used for code.
+
+By default the code uses the base PostScript fonts Helvetica, Helvetica-Bold,
+Helvetica-Oblique, and Courier.  The `USE_TRUETYPE` define can be used to
+replace these with the Roboto TrueType fonts.
+
+Embedded JPEG and PNG images are copied into the PDF document, with the `images`
+array containing the list of the images and their objects.
+
+The `title` member contains the document title, while the `heading` member
+contains the current heading text.
+
+The `actions` array contains a list of action dictionaries for interior document
+links that need to be resolved, while the `targets` array keeps track of the
+location of the headings in the PDF document.
+
+The `toc` array contains a list of headings and is used to construct the PDF
+outlines dictionaries/objects, which provides a table of contents for navigation
+in most PDF readers.
+
+
+#### Page State
+
+The `st` member provides the stream for the current page content.  The `color`,
+`font`, `fsize`, and `y` members provide the current graphics state on the page.
+
+The `annots_array`, `annots_obj`, `num_links`, and `links` members contain a
+list of hyperlinks on the current page.
+
+
+### Creating Pages
+
+The `new_page` function is used to start a new page.  Aside from creating the
+new page object and stream, it adds a standard header and footer to the page.
+It starts by closing the current page if it is open:
+
+```c
+// Close the current page...
+if (dd->st)
+{
+  pdfioStreamClose(dd->st);
+  add_links(dd);
+}
+```
+
+The new page needs a dictionary containing any link annotations, the media and
+art boxes, the four fonts, and any images:
+
+```c
+// Prep the new page...
+page_dict = pdfioDictCreate(dd->pdf);
+
+dd->annots_array = pdfioArrayCreate(dd->pdf);
+dd->annots_obj   = pdfioFileCreateArrayObj(dd->pdf, dd->annots_array);
+pdfioDictSetObj(page_dict, "Annots", dd->annots_obj);
+
+pdfioDictSetRect(page_dict, "MediaBox", &dd->media_box);
+pdfioDictSetRect(page_dict, "ArtBox", &dd->art_box);
+
+for (fontface = DOCFONT_REGULAR; fontface < DOCFONT_MAX; fontface ++)
+  pdfioPageDictAddFont(page_dict, docfont_names[fontface],
+                       dd->fonts[fontface]);
+
+for (i = 0; i < dd->num_images; i ++)
+  pdfioPageDictAddImage(page_dict,
+                        pdfioStringCreatef(dd->pdf, "I%u",
+                                           (unsigned)i),
+                        dd->images[i].obj);
+```
+
+Once the page dictionary is initialized, we create a new page and initialize
+the current graphics state:
+
+```c
+dd->st    = pdfioFileCreatePage(dd->pdf, page_dict);
+dd->color = DOCCOLOR_BLACK;
+dd->font  = DOCFONT_MAX;
+dd->fsize = 0.0;
+dd->y     = dd->art_box.y2;
+```
+
+The header consists of a dark gray separating line and the document title.  We
+don't show the header on the first page:
+
+```c
+// Add header/footer text
+set_color(dd, DOCCOLOR_GRAY);
+set_font(dd, DOCFONT_REGULAR, SIZE_HEADFOOT);
+
+if (pdfioFileGetNumPages(dd->pdf) > 1 && dd->title)
+{
+  // Show title in header...
+  width = pdfioContentTextMeasure(dd->fonts[DOCFONT_REGULAR],
+                                  dd->title, SIZE_HEADFOOT);
+
+  pdfioContentTextBegin(dd->st);
+  pdfioContentTextMoveTo(dd->st,
+                         dd->crop_box.x1 + 0.5 * (dd->crop_box.x2 -
+                             dd->crop_box.x1 - width),
+                         dd->crop_box.y2 - SIZE_HEADFOOT);
+  pdfioContentTextShow(dd->st, UNICODE_VALUE, dd->title);
+  pdfioContentTextEnd(dd->st);
+
+  pdfioContentPathMoveTo(dd->st, dd->crop_box.x1,
+                         dd->crop_box.y2 -
+                             2 * SIZE_HEADFOOT * LINE_HEIGHT +
+                             SIZE_HEADFOOT);
+  pdfioContentPathLineTo(dd->st, dd->crop_box.x2,
+                         dd->crop_box.y2 -
+                             2 * SIZE_HEADFOOT * LINE_HEIGHT +
+                             SIZE_HEADFOOT);
+  pdfioContentStroke(dd->st);
+}
+```
+
+The footer contains the same dark gray separating line with the current heading
+and page number on opposite sides.  The page number is always positioned on the
+outer edge for a two-sided print - right justified on odd numbered pages and
+left justified on even numbered pages:
+
+```c
+// Show page number and current heading...
+pdfioContentPathMoveTo(dd->st, dd->crop_box.x1,
+                       dd->crop_box.y1 + SIZE_HEADFOOT * LINE_HEIGHT);
+pdfioContentPathLineTo(dd->st, dd->crop_box.x2,
+                       dd->crop_box.y1 + SIZE_HEADFOOT * LINE_HEIGHT);
+pdfioContentStroke(dd->st);
+
+pdfioContentTextBegin(dd->st);
+snprintf(temp, sizeof(temp), "%u",
+         (unsigned)pdfioFileGetNumPages(dd->pdf));
+if (pdfioFileGetNumPages(dd->pdf) & 1)
+{
+  // Page number on right...
+  width = pdfioContentTextMeasure(dd->fonts[DOCFONT_REGULAR], temp,
+                                  SIZE_HEADFOOT);
+  pdfioContentTextMoveTo(dd->st, dd->crop_box.x2 - width,
+                         dd->crop_box.y1);
+}
+else
+{
+  // Page number on left...
+  pdfioContentTextMoveTo(dd->st, dd->crop_box.x1, dd->crop_box.y1);
+}
+
+pdfioContentTextShow(dd->st, UNICODE_VALUE, temp);
+pdfioContentTextEnd(dd->st);
+
+if (dd->heading)
+{
+  pdfioContentTextBegin(dd->st);
+
+  if (pdfioFileGetNumPages(dd->pdf) & 1)
+  {
+    // Current heading on left...
+    pdfioContentTextMoveTo(dd->st, dd->crop_box.x1, dd->crop_box.y1);
+  }
+  else
+  {
+    width = pdfioContentTextMeasure(dd->fonts[DOCFONT_REGULAR],
+                                    dd->heading, SIZE_HEADFOOT);
+    pdfioContentTextMoveTo(dd->st, dd->crop_box.x2 - width,
+                           dd->crop_box.y1);
+  }
+
+  pdfioContentTextShow(dd->st, UNICODE_VALUE, dd->heading);
+  pdfioContentTextEnd(dd->st);
+}
+```
