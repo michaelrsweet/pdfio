@@ -107,6 +107,7 @@ typedef struct docdata_s		// Document formatting data
   pdfio_rect_t	crop_box;		// Crop box (for margins)
   pdfio_rect_t	art_box;		// Art box (for markdown content)
   pdfio_obj_t	*fonts[DOCFONT_MAX];	// Embedded fonts
+  double	font_space;		// Unit width of a space
   size_t	num_images;		// Number of embedded images
   docimage_t	images[DOCIMAGE_MAX];	// Embedded images
   const char	*title;			// Document title
@@ -348,6 +349,8 @@ main(int  argc,				// I - Number of command-line arguments
       return (1);
 #endif // USE_TRUETYPE
   }
+
+  dd.font_space = pdfioContentTextMeasure(dd.fonts[DOCFONT_REGULAR], " ", 1.0);
 
   // Add images...
   add_images(&dd, doc);
@@ -624,7 +627,7 @@ format_block(docdata_t  *dd,		// I - Document data
     imagenum = 0;
     url      = mmdGetURL(current);
     ws       = mmdGetWhitespace(current);
-    wswidth  = 0.0;
+    wswidth  = ws ? dd->font_space * fsize : 0.0;
     next     = mmd_walk_next(block, current);
 
     // Process the node...
@@ -714,9 +717,6 @@ format_block(docdata_t  *dd,		// I - Document data
 
       width  = pdfioContentTextMeasure(dd->fonts[font], text, fsize);
       height = fsize * LINE_HEIGHT;
-
-      if (ws)
-	wswidth = pdfioContentTextMeasure(dd->fonts[font], " ", fsize);
     }
 
     // See if this node will fit on the current line...
@@ -1469,7 +1469,6 @@ render_line(docdata_t  *dd,		// I - Document data
   size_t	i;			// Looping var
   linefrag_t	*frag;			// Current line fragment
   bool		in_text = false;	// Are we in a text block?
-//  bool		ws_after;		// Do we have whitespace after this fragment?
 
 
   if (!dd->st)
@@ -1517,9 +1516,6 @@ render_line(docdata_t  *dd,		// I - Document data
     else if (frag->text)
     {
       // Draw text
-      set_color(dd, frag->color);
-      set_font(dd, frag->font, frag->height);
-
       if (!in_text)
       {
 	pdfioContentTextBegin(dd->st);
@@ -1528,20 +1524,19 @@ render_line(docdata_t  *dd,		// I - Document data
 	in_text = true;
       }
 
-#if 0
-      if (frag->font != DOCFONT_MONOSPACE && (i + 1) < num_frags && frag[1].ws && frag[1].font == DOCFONT_MONOSPACE)
+      if (frag->ws && frag->font == DOCFONT_MONOSPACE)
       {
-        // Don't use a monospace space to separate it from non-monospace
-        ws_after   = true;
-        frag[1].ws = false;
+	set_font(dd, DOCFONT_REGULAR, frag->height);
+	pdfioContentTextShow(dd->st, UNICODE_VALUE, " ");
       }
-      else
-      {
-        ws_after = false;
-      }
-#endif // 0
 
-      pdfioContentTextShowf(dd->st, UNICODE_VALUE, "%s%s%s", frag->ws ? " " : "", frag->text, /*ws_after ? " " :*/ "");
+      set_color(dd, frag->color);
+      set_font(dd, frag->font, frag->height);
+
+      if (frag->font == DOCFONT_MONOSPACE)
+	pdfioContentTextShow(dd->st, UNICODE_VALUE, frag->text);
+      else
+	pdfioContentTextShowf(dd->st, UNICODE_VALUE, "%s%s", frag->ws ? " " : "", frag->text);
 
       if (frag->url && dd->num_links < DOCLINK_MAX)
       {
