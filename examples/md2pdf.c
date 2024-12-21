@@ -829,7 +829,7 @@ format_code(docdata_t *dd,		// I - Document data
   {
     new_page(dd);
 
-    margin_top = (1.0 - LINE_HEIGHT) * lineheight;
+    margin_top = 0.0;
   }
 
   dd->y -= lineheight + margin_top + CODE_PADDING;
@@ -838,7 +838,7 @@ format_code(docdata_t *dd,		// I - Document data
   {
     new_page(dd);
 
-    dd->y -= lineheight / LINE_HEIGHT + CODE_PADDING;
+    dd->y -= lineheight + CODE_PADDING;
   }
 
   // Draw the top padding...
@@ -870,7 +870,7 @@ format_code(docdata_t *dd,		// I - Document data
       new_page(dd);
       set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
 
-      dd->y -= lineheight / LINE_HEIGHT;
+      dd->y -= lineheight;
 
       pdfioContentTextBegin(dd->st);
       pdfioContentTextMoveTo(dd->st, left, dd->y);
@@ -1010,7 +1010,7 @@ format_doc(docdata_t *dd,		// I - Document data
           break;
 
       case MMD_TYPE_CODE_BLOCK :
-          format_code(dd, current, left + CODE_PADDING, right + CODE_PADDING);
+          format_code(dd, current, left + CODE_PADDING, right - CODE_PADDING);
           break;
     }
   }
@@ -1486,7 +1486,7 @@ render_line(docdata_t  *dd,		// I - Document data
   if (!dd->st)
   {
     new_page(dd);
-    margin_top = (1.0 - LINE_HEIGHT) * lineheight;
+    margin_top = 0.0;
   }
 
   dd->y -= margin_top + lineheight;
@@ -1494,7 +1494,7 @@ render_line(docdata_t  *dd,		// I - Document data
   {
     new_page(dd);
 
-    dd->y -= lineheight / LINE_HEIGHT;
+    dd->y -= lineheight;
   }
 
   for (i = 0, frag = frags; i < num_frags; i ++, frag ++)

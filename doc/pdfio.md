@@ -316,8 +316,8 @@ You open an existing PDF file using the [`pdfioFileOpen`](@@) function:
 
 ```c
 pdfio_file_t *pdf =
-    pdfioFileOpen("myinputfile.pdf", password_cb, password_data,
-                  error_cb, error_data);
+    pdfioFileOpen("myinputfile.pdf", password_cb, password_data, error_cb,
+                  error_data);
 
 ```
 
@@ -466,8 +466,7 @@ You create a new PDF file using the [`pdfioFileCreate`](@@) function:
 pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
 pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // w/0.5" margins
 
-pdfio_file_t *pdf = pdfioFileCreate("myoutputfile.pdf", "2.0",
-                                    &media_box, &crop_box,
+pdfio_file_t *pdf = pdfioFileCreate("myoutputfile.pdf", "2.0", &media_box, &crop_box,
                                     error_cb, error_data);
 ```
 
@@ -484,9 +483,8 @@ function:
 pdfio_rect_t media_box = { 0.0, 0.0, 612.0, 792.0 };  // US Letter
 pdfio_rect_t crop_box = { 36.0, 36.0, 576.0, 756.0 }; // w/0.5" margins
 
-pdfio_file_t *pdf = pdfioFileCreateOutput(output_cb, output_ctx, "2.0",
-                                          &media_box, &crop_box,
-                                          error_cb, error_data);
+pdfio_file_t *pdf = pdfioFileCreateOutput(output_cb, output_ctx, "2.0", &media_box,
+                                          &crop_box, error_cb, error_data);
 ```
 
 Once the file is created, use the [`pdfioFileCreateObj`](@@),
@@ -619,11 +617,16 @@ PDF color spaces are specified using well-known names like "DeviceCMYK",
 color spaces.  PDFio provides several functions for embedding ICC profiles and
 creating color space arrays:
 
-- [`pdfioArrayCreateColorFromICCObj`](@@) creates a color array for an ICC color profile object
-- [`pdfioArrayCreateColorFromMatrix`](@@) creates a color array using a CIE XYZ color transform matrix, a gamma value, and a CIE XYZ white point
-- [`pdfioArrayCreateColorFromPalette`](@@) creates an indexed color array from an array of sRGB values
-- [`pdfioArrayCreateColorFromPrimaries`](@@) creates a color array using CIE XYZ primaries and a gamma value
-- [`pdfioArrayCreateColorFromStandard`](@@) creates a color array for a standard color space
+- [`pdfioArrayCreateColorFromICCObj`](@@) creates a color array for an ICC color
+  profile object
+- [`pdfioArrayCreateColorFromMatrix`](@@) creates a color array using a CIE XYZ
+  color transform matrix, a gamma value, and a CIE XYZ white point
+- [`pdfioArrayCreateColorFromPalette`](@@) creates an indexed color array from
+  an array of sRGB values
+- [`pdfioArrayCreateColorFromPrimaries`](@@) creates a color array using CIE XYZ
+  primaries and a gamma value
+- [`pdfioArrayCreateColorFromStandard`](@@) creates a color array for a standard
+  color space
 
 You can embed an ICC color profile using the
 [`pdfioFileCreateICCObjFromFile`](@@) function:
@@ -720,10 +723,9 @@ in memory, for example:
 pdfio_file_t *pdf = pdfioFileCreate(...);
 unsigned char data[1024 * 1024 * 4]; // 1024x1024 RGBA image data
 pdfio_obj_t *img =
-    pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024,
-                                    /*height*/1024, /*num_colors*/3,
-                                    /*color_data*/NULL, /*alpha*/true,
-                                    /*interpolate*/false);
+    pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024, /*height*/1024,
+                                    /*num_colors*/3, /*color_data*/NULL,
+                                    /*alpha*/true, /*interpolate*/false);
 ```
 
 will create an object for a 1024x1024 RGBA image in memory, using the default
@@ -737,17 +739,14 @@ pdfio_file_t *pdf = pdfioFileCreate(...);
 // Create an AdobeRGB color array
 pdfio_array_t *adobe_rgb =
     pdfioArrayCreateColorFromMatrix(pdf, 3, pdfioAdobeRGBGamma,
-                                    pdfioAdobeRGBMatrix,
-                                    pdfioAdobeRGBWhitePoint);
+                                    pdfioAdobeRGBMatrix, pdfioAdobeRGBWhitePoint);
 
 // Create a 1024x1024 RGBA image using AdobeRGB
 unsigned char data[1024 * 1024 * 4]; // 1024x1024 RGBA image data
 pdfio_obj_t *img =
-    pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024,
-                                    /*height*/1024, /*num_colors*/3,
-                                    /*color_data*/adobe_rgb,
-                                    /*alpha*/true,
-                                    /*interpolate*/false);
+    pdfioFileCreateImageObjFromData(pdf, data, /*width*/1024, /*height*/1024,
+                                    /*num_colors*/3, /*color_data*/adobe_rgb,
+                                    /*alpha*/true, /*interpolate*/false);
 ```
 
 The "interpolate" argument specifies whether the colors in the image should be
@@ -760,8 +759,7 @@ function to copy the image into a PDF image object, for example:
 ```c
 pdfio_file_t *pdf = pdfioFileCreate(...);
 pdfio_obj_t *img =
-    pdfioFileCreateImageObjFromFile(pdf, "myphoto.jpg",
-                                    /*interpolate*/true);
+    pdfioFileCreateImageObjFromFile(pdf, "myphoto.jpg", /*interpolate*/true);
 ```
 
 > Note: Currently `pdfioFileCreateImageObjFromFile` does not support 12 bit JPEG
@@ -899,9 +897,8 @@ main(int  argc,                         // I - Number of command-line arguments
   filename = argv[1];
 
   // Open the PDF file with the default callbacks...
-  pdf = pdfioFileOpen(filename, /*password_cb*/NULL,
-                      /*password_cbdata*/NULL, /*error_cb*/NULL,
-                      /*error_cbdata*/NULL);
+  pdf = pdfioFileOpen(filename, /*password_cb*/NULL, /*password_cbdata*/NULL,
+                      /*error_cb*/NULL, /*error_cbdata*/NULL);
   if (pdf == NULL)
     return (1);
 
@@ -957,9 +954,8 @@ create_pdf_image_file(
 
 
   // Create the PDF file...
-  pdf = pdfioFileCreate(pdfname, /*version*/NULL, /*media_box*/NULL,
-                        /*crop_box*/NULL, /*error_cb*/NULL,
-                        /*error_cbdata*/NULL);
+  pdf = pdfioFileCreate(pdfname, /*version*/NULL, /*media_box*/NULL, /*crop_box*/NULL,
+                        /*error_cb*/NULL, /*error_cbdata*/NULL);
   if (!pdf)
     return (false);
 
@@ -993,9 +989,9 @@ create_pdf_image_file(
   width  = pdfioImageGetWidth(image);
   height = pdfioImageGetHeight(image);
 
-  // Default media_box is "universal" 595.28x792 points (8.27x11in or
-  // 210x279mm).  Use margins of 36 points (0.5in or 12.7mm) with another
-  // 36 points for the caption underneath...
+  // Default media_box is "universal" 595.28x792 points (8.27x11in or 210x279mm).
+  // Use margins of 36 points (0.5in or 12.7mm) with another 36 points for the
+  // caption underneath...
   swidth  = 595.28 - 72.0;
   sheight = swidth * height / width;
   if (sheight > (792.0 - 36.0 - 72.0))
@@ -1012,8 +1008,8 @@ create_pdf_image_file(
   // Draw the caption in black...
   pdfioContentSetFillColorDeviceGray(page, 0.0);
 
-  // Compute the starting point for the text - Courier is monospaced
-  // with a nominal width of 0.6 times the text height...
+  // Compute the starting point for the text - Courier is monospaced with a
+  // nominal width of 0.6 times the text height...
   tx = 0.5 * (595.28 - 18.0 * 0.6 * strlen(caption));
 
   // Position and draw the caption underneath...
@@ -1099,8 +1095,7 @@ using the [`pdfioFileCreateFontObjFromFile`](@@) function.  We pass `false`
 for the "unicode" argument since we just want the (default) ASCII encoding:
 
 ```c
-barcode_font = pdfioFileCreateFontObjFromFile(pdf, "code128.ttf",
-                                              /*unicode*/false);
+barcode_font = pdfioFileCreateFontObjFromFile(pdf, "code128.ttf", /*unicode*/false);
 ```
 
 Since barcodes usually have the number or text represented by the barcode
@@ -1135,8 +1130,7 @@ double text_width = 0.0;
 if (text && text_font)
 {
   text_height = 9.0;
-  text_width  = pdfioContentTextMeasure(text_font, text,
-                                        text_height);
+  text_width  = pdfioContentTextMeasure(text_font, text, text_height);
 }
 
 // Compute the size of the PDF page...
@@ -1144,8 +1138,7 @@ pdfio_rect_t media_box;
 
 media_box.x1 = 0.0;
 media_box.y1 = 0.0;
-media_box.x2 = (barcode_width > text_width ?
-                    barcode_width : text_width) + 18.0;
+media_box.x2 = (barcode_width > text_width ? barcode_width : text_width) + 18.0;
 media_box.y2 = barcode_height + text_height + 18.0;
 ```
 
@@ -1221,6 +1214,7 @@ typedef struct docdata_s                // Document formatting data
   pdfio_rect_t  crop_box;               // Crop box (for margins)
   pdfio_rect_t  art_box;                // Art box (for markdown content)
   pdfio_obj_t   *fonts[DOCFONT_MAX];    // Embedded fonts
+  double        font_space;             // Unit width of a space
   size_t        num_images;             // Number of embedded images
   docimage_t    images[DOCIMAGE_MAX];   // Embedded images
   const char    *title;                 // Document title
@@ -1319,13 +1313,10 @@ pdfioDictSetRect(page_dict, "MediaBox", &dd->media_box);
 pdfioDictSetRect(page_dict, "ArtBox", &dd->art_box);
 
 for (fontface = DOCFONT_REGULAR; fontface < DOCFONT_MAX; fontface ++)
-  pdfioPageDictAddFont(page_dict, docfont_names[fontface],
-                       dd->fonts[fontface]);
+  pdfioPageDictAddFont(page_dict, docfont_names[fontface], dd->fonts[fontface]);
 
 for (i = 0; i < dd->num_images; i ++)
-  pdfioPageDictAddImage(page_dict,
-                        pdfioStringCreatef(dd->pdf, "I%u",
-                                           (unsigned)i),
+  pdfioPageDictAddImage(page_dict, pdfioStringCreatef(dd->pdf, "I%u", (unsigned)i),
                         dd->images[i].obj);
 ```
 
@@ -1351,8 +1342,8 @@ set_font(dd, DOCFONT_REGULAR, SIZE_HEADFOOT);
 if (pdfioFileGetNumPages(dd->pdf) > 1 && dd->title)
 {
   // Show title in header...
-  width = pdfioContentTextMeasure(dd->fonts[DOCFONT_REGULAR],
-                                  dd->title, SIZE_HEADFOOT);
+  width = pdfioContentTextMeasure(dd->fonts[DOCFONT_REGULAR], dd->title,
+                                  SIZE_HEADFOOT);
 
   pdfioContentTextBegin(dd->st);
   pdfioContentTextMoveTo(dd->st,
@@ -1363,12 +1354,10 @@ if (pdfioFileGetNumPages(dd->pdf) > 1 && dd->title)
   pdfioContentTextEnd(dd->st);
 
   pdfioContentPathMoveTo(dd->st, dd->crop_box.x1,
-                         dd->crop_box.y2 -
-                             2 * SIZE_HEADFOOT * LINE_HEIGHT +
+                         dd->crop_box.y2 - 2 * SIZE_HEADFOOT * LINE_HEIGHT +
                              SIZE_HEADFOOT);
   pdfioContentPathLineTo(dd->st, dd->crop_box.x2,
-                         dd->crop_box.y2 -
-                             2 * SIZE_HEADFOOT * LINE_HEIGHT +
+                         dd->crop_box.y2 - 2 * SIZE_HEADFOOT * LINE_HEIGHT +
                              SIZE_HEADFOOT);
   pdfioContentStroke(dd->st);
 }
@@ -1388,15 +1377,12 @@ pdfioContentPathLineTo(dd->st, dd->crop_box.x2,
 pdfioContentStroke(dd->st);
 
 pdfioContentTextBegin(dd->st);
-snprintf(temp, sizeof(temp), "%u",
-         (unsigned)pdfioFileGetNumPages(dd->pdf));
+snprintf(temp, sizeof(temp), "%u", (unsigned)pdfioFileGetNumPages(dd->pdf));
 if (pdfioFileGetNumPages(dd->pdf) & 1)
 {
   // Page number on right...
-  width = pdfioContentTextMeasure(dd->fonts[DOCFONT_REGULAR], temp,
-                                  SIZE_HEADFOOT);
-  pdfioContentTextMoveTo(dd->st, dd->crop_box.x2 - width,
-                         dd->crop_box.y1);
+  width = pdfioContentTextMeasure(dd->fonts[DOCFONT_REGULAR], temp, SIZE_HEADFOOT);
+  pdfioContentTextMoveTo(dd->st, dd->crop_box.x2 - width, dd->crop_box.y1);
 }
 else
 {
@@ -1418,13 +1404,829 @@ if (dd->heading)
   }
   else
   {
-    width = pdfioContentTextMeasure(dd->fonts[DOCFONT_REGULAR],
-                                    dd->heading, SIZE_HEADFOOT);
-    pdfioContentTextMoveTo(dd->st, dd->crop_box.x2 - width,
-                           dd->crop_box.y1);
+    width = pdfioContentTextMeasure(dd->fonts[DOCFONT_REGULAR], dd->heading,
+                                    SIZE_HEADFOOT);
+    pdfioContentTextMoveTo(dd->st, dd->crop_box.x2 - width, dd->crop_box.y1);
   }
 
   pdfioContentTextShow(dd->st, UNICODE_VALUE, dd->heading);
   pdfioContentTextEnd(dd->st);
+}
+```
+
+
+### Formatting the Markdown Document
+
+Four functions handle the formatting of the markdown document:
+
+- `format_block` formats a single paragraph, heading, or table cell,
+- `format_code`: formats a block of code,
+- `format_doc`: formats the document as a whole, and
+- `format_table`: formats a table.
+
+Formatted content is organized into arrays of `linefrag_t` and `tablerow_t`
+structures for a line of content or row of table cells, respectively.  These
+are passed to the `render_line` and `render_row` functions to actually produce
+content in the PDF document.
+
+#### High-Level Formatting
+
+```c
+static void
+format_doc(docdata_t *dd,               // I - Document data
+           mmd_t     *doc,              // I - Document node to format
+           docfont_t deffont,           // I - Default font
+           double    left,              // I - Left margin
+           double    right)             // I - Right margin
+{
+  int           i;                      // Child number
+  mmd_type_t    doctype;                // Document node type
+  mmd_t         *current;               // Current node
+  mmd_type_t    curtype;                // Current node type
+  char          leader[32];             // Leader
+  static const double heading_sizes[] = // Heading font sizes
+  {
+    SIZE_HEADING_1,
+    SIZE_HEADING_2,
+    SIZE_HEADING_3,
+    SIZE_HEADING_4,
+    SIZE_HEADING_5,
+    SIZE_HEADING_6
+  };
+
+
+  doctype = mmdGetType(doc);
+
+  for (i = 1, current = mmdGetFirstChild(doc); current; i ++, current = mmdGetNextSibling(current))
+  {
+    switch (curtype = mmdGetType(current))
+    {
+      default :
+          break;
+
+      case MMD_TYPE_THEMATIC_BREAK :
+          // Force a page break
+          dd->y = dd->art_box.y1;
+          break;
+
+      case MMD_TYPE_BLOCK_QUOTE :
+          format_doc(dd, current, DOCFONT_ITALIC, left + 36.0, right - 36.0);
+          break;
+
+      case MMD_TYPE_ORDERED_LIST :
+      case MMD_TYPE_UNORDERED_LIST :
+          if (dd->st)
+            dd->y -= SIZE_BODY * LINE_HEIGHT;
+
+          format_doc(dd, current, deffont, left + 36.0, right);
+          break;
+
+      case MMD_TYPE_LIST_ITEM :
+          if (doctype == MMD_TYPE_ORDERED_LIST)
+          {
+            snprintf(leader, sizeof(leader), "%d. ", i);
+            format_block(dd, current, deffont, SIZE_BODY, left, right, leader);
+          }
+          else
+          {
+            format_block(dd, current, deffont, SIZE_BODY, left, right, /*leader*/"• ");
+          }
+          break;
+
+      case MMD_TYPE_HEADING_1 :
+      case MMD_TYPE_HEADING_2 :
+      case MMD_TYPE_HEADING_3 :
+      case MMD_TYPE_HEADING_4 :
+      case MMD_TYPE_HEADING_5 :
+      case MMD_TYPE_HEADING_6 :
+          free(dd->heading);
+
+          dd->heading = mmdCopyAllText(current);
+
+          format_block(dd, current, DOCFONT_BOLD, heading_sizes[curtype - MMD_TYPE_HEADING_1], left, right, /*leader*/NULL);
+
+          if (dd->num_toc < DOCTOC_MAX)
+          {
+            doctoc_t *t = dd->toc + dd->num_toc;
+                                        // New TOC
+            pdfio_array_t *dest;        // Destination array
+
+            t->level = curtype - MMD_TYPE_HEADING_1;
+            t->dict  = pdfioDictCreate(dd->pdf);
+            t->obj   = pdfioFileCreateObj(dd->pdf, t->dict);
+            dest     = pdfioArrayCreate(dd->pdf);
+
+            pdfioArrayAppendObj(dest, pdfioFileGetPage(dd->pdf, pdfioFileGetNumPages(dd->pdf) - 1));
+            pdfioArrayAppendName(dest, "XYZ");
+            pdfioArrayAppendNumber(dest, PAGE_LEFT);
+            pdfioArrayAppendNumber(dest, dd->y + heading_sizes[curtype - MMD_TYPE_HEADING_1] * LINE_HEIGHT);
+            pdfioArrayAppendNumber(dest, 0.0);
+
+            pdfioDictSetArray(t->dict, "Dest", dest);
+            pdfioDictSetString(t->dict, "Title", pdfioStringCreate(dd->pdf, dd->heading));
+
+            dd->num_toc ++;
+          }
+
+          if (dd->num_targets < DOCTARGET_MAX)
+          {
+            doctarget_t *t = dd->targets + dd->num_targets;
+                                        // New target
+
+            make_target_name(t->name, dd->heading, sizeof(t->name));
+            t->page = pdfioFileGetNumPages(dd->pdf) - 1;
+            t->y    = dd->y + heading_sizes[curtype - MMD_TYPE_HEADING_1] * LINE_HEIGHT;
+
+            dd->num_targets ++;
+          }
+          break;
+
+      case MMD_TYPE_PARAGRAPH :
+          format_block(dd, current, deffont, SIZE_BODY, left, right, /*leader*/NULL);
+          break;
+
+      case MMD_TYPE_TABLE :
+          format_table(dd, current, left, right);
+          break;
+
+      case MMD_TYPE_CODE_BLOCK :
+          format_code(dd, current, left + CODE_PADDING, right - CODE_PADDING);
+          break;
+    }
+  }
+}
+```
+
+
+#### Formatting Paragraphs, Headings, and Table Cells
+
+```c
+static void
+format_block(docdata_t  *dd,            // I - Document data
+             mmd_t      *block,         // I - Block to format
+             docfont_t  deffont,        // I - Default font
+             double     fsize,          // I - Size of font
+             double     left,           // I - Left margin
+             double     right,          // I - Right margin
+             const char *leader)        // I - Leader text on the first line
+{
+  mmd_type_t    blocktype;              // Block type
+  mmd_t         *current,               // Current node
+                *next;                  // Next node
+  size_t        num_frags;              // Number of line fragments
+  linefrag_t    frags[LINEFRAG_MAX],    // Line fragments
+                *frag;                  // Current fragment
+  mmd_type_t    type;                   // Current node type
+  const char    *text,                  // Current text
+                *url;                   // Current URL, if any
+  bool          ws;                     // Current whitespace
+  pdfio_obj_t   *image;                 // Current image, if any
+  size_t        imagenum;               // Current image number
+  doccolor_t    color = DOCCOLOR_BLACK; // Current text color
+  docfont_t     font = deffont;         // Current text font
+  double        x,                      // Current position
+                width,                  // Width of current fragment
+                wswidth,                // Width of whitespace
+                margin_left,            // Left margin
+                margin_top,             // Top margin
+                need_bottom,            // Space needed after this block
+                height,                 // Height of current fragment
+                lineheight;             // Height of current line
+
+
+  blocktype  = mmdGetType(block);
+
+  if ((blocktype >= MMD_TYPE_TABLE_HEADER_CELL && blocktype <= MMD_TYPE_TABLE_BODY_CELL_RIGHT) || blocktype == MMD_TYPE_LIST_ITEM)
+    margin_top = 0.0;
+  else
+    margin_top = fsize * LINE_HEIGHT;
+
+  if (mmdGetNextSibling(block))
+    need_bottom = 3.0 * SIZE_BODY * LINE_HEIGHT;
+  else
+    need_bottom = 0.0;
+
+  if (leader)
+  {
+    // Add leader text on first line...
+    frags[0].type     = MMD_TYPE_NORMAL_TEXT;
+    frags[0].width    = pdfioContentTextMeasure(dd->fonts[deffont], leader, fsize);
+    frags[0].height   = fsize;
+    frags[0].x        = left - frags[0].width;
+    frags[0].imagenum = 0;
+    frags[0].text     = leader;
+    frags[0].url      = NULL;
+    frags[0].ws       = false;
+    frags[0].font     = deffont;
+    frags[0].color    = DOCCOLOR_BLACK;
+
+    num_frags  = 1;
+    lineheight = fsize * LINE_HEIGHT;
+  }
+  else
+  {
+    // No leader text...
+    num_frags  = 0;
+    lineheight = 0.0;
+  }
+
+  frag = frags + num_frags;
+
+  // Loop through the block and render lines...
+  for (current = mmdGetFirstChild(block), x = left; current; current = next)
+  {
+    // Get information about the current node...
+    type     = mmdGetType(current);
+    text     = mmdGetText(current);
+    image    = NULL;
+    imagenum = 0;
+    url      = mmdGetURL(current);
+    ws       = mmdGetWhitespace(current);
+    wswidth  = ws ? dd->font_space * fsize : 0.0;
+    next     = mmd_walk_next(block, current);
+
+    // Process the node...
+    if (type == MMD_TYPE_IMAGE && url)
+    {
+      // Embed an image
+      if ((image = find_image(dd, url, &imagenum)) == NULL)
+        continue;
+
+      // Image - treat as 100dpi
+      width  = 72.0 * pdfioImageGetWidth(image) / IMAGE_PPI;
+      height = 72.0 * pdfioImageGetHeight(image) / IMAGE_PPI;
+      text   = NULL;
+
+      if (width > (right - left))
+      {
+        // Too wide, scale to width...
+        width  = right - left;
+        height = width * pdfioImageGetHeight(image) / pdfioImageGetWidth(image);
+      }
+      else if (height > (dd->art_box.y2 - dd->art_box.y1))
+      {
+        // Too tall, scale to height...
+        height = dd->art_box.y2 - dd->art_box.y1;
+        width  = height * pdfioImageGetWidth(image) / pdfioImageGetHeight(image);
+      }
+    }
+    else if (type == MMD_TYPE_HARD_BREAK && num_frags > 0)
+    {
+      if (blocktype == MMD_TYPE_TABLE_HEADER_CELL || blocktype == MMD_TYPE_TABLE_BODY_CELL_CENTER)
+        margin_left = 0.5 * (right - x);
+      else if (blocktype == MMD_TYPE_TABLE_BODY_CELL_RIGHT)
+        margin_left = right - x;
+      else
+        margin_left = 0.0;
+
+      render_line(dd, margin_left, margin_top, need_bottom, lineheight, num_frags, frags);
+
+      if (deffont == DOCFONT_ITALIC)
+      {
+        // Add an orange bar to the left of block quotes...
+        set_color(dd, DOCCOLOR_ORANGE);
+        pdfioContentSave(dd->st);
+        pdfioContentSetLineWidth(dd->st, 3.0);
+        pdfioContentPathMoveTo(dd->st, left - 6.0, dd->y - (LINE_HEIGHT - 1.0) * fsize);
+        pdfioContentPathLineTo(dd->st, left - 6.0, dd->y + fsize);
+        pdfioContentStroke(dd->st);
+        pdfioContentRestore(dd->st);
+      }
+
+      num_frags   = 0;
+      frag        = frags;
+      x           = left;
+      lineheight  = 0.0;
+      margin_top  = 0.0;
+      need_bottom = 0.0;
+
+      continue;
+    }
+    else if (type == MMD_TYPE_CHECKBOX)
+    {
+      // Checkbox
+      width = height = fsize;
+    }
+    else if (!text)
+    {
+      continue;
+    }
+    else
+    {
+      // Text fragment...
+      if (type == MMD_TYPE_EMPHASIZED_TEXT)
+        font = DOCFONT_ITALIC;
+      else if (type == MMD_TYPE_STRONG_TEXT)
+        font = DOCFONT_BOLD;
+      else  if (type == MMD_TYPE_CODE_TEXT)
+        font = DOCFONT_MONOSPACE;
+      else
+        font = deffont;
+
+      if (type == MMD_TYPE_CODE_TEXT)
+        color = DOCCOLOR_RED;
+      else if (type == MMD_TYPE_LINKED_TEXT)
+        color = DOCCOLOR_BLUE;
+      else
+        color = DOCCOLOR_BLACK;
+
+      width  = pdfioContentTextMeasure(dd->fonts[font], text, fsize);
+      height = fsize * LINE_HEIGHT;
+    }
+
+    // See if this node will fit on the current line...
+    if ((num_frags > 0 && (x + width + wswidth) >= right) || num_frags == LINEFRAG_MAX)
+    {
+      // No, render this line and start over...
+      if (blocktype == MMD_TYPE_TABLE_HEADER_CELL || blocktype == MMD_TYPE_TABLE_BODY_CELL_CENTER)
+        margin_left = 0.5 * (right - x);
+      else if (blocktype == MMD_TYPE_TABLE_BODY_CELL_RIGHT)
+        margin_left = right - x;
+      else
+        margin_left = 0.0;
+
+      render_line(dd, margin_left, margin_top, need_bottom, lineheight, num_frags, frags);
+
+      if (deffont == DOCFONT_ITALIC)
+      {
+        // Add an orange bar to the left of block quotes...
+        set_color(dd, DOCCOLOR_ORANGE);
+        pdfioContentSave(dd->st);
+        pdfioContentSetLineWidth(dd->st, 3.0);
+        pdfioContentPathMoveTo(dd->st, left - 6.0, dd->y - (LINE_HEIGHT - 1.0) * fsize);
+        pdfioContentPathLineTo(dd->st, left - 6.0, dd->y + fsize);
+        pdfioContentStroke(dd->st);
+        pdfioContentRestore(dd->st);
+      }
+
+      num_frags   = 0;
+      frag        = frags;
+      x           = left;
+      lineheight  = 0.0;
+      margin_top  = 0.0;
+      need_bottom = 0.0;
+    }
+
+    // Add the current node to the fragment list
+    if (num_frags == 0)
+    {
+      ws      = false;
+      wswidth = 0.0;
+    }
+
+    frag->type       = type;
+    frag->x          = x;
+    frag->width      = width + wswidth;
+    frag->height     = text ? fsize : height;
+    frag->imagenum   = imagenum;
+    frag->text       = text;
+    frag->url        = url;
+    frag->ws         = ws;
+    frag->font       = font;
+    frag->color      = color;
+
+    num_frags ++;
+    frag ++;
+    x += width + wswidth;
+    if (height > lineheight)
+      lineheight = height;
+  }
+
+  if (num_frags > 0)
+  {
+    if (blocktype == MMD_TYPE_TABLE_HEADER_CELL || blocktype == MMD_TYPE_TABLE_BODY_CELL_CENTER)
+      margin_left = 0.5 * (right - x);
+    else if (blocktype == MMD_TYPE_TABLE_BODY_CELL_RIGHT)
+      margin_left = right - x;
+    else
+      margin_left = 0.0;
+
+    render_line(dd, margin_left, margin_top, need_bottom, lineheight, num_frags, frags);
+
+    if (deffont == DOCFONT_ITALIC)
+    {
+      // Add an orange bar to the left of block quotes...
+      set_color(dd, DOCCOLOR_ORANGE);
+      pdfioContentSave(dd->st);
+      pdfioContentSetLineWidth(dd->st, 3.0);
+      pdfioContentPathMoveTo(dd->st, left - 6.0, dd->y - (LINE_HEIGHT - 1.0) * fsize);
+      pdfioContentPathLineTo(dd->st, left - 6.0, dd->y + fsize);
+      pdfioContentStroke(dd->st);
+      pdfioContentRestore(dd->st);
+    }
+  }
+}
+```
+
+
+#### Formatting Code Blocks
+
+```c
+static void
+format_code(docdata_t *dd,              // I - Document data
+            mmd_t     *block,           // I - Code block
+            double    left,             // I - Left margin
+            double    right)            // I - Right margin
+{
+  mmd_t         *code;                  // Current code block
+  double        lineheight,             // Line height
+                margin_top;             // Top margin
+
+
+  // Compute line height and initial top margin...
+  lineheight = SIZE_CODEBLOCK * LINE_HEIGHT;
+  margin_top = lineheight;
+
+  // Start a new page as needed...
+  if (!dd->st)
+  {
+    new_page(dd);
+
+    margin_top = 0.0;
+  }
+
+  dd->y -= lineheight + margin_top + CODE_PADDING;
+
+  if ((dd->y - lineheight) < dd->art_box.y1)
+  {
+    new_page(dd);
+
+    dd->y -= lineheight + CODE_PADDING;
+  }
+
+  // Draw the top padding...
+  set_color(dd, DOCCOLOR_LTGRAY);
+  pdfioContentPathRect(dd->st, left - CODE_PADDING, dd->y + SIZE_CODEBLOCK, right - left + 2.0 * CODE_PADDING, CODE_PADDING);
+  pdfioContentFillAndStroke(dd->st, false);
+
+  // Start a code text block...
+  set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
+  pdfioContentTextBegin(dd->st);
+  pdfioContentTextMoveTo(dd->st, left, dd->y);
+
+  for (code = mmdGetFirstChild(block); code; code = mmdGetNextSibling(code))
+  {
+    set_color(dd, DOCCOLOR_LTGRAY);
+    pdfioContentPathRect(dd->st, left - CODE_PADDING, dd->y - (LINE_HEIGHT - 1.0) * SIZE_CODEBLOCK, right - left + 2.0 * CODE_PADDING, lineheight);
+    pdfioContentFillAndStroke(dd->st, false);
+
+    set_color(dd, DOCCOLOR_RED);
+    pdfioContentTextShow(dd->st, UNICODE_VALUE, mmdGetText(code));
+    dd->y -= lineheight;
+
+    if (dd->y < dd->art_box.y1)
+    {
+      // End the current text block...
+      pdfioContentTextEnd(dd->st);
+
+      // Start a new page...
+      new_page(dd);
+      set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
+
+      dd->y -= lineheight;
+
+      pdfioContentTextBegin(dd->st);
+      pdfioContentTextMoveTo(dd->st, left, dd->y);
+    }
+  }
+
+  // End the current text block...
+  pdfioContentTextEnd(dd->st);
+  dd->y += lineheight;
+
+  // Draw the bottom padding...
+  set_color(dd, DOCCOLOR_LTGRAY);
+  pdfioContentPathRect(dd->st, left - CODE_PADDING, dd->y - CODE_PADDING - (LINE_HEIGHT - 1.0) * SIZE_CODEBLOCK, right - left + 2.0 * CODE_PADDING, CODE_PADDING);
+  pdfioContentFillAndStroke(dd->st, false);
+}
+```
+
+
+#### Formatting Tables
+
+```c
+static void
+format_table(docdata_t *dd,             // I - Document data
+             mmd_t     *table,          // I - Table node
+             double    left,            // I - Left margin
+             double    right)           // I - Right margin
+{
+  mmd_t         *current,               // Current node
+                *next;                  // Next node
+  mmd_type_t    type;                   // Node type
+  size_t        col,                    // Current column
+                num_cols;               // Number of columns
+  tablecol_t    cols[TABLECOL_MAX];     // Columns
+  size_t        row,                    // Current row
+                num_rows;               // Number of rows
+  tablerow_t    rows[TABLEROW_MAX],     // Rows
+                *rowptr;                // Pointer to current row
+  double        x,                      // Current X position
+                height,                 // Height of cell
+                format_width,           // Maximum format width of table
+                table_width;            // Total width of table
+
+
+  // Find all of the rows and columns in the table...
+  num_cols = num_rows = 0;
+
+  memset(cols, 0, sizeof(cols));
+  memset(rows, 0, sizeof(rows));
+
+  rowptr = rows;
+
+  for (current = mmdGetFirstChild(table); current && num_rows < TABLEROW_MAX; current = next)
+  {
+    next = mmd_walk_next(table, current);
+    type = mmdGetType(current);
+
+    if (type == MMD_TYPE_TABLE_ROW)
+    {
+      // Parse row...
+      for (col = 0, current = mmdGetFirstChild(current); current && num_cols < TABLECOL_MAX; current = mmdGetNextSibling(current), col ++)
+      {
+        rowptr->cells[col] = current;
+
+        measure_cell(dd, current, cols + col);
+
+        if (col >= num_cols)
+          num_cols = col + 1;
+      }
+
+      rowptr ++;
+      num_rows ++;
+    }
+  }
+
+  // Figure out the width of each column...
+  for (col = 0, table_width = 0.0; col < num_cols; col ++)
+  {
+    cols[col].max_width += 2.0 * TABLE_PADDING;
+
+    table_width += cols[col].max_width;
+    cols[col].width = cols[col].max_width;
+  }
+
+  format_width = right - left - 2.0 * TABLE_PADDING * num_cols;
+
+  if (table_width > format_width)
+  {
+    // Content too wide, try scaling the widths...
+    double      avg_width,              // Average column width
+                base_width,             // Base width
+                remaining_width,        // Remaining width
+                scale_width;            // Width for scaling
+    size_t      num_remaining_cols = 0; // Number of remaining columns
+
+    // First mark any columns that are narrower than the average width...
+    avg_width = format_width / num_cols;
+
+    for (col = 0, base_width = 0.0, remaining_width = 0.0; col < num_cols; col ++)
+    {
+      if (cols[col].width > avg_width)
+      {
+        remaining_width += cols[col].width;
+        num_remaining_cols ++;
+      }
+      else
+      {
+        base_width += cols[col].width;
+      }
+    }
+
+    // Then proportionately distribute the remaining width to the other columns...
+    format_width -= base_width;
+
+    for (col = 0, table_width = 0.0; col < num_cols; col ++)
+    {
+      if (cols[col].width > avg_width)
+        cols[col].width = cols[col].width * format_width / remaining_width;
+
+      table_width += cols[col].width;
+    }
+  }
+
+  // Calculate the margins of each column in preparation for formatting
+  for (col = 0, x = left + TABLE_PADDING; col < num_cols; col ++)
+  {
+    cols[col].left  = x;
+    cols[col].right = x + cols[col].width;
+
+    x += cols[col].width + 2.0 * TABLE_PADDING;
+  }
+
+  // Calculate the height of each row and cell in preparation for formatting
+  for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
+  {
+    for (col = 0; col < num_cols; col ++)
+    {
+      height = measure_cell(dd, rowptr->cells[col], cols + col) + 2.0 * TABLE_PADDING;
+      if (height > rowptr->height)
+        rowptr->height = height;
+    }
+  }
+
+  // Render each table row...
+  if (dd->st)
+    dd->y -= SIZE_TABLE * LINE_HEIGHT;
+
+  for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
+    render_row(dd, num_cols, cols, rowptr);
+}
+```
+
+### Rendering the Markdown Document
+
+
+#### Rendering a Line in a Paragraph, Heading, or Table Cell
+
+```c
+static void
+render_line(docdata_t  *dd,             // I - Document data
+            double     margin_left,     // I - Left margin
+            double     margin_top,      // I - Top margin
+            double     need_bottom,     // I - How much space is needed after
+            double     lineheight,      // I - Height of line
+            size_t     num_frags,       // I - Number of line fragments
+            linefrag_t *frags)          // I - Line fragments
+{
+  size_t        i;                      // Looping var
+  linefrag_t    *frag;                  // Current line fragment
+  bool          in_text = false;        // Are we in a text block?
+
+
+  if (!dd->st)
+  {
+    new_page(dd);
+    margin_top = 0.0;
+  }
+
+  dd->y -= margin_top + lineheight;
+  if ((dd->y - need_bottom) < dd->art_box.y1)
+  {
+    new_page(dd);
+
+    dd->y -= lineheight;
+  }
+
+  for (i = 0, frag = frags; i < num_frags; i ++, frag ++)
+  {
+    if (frag->type == MMD_TYPE_CHECKBOX)
+    {
+      // Draw checkbox...
+      set_color(dd, frag->color);
+
+      if (in_text)
+      {
+        pdfioContentTextEnd(dd->st);
+        in_text = false;
+      }
+
+      // Add box
+      pdfioContentPathRect(dd->st, frag->x + 1.0 + margin_left, dd->y, frag->width - 3.0, frag->height - 3.0);
+
+      if (frag->text)
+      {
+        // Add check
+        pdfioContentPathMoveTo(dd->st, frag->x + 3.0 + margin_left, dd->y + 2.0);
+        pdfioContentPathLineTo(dd->st, frag->x + frag->width - 4.0 + margin_left, dd->y + frag->height - 5.0);
+
+        pdfioContentPathMoveTo(dd->st, frag->x + 3.0 + margin_left, dd->y + frag->height - 5.0);
+        pdfioContentPathLineTo(dd->st, frag->x + frag->width - 4.0 + margin_left, dd->y + 2.0);
+      }
+
+      pdfioContentStroke(dd->st);
+    }
+    else if (frag->text)
+    {
+      // Draw text
+      if (!in_text)
+      {
+        pdfioContentTextBegin(dd->st);
+        pdfioContentTextMoveTo(dd->st, frag->x + margin_left, dd->y);
+
+        in_text = true;
+      }
+
+      if (frag->ws && frag->font == DOCFONT_MONOSPACE)
+      {
+        set_font(dd, DOCFONT_REGULAR, frag->height);
+        pdfioContentTextShow(dd->st, UNICODE_VALUE, " ");
+      }
+
+      set_color(dd, frag->color);
+      set_font(dd, frag->font, frag->height);
+
+      if (frag->font == DOCFONT_MONOSPACE)
+        pdfioContentTextShow(dd->st, UNICODE_VALUE, frag->text);
+      else
+        pdfioContentTextShowf(dd->st, UNICODE_VALUE, "%s%s", frag->ws ? " " : "", frag->text);
+
+      if (frag->url && dd->num_links < DOCLINK_MAX)
+      {
+        doclink_t *l = dd->links + dd->num_links;
+                                        // Pointer to this link record
+
+        if (!strcmp(frag->url, "@"))
+        {
+          // Use mapped text as link target...
+          char  targetlink[129];        // Targeted link
+
+          targetlink[0] = '#';
+          make_target_name(targetlink + 1, frag->text, sizeof(targetlink) - 1);
+
+          l->url = pdfioStringCreate(dd->pdf, targetlink);
+        }
+        else if (!strcmp(frag->url, "@@"))
+        {
+          // Use literal text as anchor...
+          l->url = pdfioStringCreatef(dd->pdf, "#%s", frag->text);
+        }
+        else
+        {
+          // Use URL as-is...
+          l->url = frag->url;
+        }
+
+        l->box.x1 = frag->x;
+        l->box.y1 = dd->y;
+        l->box.x2 = frag->x + frag->width;
+        l->box.y2 = dd->y + frag->height;
+
+        dd->num_links ++;
+      }
+    }
+    else
+    {
+      // Draw image
+      char      imagename[32];          // Current image name
+
+      if (in_text)
+      {
+        pdfioContentTextEnd(dd->st);
+        in_text = false;
+      }
+
+      snprintf(imagename, sizeof(imagename), "I%u", (unsigned)frag->imagenum);
+      pdfioContentDrawImage(dd->st, imagename, frag->x + margin_left, dd->y, frag->width, frag->height);
+    }
+  }
+
+  if (in_text)
+    pdfioContentTextEnd(dd->st);
+}
+```
+
+#### Rendering a Table Row
+
+```c
+static void
+render_row(docdata_t  *dd,              // I - Document data
+           size_t     num_cols,         // I - Number of columns
+           tablecol_t *cols,            // I - Column information
+           tablerow_t *row)             // I - Row
+{
+  size_t        col;                    // Current column
+  double        row_y;                  // Start of row
+  docfont_t     deffont;                // Default font
+
+
+  // Start a new page as needed...
+  if (!dd->st)
+    new_page(dd);
+
+  if ((dd->y - row->height) < dd->art_box.y1)
+    new_page(dd);
+
+  if (mmdGetType(row->cells[0]) == MMD_TYPE_TABLE_HEADER_CELL)
+  {
+    // Header row, no border...
+    deffont = DOCFONT_BOLD;
+  }
+  else
+  {
+    // Regular body row, add borders...
+    deffont = DOCFONT_REGULAR;
+
+    set_color(dd, DOCCOLOR_GRAY);
+    pdfioContentPathRect(dd->st, cols[0].left - TABLE_PADDING, dd->y - row->height, cols[num_cols - 1].right - cols[0].left + 2.0 * TABLE_PADDING, row->height);
+    for (col = 1; col < num_cols; col ++)
+    {
+      pdfioContentPathMoveTo(dd->st, cols[col].left - TABLE_PADDING, dd->y);
+      pdfioContentPathLineTo(dd->st, cols[col].left - TABLE_PADDING, dd->y - row->height);
+    }
+    pdfioContentStroke(dd->st);
+  }
+
+  row_y = dd->y;
+
+  for (col = 0; col < num_cols; col ++)
+  {
+    dd->y = row_y;
+
+    format_block(dd, row->cells[col], deffont, SIZE_TABLE, cols[col].left, cols[col].right, /*leader*/NULL);
+  }
+
+  dd->y = row_y - row->height;
 }
 ```
