@@ -1425,9 +1425,8 @@ Four functions handle the formatting of the markdown document:
 - `format_table`: formats a table.
 
 Formatted content is organized into arrays of `linefrag_t` and `tablerow_t`
-structures for a line of content or row of table cells, respectively.  These
-are passed to the `render_line` and `render_row` functions to actually produce
-content in the PDF document.
+structures for a line of content or row of table cells, respectively.
+
 
 #### High-Level Formatting
 
@@ -2037,196 +2036,92 @@ format_table(docdata_t *dd,             // I - Document data
 
 ### Rendering the Markdown Document
 
+The formatted content in arrays of `linefrag_t` and `tablerow_t` structures
+are passed to the `render_line` and `render_row` functions respectively to
+produce content in the PDF document.
+
 
 #### Rendering a Line in a Paragraph, Heading, or Table Cell
 
+The `render_line` function adds content from the `linefrag_t` array to a PDF
+page.  It starts by determining whether a new page is needed:
+
 ```c
-static void
-render_line(docdata_t  *dd,             // I - Document data
-            double     margin_left,     // I - Left margin
-            double     margin_top,      // I - Top margin
-            double     need_bottom,     // I - How much space is needed after
-            double     lineheight,      // I - Height of line
-            size_t     num_frags,       // I - Number of line fragments
-            linefrag_t *frags)          // I - Line fragments
+if (!dd->st)
 {
-  size_t        i;                      // Looping var
-  linefrag_t    *frag;                  // Current line fragment
-  bool          in_text = false;        // Are we in a text block?
+  new_page(dd);
+  margin_top = 0.0;
+}
 
+dd->y -= margin_top + lineheight;
+if ((dd->y - need_bottom) < dd->art_box.y1)
+{
+  new_page(dd);
 
-  if (!dd->st)
-  {
-    new_page(dd);
-    margin_top = 0.0;
-  }
-
-  dd->y -= margin_top + lineheight;
-  if ((dd->y - need_bottom) < dd->art_box.y1)
-  {
-    new_page(dd);
-
-    dd->y -= lineheight;
-  }
-
-  for (i = 0, frag = frags; i < num_frags; i ++, frag ++)
-  {
-    if (frag->type == MMD_TYPE_CHECKBOX)
-    {
-      // Draw checkbox...
-      set_color(dd, frag->color);
-
-      if (in_text)
-      {
-        pdfioContentTextEnd(dd->st);
-        in_text = false;
-      }
-
-      // Add box
-      pdfioContentPathRect(dd->st, frag->x + 1.0 + margin_left, dd->y, frag->width - 3.0, frag->height - 3.0);
-
-      if (frag->text)
-      {
-        // Add check
-        pdfioContentPathMoveTo(dd->st, frag->x + 3.0 + margin_left, dd->y + 2.0);
-        pdfioContentPathLineTo(dd->st, frag->x + frag->width - 4.0 + margin_left, dd->y + frag->height - 5.0);
-
-        pdfioContentPathMoveTo(dd->st, frag->x + 3.0 + margin_left, dd->y + frag->height - 5.0);
-        pdfioContentPathLineTo(dd->st, frag->x + frag->width - 4.0 + margin_left, dd->y + 2.0);
-      }
-
-      pdfioContentStroke(dd->st);
-    }
-    else if (frag->text)
-    {
-      // Draw text
-      if (!in_text)
-      {
-        pdfioContentTextBegin(dd->st);
-        pdfioContentTextMoveTo(dd->st, frag->x + margin_left, dd->y);
-
-        in_text = true;
-      }
-
-      if (frag->ws && frag->font == DOCFONT_MONOSPACE)
-      {
-        set_font(dd, DOCFONT_REGULAR, frag->height);
-        pdfioContentTextShow(dd->st, UNICODE_VALUE, " ");
-      }
-
-      set_color(dd, frag->color);
-      set_font(dd, frag->font, frag->height);
-
-      if (frag->font == DOCFONT_MONOSPACE)
-        pdfioContentTextShow(dd->st, UNICODE_VALUE, frag->text);
-      else
-        pdfioContentTextShowf(dd->st, UNICODE_VALUE, "%s%s", frag->ws ? " " : "", frag->text);
-
-      if (frag->url && dd->num_links < DOCLINK_MAX)
-      {
-        doclink_t *l = dd->links + dd->num_links;
-                                        // Pointer to this link record
-
-        if (!strcmp(frag->url, "@"))
-        {
-          // Use mapped text as link target...
-          char  targetlink[129];        // Targeted link
-
-          targetlink[0] = '#';
-          make_target_name(targetlink + 1, frag->text, sizeof(targetlink) - 1);
-
-          l->url = pdfioStringCreate(dd->pdf, targetlink);
-        }
-        else if (!strcmp(frag->url, "@@"))
-        {
-          // Use literal text as anchor...
-          l->url = pdfioStringCreatef(dd->pdf, "#%s", frag->text);
-        }
-        else
-        {
-          // Use URL as-is...
-          l->url = frag->url;
-        }
-
-        l->box.x1 = frag->x;
-        l->box.y1 = dd->y;
-        l->box.x2 = frag->x + frag->width;
-        l->box.y2 = dd->y + frag->height;
-
-        dd->num_links ++;
-      }
-    }
-    else
-    {
-      // Draw image
-      char      imagename[32];          // Current image name
-
-      if (in_text)
-      {
-        pdfioContentTextEnd(dd->st);
-        in_text = false;
-      }
-
-      snprintf(imagename, sizeof(imagename), "I%u", (unsigned)frag->imagenum);
-      pdfioContentDrawImage(dd->st, imagename, frag->x + margin_left, dd->y, frag->width, frag->height);
-    }
-  }
-
-  if (in_text)
-    pdfioContentTextEnd(dd->st);
+  dd->y -= lineheight;
 }
 ```
 
-#### Rendering a Table Row
+We then loops through the fragments for the current line, drawing checkboxes,
+images, and text as needed.  When a hyperlink is present, we add the link to the
+`links` array in the `docdata_t` structure, mapping "@" and "@@" to an internal
+link corresponding to the linked text:
 
 ```c
-static void
-render_row(docdata_t  *dd,              // I - Document data
-           size_t     num_cols,         // I - Number of columns
-           tablecol_t *cols,            // I - Column information
-           tablerow_t *row)             // I - Row
+if (frag->url && dd->num_links < DOCLINK_MAX)
 {
-  size_t        col;                    // Current column
-  double        row_y;                  // Start of row
-  docfont_t     deffont;                // Default font
+  doclink_t *l = dd->links + dd->num_links;
+                                  // Pointer to this link record
 
-
-  // Start a new page as needed...
-  if (!dd->st)
-    new_page(dd);
-
-  if ((dd->y - row->height) < dd->art_box.y1)
-    new_page(dd);
-
-  if (mmdGetType(row->cells[0]) == MMD_TYPE_TABLE_HEADER_CELL)
+  if (!strcmp(frag->url, "@"))
   {
-    // Header row, no border...
-    deffont = DOCFONT_BOLD;
+    // Use mapped text as link target...
+    char  targetlink[129];        // Targeted link
+
+    targetlink[0] = '#';
+    make_target_name(targetlink + 1, frag->text, sizeof(targetlink) - 1);
+
+    l->url = pdfioStringCreate(dd->pdf, targetlink);
+  }
+  else if (!strcmp(frag->url, "@@"))
+  {
+    // Use literal text as anchor...
+    l->url = pdfioStringCreatef(dd->pdf, "#%s", frag->text);
   }
   else
   {
-    // Regular body row, add borders...
-    deffont = DOCFONT_REGULAR;
-
-    set_color(dd, DOCCOLOR_GRAY);
-    pdfioContentPathRect(dd->st, cols[0].left - TABLE_PADDING, dd->y - row->height, cols[num_cols - 1].right - cols[0].left + 2.0 * TABLE_PADDING, row->height);
-    for (col = 1; col < num_cols; col ++)
-    {
-      pdfioContentPathMoveTo(dd->st, cols[col].left - TABLE_PADDING, dd->y);
-      pdfioContentPathLineTo(dd->st, cols[col].left - TABLE_PADDING, dd->y - row->height);
-    }
-    pdfioContentStroke(dd->st);
+    // Use URL as-is...
+    l->url = frag->url;
   }
 
-  row_y = dd->y;
+  l->box.x1 = frag->x;
+  l->box.y1 = dd->y;
+  l->box.x2 = frag->x + frag->width;
+  l->box.y2 = dd->y + frag->height;
 
-  for (col = 0; col < num_cols; col ++)
-  {
-    dd->y = row_y;
-
-    format_block(dd, row->cells[col], deffont, SIZE_TABLE, cols[col].left, cols[col].right, /*leader*/NULL);
-  }
-
-  dd->y = row_y - row->height;
+  dd->num_links ++;
 }
+```
+
+These are later written as annotations in the `add_links` function.
+
+
+#### Rendering a Table Row
+
+The `render_row` function takes a row of cells and the corresponding column
+definitions, draws the border boxes around body cells, and then formats each
+cell using the `format_block` function described previously.  The key is to
+reset the page `y` value before formatting each cell:
+
+```c
+row_y = dd->y;
+
+for (col = 0; col < num_cols; col ++)
+{
+  dd->y = row_y;
+
+  format_block(dd, row->cells[col], deffont, SIZE_TABLE, cols[col].left, cols[col].right, /*leader*/NULL);
+}
+
+dd->y = row_y - row->height;
 ```
