@@ -218,6 +218,8 @@ static const char * const docfont_names[] =
 
 #define LINE_HEIGHT	1.4		// Multiplier for line height
 
+#define LIST_PADDING	36.0		// Padding/indentation for lists
+
 #define SIZE_BODY	11.0		// Size of body text (points)
 #define SIZE_CODEBLOCK	10.0		// Size of code block text (points)
 #define SIZE_HEADFOOT	9.0		// Size of header/footer text (points)
@@ -260,7 +262,7 @@ static double	measure_cell(docdata_t *dd, mmd_t *cell, tablecol_t *col);
 static mmd_t	*mmd_walk_next(mmd_t *top, mmd_t *node);
 static void	new_page(docdata_t *dd);
 static ssize_t	output_cb(void *output_cbdata, const void *buffer, size_t bytes);
-static void	render_line(docdata_t *dd, double margin_left, double margin_top, double need_bottom, double lineheight, size_t num_frags, linefrag_t *frags);
+static void	render_line(docdata_t *dd, double margin_left, double need_bottom, double lineheight, size_t num_frags, linefrag_t *frags);
 static void	render_row(docdata_t *dd, size_t num_cols, tablecol_t *cols, tablerow_t *row);
 static void	set_color(docdata_t *dd, doccolor_t color);
 static void	set_font(docdata_t *dd, docfont_t font, double fsize);
@@ -578,18 +580,12 @@ format_block(docdata_t  *dd,		// I - Document data
 		width,			// Width of current fragment
 		wswidth,		// Width of whitespace
 		margin_left,		// Left margin
-		margin_top,		// Top margin
 		need_bottom,		// Space needed after this block
 		height,			// Height of current fragment
 		lineheight;		// Height of current line
 
 
   blocktype  = mmdGetType(block);
-
-  if ((blocktype >= MMD_TYPE_TABLE_HEADER_CELL && blocktype <= MMD_TYPE_TABLE_BODY_CELL_RIGHT) || blocktype == MMD_TYPE_LIST_ITEM)
-    margin_top = 0.0;
-  else
-    margin_top = fsize * LINE_HEIGHT;
 
   if (mmdGetNextSibling(block))
     need_bottom = 3.0 * SIZE_BODY * LINE_HEIGHT;
@@ -669,7 +665,7 @@ format_block(docdata_t  *dd,		// I - Document data
       else
         margin_left = 0.0;
 
-      render_line(dd, margin_left, margin_top, need_bottom, lineheight, num_frags, frags);
+      render_line(dd, margin_left, need_bottom, lineheight, num_frags, frags);
 
       if (deffont == DOCFONT_ITALIC)
       {
@@ -683,7 +679,6 @@ format_block(docdata_t  *dd,		// I - Document data
       frag        = frags;
       x           = left;
       lineheight  = 0.0;
-      margin_top  = 0.0;
       need_bottom = 0.0;
 
       continue;
@@ -731,7 +726,13 @@ format_block(docdata_t  *dd,		// I - Document data
       else
         margin_left = 0.0;
 
-      render_line(dd, margin_left, margin_top, need_bottom, lineheight, num_frags, frags);
+      render_line(dd, margin_left, need_bottom, lineheight, num_frags, frags);
+
+      num_frags   = 0;
+      frag        = frags;
+      x           = left;
+      lineheight  = 0.0;
+      need_bottom = 0.0;
 
       if (deffont == DOCFONT_ITALIC)
       {
@@ -744,18 +745,12 @@ format_block(docdata_t  *dd,		// I - Document data
         pdfioContentStroke(dd->st);
         pdfioContentRestore(dd->st);
       }
-
-      num_frags   = 0;
-      frag        = frags;
-      x           = left;
-      lineheight  = 0.0;
-      margin_top  = 0.0;
-      need_bottom = 0.0;
     }
 
     // Add the current node to the fragment list
     if (num_frags == 0)
     {
+      // No leading whitespace at the start of the line
       ws      = false;
       wswidth = 0.0;
     }
@@ -787,7 +782,7 @@ format_block(docdata_t  *dd,		// I - Document data
     else
       margin_left = 0.0;
 
-    render_line(dd, margin_left, margin_top, need_bottom, lineheight, num_frags, frags);
+    render_line(dd, margin_left, need_bottom, lineheight, num_frags, frags);
 
     if (deffont == DOCFONT_ITALIC)
     {
@@ -815,23 +810,17 @@ format_code(docdata_t *dd,		// I - Document data
             double    right)		// I - Right margin
 {
   mmd_t		*code;			// Current code block
-  double	lineheight,		// Line height
-		margin_top;		// Top margin
+  double	lineheight;		// Line height
 
 
-  // Compute line height and initial top margin...
+  // Compute line height...
   lineheight = SIZE_CODEBLOCK * LINE_HEIGHT;
-  margin_top = lineheight;
 
   // Start a new page as needed...
   if (!dd->st)
-  {
     new_page(dd);
 
-    margin_top = 0.0;
-  }
-
-  dd->y -= lineheight + margin_top + CODE_PADDING;
+  dd->y -= lineheight + CODE_PADDING;
 
   if ((dd->y - lineheight) < dd->art_box.y1)
   {
@@ -934,10 +923,9 @@ format_doc(docdata_t *dd,		// I - Document data
 
       case MMD_TYPE_ORDERED_LIST :
       case MMD_TYPE_UNORDERED_LIST :
-          if (dd->st)
-            dd->y -= SIZE_BODY * LINE_HEIGHT;
+	  dd->y -= SIZE_BODY * LINE_HEIGHT;
 
-          format_doc(dd, current, deffont, left + 36.0, right);
+          format_doc(dd, current, deffont, left + LIST_PADDING, right);
           break;
 
       case MMD_TYPE_LIST_ITEM :
@@ -958,12 +946,17 @@ format_doc(docdata_t *dd,		// I - Document data
       case MMD_TYPE_HEADING_4 :
       case MMD_TYPE_HEADING_5 :
       case MMD_TYPE_HEADING_6 :
+          // Update the current heading
           free(dd->heading);
-
           dd->heading = mmdCopyAllText(current);
 
+          // Add a blank line before the heading...
+	  dd->y -= heading_sizes[curtype - MMD_TYPE_HEADING_1] * LINE_HEIGHT;
+
+	  // Format the heading...
           format_block(dd, current, DOCFONT_BOLD, heading_sizes[curtype - MMD_TYPE_HEADING_1], left, right, /*leader*/NULL);
 
+          // Add the heading to the table-of-contents...
           if (dd->num_toc < DOCTOC_MAX)
           {
             doctoc_t *t = dd->toc + dd->num_toc;
@@ -987,6 +980,7 @@ format_doc(docdata_t *dd,		// I - Document data
             dd->num_toc ++;
           }
 
+	  // Add the heading to the list of link targets...
           if (dd->num_targets < DOCTARGET_MAX)
           {
             doctarget_t *t = dd->targets + dd->num_targets;
@@ -1001,14 +995,26 @@ format_doc(docdata_t *dd,		// I - Document data
           break;
 
       case MMD_TYPE_PARAGRAPH :
+          // Add a blank line before the paragraph...
+	  dd->y -= SIZE_BODY * LINE_HEIGHT;
+
+	  // Format the paragraph...
           format_block(dd, current, deffont, SIZE_BODY, left, right, /*leader*/NULL);
           break;
 
       case MMD_TYPE_TABLE :
+          // Add a blank line before the paragraph...
+	  dd->y -= SIZE_BODY * LINE_HEIGHT;
+
+	  // Format the table...
           format_table(dd, current, left, right);
           break;
 
       case MMD_TYPE_CODE_BLOCK :
+          // Add a blank line before the code block...
+	  dd->y -= SIZE_BODY * LINE_HEIGHT;
+
+	  // Format the code block...
           format_code(dd, current, left + CODE_PADDING, right - CODE_PADDING);
           break;
     }
@@ -1043,14 +1049,10 @@ format_table(docdata_t *dd,		// I - Document data
 
 
   // Find all of the rows and columns in the table...
-  num_cols = num_rows = 0;
-
   memset(cols, 0, sizeof(cols));
   memset(rows, 0, sizeof(rows));
 
-  rowptr = rows;
-
-  for (current = mmdGetFirstChild(table); current && num_rows < TABLEROW_MAX; current = next)
+  for (num_cols = 0, num_rows = 0, rowptr = rows, current = mmdGetFirstChild(table); current && num_rows < TABLEROW_MAX; current = next)
   {
     next = mmd_walk_next(table, current);
     type = mmdGetType(current);
@@ -1142,9 +1144,6 @@ format_table(docdata_t *dd,		// I - Document data
   }
 
   // Render each table row...
-  if (dd->st)
-    dd->y -= SIZE_TABLE * LINE_HEIGHT;
-
   for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
     render_row(dd, num_cols, cols, rowptr);
 }
@@ -1471,7 +1470,6 @@ output_cb(void       *output_cbdata,	// I - Callback data (not used)
 static void
 render_line(docdata_t  *dd,		// I - Document data
             double     margin_left,	// I - Left margin
-            double     margin_top,	// I - Top margin
             double     need_bottom,	// I - How much space is needed after
             double     lineheight,	// I - Height of line
             size_t     num_frags,	// I - Number of line fragments
@@ -1483,12 +1481,9 @@ render_line(docdata_t  *dd,		// I - Document data
 
 
   if (!dd->st)
-  {
     new_page(dd);
-    margin_top = 0.0;
-  }
 
-  dd->y -= margin_top + lineheight;
+  dd->y -= lineheight;
   if ((dd->y - need_bottom) < dd->art_box.y1)
   {
     new_page(dd);

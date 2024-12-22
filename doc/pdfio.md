@@ -1430,378 +1430,251 @@ structures for a line of content or row of table cells, respectively.
 
 #### High-Level Formatting
 
+The `format_doc` function iterates over the block nodes in the markdown
+document.  We map a "thematic break" (horizontal rule) to a page break, which
+is implemented by moving the current vertical position to the bottom of the
+page:
+
 ```c
-static void
-format_doc(docdata_t *dd,               // I - Document data
-           mmd_t     *doc,              // I - Document node to format
-           docfont_t deffont,           // I - Default font
-           double    left,              // I - Left margin
-           double    right)             // I - Right margin
-{
-  int           i;                      // Child number
-  mmd_type_t    doctype;                // Document node type
-  mmd_t         *current;               // Current node
-  mmd_type_t    curtype;                // Current node type
-  char          leader[32];             // Leader
-  static const double heading_sizes[] = // Heading font sizes
-  {
-    SIZE_HEADING_1,
-    SIZE_HEADING_2,
-    SIZE_HEADING_3,
-    SIZE_HEADING_4,
-    SIZE_HEADING_5,
-    SIZE_HEADING_6
-  };
-
-
-  doctype = mmdGetType(doc);
-
-  for (i = 1, current = mmdGetFirstChild(doc); current; i ++, current = mmdGetNextSibling(current))
-  {
-    switch (curtype = mmdGetType(current))
-    {
-      default :
-          break;
-
-      case MMD_TYPE_THEMATIC_BREAK :
-          // Force a page break
-          dd->y = dd->art_box.y1;
-          break;
-
-      case MMD_TYPE_BLOCK_QUOTE :
-          format_doc(dd, current, DOCFONT_ITALIC, left + 36.0, right - 36.0);
-          break;
-
-      case MMD_TYPE_ORDERED_LIST :
-      case MMD_TYPE_UNORDERED_LIST :
-          if (dd->st)
-            dd->y -= SIZE_BODY * LINE_HEIGHT;
-
-          format_doc(dd, current, deffont, left + 36.0, right);
-          break;
-
-      case MMD_TYPE_LIST_ITEM :
-          if (doctype == MMD_TYPE_ORDERED_LIST)
-          {
-            snprintf(leader, sizeof(leader), "%d. ", i);
-            format_block(dd, current, deffont, SIZE_BODY, left, right, leader);
-          }
-          else
-          {
-            format_block(dd, current, deffont, SIZE_BODY, left, right, /*leader*/"• ");
-          }
-          break;
-
-      case MMD_TYPE_HEADING_1 :
-      case MMD_TYPE_HEADING_2 :
-      case MMD_TYPE_HEADING_3 :
-      case MMD_TYPE_HEADING_4 :
-      case MMD_TYPE_HEADING_5 :
-      case MMD_TYPE_HEADING_6 :
-          free(dd->heading);
-
-          dd->heading = mmdCopyAllText(current);
-
-          format_block(dd, current, DOCFONT_BOLD, heading_sizes[curtype - MMD_TYPE_HEADING_1], left, right, /*leader*/NULL);
-
-          if (dd->num_toc < DOCTOC_MAX)
-          {
-            doctoc_t *t = dd->toc + dd->num_toc;
-                                        // New TOC
-            pdfio_array_t *dest;        // Destination array
-
-            t->level = curtype - MMD_TYPE_HEADING_1;
-            t->dict  = pdfioDictCreate(dd->pdf);
-            t->obj   = pdfioFileCreateObj(dd->pdf, t->dict);
-            dest     = pdfioArrayCreate(dd->pdf);
-
-            pdfioArrayAppendObj(dest, pdfioFileGetPage(dd->pdf, pdfioFileGetNumPages(dd->pdf) - 1));
-            pdfioArrayAppendName(dest, "XYZ");
-            pdfioArrayAppendNumber(dest, PAGE_LEFT);
-            pdfioArrayAppendNumber(dest, dd->y + heading_sizes[curtype - MMD_TYPE_HEADING_1] * LINE_HEIGHT);
-            pdfioArrayAppendNumber(dest, 0.0);
-
-            pdfioDictSetArray(t->dict, "Dest", dest);
-            pdfioDictSetString(t->dict, "Title", pdfioStringCreate(dd->pdf, dd->heading));
-
-            dd->num_toc ++;
-          }
-
-          if (dd->num_targets < DOCTARGET_MAX)
-          {
-            doctarget_t *t = dd->targets + dd->num_targets;
-                                        // New target
-
-            make_target_name(t->name, dd->heading, sizeof(t->name));
-            t->page = pdfioFileGetNumPages(dd->pdf) - 1;
-            t->y    = dd->y + heading_sizes[curtype - MMD_TYPE_HEADING_1] * LINE_HEIGHT;
-
-            dd->num_targets ++;
-          }
-          break;
-
-      case MMD_TYPE_PARAGRAPH :
-          format_block(dd, current, deffont, SIZE_BODY, left, right, /*leader*/NULL);
-          break;
-
-      case MMD_TYPE_TABLE :
-          format_table(dd, current, left, right);
-          break;
-
-      case MMD_TYPE_CODE_BLOCK :
-          format_code(dd, current, left + CODE_PADDING, right - CODE_PADDING);
-          break;
-    }
-  }
-}
+case MMD_TYPE_THEMATIC_BREAK :
+    // Force a page break
+    dd->y = dd->art_box.y1;
+    break;
 ```
 
-
-#### Formatting Paragraphs, Headings, and Table Cells
+A block quote is indented and uses the italic font by default:
 
 ```c
-static void
-format_block(docdata_t  *dd,            // I - Document data
-             mmd_t      *block,         // I - Block to format
-             docfont_t  deffont,        // I - Default font
-             double     fsize,          // I - Size of font
-             double     left,           // I - Left margin
-             double     right,          // I - Right margin
-             const char *leader)        // I - Leader text on the first line
-{
-  mmd_type_t    blocktype;              // Block type
-  mmd_t         *current,               // Current node
-                *next;                  // Next node
-  size_t        num_frags;              // Number of line fragments
-  linefrag_t    frags[LINEFRAG_MAX],    // Line fragments
-                *frag;                  // Current fragment
-  mmd_type_t    type;                   // Current node type
-  const char    *text,                  // Current text
-                *url;                   // Current URL, if any
-  bool          ws;                     // Current whitespace
-  pdfio_obj_t   *image;                 // Current image, if any
-  size_t        imagenum;               // Current image number
-  doccolor_t    color = DOCCOLOR_BLACK; // Current text color
-  docfont_t     font = deffont;         // Current text font
-  double        x,                      // Current position
-                width,                  // Width of current fragment
-                wswidth,                // Width of whitespace
-                margin_left,            // Left margin
-                margin_top,             // Top margin
-                need_bottom,            // Space needed after this block
-                height,                 // Height of current fragment
-                lineheight;             // Height of current line
+case MMD_TYPE_BLOCK_QUOTE :
+    format_doc(dd, current, DOCFONT_ITALIC, left + BQ_PADDING, right - BQ_PADDING);
+    break;
+```
 
+Lists have a leading blank line and are indented:
 
-  blocktype  = mmdGetType(block);
+```c
+case MMD_TYPE_ORDERED_LIST :
+case MMD_TYPE_UNORDERED_LIST :
+    if (dd->st)
+      dd->y -= SIZE_BODY * LINE_HEIGHT;
 
-  if ((blocktype >= MMD_TYPE_TABLE_HEADER_CELL && blocktype <= MMD_TYPE_TABLE_BODY_CELL_RIGHT) || blocktype == MMD_TYPE_LIST_ITEM)
-    margin_top = 0.0;
-  else
-    margin_top = fsize * LINE_HEIGHT;
+    format_doc(dd, current, deffont, left + LIST_PADDING, right);
+    break;
+```
 
-  if (mmdGetNextSibling(block))
-    need_bottom = 3.0 * SIZE_BODY * LINE_HEIGHT;
-  else
-    need_bottom = 0.0;
+List items do not have a leading blank line and make use of leader text that is
+shown in front of the list text.  The leader text is either the current item
+number or a bullet, which then is directly formatted using the `format_block`
+function:
 
-  if (leader)
-  {
-    // Add leader text on first line...
-    frags[0].type     = MMD_TYPE_NORMAL_TEXT;
-    frags[0].width    = pdfioContentTextMeasure(dd->fonts[deffont], leader, fsize);
-    frags[0].height   = fsize;
-    frags[0].x        = left - frags[0].width;
-    frags[0].imagenum = 0;
-    frags[0].text     = leader;
-    frags[0].url      = NULL;
-    frags[0].ws       = false;
-    frags[0].font     = deffont;
-    frags[0].color    = DOCCOLOR_BLACK;
-
-    num_frags  = 1;
-    lineheight = fsize * LINE_HEIGHT;
-  }
-  else
-  {
-    // No leader text...
-    num_frags  = 0;
-    lineheight = 0.0;
-  }
-
-  frag = frags + num_frags;
-
-  // Loop through the block and render lines...
-  for (current = mmdGetFirstChild(block), x = left; current; current = next)
-  {
-    // Get information about the current node...
-    type     = mmdGetType(current);
-    text     = mmdGetText(current);
-    image    = NULL;
-    imagenum = 0;
-    url      = mmdGetURL(current);
-    ws       = mmdGetWhitespace(current);
-    wswidth  = ws ? dd->font_space * fsize : 0.0;
-    next     = mmd_walk_next(block, current);
-
-    // Process the node...
-    if (type == MMD_TYPE_IMAGE && url)
+```c
+case MMD_TYPE_LIST_ITEM :
+    if (doctype == MMD_TYPE_ORDERED_LIST)
     {
-      // Embed an image
-      if ((image = find_image(dd, url, &imagenum)) == NULL)
-        continue;
-
-      // Image - treat as 100dpi
-      width  = 72.0 * pdfioImageGetWidth(image) / IMAGE_PPI;
-      height = 72.0 * pdfioImageGetHeight(image) / IMAGE_PPI;
-      text   = NULL;
-
-      if (width > (right - left))
-      {
-        // Too wide, scale to width...
-        width  = right - left;
-        height = width * pdfioImageGetHeight(image) / pdfioImageGetWidth(image);
-      }
-      else if (height > (dd->art_box.y2 - dd->art_box.y1))
-      {
-        // Too tall, scale to height...
-        height = dd->art_box.y2 - dd->art_box.y1;
-        width  = height * pdfioImageGetWidth(image) / pdfioImageGetHeight(image);
-      }
-    }
-    else if (type == MMD_TYPE_HARD_BREAK && num_frags > 0)
-    {
-      if (blocktype == MMD_TYPE_TABLE_HEADER_CELL || blocktype == MMD_TYPE_TABLE_BODY_CELL_CENTER)
-        margin_left = 0.5 * (right - x);
-      else if (blocktype == MMD_TYPE_TABLE_BODY_CELL_RIGHT)
-        margin_left = right - x;
-      else
-        margin_left = 0.0;
-
-      render_line(dd, margin_left, margin_top, need_bottom, lineheight, num_frags, frags);
-
-      if (deffont == DOCFONT_ITALIC)
-      {
-        // Add an orange bar to the left of block quotes...
-        set_color(dd, DOCCOLOR_ORANGE);
-        pdfioContentSave(dd->st);
-        pdfioContentSetLineWidth(dd->st, 3.0);
-        pdfioContentPathMoveTo(dd->st, left - 6.0, dd->y - (LINE_HEIGHT - 1.0) * fsize);
-        pdfioContentPathLineTo(dd->st, left - 6.0, dd->y + fsize);
-        pdfioContentStroke(dd->st);
-        pdfioContentRestore(dd->st);
-      }
-
-      num_frags   = 0;
-      frag        = frags;
-      x           = left;
-      lineheight  = 0.0;
-      margin_top  = 0.0;
-      need_bottom = 0.0;
-
-      continue;
-    }
-    else if (type == MMD_TYPE_CHECKBOX)
-    {
-      // Checkbox
-      width = height = fsize;
-    }
-    else if (!text)
-    {
-      continue;
+      snprintf(leader, sizeof(leader), "%d. ", i);
+      format_block(dd, current, deffont, SIZE_BODY, left, right, leader);
     }
     else
     {
-      // Text fragment...
-      if (type == MMD_TYPE_EMPHASIZED_TEXT)
-        font = DOCFONT_ITALIC;
-      else if (type == MMD_TYPE_STRONG_TEXT)
-        font = DOCFONT_BOLD;
-      else  if (type == MMD_TYPE_CODE_TEXT)
-        font = DOCFONT_MONOSPACE;
-      else
-        font = deffont;
-
-      if (type == MMD_TYPE_CODE_TEXT)
-        color = DOCCOLOR_RED;
-      else if (type == MMD_TYPE_LINKED_TEXT)
-        color = DOCCOLOR_BLUE;
-      else
-        color = DOCCOLOR_BLACK;
-
-      width  = pdfioContentTextMeasure(dd->fonts[font], text, fsize);
-      height = fsize * LINE_HEIGHT;
+      format_block(dd, current, deffont, SIZE_BODY, left, right, /*leader*/"• ");
     }
+    break;
+```
 
-    // See if this node will fit on the current line...
-    if ((num_frags > 0 && (x + width + wswidth) >= right) || num_frags == LINEFRAG_MAX)
+Paragraphs have a leading blank line and are likewise directly formatted:
+
+```c
+case MMD_TYPE_PARAGRAPH :
+    // Add a blank line before the paragraph...
+    dd->y -= SIZE_BODY * LINE_HEIGHT;
+
+    // Format the paragraph...
+    format_block(dd, current, deffont, SIZE_BODY, left, right, /*leader*/NULL);
+    break;
+```
+
+Tables have a leading blank line and are formatted using the `format_table`
+function:
+
+```c
+case MMD_TYPE_TABLE :
+    // Add a blank line before the paragraph...
+    dd->y -= SIZE_BODY * LINE_HEIGHT;
+
+    // Format the table...
+    format_table(dd, current, left, right);
+    break;
+```
+
+Code blocks have a leading blank line, are indented slightly (to account for the
+padded background), and are formatted using the `format_code` function:
+
+```c
+case MMD_TYPE_CODE_BLOCK :
+    // Add a blank line before the code block...
+    dd->y -= SIZE_BODY * LINE_HEIGHT;
+
+    // Format the code block...
+    format_code(dd, current, left + CODE_PADDING, right - CODE_PADDING);
+    break;
+```
+
+Headings get some extra processing.  First, the current heading is remembered in
+the `docdata_t` structure so it can be used in the page footer:
+
+```c
+case MMD_TYPE_HEADING_1 :
+case MMD_TYPE_HEADING_2 :
+case MMD_TYPE_HEADING_3 :
+case MMD_TYPE_HEADING_4 :
+case MMD_TYPE_HEADING_5 :
+case MMD_TYPE_HEADING_6 :
+    // Update the current heading
+    free(dd->heading);
+    dd->heading = mmdCopyAllText(current);
+```
+
+Then we add a blank line and format the heading with the boldface font at a
+larger size using the `format_block` function:
+
+```c
+    // Add a blank line before the heading...
+    dd->y -= heading_sizes[curtype - MMD_TYPE_HEADING_1] * LINE_HEIGHT;
+
+    // Format the heading...
+    format_block(dd, current, DOCFONT_BOLD,
+                 heading_sizes[curtype - MMD_TYPE_HEADING_1], left, right,
+                 /*leader*/NULL);
+```
+
+Once the heading is formatted, we record it in the `toc` array as a PDF outline
+item object/dictionary:
+
+```c
+    // Add the heading to the table-of-contents...
+    if (dd->num_toc < DOCTOC_MAX)
     {
-      // No, render this line and start over...
-      if (blocktype == MMD_TYPE_TABLE_HEADER_CELL || blocktype == MMD_TYPE_TABLE_BODY_CELL_CENTER)
-        margin_left = 0.5 * (right - x);
-      else if (blocktype == MMD_TYPE_TABLE_BODY_CELL_RIGHT)
-        margin_left = right - x;
-      else
-        margin_left = 0.0;
+      doctoc_t *t = dd->toc + dd->num_toc;
+                                  // New TOC
+      pdfio_array_t *dest;	// Destination array
 
-      render_line(dd, margin_left, margin_top, need_bottom, lineheight, num_frags, frags);
+      t->level = curtype - MMD_TYPE_HEADING_1;
+      t->dict  = pdfioDictCreate(dd->pdf);
+      t->obj   = pdfioFileCreateObj(dd->pdf, t->dict);
+      dest     = pdfioArrayCreate(dd->pdf);
 
-      if (deffont == DOCFONT_ITALIC)
-      {
-        // Add an orange bar to the left of block quotes...
-        set_color(dd, DOCCOLOR_ORANGE);
-        pdfioContentSave(dd->st);
-        pdfioContentSetLineWidth(dd->st, 3.0);
-        pdfioContentPathMoveTo(dd->st, left - 6.0, dd->y - (LINE_HEIGHT - 1.0) * fsize);
-        pdfioContentPathLineTo(dd->st, left - 6.0, dd->y + fsize);
-        pdfioContentStroke(dd->st);
-        pdfioContentRestore(dd->st);
-      }
+      pdfioArrayAppendObj(dest,
+          pdfioFileGetPage(dd->pdf, pdfioFileGetNumPages(dd->pdf) - 1));
+      pdfioArrayAppendName(dest, "XYZ");
+      pdfioArrayAppendNumber(dest, PAGE_LEFT);
+      pdfioArrayAppendNumber(dest,
+          dd->y + heading_sizes[curtype - MMD_TYPE_HEADING_1] * LINE_HEIGHT);
+      pdfioArrayAppendNumber(dest, 0.0);
 
-      num_frags   = 0;
-      frag        = frags;
-      x           = left;
-      lineheight  = 0.0;
-      margin_top  = 0.0;
-      need_bottom = 0.0;
+      pdfioDictSetArray(t->dict, "Dest", dest);
+      pdfioDictSetString(t->dict, "Title", pdfioStringCreate(dd->pdf, dd->heading));
+
+      dd->num_toc ++;
     }
+```
 
-    // Add the current node to the fragment list
-    if (num_frags == 0)
+Finally, we also save the heading's target name and its location in the
+`targets` array to allow interior links to work:
+
+```c
+    // Add the heading to the list of link targets...
+    if (dd->num_targets < DOCTARGET_MAX)
     {
-      ws      = false;
-      wswidth = 0.0;
+      doctarget_t *t = dd->targets + dd->num_targets;
+                                  // New target
+
+      make_target_name(t->name, dd->heading, sizeof(t->name));
+      t->page = pdfioFileGetNumPages(dd->pdf) - 1;
+      t->y    = dd->y + heading_sizes[curtype - MMD_TYPE_HEADING_1] * LINE_HEIGHT;
+
+      dd->num_targets ++;
     }
+    break;
+```
 
-    frag->type       = type;
-    frag->x          = x;
-    frag->width      = width + wswidth;
-    frag->height     = text ? fsize : height;
-    frag->imagenum   = imagenum;
-    frag->text       = text;
-    frag->url        = url;
-    frag->ws         = ws;
-    frag->font       = font;
-    frag->color      = color;
 
-    num_frags ++;
-    frag ++;
-    x += width + wswidth;
-    if (height > lineheight)
-      lineheight = height;
-  }
+#### Formatting Paragraphs, Headings, List Items, and Table Cells
 
-  if (num_frags > 0)
+Paragraphs, headings, list items, and table cells all use the same basic
+formatting algorithm.  Text, checkboxes, and images are collected until the
+nodes in the current block are used up or the content reaches the right margin.
+
+In order to keep adjacent blocks of text together, the formatting algorithm
+makes sure that at least 3 lines of text can fit before the bottom edge of the
+page:
+
+```c
+if (mmdGetNextSibling(block))
+  need_bottom = 3.0 * SIZE_BODY * LINE_HEIGHT;
+else
+  need_bottom = 0.0;
+```
+
+Leader text (used for list items) is right justified to the left margin and
+becomes the first fragment on the line when present.
+
+```c
+if (leader)
+{
+  // Add leader text on first line...
+  frags[0].type     = MMD_TYPE_NORMAL_TEXT;
+  frags[0].width    = pdfioContentTextMeasure(dd->fonts[deffont], leader, fsize);
+  frags[0].height   = fsize;
+  frags[0].x        = left - frags[0].width;
+  frags[0].imagenum = 0;
+  frags[0].text     = leader;
+  frags[0].url      = NULL;
+  frags[0].ws       = false;
+  frags[0].font     = deffont;
+  frags[0].color    = DOCCOLOR_BLACK;
+
+  num_frags  = 1;
+  lineheight = fsize * LINE_HEIGHT;
+}
+else
+{
+  // No leader text...
+  num_frags  = 0;
+  lineheight = 0.0;
+}
+
+frag = frags + num_frags;
+```
+
+If the current content fragment won't fit, we call `render_line` to draw what we
+have, adjusting the left margin as needed for table cells:
+
+```c
+  // See if this node will fit on the current line...
+  if ((num_frags > 0 && (x + width + wswidth) >= right) || num_frags == LINEFRAG_MAX)
   {
-    if (blocktype == MMD_TYPE_TABLE_HEADER_CELL || blocktype == MMD_TYPE_TABLE_BODY_CELL_CENTER)
+    // No, render this line and start over...
+    if (blocktype == MMD_TYPE_TABLE_HEADER_CELL ||
+        blocktype == MMD_TYPE_TABLE_BODY_CELL_CENTER)
       margin_left = 0.5 * (right - x);
     else if (blocktype == MMD_TYPE_TABLE_BODY_CELL_RIGHT)
       margin_left = right - x;
     else
       margin_left = 0.0;
 
-    render_line(dd, margin_left, margin_top, need_bottom, lineheight, num_frags, frags);
+    render_line(dd, margin_left, need_bottom, lineheight, num_frags, frags);
 
+    num_frags   = 0;
+    frag        = frags;
+    x           = left;
+    lineheight  = 0.0;
+    need_bottom = 0.0;
+```
+
+Block quotes (blocks use a default font of italic) have an orange bar to the
+left of the block:
+
+```c
     if (deffont == DOCFONT_ITALIC)
     {
       // Add an orange bar to the left of block quotes...
@@ -1813,226 +1686,232 @@ format_block(docdata_t  *dd,            // I - Document data
       pdfioContentStroke(dd->st);
       pdfioContentRestore(dd->st);
     }
+```
+
+Finally, we add the current content fragment to the array:
+
+```c
+  // Add the current node to the fragment list
+  if (num_frags == 0)
+  {
+    // No leading whitespace at the start of the line
+    ws      = false;
+    wswidth = 0.0;
   }
-}
+
+  frag->type       = type;
+  frag->x          = x;
+  frag->width      = width + wswidth;
+  frag->height     = text ? fsize : height;
+  frag->imagenum   = imagenum;
+  frag->text       = text;
+  frag->url        = url;
+  frag->ws         = ws;
+  frag->font       = font;
+  frag->color      = color;
+
+  num_frags ++;
+  frag ++;
+  x += width + wswidth;
+  if (height > lineheight)
+    lineheight = height;
 ```
 
 
 #### Formatting Code Blocks
 
+Code blocks consist of one or more lines of plain monospaced text.  We draw a
+light gray background behind each line with a small bit of padding at the top
+and bottom:
+
 ```c
-static void
-format_code(docdata_t *dd,              // I - Document data
-            mmd_t     *block,           // I - Code block
-            double    left,             // I - Left margin
-            double    right)            // I - Right margin
+// Draw the top padding...
+set_color(dd, DOCCOLOR_LTGRAY);
+pdfioContentPathRect(dd->st, left - CODE_PADDING, dd->y + SIZE_CODEBLOCK,
+                     right - left + 2.0 * CODE_PADDING, CODE_PADDING);
+pdfioContentFillAndStroke(dd->st, false);
+
+// Start a code text block...
+set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
+pdfioContentTextBegin(dd->st);
+pdfioContentTextMoveTo(dd->st, left, dd->y);
+
+for (code = mmdGetFirstChild(block); code; code = mmdGetNextSibling(code))
 {
-  mmd_t         *code;                  // Current code block
-  double        lineheight,             // Line height
-                margin_top;             // Top margin
-
-
-  // Compute line height and initial top margin...
-  lineheight = SIZE_CODEBLOCK * LINE_HEIGHT;
-  margin_top = lineheight;
-
-  // Start a new page as needed...
-  if (!dd->st)
-  {
-    new_page(dd);
-
-    margin_top = 0.0;
-  }
-
-  dd->y -= lineheight + margin_top + CODE_PADDING;
-
-  if ((dd->y - lineheight) < dd->art_box.y1)
-  {
-    new_page(dd);
-
-    dd->y -= lineheight + CODE_PADDING;
-  }
-
-  // Draw the top padding...
   set_color(dd, DOCCOLOR_LTGRAY);
-  pdfioContentPathRect(dd->st, left - CODE_PADDING, dd->y + SIZE_CODEBLOCK, right - left + 2.0 * CODE_PADDING, CODE_PADDING);
+  pdfioContentPathRect(dd->st, left - CODE_PADDING,
+                       dd->y - (LINE_HEIGHT - 1.0) * SIZE_CODEBLOCK,
+                       right - left + 2.0 * CODE_PADDING, lineheight);
   pdfioContentFillAndStroke(dd->st, false);
 
-  // Start a code text block...
-  set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
-  pdfioContentTextBegin(dd->st);
-  pdfioContentTextMoveTo(dd->st, left, dd->y);
+  set_color(dd, DOCCOLOR_RED);
+  pdfioContentTextShow(dd->st, UNICODE_VALUE, mmdGetText(code));
+  dd->y -= lineheight;
 
-  for (code = mmdGetFirstChild(block); code; code = mmdGetNextSibling(code))
+  if (dd->y < dd->art_box.y1)
   {
-    set_color(dd, DOCCOLOR_LTGRAY);
-    pdfioContentPathRect(dd->st, left - CODE_PADDING, dd->y - (LINE_HEIGHT - 1.0) * SIZE_CODEBLOCK, right - left + 2.0 * CODE_PADDING, lineheight);
-    pdfioContentFillAndStroke(dd->st, false);
+    // End the current text block...
+    pdfioContentTextEnd(dd->st);
 
-    set_color(dd, DOCCOLOR_RED);
-    pdfioContentTextShow(dd->st, UNICODE_VALUE, mmdGetText(code));
+    // Start a new page...
+    new_page(dd);
+    set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
+
     dd->y -= lineheight;
 
-    if (dd->y < dd->art_box.y1)
-    {
-      // End the current text block...
-      pdfioContentTextEnd(dd->st);
-
-      // Start a new page...
-      new_page(dd);
-      set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
-
-      dd->y -= lineheight;
-
-      pdfioContentTextBegin(dd->st);
-      pdfioContentTextMoveTo(dd->st, left, dd->y);
-    }
+    pdfioContentTextBegin(dd->st);
+    pdfioContentTextMoveTo(dd->st, left, dd->y);
   }
-
-  // End the current text block...
-  pdfioContentTextEnd(dd->st);
-  dd->y += lineheight;
-
-  // Draw the bottom padding...
-  set_color(dd, DOCCOLOR_LTGRAY);
-  pdfioContentPathRect(dd->st, left - CODE_PADDING, dd->y - CODE_PADDING - (LINE_HEIGHT - 1.0) * SIZE_CODEBLOCK, right - left + 2.0 * CODE_PADDING, CODE_PADDING);
-  pdfioContentFillAndStroke(dd->st, false);
 }
+
+// End the current text block...
+pdfioContentTextEnd(dd->st);
+dd->y += lineheight;
+
+// Draw the bottom padding...
+set_color(dd, DOCCOLOR_LTGRAY);
+pdfioContentPathRect(dd->st, left - CODE_PADDING,
+                     dd->y - CODE_PADDING - (LINE_HEIGHT - 1.0) * SIZE_CODEBLOCK,
+                     right - left + 2.0 * CODE_PADDING, CODE_PADDING);
+pdfioContentFillAndStroke(dd->st, false);
 ```
 
 
 #### Formatting Tables
 
+Tables are the most difficult to format.  We start by scanning the entire table
+and measuring every cell with the `measure_cell` function:
+
 ```c
-static void
-format_table(docdata_t *dd,             // I - Document data
-             mmd_t     *table,          // I - Table node
-             double    left,            // I - Left margin
-             double    right)           // I - Right margin
+for (num_cols = 0, num_rows = 0, rowptr = rows, current = mmdGetFirstChild(table);
+     current && num_rows < TABLEROW_MAX;
+     current = next)
 {
-  mmd_t         *current,               // Current node
-                *next;                  // Next node
-  mmd_type_t    type;                   // Node type
-  size_t        col,                    // Current column
-                num_cols;               // Number of columns
-  tablecol_t    cols[TABLECOL_MAX];     // Columns
-  size_t        row,                    // Current row
-                num_rows;               // Number of rows
-  tablerow_t    rows[TABLEROW_MAX],     // Rows
-                *rowptr;                // Pointer to current row
-  double        x,                      // Current X position
-                height,                 // Height of cell
-                format_width,           // Maximum format width of table
-                table_width;            // Total width of table
+  next = mmd_walk_next(table, current);
+  type = mmdGetType(current);
 
-
-  // Find all of the rows and columns in the table...
-  num_cols = num_rows = 0;
-
-  memset(cols, 0, sizeof(cols));
-  memset(rows, 0, sizeof(rows));
-
-  rowptr = rows;
-
-  for (current = mmdGetFirstChild(table); current && num_rows < TABLEROW_MAX; current = next)
+  if (type == MMD_TYPE_TABLE_ROW)
   {
-    next = mmd_walk_next(table, current);
-    type = mmdGetType(current);
-
-    if (type == MMD_TYPE_TABLE_ROW)
+    // Parse row...
+    for (col = 0, current = mmdGetFirstChild(current);
+         current && num_cols < TABLECOL_MAX;
+         current = mmdGetNextSibling(current), col ++)
     {
-      // Parse row...
-      for (col = 0, current = mmdGetFirstChild(current); current && num_cols < TABLECOL_MAX; current = mmdGetNextSibling(current), col ++)
-      {
-        rowptr->cells[col] = current;
+      rowptr->cells[col] = current;
 
-        measure_cell(dd, current, cols + col);
+      measure_cell(dd, current, cols + col);
 
-        if (col >= num_cols)
-          num_cols = col + 1;
-      }
-
-      rowptr ++;
-      num_rows ++;
-    }
-  }
-
-  // Figure out the width of each column...
-  for (col = 0, table_width = 0.0; col < num_cols; col ++)
-  {
-    cols[col].max_width += 2.0 * TABLE_PADDING;
-
-    table_width += cols[col].max_width;
-    cols[col].width = cols[col].max_width;
-  }
-
-  format_width = right - left - 2.0 * TABLE_PADDING * num_cols;
-
-  if (table_width > format_width)
-  {
-    // Content too wide, try scaling the widths...
-    double      avg_width,              // Average column width
-                base_width,             // Base width
-                remaining_width,        // Remaining width
-                scale_width;            // Width for scaling
-    size_t      num_remaining_cols = 0; // Number of remaining columns
-
-    // First mark any columns that are narrower than the average width...
-    avg_width = format_width / num_cols;
-
-    for (col = 0, base_width = 0.0, remaining_width = 0.0; col < num_cols; col ++)
-    {
-      if (cols[col].width > avg_width)
-      {
-        remaining_width += cols[col].width;
-        num_remaining_cols ++;
-      }
-      else
-      {
-        base_width += cols[col].width;
-      }
+      if (col >= num_cols)
+        num_cols = col + 1;
     }
 
-    // Then proportionately distribute the remaining width to the other columns...
-    format_width -= base_width;
-
-    for (col = 0, table_width = 0.0; col < num_cols; col ++)
-    {
-      if (cols[col].width > avg_width)
-        cols[col].width = cols[col].width * format_width / remaining_width;
-
-      table_width += cols[col].width;
-    }
+    rowptr ++;
+    num_rows ++;
   }
-
-  // Calculate the margins of each column in preparation for formatting
-  for (col = 0, x = left + TABLE_PADDING; col < num_cols; col ++)
-  {
-    cols[col].left  = x;
-    cols[col].right = x + cols[col].width;
-
-    x += cols[col].width + 2.0 * TABLE_PADDING;
-  }
-
-  // Calculate the height of each row and cell in preparation for formatting
-  for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
-  {
-    for (col = 0; col < num_cols; col ++)
-    {
-      height = measure_cell(dd, rowptr->cells[col], cols + col) + 2.0 * TABLE_PADDING;
-      if (height > rowptr->height)
-        rowptr->height = height;
-    }
-  }
-
-  // Render each table row...
-  if (dd->st)
-    dd->y -= SIZE_TABLE * LINE_HEIGHT;
-
-  for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
-    render_row(dd, num_cols, cols, rowptr);
 }
 ```
+
+The `measure_cell` function also updates the minimum and maximum width needed
+for each column.  To this we add the cell padding to compute the total table
+width:
+
+```c
+// Figure out the width of each column...
+for (col = 0, table_width = 0.0; col < num_cols; col ++)
+{
+  cols[col].max_width += 2.0 * TABLE_PADDING;
+
+  table_width += cols[col].max_width;
+  cols[col].width = cols[col].max_width;
+}
+```
+
+If the calculated width is more than the available width, we need to adjust the
+width of the columns.  The algorithm used here breaks the available width into
+N equal-width columns - any columns wider than this will be scaled
+proportionately.  This works out as two steps - one to calculate the the base
+width of "narrow" columns and a second to distribute the remaining width amongst
+the wider columns:
+
+```c
+format_width = right - left - 2.0 * TABLE_PADDING * num_cols;
+
+if (table_width > format_width)
+{
+  // Content too wide, try scaling the widths...
+  double      avg_width,              // Average column width
+              base_width,             // Base width
+              remaining_width,        // Remaining width
+              scale_width;            // Width for scaling
+  size_t      num_remaining_cols = 0; // Number of remaining columns
+
+  // First mark any columns that are narrower than the average width...
+  avg_width = format_width / num_cols;
+
+  for (col = 0, base_width = 0.0, remaining_width = 0.0; col < num_cols; col ++)
+  {
+    if (cols[col].width > avg_width)
+    {
+      remaining_width += cols[col].width;
+      num_remaining_cols ++;
+    }
+    else
+    {
+      base_width += cols[col].width;
+    }
+  }
+
+  // Then proportionately distribute the remaining width to the other columns...
+  format_width -= base_width;
+
+  for (col = 0, table_width = 0.0; col < num_cols; col ++)
+  {
+    if (cols[col].width > avg_width)
+      cols[col].width = cols[col].width * format_width / remaining_width;
+
+    table_width += cols[col].width;
+  }
+}
+```
+
+Now that we have the widths of the columns, we can calculate the left and right
+margins of each column for formatting the cell text:
+
+```c
+// Calculate the margins of each column in preparation for formatting
+for (col = 0, x = left + TABLE_PADDING; col < num_cols; col ++)
+{
+  cols[col].left  = x;
+  cols[col].right = x + cols[col].width;
+
+  x += cols[col].width + 2.0 * TABLE_PADDING;
+}
+```
+
+Then we re-measure the cells using the final column widths to determine the
+height of each cell and row:
+
+```c
+// Calculate the height of each row and cell in preparation for formatting
+for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
+{
+  for (col = 0; col < num_cols; col ++)
+  {
+    height = measure_cell(dd, rowptr->cells[col], cols + col) + 2.0 * TABLE_PADDING;
+    if (height > rowptr->height)
+      rowptr->height = height;
+  }
+}
+```
+
+Finally, we render each row in the table:
+
+```c
+// Render each table row...
+for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
+  render_row(dd, num_cols, cols, rowptr);
+```
+
 
 ### Rendering the Markdown Document
 
@@ -2109,9 +1988,34 @@ These are later written as annotations in the `add_links` function.
 #### Rendering a Table Row
 
 The `render_row` function takes a row of cells and the corresponding column
-definitions, draws the border boxes around body cells, and then formats each
-cell using the `format_block` function described previously.  The key is to
-reset the page `y` value before formatting each cell:
+definitions.  It starts by drawing the border boxes around body cells:
+
+```c
+if (mmdGetType(row->cells[0]) == MMD_TYPE_TABLE_HEADER_CELL)
+{
+  // Header row, no border...
+  deffont = DOCFONT_BOLD;
+}
+else
+{
+  // Regular body row, add borders...
+  deffont = DOCFONT_REGULAR;
+
+  set_color(dd, DOCCOLOR_GRAY);
+  pdfioContentPathRect(dd->st, cols[0].left - TABLE_PADDING, dd->y - row->height,
+                       cols[num_cols - 1].right - cols[0].left +
+                           2.0 * TABLE_PADDING, row->height);
+  for (col = 1; col < num_cols; col ++)
+  {
+    pdfioContentPathMoveTo(dd->st, cols[col].left - TABLE_PADDING, dd->y);
+    pdfioContentPathLineTo(dd->st, cols[col].left - TABLE_PADDING, dd->y - row->height);
+  }
+  pdfioContentStroke(dd->st);
+}
+```
+
+Then it formats each cell using the `format_block` function described
+previously.  The page `y` value is reset before formatting each cell:
 
 ```c
 row_y = dd->y;
@@ -2120,7 +2024,8 @@ for (col = 0; col < num_cols; col ++)
 {
   dd->y = row_y;
 
-  format_block(dd, row->cells[col], deffont, SIZE_TABLE, cols[col].left, cols[col].right, /*leader*/NULL);
+  format_block(dd, row->cells[col], deffont, SIZE_TABLE, cols[col].left,
+               cols[col].right, /*leader*/NULL);
 }
 
 dd->y = row_y - row->height;
