@@ -1,17 +1,17 @@
 //
 // PDF to text program for PDFio.
 //
-// Copyright © 2022 by Michael R Sweet.
+// Copyright © 2022-2024 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
 //
 // Usage:
 //
-//   ./pdfiototext FILENAME.pdf > FILENAME.txt
+//   ./pdf2text FILENAME.pdf > FILENAME.txt
 //
 
-#include "pdfio.h"
+#include <pdfio.h>
 #include <string.h>
 
 
@@ -36,15 +36,13 @@ main(int  argc,				// I - Number of command-line arguments
   // Verify command-line arguments...
   if (argc != 2)
   {
-    puts("Usage: pdfiototext FILENAME.pdf > FILENAME.txt");
+    puts("Usage: pdf2text FILENAME.pdf > FILENAME.txt");
     return (1);
   }
 
   // Open the PDF file...
-  if ((file = pdfioFileOpen(argv[1], NULL, NULL, NULL, NULL)) == NULL)
+  if ((file = pdfioFileOpen(argv[1], /*password_cb*/NULL, /*password_data*/NULL, /*error_cb*/NULL, /*error_data*/NULL)) == NULL)
     return (1);
-
-//  printf("%s: %u pages\n", argv[1], (unsigned)pdfioFileGetNumPages(file));
 
   // Try grabbing content from all of the pages...
   for (i = 0, num_pages = pdfioFileGetNumPages(file); i < num_pages; i ++)
@@ -54,14 +52,10 @@ main(int  argc,				// I - Number of command-line arguments
 
     num_streams = pdfioPageGetNumStreams(obj);
 
-//    printf("%s: page%u=%p, num_streams=%u\n", argv[1], (unsigned)i, obj, (unsigned)num_streams);
-
     for (j = 0; j < num_streams; j ++)
     {
       if ((st = pdfioPageOpenStream(obj, j, true)) == NULL)
 	continue;
-
-//      printf("%s: page%u st%u=%p\n", argv[1], (unsigned)i, (unsigned)j, st);
 
       first = true;
       while (pdfioStreamGetToken(st, buffer, sizeof(buffer)))
@@ -70,7 +64,7 @@ main(int  argc,				// I - Number of command-line arguments
 	{
 	  if (first)
 	    first = false;
-	  else
+	  else if (buffer[1] != ' ')
 	    putchar(' ');
 
 	  fputs(buffer + 1, stdout);

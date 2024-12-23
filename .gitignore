@@ -14,6 +14,7 @@
 /examples/code128
 /examples/image2pdf
 /examples/md2pdf
+/examples/pdf2text
 /examples/pdfioinfo
 /Makefile
 /packages
@@ -21,7 +22,6 @@
 /pdfio.xcodeproj/xcshareddata
 /pdfio-*.tar.gz*
 /pdfio-*.zip*
-/pdfiototext
 /testpdfio
 /testpdfio-*.pdf
 /testttf

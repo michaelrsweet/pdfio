@@ -23,6 +23,7 @@ TARGETS		=	\
 			code128 \
 			image2pdf \
 			md2pdf \
+			pdf2text \
 			pdfioinfo
 
 
@@ -48,6 +49,11 @@ image2pdf:	image2pdf.c
 # md2pdf
 md2pdf:		md2pdf.c mmd.c mmd.h
 	$(CC) $(CFLAGS) -o $@ md2pdf.c mmd.c $(LIBS)
+
+
+# pdfio text extraction (demo, doesn't handle a lot of things yet)
+pdf2text:	pdf2text.c
+	$(CC) $(CFLAGS) -o $@ pdf2text.c $(LIBS)
 
 
 # pdfioinfo
