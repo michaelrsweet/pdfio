@@ -57,11 +57,13 @@ main(int  argc,				// I - Number of command-line arguments
       if ((st = pdfioPageOpenStream(obj, j, true)) == NULL)
 	continue;
 
+      // Read PDF tokens from the page stream...
       first = true;
       while (pdfioStreamGetToken(st, buffer, sizeof(buffer)))
       {
 	if (buffer[0] == '(')
 	{
+          // Text string using an 8-bit encoding
 	  if (first)
 	    first = false;
 	  else if (buffer[1] != ' ')
@@ -71,6 +73,7 @@ main(int  argc,				// I - Number of command-line arguments
 	}
 	else if (!strcmp(buffer, "Td") || !strcmp(buffer, "TD") || !strcmp(buffer, "T*") || !strcmp(buffer, "\'") || !strcmp(buffer, "\""))
 	{
+	  // Text operators that advance to the next line in the block
 	  putchar('\n');
 	  first = true;
 	}

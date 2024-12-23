@@ -276,7 +276,8 @@ span.string {
 </ul></li>
 <li><a href="#examples">Examples</a><ul class="subcontents">
 <li><a href="#read-pdf-metadata">Read PDF Metadata</a></li>
-<li><a href="#create-pdf-file-with-text-and-image">Create PDF File With Text and Image</a></li>
+<li><a href="#extract-text-from-pdf-file">Extract Text from PDF File</a></li>
+<li><a href="#create-a-pdf-file-with-text-and-an-image">Create a PDF File With Text and an Image</a></li>
 <li><a href="#generate-a-code-128-barcode">Generate a Code 128 Barcode</a></li>
 <li><a href="#convert-markdown-to-pdf">Convert Markdown to PDF</a></li>
 </ul></li>
@@ -1197,7 +1198,39 @@ main(<span class="reserved">int</span>  argc,                         <span clas
   <span class="reserved">return</span> (<span class="number">0</span>);
 }
 </code></pre>
-<h3 class="title" id="create-pdf-file-with-text-and-image">Create PDF File With Text and Image</h3>
+<h3 class="title" id="extract-text-from-pdf-file">Extract Text from PDF File</h3>
+<p>The <code>pdf2text.c</code> example code extracts non-Unicode text from a PDF file by scanning each page for strings and text drawing commands. Since it doesn't look at the font encoding or support Unicode text, it is really only useful to extract plain ASCII text from a PDF file. And since it writes text in the order it appears in the page stream, it may not come out in the same order as appears on the page.</p>
+<p>The <a href="#pdfioStreamGetToken"><code>pdfioStreamGetToken</code></a> function is used to read individual tokens from the page streams. Tokens starting with the open parenthesis are text strings, while PDF operators are left as-is. We use some simple logic to make sure that we include spaces between text strings and add newlines for the text operators that start a new line in a text block:</p>
+<pre><code class="language-c">pdfio_stream_t *st;              <span class="comment">// Page stream</span>
+<span class="reserved">bool</span>           first = <span class="reserved">true</span>;     <span class="comment">// First string on line?</span>
+<span class="reserved">char</span>           buffer[<span class="number">1024</span>];     <span class="comment">// Token buffer</span>
+
+<span class="comment">// Read PDF tokens from the page stream...</span>
+<span class="reserved">while</span> (pdfioStreamGetToken(st, buffer, <span class="reserved">sizeof</span>(buffer)))
+{
+  <span class="reserved">if</span> (buffer[<span class="number">0</span>] == <span class="string">'('</span>)
+  {
+    <span class="comment">// Text string using an 8-bit encoding</span>
+    <span class="reserved">if</span> (first)
+      first = <span class="reserved">false</span>;
+    <span class="reserved">else</span> <span class="reserved">if</span> (buffer[<span class="number">1</span>] != <span class="string">' '</span>)
+      putchar(<span class="string">' '</span>);
+
+    fputs(buffer + <span class="number">1</span>, stdout);
+  }
+  <span class="reserved">else</span> <span class="reserved">if</span> (!strcmp(buffer, <span class="string">&quot;Td&quot;</span>) || !strcmp(buffer, <span class="string">&quot;TD&quot;</span>) || !strcmp(buffer, <span class="string">&quot;T*&quot;</span>) ||
+           !strcmp(buffer, <span class="string">&quot;\'&quot;</span>) || !strcmp(buffer, <span class="string">&quot;\&quot;&quot;</span>))
+  {
+    <span class="comment">// Text operators that advance to the next line in the block</span>
+    putchar(<span class="string">'\n'</span>);
+    first = <span class="reserved">true</span>;
+  }
+}
+
+<span class="reserved">if</span> (!first)
+  putchar(<span class="string">'\n'</span>);
+</code></pre>
+<h3 class="title" id="create-a-pdf-file-with-text-and-an-image">Create a PDF File With Text and an Image</h3>
 <p>The <code>image2pdf.c</code> example code creates a PDF file containing a JPEG or PNG image file and optional caption on a single page. The <code>create_pdf_image_file</code> function creates the PDF file, embeds a base font and the named JPEG or PNG image file, and then creates a page with the image centered on the page with any text centered below:</p>
 <pre><code class="language-c"><span class="directive">#include &lt;pdfio.h&gt;</span>
 <span class="directive">#include &lt;pdfio-content.h&gt;</span>
@@ -2000,7 +2033,7 @@ dd-&gt;y -= margin_top + lineheight;
     <span class="reserved">char</span>  targetlink[<span class="number">129</span>];        <span class="comment">// Targeted link</span>
 
     targetlink[<span class="number">0</span>] = <span class="string">'#'</span>;
-    make_target_name(targetlink + <span class="number">1</span>, frag-&gt;text, <span class="reserved">sizeof</span>(targetlink) - <span class="number">1</span>);
+    make_target_name(targetlink + <span class="number">1</span>, frag-&gt;text, s¾zeof(targetlink) - <span class="number">1</span>);
 
     l-&gt;url = pdfioStringCreate(dd-&gt;pdf, targetlink);
   }
@@ -2053,7 +2086,7 @@ dd-&gt;y -= margin_top + lineheight;
 
 <span class="reserved">for</span> (col = <span class="number">0</span>; col &lt; num_cols; col ++)
 {
-  ddì&gt;y = row_y;
+  dd-&gt;y = row_y;
 
   format_block(dd, row-&gt;cells[col], deffont, SIZE_TABLE, cols[col].left,
                cols[col].right, <span class="comment">/*leader*/</span>NULL);

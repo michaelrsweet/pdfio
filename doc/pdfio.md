@@ -922,8 +922,56 @@ main(int  argc,                         // I - Number of command-line arguments
 ```
 
 
-Create PDF File With Text and Image
------------------------------------
+Extract Text from PDF File
+--------------------------
+
+The `pdf2text.c` example code extracts non-Unicode text from a PDF file by
+scanning each page for strings and text drawing commands.  Since it doesn't
+look at the font encoding or support Unicode text, it is really only useful to
+extract plain ASCII text from a PDF file.  And since it writes text in the order
+it appears in the page stream, it may not come out in the same order as appears
+on the page.
+
+The [`pdfioStreamGetToken`](@@) function is used to read individual tokens from
+the page streams.  Tokens starting with the open parenthesis are text strings,
+while PDF operators are left as-is.  We use some simple logic to make sure that
+we include spaces between text strings and add newlines for the text operators
+that start a new line in a text block:
+
+```c
+pdfio_stream_t *st;              // Page stream
+bool           first = true;     // First string on line?
+char           buffer[1024];     // Token buffer
+
+// Read PDF tokens from the page stream...
+while (pdfioStreamGetToken(st, buffer, sizeof(buffer)))
+{
+  if (buffer[0] == '(')
+  {
+    // Text string using an 8-bit encoding
+    if (first)
+      first = false;
+    else if (buffer[1] != ' ')
+      putchar(' ');
+
+    fputs(buffer + 1, stdout);
+  }
+  else if (!strcmp(buffer, "Td") || !strcmp(buffer, "TD") || !strcmp(buffer, "T*") ||
+           !strcmp(buffer, "\'") || !strcmp(buffer, "\""))
+  {
+    // Text operators that advance to the next line in the block
+    putchar('\n');
+    first = true;
+  }
+}
+
+if (!first)
+  putchar('\n');
+```
+
+
+Create a PDF File With Text and an Image
+----------------------------------------
 
 The `image2pdf.c` example code creates a PDF file containing a JPEG or PNG
 image file and optional caption on a single page.  The `create_pdf_image_file`

@@ -110,6 +110,26 @@ TARGETS		=	\
 			$(LIBPDFIO_STATIC) \
 			testpdfio \
 			testttf
+DOCFILES	=	\
+			doc/pdfio.html \
+			doc/pdfio-512.png \
+			LICENSE \
+			NOTICE
+EXAMPLES	=	\
+			examples/Makefile \
+			examples/Roboto-Bold.ttf \
+			examples/Roboto-Italic.ttf \
+			examples/Roboto-Regular.ttf \
+			examples/RobotoMono-Regular.ttf \
+			examples/code128.c \
+			examples/code128.ttf \
+			examples/image2pdf.c \
+			examples/md2pdf.c \
+			examples/md2pdf.md \
+			examples/mmd.c \
+			examples/mmd.h \
+			examples/pdf2text.c \
+			examples/pdfioinfo.c
 
 
 # Make everything
@@ -150,8 +170,13 @@ install:	$(TARGETS)
 	$(INSTALL) -c -m 644 pdfio.pc $(BUILDROOT)$(libdir)/pkgconfig
 	echo Installing documentation to $(BUILDROOT)$(datadir)/doc/pdfio...
 	$(INSTALL) -d -m 755 $(BUILDROOT)$(datadir)/doc/pdfio
-	for file in doc/pdfio.html doc/pdfio-512.png LICENSE NOTICE; do \
-		$(INSTALL) -c -m 644  $$file $(BUILDROOT)$(datadir)/doc/pdfio; \
+	for file in $(DOCFILES); do \
+		$(INSTALL) -c -m 644 $$file $(BUILDROOT)$(datadir)/doc/pdfio; \
+	done
+	echo Installing examples to $(BUILDROOT)$(datadir)/doc/pdfio/examples...
+	$(INSTALL) -d -m 755 $(BUILDROOT)$(datadir)/doc/pdfio/examples
+	for file in $(EXAMPLES); do \
+		$(INSTALL) -c -m 644 $$file $(BUILDROOT)$(datadir)/doc/pdfio/examples; \
 	done
 	echo Installing man page to $(BUILDROOT)$(mandir)/man3...
 	$(INSTALL) -d -m 755 $(BUILDROOT)$(mandir)/man3
