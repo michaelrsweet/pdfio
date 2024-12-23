@@ -1132,7 +1132,7 @@ pdfioContentTextMeasure(
 	  }
 
 	  if (i < (sizeof(_pdfio_cp1252) / sizeof(_pdfio_cp1252[0])))
-	    ch = i + 0x80;		// Extra characters from 0x80 to 0x9f
+	    ch = (int)(i + 0x80);	// Extra characters from 0x80 to 0x9f
 	  else
 	    ch = '?';			// Unsupported chars map to ?
 	}

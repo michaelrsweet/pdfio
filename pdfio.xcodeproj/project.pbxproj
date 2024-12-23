@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -31,6 +31,7 @@
 		27F2F0612710BE92008ECD36 /* pdfio-rc4.c in Sources */ = {isa = PBXBuildFile; fileRef = 27F2F05E2710BE92008ECD36 /* pdfio-rc4.c */; };
 		27F2F0622710BE92008ECD36 /* pdfio-crypto.c in Sources */ = {isa = PBXBuildFile; fileRef = 27F2F05F2710BE92008ECD36 /* pdfio-crypto.c */; };
 		27F2F0642711243D008ECD36 /* pdfio-sha256.c in Sources */ = {isa = PBXBuildFile; fileRef = 27F2F0632711243D008ECD36 /* pdfio-sha256.c */; };
+		27FCBDE42D19F9B300485EEE /* pdfio-base-font-widths.h in Headers */ = {isa = PBXBuildFile; fileRef = 27FCBDE32D19F9B300485EEE /* pdfio-base-font-widths.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,6 +90,7 @@
 		27F2F05E2710BE92008ECD36 /* pdfio-rc4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-rc4.c"; sourceTree = "<group>"; };
 		27F2F05F2710BE92008ECD36 /* pdfio-crypto.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-crypto.c"; sourceTree = "<group>"; };
 		27F2F0632711243D008ECD36 /* pdfio-sha256.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-sha256.c"; sourceTree = "<group>"; };
+		27FCBDE32D19F9B300485EEE /* pdfio-base-font-widths.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "pdfio-base-font-widths.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -162,6 +164,7 @@
 			children = (
 				27CF90432711DFFE00E50FE4 /* pdfio-aes.c */,
 				273440BA263D727800FBFD63 /* pdfio-array.c */,
+				27FCBDE32D19F9B300485EEE /* pdfio-base-font-widths.h */,
 				273440BB263D727800FBFD63 /* pdfio-common.c */,
 				271EA703265B2B1000ACDD39 /* pdfio-content.c */,
 				27F2F05F2710BE92008ECD36 /* pdfio-crypto.c */,
@@ -205,6 +208,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				27FCBDE42D19F9B300485EEE /* pdfio-base-font-widths.h in Headers */,
 				273440CC263D727800FBFD63 /* pdfio.h in Headers */,
 				271EA706265B2B1000ACDD39 /* pdfio-content.h in Headers */,
 				273440C3263D727800FBFD63 /* pdfio-private.h in Headers */,
@@ -256,7 +260,8 @@
 		273440A8263D6FE200FBFD63 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1300;
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					273440AF263D6FE200FBFD63 = {
 						CreatedOnToolsVersion = 12.5;
@@ -373,9 +378,11 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1.1.2;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -450,15 +457,15 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1.1.2;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"$(inherited)",
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
 				GCC_TREAT_IMPLICIT_FUNCTION_DECLARATIONS_AS_ERRORS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_MISSING_FIELD_INITIALIZERS = YES;
@@ -486,6 +493,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = RU58A2256H;
 				EXECUTABLE_PREFIX = lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -497,6 +505,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = RU58A2256H;
 				EXECUTABLE_PREFIX = lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -509,6 +518,7 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -525,6 +535,7 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				MACOSX_DEPLOYMENT_TARGET = 11.0;
