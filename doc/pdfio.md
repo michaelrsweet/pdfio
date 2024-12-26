@@ -864,6 +864,10 @@ escaping, as needed:
 Examples
 ========
 
+PDFio includes several example programs that are typically installed to the
+`/usr/share/doc/pdfio/examples` or `/usr/local/share/doc/pdfio/examples`
+directories.  A makefile is included to build them.
+
 
 Read PDF Metadata
 -----------------

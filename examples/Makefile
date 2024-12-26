@@ -12,10 +12,10 @@
 
 
 # Common options
-#CFLAGS		=	-g $(CPPFLAGS)
-CFLAGS		=	-g -fsanitize=address $(CPPFLAGS)
-CPPFLAGS	=	-I..
-LIBS		=	-L.. -lpdfio -lz
+CFLAGS		=	-g $(CPPFLAGS)
+#CFLAGS		=	-g -fsanitize=address $(CPPFLAGS)
+CPPFLAGS	=	-I.. -I/usr/local/include
+LIBS		=	-L.. -L/usr/local/lib -lpdfio -lz
 
 
 # Targets

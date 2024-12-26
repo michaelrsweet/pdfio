@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2024-12-22" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2024-12-26" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -1028,6 +1028,8 @@ pdfioContentTextShowJustified draws an array of literal strings with offsets bet
 
 
 .SH Examples
+.PP
+PDFio includes several example programs that are typically installed to the /usr/share/doc/pdfio/examples or /usr/local/share/doc/pdfio/examples directories. A makefile is included to build them.
 .SS Read PDF Metadata
 .PP
 The pdfioinfo.c example program opens a PDF file and prints the title, author, creation date, and number of pages:
@@ -2068,13 +2070,13 @@ We then loops through the fragments for the current line, drawing checkboxes, im
       doclink_t *l = dd\->links + dd\->num_links;
                                       // Pointer to this link record
     
-      if (!strcmp(frag\->url, "@"))
+     if (!strcmp(frag\->url, "@"))
       {
         // Use mapped text as link target...
         char  targetlink[129];        // Targeted link
     
         targetlink[0] = '#';
-        make_target_name(targetlink + 1, frag\->text, sNzeof(targetlink) \- 1);
+        make_target_name(targetlink + 1, frag\->text, sizeof(targetlink) \- 1);
     
         l\->url = pdfioStringCreate(dd\->pdf, targetlink);
       }

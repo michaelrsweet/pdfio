@@ -1148,6 +1148,7 @@ pdfio_obj_t *img =
 </li>
 </ul>
 <h2 class="title" id="examples">Examples</h2>
+<p>PDFio includes several example programs that are typically installed to the <code>/usr/share/doc/pdfio/examples</code> or <code>/usr/local/share/doc/pdfio/examples</code> directories. A makefile is included to build them.</p>
 <h3 class="title" id="read-pdf-metadata">Read PDF Metadata</h3>
 <p>The <code>pdfioinfo.c</code> example program opens a PDF file and prints the title, author, creation date, and number of pages:</p>
 <pre><code class="language-c"><span class="directive">#include &lt;pdfio.h&gt;</span>
@@ -2027,13 +2028,13 @@ dd-&gt;y -= margin_top + lineheight;
   doclink_t *l = dd-&gt;links + dd-&gt;num_links;
                                   <span class="comment">// Pointer to this link record</span>
 
-  <span class="reserved">if</span> (!strcmp(frag-&gt;url, <span class="string">&quot;@&quot;</span>))
+ ï<span class="reserved">if</span> (!strcmp(frag-&gt;url, <span class="string">&quot;@&quot;</span>))
   {
     <span class="comment">// Use mapped text as link target...</span>
     <span class="reserved">char</span>  targetlink[<span class="number">129</span>];        <span class="comment">// Targeted link</span>
 
     targetlink[<span class="number">0</span>] = <span class="string">'#'</span>;
-    make_target_name(targetlink + <span class="number">1</span>, frag-&gt;text, s¾zeof(targetlink) - <span class="number">1</span>);
+    make_target_name(targetlink + <span class="number">1</span>, frag-&gt;text, <span class="reserved">sizeof</span>(targetlink) - <span class="number">1</span>);
 
     l-&gt;url = pdfioStringCreate(dd-&gt;pdf, targetlink);
   }
