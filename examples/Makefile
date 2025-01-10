@@ -1,7 +1,7 @@
 #
 # Makefile for PDFio examples.
 #
-# Copyright © 2024 by Michael R Sweet.
+# Copyright © 2024-2025 by Michael R Sweet.
 #
 # Licensed under Apache License v2.0.  See the file "LICENSE" for more
 # information.

@@ -3,7 +3,7 @@
     <metadata>
         <id>pdfio_native.redist</id>
         <title>PDFio Library for VS2019+</title>
-        <version>1.4.0</version>
+        <version>1.4.1</version>
         <authors>Michael R Sweet</authors>
         <owners>michaelrsweet</owners>
         <projectUrl>https://github.com/michaelrsweet/pappl</projectUrl>
@@ -13,7 +13,7 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>PDFio Library for VS2019+</description>
         <summary>PDFio is a simple C library for reading and writing PDF files. This package provides the redistributable content for the PDFio library. PDFio is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GNU GPL2-only software.</summary>
-        <copyright>Copyright © 2019-2024 by Michael R Sweet</copyright>
+        <copyright>Copyright © 2019-2025 by Michael R Sweet</copyright>
         <tags>pdf file native</tags>
 	<dependencies>
 	    <dependency id="zlib_native.redist" version="1.2.11" />

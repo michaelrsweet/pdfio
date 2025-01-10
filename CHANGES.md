@@ -2,7 +2,13 @@ Changes in PDFio
 ================
 
 
-v1.4.0 - YYYY-MM-DD
+v1.4.1 - YYYY-MM-DD
+-------------------
+
+- Fixed the link libraries for the example source code (Issue #86)
+
+
+v1.4.0 - 2024-12-26
 -------------------
 
 - Added new `pdfioDictGetKey` and `pdfioDictGetNumPairs` APIs (Issue #63)

@@ -1,7 +1,7 @@
 #
 # Makefile for PDFio.
 #
-# Copyright © 2021-2024 by Michael R Sweet.
+# Copyright © 2021-2025 by Michael R Sweet.
 #
 # Licensed under Apache License v2.0.  See the file "LICENSE" for more
 # information.
@@ -246,7 +246,7 @@ ttf.o:			ttf.h
 # Make documentation using Codedoc <https://www.msweet.org/codedoc>
 DOCFLAGS	=	\
 			--author "Michael R Sweet" \
-			--copyright "Copyright (c) 2021-2024 by Michael R Sweet" \
+			--copyright "Copyright (c) 2021-2025 by Michael R Sweet" \
 			--docversion $(PDFIO_VERSION)
 
 .PHONY: doc
