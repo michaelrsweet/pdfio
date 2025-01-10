@@ -15,7 +15,7 @@
 CFLAGS		=	-g $(CPPFLAGS)
 #CFLAGS		=	-g -fsanitize=address $(CPPFLAGS)
 CPPFLAGS	=	-I.. -I/usr/local/include
-LIBS		=	-L.. -L/usr/local/lib -lpdfio -lz
+LIBS		=	-L.. -L/usr/local/lib -lpdfio -lz -lm
 
 
 # Targets
