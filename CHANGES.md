@@ -6,6 +6,7 @@ v1.4.1 - YYYY-MM-DD
 -------------------
 
 - Fixed the link libraries for the example source code (Issue #86)
+- Fixed handling of the Info object (Issue #87)
 
 
 v1.4.0 - 2024-12-26

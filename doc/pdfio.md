@@ -886,9 +886,11 @@ main(int  argc,                         // I - Number of command-line arguments
 {
   const char    *filename;              // PDF filename
   pdfio_file_t  *pdf;                   // PDF file
+  const char    *author;                // Author name
   time_t        creation_date;          // Creation date
   struct tm     *creation_tm;           // Creation date/time information
   char          creation_text[256];     // Creation date/time as a string
+  const char    *title;                 // Title
 
 
   // Get the filename from the command-line...
@@ -906,15 +908,25 @@ main(int  argc,                         // I - Number of command-line arguments
   if (pdf == NULL)
     return (1);
 
+  // Get the title and author...
+  author = pdfioFileGetAuthor(pdf);
+  title  = pdfioFileGetTitle(pdf);
+
   // Get the creation date and convert to a string...
-  creation_date = pdfioFileGetCreationDate(pdf);
-  creation_tm   = localtime(&creation_date);
-  strftime(creation_text, sizeof(creation_text), "%c", creation_tm);
+  if ((creation_date = pdfioFileGetCreationDate(pdf)) > 0)
+  {
+    creation_tm   = localtime(&creation_date);
+    strftime(creation_text, sizeof(creation_text), "%c", creation_tm);
+  }
+  else
+  {
+    snprintf(creation_text, sizeof(creation_text), "-- not set --");
+  }
 
   // Print file information to stdout...
   printf("%s:\n", filename);
-  printf("         Title: %s\n", pdfioFileGetTitle(pdf));
-  printf("        Author: %s\n", pdfioFileGetAuthor(pdf));
+  printf("         Title: %s\n", title ? title : "-- not set --");
+  printf("        Author: %s\n", author ? author : "-- not set --");
   printf("    Created On: %s\n", creation_text);
   printf("  Number Pages: %u\n", (unsigned)pdfioFileGetNumPages(pdf));
 

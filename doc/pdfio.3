@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2024-12-26" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2025-01-17" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -1045,9 +1045,11 @@ The pdfioinfo.c example program opens a PDF file and prints the title, author, c
     {
       const char    *filename;              // PDF filename
       pdfio_file_t  *pdf;                   // PDF file
+      const char    *author;                // Author name
       time_t        creation_date;          // Creation date
       struct tm     *creation_tm;           // Creation date/time information
       char          creation_text[256];     // Creation date/time as a string
+      const char    *title;                 // Title
     
     
       // Get the filename from the command\-line...
@@ -1065,15 +1067,25 @@ The pdfioinfo.c example program opens a PDF file and prints the title, author, c
       if (pdf == NULL)
         return (1);
     
+      // Get the title and author...
+      author = pdfioFileGetAuthor(pdf);
+      title  = pdfioFileGetTitle(pdf);
+    
       // Get the creation date and convert to a string...
-      creation_date = pdfioFileGetCreationDate(pdf);
-      creation_tm   = localtime(&creation_date);
-      strftime(creation_text, sizeof(creation_text), "%c", creation_tm);
+      if ((creation_date = pdfioFileGetCreationDate(pdf)) > 0)
+      {
+        creation_tm   = localtime(&creation_date);
+        strftime(creation_text, sizeof(creation_text), "%c", creation_tm);
+      }
+      else
+      {
+        snprintf(creation_text, sizeof(creation_text), "\-\- not set \-\-");
+      }
     
       // Print file information to stdout...
       printf("%s:\\n", filename);
-      printf("         Title: %s\\n", pdfioFileGetTitle(pdf));
-      printf("        Author: %s\\n", pdfioFileGetAuthor(pdf));
+      printf("         Title: %s\\n", title ? title : "\-\- not set \-\-");
+      printf("        Author: %s\\n", author ? author : "\-\- not set \-\-");
       printf("    Created On: %s\\n", creation_text);
       printf("  Number Pages: %u\\n", (unsigned)pdfioFileGetNumPages(pdf));
     
@@ -2062,7 +2074,7 @@ The render_line function adds content from the linefrag_t array to a PDF page. I
     }
 .fi
 .PP
-We then loops through the fragments for the current line, drawing checkboxes, images, and text as needed. When a hyperlink is present, we add the link to the links array in the docdata_t structure, mapping "@" and "@@" to an internal link corresponding to the linked text:
+We then loops through the fragments for the current line, drawing checkboxes, images, and text as needed. Whan a hyperlink is present, we add the link to the links array in the docdata_t structure, mapping "@" and "@@" to an internal link corresponding to the linked text:
 .nf
 
     if (frag\->url && dd\->num_links < DOCLINK_MAX)
@@ -2070,7 +2082,7 @@ We then loops through the fragments for the current line, drawing checkboxes, im
       doclink_t *l = dd\->links + dd\->num_links;
                                       // Pointer to this link record
     
-     if (!strcmp(frag\->url, "@"))
+      if (!strcmp(frag\->url, "@"))
       {
         // Use mapped text as link target...
         char  targetlink[129];        // Targeted link

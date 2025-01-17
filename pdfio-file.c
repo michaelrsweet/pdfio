@@ -1,7 +1,7 @@
 //
 // PDF file functions for PDFio.
 //
-// Copyright © 2021-2024 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -1938,7 +1938,6 @@ load_xref(
 	// Save the trailer dictionary and grab the root (catalog) and info
 	// objects...
 	pdf->trailer_dict = trailer.value.dict;
-	pdf->info_obj     = pdfioDictGetObj(pdf->trailer_dict, "Info");
 	pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
 	pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
 
@@ -2086,7 +2085,6 @@ load_xref(
 	// Save the trailer dictionary and grab the root (catalog) and info
 	// objects...
 	pdf->trailer_dict = trailer.value.dict;
-	pdf->info_obj     = pdfioDictGetObj(pdf->trailer_dict, "Info");
 	pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
 	pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
 
@@ -2123,6 +2121,8 @@ load_xref(
 
   // Once we have all of the xref tables loaded, get the important objects and
   // build the pages array...
+  pdf->info_obj = pdfioDictGetObj(pdf->trailer_dict, "Info");
+
   if ((pdf->root_obj = pdfioDictGetObj(pdf->trailer_dict, "Root")) == NULL)
   {
     _pdfioFileError(pdf, "Missing Root object.");

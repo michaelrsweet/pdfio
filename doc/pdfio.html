@@ -1161,9 +1161,11 @@ main(<span class="reserved">int</span>  argc,                         <span clas
 {
   <span class="reserved">const</span> <span class="reserved">char</span>    *filename;              <span class="comment">// PDF filename</span>
   pdfio_file_t  *pdf;                   <span class="comment">// PDF file</span>
+  <span class="reserved">const</span> <span class="reserved">char</span>    *author;                <span class="comment">// Author name</span>
   time_t        creation_date;          <span class="comment">// Creation date</span>
   <span class="reserved">struct</span> tm     *creation_tm;           <span class="comment">// Creation date/time information</span>
   <span class="reserved">char</span>          creation_text[<span class="number">256</span>];     <span class="comment">// Creation date/time as a string</span>
+  <span class="reserved">const</span> <span class="reserved">char</span>    *title;                 <span class="comment">// Title</span>
 
 
   <span class="comment">// Get the filename from the command-line...</span>
@@ -1181,15 +1183,25 @@ main(<span class="reserved">int</span>  argc,                         <span clas
   <span class="reserved">if</span> (pdf == NULL)
     <span class="reserved">return</span> (<span class="number">1</span>);
 
+  <span class="comment">// Get the title and author...</span>
+  author = pdfioFileGetAuthor(pdf);
+  title  = pdfioFileGetTitle(pdf);
+
   <span class="comment">// Get the creation date and convert to a string...</span>
-  creation_date = pdfioFileGetCreationDate(pdf);
-  creation_tm   = localtime(&amp;creation_date);
-  strftime(creation_text, <span class="reserved">sizeof</span>(creation_text), <span class="string">&quot;%c&quot;</span>, creation_tm);
+  <span class="reserved">if</span> ((creation_date = pdfioFileGetCreationDate(pdf)) &gt; <span class="number">0</span>)
+  {
+    creation_tm   = localtime(&amp;creation_date);
+    strftime(creation_text, <span class="reserved">sizeof</span>(creation_text), <span class="string">&quot;%c&quot;</span>, creation_tm);
+  }
+  <span class="reserved">else</span>
+  {
+    snprintf(creation_text, <span class="reserved">sizeof</span>(creation_text), <span class="string">&quot;-- not set --&quot;</span>);
+  }
 
   <span class="comment">// Print file information to stdout...</span>
   printf(<span class="string">&quot;%s:\n&quot;</span>, filename);
-  printf(<span class="string">&quot;         Title: %s\n&quot;</span>, pdfioFileGetTitle(pdf));
-  printf(<span class="string">&quot;        Author: %s\n&quot;</span>, pdfioFileGetAuthor(pdf));
+  printf(<span class="string">&quot;         Title: %s\n&quot;</span>, title ? title : <span class="string">&quot;-- not set --&quot;</span>);
+  printf(<span class="string">&quot;        Author: %s\n&quot;</span>, author ? author : <span class="string">&quot;-- not set --&quot;</span>);
   printf(<span class="string">&quot;    Created On: %s\n&quot;</span>, creation_text);
   printf(<span class="string">&quot;  Number Pages: %u\n&quot;</span>, (<span class="reserved">unsigned</span>)pdfioFileGetNumPages(pdf));
 
@@ -2022,13 +2034,13 @@ dd-&gt;y -= margin_top + lineheight;
   dd-&gt;y -= lineheight;
 }
 </code></pre>
-<p>We then loops through the fragments for the current line, drawing checkboxes, images, and text as needed. When a hyperlink is present, we add the link to the <code>links</code> array in the <code>docdata_t</code> structure, mapping &quot;@&quot; and &quot;@@&quot; to an internal link corresponding to the linked text:</p>
+<p>We then loops through the fragments for the current line, drawing checkboxes, images, and text as needed. Wh—n a hyperlink is present, we add the link to the <code>links</code> array in the <code>docdata_t</code> structure, mapping &quot;@&quot; and &quot;@@&quot; to an internal link corresponding to the linked text:</p>
 <pre><code class="language-c"><span class="reserved">if</span> (frag-&gt;url &amp;&amp; dd-&gt;num_links &lt; DOCLINK_MAX)
 {
   doclink_t *l = dd-&gt;links + dd-&gt;num_links;
                                   <span class="comment">// Pointer to this link record</span>
 
- Ô<span class="reserved">if</span> (!strcmp(frag-&gt;url, <span class="string">&quot;@&quot;</span>))
+  <span class="reserved">if</span> (!strcmp(frag-&gt;url, <span class="string">&quot;@&quot;</span>))
   {
     <span class="comment">// Use mapped text as link target...</span>
     <span class="reserved">char</span>  targetlink[<span class="number">129</span>];        <span class="comment">// Targeted link</span>
