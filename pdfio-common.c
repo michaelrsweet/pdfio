@@ -1,7 +1,7 @@
 //
 // Common support functions for pdfio.
 //
-// Copyright © 2021-2024 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -398,7 +398,10 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
   }
 
   // Seek within the file...
-  if ((offset = lseek(pdf->fd, offset, whence)) < 0)
+  if ((offset = lseek(pdf->fd, offset, whence)) < 0 && whence == SEEK_END && errno == EINVAL)
+    offset = lseek(pdf->fd, 0, SEEK_SET);
+
+  if (offset < 0)
   {
     _pdfioFileError(pdf, "Unable to seek within file - %s", strerror(errno));
     return (-1);
