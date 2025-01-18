@@ -368,7 +368,7 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
   if (pdf->mode == _PDFIO_MODE_READ)
   {
     // Reading, see if we already have the data we need...
-    if (whence != SEEK_END && offset >= pdf->bufpos && offset < (pdf->bufpos + pdf->bufend - pdf->buffer))
+    if (whence != SEEK_END && offset >= pdf->bufpos && pdf->bufend && offset < (pdf->bufpos + pdf->bufend - pdf->buffer))
     {
       // Yes, seek within existing buffer...
       pdf->bufptr = pdf->buffer + (offset - pdf->bufpos);
