@@ -5,6 +5,7 @@ Changes in PDFio
 v1.4.1 - YYYY-MM-DD
 -------------------
 
+- Added license files for the example fonts now bundled with PDFio (Issue #91)
 - Fixed the link libraries for the example source code (Issue #86)
 - Fixed handling of the Info object (Issue #87)
 - Fixed opening of PDF files less than 1024 bytes in length (Issue #87)
