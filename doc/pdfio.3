@@ -2074,7 +2074,7 @@ The render_line function adds content from the linefrag_t array to a PDF page. I
     }
 .fi
 .PP
-We then loops through the fragments for the current line, drawing checkboxes, images, and text as needed. Whan a hyperlink is present, we add the link to the links array in the docdata_t structure, mapping "@" and "@@" to an internal link corresponding to the linked text:
+We then loop through the fragments for the current line, drawing checkboxes, images, and text as needed. When a hyperlink is present, we add the link to the links array in the docdata_t structure, mapping "@" and "@@" to an internal link corresponding to the linked text:
 .nf
 
     if (frag\->url && dd\->num_links < DOCLINK_MAX)
@@ -4567,4 +4567,4 @@ typedef enum pdfio_valtype_e pdfio_valtype_t;
 Michael R Sweet
 .SH COPYRIGHT
 .PP
-Copyright (c) 2021-2024 by Michael R Sweet
+Copyright (c) 2021-2025 by Michael R Sweet

@@ -2005,7 +2005,7 @@ if ((dd->y - need_bottom) < dd->art_box.y1)
 }
 ```
 
-We then loops through the fragments for the current line, drawing checkboxes,
+We then loop through the fragments for the current line, drawing checkboxes,
 images, and text as needed.  When a hyperlink is present, we add the link to the
 `links` array in the `docdata_t` structure, mapping "@" and "@@" to an internal
 link corresponding to the linked text:

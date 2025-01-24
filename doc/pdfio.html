@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<title>PDFio Programming Manual v1.4.0</title>
+<title>PDFio Programming Manual v1.4.1</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.8">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
-<meta name="copyright" content="Copyright © 2021-2024 by Michael R Sweet">
-<meta name="version" content="1.4.0">
+<meta name="copyright" content="Copyright © 2021-2025 by Michael R Sweet">
+<meta name="version" content="1.4.1">
 <style type="text/css"><!--
 body {
   background: white;
@@ -251,9 +251,9 @@ span.string {
 <body>
 <div class="header">
 <p><img class="title" src="pdfio-512.png"></p>
-<h1 class="title">PDFio Programming Manual v1.4.0</h1>
+<h1 class="title">PDFio Programming Manual v1.4.1</h1>
 <p>Michael R Sweet</p>
-<p>Copyright © 2021-2024 by Michael R Sweet</p>
+<p>Copyright © 2021-2025 by Michael R Sweet</p>
 </div>
 <div class="contents">
 <h2 class="title">Contents</h2>
@@ -2034,7 +2034,7 @@ dd-&gt;y -= margin_top + lineheight;
   dd-&gt;y -= lineheight;
 }
 </code></pre>
-<p>We then loops through the fragments for the current line, drawing checkboxes, images, and text as needed. Wh�n a hyperlink is present, we add the link to the <code>links</code> array in the <code>docdata_t</code> structure, mapping &quot;@&quot; and &quot;@@&quot; to an internal link corresponding to the linked text:</p>
+<p>We then loop through the fragments for the current line, drawing checkboxes, images, and text as needed. When a hyperlink is present, we add the link to the <code>links</code> array in the <code>docdata_t</code> structure, mapping &quot;@&quot; and &quot;@@&quot; to an internal link corresponding to the linked text:</p>
 <pre><code class="language-c"><span class="reserved">if</span> (frag-&gt;url &amp;&amp; dd-&gt;num_links &lt; DOCLINK_MAX)
 {
   doclink_t *l = dd-&gt;links + dd-&gt;num_links;
