@@ -10,6 +10,7 @@ v1.4.1 - YYYY-MM-DD
 - Fixed opening of PDF files less than 1024 bytes in length (Issue #87)
 - Fixed potential `NULL` dereference when reading (Issue #89)
 - Fixed reading of compressed object streams (Issue #92)
+- Fixed reading of UTF-16 string values (Issue #92)
 
 
 v1.4.0 - 2024-12-26
