@@ -1,3 +1,7 @@
+Copyright 2003 Grandzebu, All Rights Reserved
+
+http://grandzebu.net/informatique/codbar-en/code128.htm
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 2, June 1991
 
