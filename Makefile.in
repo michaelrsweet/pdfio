@@ -117,12 +117,14 @@ DOCFILES	=	\
 			NOTICE
 EXAMPLES	=	\
 			examples/Makefile \
+			examples/Roboto-LICENSE.txt \
 			examples/Roboto-Bold.ttf \
 			examples/Roboto-Italic.ttf \
 			examples/Roboto-Regular.ttf \
 			examples/RobotoMono-Regular.ttf \
 			examples/code128.c \
 			examples/code128.ttf \
+			examples/code128-LICENSE.txt \
 			examples/image2pdf.c \
 			examples/md2pdf.c \
 			examples/md2pdf.md \
