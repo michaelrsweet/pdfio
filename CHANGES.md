@@ -1,7 +1,7 @@
 Changes in PDFio
 ================
 
-v1.4.1 - YYYY-MM-DD
+v1.4.1 - 2025-01-24
 -------------------
 
 - Added license files for the example fonts now bundled with PDFio (Issue #91)
