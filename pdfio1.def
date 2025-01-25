@@ -204,6 +204,7 @@ pdfioFileGetCreationDate
 pdfioFileGetCreator
 pdfioFileGetID
 pdfioFileGetKeywords
+pdfioFileGetModDate
 pdfioFileGetName
 pdfioFileGetNumObjs
 pdfioFileGetNumPages

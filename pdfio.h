@@ -201,6 +201,7 @@ extern time_t		pdfioFileGetCreationDate(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetCreator(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioFileGetID(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetKeywords(pdfio_file_t *pdf) _PDFIO_PUBLIC;
+extern time_t		pdfioFileGetModDate(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetName(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern size_t		pdfioFileGetNumObjs(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern size_t		pdfioFileGetNumPages(pdfio_file_t *pdf) _PDFIO_PUBLIC;
