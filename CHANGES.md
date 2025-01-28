@@ -1,6 +1,12 @@
 Changes in PDFio
 ================
 
+v1.?.? - YYYY-MM-DD
+-------------------
+
+- Updated the pdf2txt example to support font encodings.
+
+
 v1.4.1 - 2025-01-24
 -------------------
 
