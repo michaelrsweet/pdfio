@@ -86,6 +86,7 @@ typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
 static bool		create_cp1252(pdfio_file_t *pdf);
+static pdfio_obj_t	*create_image(pdfio_file_t *pdf, pdfio_dict_t *dict, const unsigned char *data, size_t width, size_t height, size_t num_colors, bool alpha);
 static void		ttf_error_cb(pdfio_file_t *pdf, const char *message);
 static unsigned		update_png_crc(unsigned crc, const unsigned char *buffer, size_t length);
 static bool		write_string(pdfio_stream_t *st, bool unicode, const char *s, bool *newline);
@@ -1976,18 +1977,7 @@ pdfioFileCreateImageObjFromData(
     bool                alpha,		// I - `true` if data contains an alpha channel
     bool                interpolate)	// I - Interpolate image data?
 {
-  pdfio_dict_t		*dict,		// Image dictionary
-			*decode;	// DecodeParms dictionary
-  pdfio_obj_t		*obj,		// Image object
-			*mask_obj = NULL;
-					// Mask image object, if any
-  pdfio_stream_t	*st;		// Image stream
-  size_t		x, y,		// X and Y position in image
-			bpp,		// Bytes per pixel
-			linelen;	// Line length
-  const unsigned char	*dataptr;	// Pointer into image data
-  unsigned char		*line = NULL,	// Current line
-			*lineptr;	// Pointer into line
+  pdfio_dict_t		*dict;		// Image dictionary
   static const char	*defcolors[] =	// Default ColorSpace values
   {
     NULL,
@@ -2002,74 +1992,9 @@ pdfioFileCreateImageObjFromData(
   if (!pdf || !data || !width || !height || num_colors < 1 || num_colors == 2 || num_colors > 4)
     return (NULL);
 
-  // Allocate memory for one line of data...
-  bpp     = alpha ? num_colors + 1 : num_colors;
-  linelen = num_colors * width;
-
-  if ((line = malloc(linelen)) == NULL)
-    return (NULL);
-
-  // Generate a mask image, as needed...
-  if (alpha)
-  {
-    // Create the image mask dictionary...
-    if ((dict = pdfioDictCreate(pdf)) == NULL)
-    {
-      free(line);
-      return (NULL);
-    }
-
-    pdfioDictSetName(dict, "Type", "XObject");
-    pdfioDictSetName(dict, "Subtype", "Image");
-    pdfioDictSetNumber(dict, "Width", width);
-    pdfioDictSetNumber(dict, "Height", height);
-    pdfioDictSetNumber(dict, "BitsPerComponent", 8);
-    pdfioDictSetName(dict, "ColorSpace", "DeviceGray");
-    pdfioDictSetName(dict, "Filter", "FlateDecode");
-
-    if ((decode = pdfioDictCreate(pdf)) == NULL)
-    {
-      free(line);
-      return (NULL);
-    }
-
-    pdfioDictSetNumber(decode, "BitsPerComponent", 8);
-    pdfioDictSetNumber(decode, "Colors", 1);
-    pdfioDictSetNumber(decode, "Columns", width);
-    pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
-    pdfioDictSetDict(dict, "DecodeParms", decode);
-
-    // Create the mask object and write the mask image...
-    if ((mask_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
-    {
-      free(line);
-      return (NULL);
-    }
-
-    if ((st = pdfioObjCreateStream(mask_obj, PDFIO_FILTER_FLATE)) == NULL)
-    {
-      free(line);
-      pdfioObjClose(mask_obj);
-      return (NULL);
-    }
-
-    for (y = height, dataptr = data + num_colors; y > 0; y --)
-    {
-      for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
-        *lineptr++ = *dataptr;
-
-      pdfioStreamWrite(st, line, width);
-    }
-
-    pdfioStreamClose(st);
-  }
-
-  // Now create the image...
+  // Create the image dictionary...
   if ((dict = pdfioDictCreate(pdf)) == NULL)
-  {
-    free(line);
     return (NULL);
-  }
 
   pdfioDictSetName(dict, "Type", "XObject");
   pdfioDictSetName(dict, "Subtype", "Image");
@@ -2077,83 +2002,14 @@ pdfioFileCreateImageObjFromData(
   pdfioDictSetNumber(dict, "Width", width);
   pdfioDictSetNumber(dict, "Height", height);
   pdfioDictSetNumber(dict, "BitsPerComponent", 8);
-  pdfioDictSetName(dict, "Filter", "FlateDecode");
 
   if (color_data)
     pdfioDictSetArray(dict, "ColorSpace", color_data);
   else
     pdfioDictSetName(dict, "ColorSpace", defcolors[num_colors]);
 
-  if (mask_obj)
-    pdfioDictSetObj(dict, "SMask", mask_obj);
-
-  if ((decode = pdfioDictCreate(pdf)) == NULL)
-  {
-    free(line);
-    return (NULL);
-  }
-
-  pdfioDictSetNumber(decode, "BitsPerComponent", 8);
-  pdfioDictSetNumber(decode, "Colors", num_colors);
-  pdfioDictSetNumber(decode, "Columns", width);
-  pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
-  pdfioDictSetDict(dict, "DecodeParms", decode);
-
-  if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
-  {
-    free(line);
-    return (NULL);
-  }
-
-  if ((st = pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE)) == NULL)
-  {
-    free(line);
-    pdfioObjClose(obj);
-    return (NULL);
-  }
-
-  for (y = height, dataptr = data; y > 0; y --)
-  {
-    if (alpha)
-    {
-      switch (num_colors)
-      {
-	case 1 :
-	    for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
-	      *lineptr++ = *dataptr;
-	    break;
-	case 3 :
-	    for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
-	    {
-	      *lineptr++ = dataptr[0];
-	      *lineptr++ = dataptr[1];
-	      *lineptr++ = dataptr[2];
-	    }
-	    break;
-	case 4 :
-	    for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
-	    {
-	      *lineptr++ = dataptr[0];
-	      *lineptr++ = dataptr[1];
-	      *lineptr++ = dataptr[2];
-	      *lineptr++ = dataptr[3];
-	    }
-	    break;
-      }
-
-      pdfioStreamWrite(st, line, linelen);
-    }
-    else
-    {
-      pdfioStreamWrite(st, dataptr, linelen);
-      dataptr += linelen;
-    }
-  }
-
-  free(line);
-  pdfioStreamClose(st);
-
-  return (obj);
+  // Create the image object(s)...
+  return (create_image(pdf, dict, data, width, height, num_colors, alpha));
 }
 
 
@@ -3224,6 +3080,170 @@ create_cp1252(pdfio_file_t *pdf)	// I - PDF file
   pdfioObjClose(pdf->cp1252_obj);
 
   return (true);
+}
+
+
+//
+// 'create_image()' - Create an image object from some data.
+//
+
+static pdfio_obj_t *			// O - PDF object or `NULL` on error
+create_image(
+    pdfio_file_t        *pdf,		// I - PDF file
+    pdfio_dict_t        *dict,		// I - Image dictionary
+    const unsigned char *data,		// I - Image data
+    size_t              width,		// I - Width in columns
+    size_t              height,		// I - Height in lines
+    size_t              num_colors,	// I - Number of colors
+    bool                alpha)		// I - `true` if there is transparency
+{
+  pdfio_dict_t		*mask_dict,	// Mask image dictionary
+			*decode;	// DecodeParms dictionary
+  pdfio_obj_t		*obj,		// Image object
+			*mask_obj = NULL;
+					// Mask image object, if any
+  pdfio_stream_t	*st;		// Image stream
+  size_t		x, y,		// X and Y position in image
+			bpp,		// Bytes per pixel
+			linelen;	// Line length
+  const unsigned char	*dataptr;	// Pointer into image data
+  unsigned char		*line = NULL,	// Current line
+			*lineptr;	// Pointer into line
+
+
+  // Allocate memory for one line of data...
+  bpp     = alpha ? num_colors + 1 : num_colors;
+  linelen = num_colors * width;
+
+  if ((line = malloc(linelen)) == NULL)
+    return (NULL);
+
+  // Use Flate compression...
+  pdfioDictSetName(dict, "Filter", "FlateDecode");
+
+  // Generate a mask image, as needed...
+  if (alpha)
+  {
+    // Create the image mask dictionary...
+    if ((mask_dict = pdfioDictCopy(pdf, dict)) == NULL)
+    {
+      free(line);
+      return (NULL);
+    }
+
+    // Transparency masks are always grayscale...
+    pdfioDictSetName(mask_dict, "ColorSpace", "DeviceGray");
+
+    // Set the automatic PNG predictor to optimize compression...
+    if ((decode = pdfioDictCreate(pdf)) == NULL)
+    {
+      free(line);
+      return (NULL);
+    }
+
+    pdfioDictSetNumber(decode, "BitsPerComponent", 8);
+    pdfioDictSetNumber(decode, "Colors", 1);
+    pdfioDictSetNumber(decode, "Columns", width);
+    pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
+    pdfioDictSetDict(mask_dict, "DecodeParms", decode);
+
+    // Create the mask object and write the mask image...
+    if ((mask_obj = pdfioFileCreateObj(pdf, mask_dict)) == NULL)
+    {
+      free(line);
+      return (NULL);
+    }
+
+    if ((st = pdfioObjCreateStream(mask_obj, PDFIO_FILTER_FLATE)) == NULL)
+    {
+      free(line);
+      pdfioObjClose(mask_obj);
+      return (NULL);
+    }
+
+    for (y = height, dataptr = data + num_colors; y > 0; y --)
+    {
+      for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
+        *lineptr++ = *dataptr;
+
+      pdfioStreamWrite(st, line, width);
+    }
+
+    pdfioStreamClose(st);
+
+    // Use the transparency mask...
+    pdfioDictSetObj(dict, "SMask", mask_obj);
+  }
+
+  // Set the automatic PNG predictor to optimize compression...
+  if ((decode = pdfioDictCreate(pdf)) == NULL)
+  {
+    free(line);
+    return (NULL);
+  }
+
+  pdfioDictSetNumber(decode, "BitsPerComponent", 8);
+  pdfioDictSetNumber(decode, "Colors", num_colors);
+  pdfioDictSetNumber(decode, "Columns", width);
+  pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
+  pdfioDictSetDict(dict, "DecodeParms", decode);
+
+  // Now create the image...
+  if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+  {
+    free(line);
+    return (NULL);
+  }
+
+  if ((st = pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE)) == NULL)
+  {
+    free(line);
+    pdfioObjClose(obj);
+    return (NULL);
+  }
+
+  for (y = height, dataptr = data; y > 0; y --)
+  {
+    if (alpha)
+    {
+      switch (num_colors)
+      {
+	case 1 :
+	    for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
+	      *lineptr++ = *dataptr;
+	    break;
+	case 3 :
+	    for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
+	    {
+	      *lineptr++ = dataptr[0];
+	      *lineptr++ = dataptr[1];
+	      *lineptr++ = dataptr[2];
+	    }
+	    break;
+	case 4 :
+	    for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
+	    {
+	      *lineptr++ = dataptr[0];
+	      *lineptr++ = dataptr[1];
+	      *lineptr++ = dataptr[2];
+	      *lineptr++ = dataptr[3];
+	    }
+	    break;
+      }
+
+      pdfioStreamWrite(st, line, linelen);
+    }
+    else
+    {
+      pdfioStreamWrite(st, dataptr, linelen);
+      dataptr += linelen;
+    }
+  }
+
+  free(line);
+  pdfioStreamClose(st);
+
+  return (obj);
 }
 
 
