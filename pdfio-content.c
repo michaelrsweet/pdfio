@@ -29,11 +29,43 @@
 #define _PDFIO_PNG_CHUNK_gAMA	0x67414d41	// Gamma correction
 #define _PDFIO_PNG_CHUNK_tRNS	0x74524e53	// Transparency information
 
+#define _PDFIO_PNG_COMPRESSION_FLATE 0	// Flate compression
+
+#define _PDFIO_PNG_FILTER_ADAPTIVE 0	// Adaptive filtering
+
+#define _PDFIO_PNG_INTERLACE_NONE 0	// No interlacing
+#define _PDFIO_PNG_INTERLACE_ADAM 1	// "Adam7" interlacing
+
 #define _PDFIO_PNG_TYPE_GRAY	0	// Grayscale
 #define _PDFIO_PNG_TYPE_RGB	2	// RGB
 #define _PDFIO_PNG_TYPE_INDEXED	3	// Indexed
 #define _PDFIO_PNG_TYPE_GRAYA	4	// Grayscale + alpha
 #define _PDFIO_PNG_TYPE_RGBA	6	// RGB + alpha
+
+
+//
+// Local types...
+//
+
+typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
+
+
+//
+// Local functions...
+//
+
+static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
+static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
+static bool		create_cp1252(pdfio_file_t *pdf);
+static pdfio_obj_t	*create_image(pdfio_file_t *pdf, pdfio_dict_t *dict, const unsigned char *data, size_t width, size_t height, size_t num_colors, bool alpha);
+static void		ttf_error_cb(pdfio_file_t *pdf, const char *message);
+static unsigned		update_png_crc(unsigned crc, const unsigned char *buffer, size_t length);
+static bool		write_string(pdfio_stream_t *st, bool unicode, const char *s, bool *newline);
+
+
+//
+// Local globals...
+//
 
 static int	_pdfio_cp1252[] =	// CP1252-specific character mapping
 {
@@ -70,31 +102,6 @@ static int	_pdfio_cp1252[] =	// CP1252-specific character mapping
   0x017E,
   0x0178
 };
-
-
-//
-// Local types...
-//
-
-typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
-
-
-//
-// Local functions...
-//
-
-static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
-static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
-static bool		create_cp1252(pdfio_file_t *pdf);
-static pdfio_obj_t	*create_image(pdfio_file_t *pdf, pdfio_dict_t *dict, const unsigned char *data, size_t width, size_t height, size_t num_colors, bool alpha);
-static void		ttf_error_cb(pdfio_file_t *pdf, const char *message);
-static unsigned		update_png_crc(unsigned crc, const unsigned char *buffer, size_t length);
-static bool		write_string(pdfio_stream_t *st, bool unicode, const char *s, bool *newline);
-
-
-//
-// Local globals...
-//
 
 static unsigned png_crc_table[256] =	// CRC-32 table for PNG files
 {
@@ -2472,9 +2479,11 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 		crc,			// CRC-32
 		temp,			// Temporary value
 		width = 0,		// Width
-		height = 0;		// Height
+		height = 0,		// Height
+		num_colors = 0;		// Number of colors
   unsigned char	bit_depth = 0,		// Bit depth
-		color_type = 0;		// Color type
+		color_type = 0,		// Color type
+		interlace = 0;		// Interlace type
   double	gamma = 2.2,		// Gamma value
 		wx = 0.0, wy = 0.0,	// White point chromacity
 		rx = 0.0, ry = 0.0,	// Red chromacity
@@ -2583,17 +2592,54 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 	    return (NULL);
           }
 
-	  crc        = update_png_crc(crc, buffer, length);
-	  width      = (unsigned)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
-	  height     = (unsigned)((buffer[4] << 24) | (buffer[5] << 16) | (buffer[6] << 8) | buffer[7]);
-	  bit_depth  = buffer[8];
-	  color_type = buffer[9];
+	  crc    = update_png_crc(crc, buffer, length);
+	  width  = (unsigned)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
+	  height = (unsigned)((buffer[4] << 24) | (buffer[5] << 16) | (buffer[6] << 8) | buffer[7]);
 
-	  if (width == 0 || height == 0 || (bit_depth != 1 && bit_depth != 2 && bit_depth != 4 && bit_depth != 8 && bit_depth != 16) || (color_type != _PDFIO_PNG_TYPE_GRAY && color_type != _PDFIO_PNG_TYPE_RGB && color_type != _PDFIO_PNG_TYPE_INDEXED) || buffer[10] || buffer[11] || buffer[12])
+	  if (width == 0 || height == 0)
 	  {
-	    _pdfioFileError(dict->pdf, "Unsupported PNG image.");
+	    _pdfioFileError(dict->pdf, "Unsupported PNG dimensions %ux%u.", (unsigned)width, (unsigned)height);
 	    return (NULL);
 	  }
+
+	  bit_depth = buffer[8];
+	  color_type = buffer[9];
+
+	  if (color_type != _PDFIO_PNG_TYPE_GRAY && color_type != _PDFIO_PNG_TYPE_RGB && color_type != _PDFIO_PNG_TYPE_INDEXED)
+	  {
+	    _pdfioFileError(dict->pdf, "Unsupported PNG color type %u.", color_type);
+	    return (NULL);
+	  }
+
+	  if ((color_type == _PDFIO_PNG_TYPE_GRAY && bit_depth != 1 && bit_depth != 2 && bit_depth != 4 && bit_depth != 8 && bit_depth != 16) ||
+	      (color_type == _PDFIO_PNG_TYPE_RGB && bit_depth != 8 && bit_depth != 16) ||
+	      (color_type == _PDFIO_PNG_TYPE_INDEXED && bit_depth != 1 && bit_depth != 2 && bit_depth != 4 && bit_depth != 8))
+	  {
+	    _pdfioFileError(dict->pdf, "Unsupported PNG bit depth %u for color type %u.", bit_depth, color_type);
+	    return (NULL);
+	  }
+
+	  if (buffer[10] != _PDFIO_PNG_COMPRESSION_FLATE)
+	  {
+	    _pdfioFileError(dict->pdf, "Unsupported PNG compression %u.", buffer[10]);
+	    return (NULL);
+	  }
+
+	  if (buffer[11] != _PDFIO_PNG_FILTER_ADAPTIVE)
+	  {
+	    _pdfioFileError(dict->pdf, "Unsupported PNG filtering %u.", buffer[11]);
+	    return (NULL);
+	  }
+
+          interlace = buffer[12];
+
+	  if (interlace != _PDFIO_PNG_INTERLACE_NONE)
+	  {
+	    _pdfioFileError(dict->pdf, "Unsupported PNG interlacing %u.", interlace);
+	    return (NULL);
+	  }
+
+          num_colors = (color_type == _PDFIO_PNG_TYPE_RGB || color_type == _PDFIO_PNG_TYPE_RGBA) ? 3 : 1;
 
 	  pdfioDictSetNumber(dict, "Width", width);
 	  pdfioDictSetNumber(dict, "Height", height);
@@ -2604,7 +2650,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 	    return (NULL);
 
 	  pdfioDictSetNumber(decode, "BitsPerComponent", bit_depth);
-	  pdfioDictSetNumber(decode, "Colors", color_type == _PDFIO_PNG_TYPE_RGB ? 3 : 1);
+	  pdfioDictSetNumber(decode, "Colors", num_colors);
 	  pdfioDictSetNumber(decode, "Columns", width);
 	  pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
 	  pdfioDictSetDict(dict, "DecodeParms", decode);
