@@ -1,7 +1,7 @@
 dnl
 dnl Configuration script for PDFio
 dnl
-dnl Copyright © 2023-2024 by Michael R Sweet
+dnl Copyright © 2023-2025 by Michael R Sweet
 dnl
 dnl Licensed under Apache License v2.0.  See the file "LICENSE" for more
 dnl information.
@@ -21,7 +21,7 @@ AC_PREREQ([2.70])
 
 
 dnl Package name and version...
-AC_INIT([pdfio], [1.4.1], [https://github.com/michaelrsweet/pdfio/issues], [pdfio], [https://www.msweet.org/pdfio])
+AC_INIT([pdfio], [1.5.0], [https://github.com/michaelrsweet/pdfio/issues], [pdfio], [https://www.msweet.org/pdfio])
 
 PDFIO_VERSION="AC_PACKAGE_VERSION"
 PDFIO_VERSION_MAJOR="`echo AC_PACKAGE_VERSION | awk -F. '{print $1}'`"
@@ -118,6 +118,32 @@ AS_IF([$PKGCONFIG --exists zlib], [
 
     PKGCONFIG_REQUIRES=""
     PKGCONFIG_LIBS_PRIVATE="-lz $PKGCONFIG_LIBS_PRIVATE"
+])
+
+
+dnl libpng...
+AC_ARG_ENABLE([libpng], AS_HELP_STRING([--enable-libpng], [use libpng for pdfioFileCreateImageObjFromFile, default=auto]))
+
+PKGCONFIG_LIBPNG=""
+AC_SUBST([PKGCONFIG_LIBPNG])
+
+AS_IF([test "x$PKGCONFIG" != x -a x$enable_libpng != xno], [
+    AC_MSG_CHECKING([for libpng-1.6.x])
+    AS_IF([$PKGCONFIG --exists libpng16], [
+	AC_MSG_RESULT([yes]);
+	AC_DEFINE([HAVE_LIBPNG], 1, [Have PNG library?])
+	CPPFLAGS="$($PKGCONFIG --cflags libpng16) -DHAVE_LIBPNG=1 $CPPFLAGS"
+	LIBS="$($PKGCONFIG --libs libpng16) -lz $LIBS"
+	PKGCONFIG_LIBPNG="libpng >= 1.6,"
+	PKGCONFIG_LIBS_PRIVATE="$($PKGCONFIG --libs libpng16) $PKGCONFIG_LIBS_PRIVATE"
+    ], [
+	AC_MSG_RESULT([no]);
+	AS_IF([test x$enable_libpng = xyes], [
+	    AC_MSG_ERROR([libpng-dev 1.6 or later required for --enable-libpng.])
+	])
+    ])
+], [test x$enable_libpng = xyes], [
+    AC_MSG_ERROR([libpng-dev 1.6 or later required for --enable-libpng.])
 ])
 
 

@@ -1,7 +1,7 @@
 //
 // Content helper functions for PDFio.
 //
-// Copyright © 2021-2024 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -11,6 +11,9 @@
 #include "pdfio-content.h"
 #include "pdfio-base-font-widths.h"
 #include "ttf.h"
+#ifdef HAVE_LIBPNG
+#  include <png.h>
+#endif // HAVE_LIBPNG
 #include <math.h>
 #ifndef M_PI
 #  define M_PI	3.14159265358979323846264338327950288
@@ -57,9 +60,15 @@ typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
 static bool		create_cp1252(pdfio_file_t *pdf);
-static pdfio_obj_t	*create_image(pdfio_file_t *pdf, pdfio_dict_t *dict, const unsigned char *data, size_t width, size_t height, size_t num_colors, bool alpha);
+static pdfio_obj_t	*create_image(pdfio_dict_t *dict, const unsigned char *data, size_t width, size_t height, size_t num_colors, bool alpha);
+#ifdef HAVE_LIBPNG
+static void		png_error_func(png_structp pp, png_const_charp message);
+static void		png_read_func(png_structp png_ptr, png_bytep data, size_t length);
+#endif // HAVE_LIBPNG
 static void		ttf_error_cb(pdfio_file_t *pdf, const char *message);
+#ifndef HAVE_LIBPNG
 static unsigned		update_png_crc(unsigned crc, const unsigned char *buffer, size_t length);
+#endif // !HAVE_LIBPNG
 static bool		write_string(pdfio_stream_t *st, bool unicode, const char *s, bool *newline);
 
 
@@ -103,6 +112,7 @@ static int	_pdfio_cp1252[] =	// CP1252-specific character mapping
   0x0178
 };
 
+#ifndef HAVE_LIBPNG
 static unsigned png_crc_table[256] =	// CRC-32 table for PNG files
 {
   0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
@@ -149,6 +159,7 @@ static unsigned png_crc_table[256] =	// CRC-32 table for PNG files
   0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
   0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
+#endif // !HAVE_LIBPNG
 
 
 //
@@ -2016,7 +2027,7 @@ pdfioFileCreateImageObjFromData(
     pdfioDictSetName(dict, "ColorSpace", defcolors[num_colors]);
 
   // Create the image object(s)...
-  return (create_image(pdf, dict, data, width, height, num_colors, alpha));
+  return (create_image(dict, data, width, height, num_colors, alpha));
 }
 
 
@@ -2469,8 +2480,145 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
          int          fd)		// I - File descriptor
 {
   pdfio_obj_t	*obj = NULL;		// Object
-  pdfio_stream_t *st = NULL;		// Stream for PNG data
+#ifdef HAVE_LIBPNG
+  png_structp	pp = NULL;		// PNG read pointer
+  png_infop	info = NULL;		// PNG info pointers
+  png_bytep	*rows = NULL;		// PNG row pointers
+  unsigned char	*pixels = NULL;		// PNG image data
+  unsigned	i,			// Looping var
+		color_type,		// PNG color mode
+		width,			// Width in columns
+		height,			// Height in lines
+		num_colors = 0,		// Number of colors
+		bpp;			// Bytes per pixel
+  bool		alpha;			// Alpha transparency?
+
+
+  // Allocate memory for PNG reader structures...
+  if ((pp = png_create_read_struct(PNG_LIBPNG_VER_STRING, (png_voidp)dict->pdf, png_error_func, png_error_func)) == NULL)
+  {
+    _pdfioFileError(dict->pdf, "Unable to allocate memory for PNG file: %s", strerror(errno));
+    goto finish_png;
+  }
+
+  if ((info = png_create_info_struct(pp)) == NULL)
+  {
+    _pdfioFileError(dict->pdf, "Unable to allocate memory for PNG file: %s", strerror(errno));
+    goto finish_png;
+  }
+
+  if (setjmp(png_jmpbuf(pp)))
+  {
+    // If we get here, PNG loading failed and any errors/warnings were logged
+    // via the corresponding callback functions...
+    goto finish_png;
+  }
+
+  // Set max image size to 16384x16384...
+  png_set_user_limits(pp, 16384, 16384);
+
+  // Read from the file descriptor...
+  png_set_read_fn(pp, &fd, png_read_func);
+
+  // Don't throw errors with "invalid" sRGB profiles produced by Adobe apps.
+#  if defined(PNG_SKIP_sRGB_CHECK_PROFILE) && defined(PNG_SET_OPTION_SUPPORTED)
+  png_set_option(pp, PNG_SKIP_sRGB_CHECK_PROFILE, PNG_OPTION_ON);
+#  endif // PNG_SKIP_sRGB_CHECK_PROFILE && PNG_SET_OPTION_SUPPORTED
+
+  // Get the image dimensions and depth...
+  png_read_info(pp, info);
+
+  width      = png_get_image_width(pp, info);
+  height     = png_get_image_height(pp, info);
+  color_type = png_get_color_type(pp, info);
+
+  if (color_type & PNG_COLOR_MASK_COLOR)
+    num_colors = 3;
+  else
+    num_colors = 1;
+
+  // Set decoding options...
+  if (png_get_valid(pp, info, PNG_INFO_tRNS))
+  {
+    // Map transparency to alpha
+    png_set_tRNS_to_alpha(pp);
+    color_type |= PNG_COLOR_MASK_ALPHA;
+  }
+
+  if (png_get_bit_depth(pp, info) > 8)
+  {
+    // Strip the bottom bits of 16-bit values
+    png_set_strip_16(pp);
+  }
+  else if (png_get_bit_depth(pp, info) < 8)
+  {
+    // Expand 1, 2, and 4-bit values to 8 bits
+    if (num_colors == 1)
+      png_set_expand_gray_1_2_4_to_8(pp);
+    else
+      png_set_packing(pp);
+  }
+
+#if 1
+  if (color_type & PNG_COLOR_MASK_PALETTE)
+  {
+    // Convert indexed images to RGB...
+    png_set_palette_to_rgb(pp);
+    num_colors = 3;
+  }
+#endif // 0
+
+  alpha = (color_type & PNG_COLOR_MASK_ALPHA) != 0;
+  bpp   = num_colors + (alpha ? 1 : 0);
+
+  // Allocate memory for the image...
+  if ((pixels = (unsigned char *)calloc(height, width * bpp)) == NULL)
+  {
+    _pdfioFileError(dict->pdf, "Unable to allocate memory for PNG image: %s", strerror(errno));
+    goto finish_png;
+  }
+
+  if ((rows = (png_bytep *)calloc((size_t)height, sizeof(png_bytep))) == NULL)
+  {
+    _pdfioFileError(dict->pdf, "Unable to allocate memory for PNG image: %s", strerror(errno));
+    goto finish_png;
+  }
+
+  for (i = 0; i < height; i ++)
+    rows[i] = pixels + i * width * bpp;
+
+  // Read the image...
+  for (i = png_set_interlace_handling(pp); i > 0; i --)
+    png_read_rows(pp, rows, NULL, (png_uint_32)height);
+
+  // Grab any color space/palette information...
+  pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, num_colors, PDFIO_CS_SRGB));
+
+  // Create the image object...
+  obj = create_image(dict, pixels, width, height, num_colors, alpha);
+
+  finish_png:
+
+  if (pp && info)
+  {
+    png_read_end(pp, info);
+    png_destroy_read_struct(&pp, &info, NULL);
+
+    pp   = NULL;
+    info = NULL;
+  }
+
+  free(pixels);
+  pixels = NULL;
+
+  free(rows);
+  rows = NULL;
+
+  return (obj);
+
+#else
   pdfio_dict_t	*decode = NULL;		// Parameters for PNG decode
+  pdfio_stream_t *st = NULL;		// Stream for PNG data
   ssize_t	bytes;			// Bytes read
   unsigned char	buffer[16384];		// Read buffer
   unsigned	i,			// Looping var
@@ -2850,6 +2998,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   }
 
   return (NULL);
+#endif // HAVE_LIBPNG
 }
 
 
@@ -3135,7 +3284,6 @@ create_cp1252(pdfio_file_t *pdf)	// I - PDF file
 
 static pdfio_obj_t *			// O - PDF object or `NULL` on error
 create_image(
-    pdfio_file_t        *pdf,		// I - PDF file
     pdfio_dict_t        *dict,		// I - Image dictionary
     const unsigned char *data,		// I - Image data
     size_t              width,		// I - Width in columns
@@ -3143,6 +3291,8 @@ create_image(
     size_t              num_colors,	// I - Number of colors
     bool                alpha)		// I - `true` if there is transparency
 {
+  pdfio_file_t		*pdf = dict->pdf;
+					// PDF file
   pdfio_dict_t		*mask_dict,	// Mask image dictionary
 			*decode;	// DecodeParms dictionary
   pdfio_obj_t		*obj,		// Image object
@@ -3293,6 +3443,44 @@ create_image(
 }
 
 
+#ifdef HAVE_LIBPNG
+//
+// 'png_error_func()' - PNG error message function.
+//
+
+static void
+png_error_func(
+    png_structp     pp,			// I - PNG pointer
+    png_const_charp message)		// I - Error message
+{
+  pdfio_file_t	*pdf = (pdfio_file_t *)png_get_error_ptr(pp);
+					// PDF file
+
+
+  _pdfioFileError(pdf, "Unable to create image object from PNG file: %s", message);
+}
+
+
+//
+// 'png_read_func()' - Read from a PNG file.
+//
+
+static void
+png_read_func(png_structp pp,		// I - PNG pointer
+              png_bytep   data,		// I - Read buffer
+              size_t      length)	// I - Number of bytes to read
+{
+  int		*fd = (int *)png_get_io_ptr(pp);
+					// Pointer to file descriptor
+  ssize_t	bytes;			// Bytes read
+
+
+  if ((bytes = read(*fd, data, length)) < (ssize_t)length)
+    png_error(pp, "Unable to read from PNG file.");
+}
+#endif // HAVE_LIBPNG
+
+
 //
 // 'ttf_error_cb()' - Relay a message from the TTF functions.
 //
@@ -3305,6 +3493,7 @@ ttf_error_cb(pdfio_file_t *pdf,		// I - PDF file
 }
 
 
+#ifndef HAVE_LIBPNG
 //
 // 'update_png_crc()' - Update the CRC-32 value for a PNG chunk.
 //
@@ -3324,6 +3513,7 @@ update_png_crc(
 
   return (crc);
 }
+#endif // !HAVE_LIBPNG
 
 
 //
