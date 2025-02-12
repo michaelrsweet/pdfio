@@ -14,8 +14,8 @@
 # Common options
 CFLAGS		=	-g $(CPPFLAGS)
 #CFLAGS		=	-g -fsanitize=address $(CPPFLAGS)
-CPPFLAGS	=	-I.. -I/usr/local/include
-LIBS		=	-L.. -L/usr/local/lib -lpdfio -lz -lm
+CPPFLAGS	=	-I.. $(shell PKG_CONFIG_PATH="..:$(PKG_CONFIG_PATH)" pkg-config pdfio --cflags)
+LIBS		=	-L.. $(shell PKG_CONFIG_PATH="..:$(PKG_CONFIG_PATH)" pkg-config pdfio --libs)
 
 
 # Targets
