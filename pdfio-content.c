@@ -2057,6 +2057,8 @@ pdfioFileCreateImageObjFromFile(
   _pdfio_image_func_t copy_func = NULL;	// Image copy function
 
 
+  PDFIO_DEBUG("pdfioFileCreateImageObjFromFile(pdf=%p, filename=\"%s\", interpolate=%s)\n", (void *)pdf, filename, interpolate ? "true" : "false");
+
   // Range check input...
   if (!pdf || !filename)
     return (NULL);
@@ -2077,6 +2079,8 @@ pdfioFileCreateImageObjFromFile(
   }
 
   lseek(fd, 0, SEEK_SET);
+
+  PDFIO_DEBUG("pdfioFileCreateImageObjFromFile: buffer=<%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X>\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5], buffer[6], buffer[7], buffer[8], buffer[9], buffer[10], buffer[11], buffer[12], buffer[13], buffer[14], buffer[15], buffer[16], buffer[17], buffer[18], buffer[19], buffer[20], buffer[21], buffer[22], buffer[23], buffer[24], buffer[25], buffer[26], buffer[27], buffer[28], buffer[29], buffer[30], buffer[31]);
 
   if (!memcmp(buffer, "\211PNG\015\012\032\012\000\000\000\015IHDR", 16))
   {
@@ -2494,6 +2498,8 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   bool		alpha;			// Alpha transparency?
 
 
+  PDFIO_DEBUG("copy_png(dict=%p, fd=%d)\n", (void *)dict, fd);
+
   // Allocate memory for PNG reader structures...
   if ((pp = png_create_read_struct(PNG_LIBPNG_VER_STRING, (png_voidp)dict->pdf, png_error_func, png_error_func)) == NULL)
   {
@@ -2507,10 +2513,13 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
     goto finish_png;
   }
 
+  PDFIO_DEBUG("copy_png: pp=%p, info=%p\n", (void *)pp, (void *)info);
+
   if (setjmp(png_jmpbuf(pp)))
   {
     // If we get here, PNG loading failed and any errors/warnings were logged
     // via the corresponding callback functions...
+    fputs("copy_png: setjmp error handler called.\n", stderr);
     goto finish_png;
   }
 
@@ -2536,6 +2545,8 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
     num_colors = 3;
   else
     num_colors = 1;
+
+  PDFIO_DEBUG("copy_png: width=%u, height=%u, color_type=%u, num_colors=%d\n", width, height, color_type, num_colors);
 
   // Set decoding options...
   if (png_get_valid(pp, info, PNG_INFO_tRNS))
@@ -2590,6 +2601,11 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   // Read the image...
   for (i = png_set_interlace_handling(pp); i > 0; i --)
     png_read_rows(pp, rows, NULL, (png_uint_32)height);
+
+  // Add image dictionary information...
+  pdfioDictSetNumber(dict, "Width", width);
+  pdfioDictSetNumber(dict, "Height", height);
+  pdfioDictSetNumber(dict, "BitsPerComponent", 8);
 
   // Grab any color space/palette information...
   pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, num_colors, PDFIO_CS_SRGB));
@@ -3474,6 +3490,8 @@ png_read_func(png_structp pp,		// I - PNG pointer
 					// Pointer to file descriptor
   ssize_t	bytes;			// Bytes read
 
+
+  PDFIO_DEBUG("png_read_func(pp=%p, data=%p, length=%lu)\n", (void *)pp, (void *)data, (unsigned long)length);
 
   if ((bytes = read(*fd, data, length)) < (ssize_t)length)
     png_error(pp, "Unable to read from PNG file.");
