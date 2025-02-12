@@ -47,7 +47,7 @@ static int	write_header_footer(pdfio_stream_t *st, const char *title, int number
 static pdfio_obj_t *write_image_object(pdfio_file_t *pdf, _pdfio_predictor_t predictor);
 static int	write_images_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_jpeg_test(pdfio_file_t *pdf, const char *title, int number, pdfio_obj_t *font, pdfio_obj_t *image);
-static int	write_png_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
+static int	write_png_tests(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_text_test(pdfio_file_t *pdf, int first_page, pdfio_obj_t *font, const char *filename);
 static int	write_unit_file(pdfio_file_t *inpdf, const char *outname, pdfio_file_t *outpdf, size_t *num_pages, size_t *first_image);
 
@@ -2989,19 +2989,84 @@ write_jpeg_test(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
-// 'write_png_test()' - Write a page of PNG test images.
+// 'write_png_tests()' - Write pages of PNG test images.
 //
 
 static int				// O - 0 on success, 1 on failure
-write_png_test(pdfio_file_t *pdf,		// I - PDF file
-          int          number,		// I - Page number
-          pdfio_obj_t  *font)		// I - Page number font
+write_png_tests(pdfio_file_t *pdf,	// I - PDF file
+	        int          number,	// I - Page number
+	        pdfio_obj_t  *font)	// I - Page number font
 {
   pdfio_dict_t		*dict;		// Page dictionary
   pdfio_stream_t	*st;		// Page contents stream
   pdfio_obj_t		*color,		// pdfio-color.png
 			*gray,		// pdfio-gray.png
 			*indexed;	// pdfio-indexed.png
+#ifdef HAVE_LIBPNG
+  size_t		i;		// Looping var
+  char			imgname[32];	// Image name
+  pdfio_obj_t		*pngsuite[80];	// PngSuite test file objects
+  static const char * const pngsuite_files[80] =
+  {					// PngSuite test filenames
+    "testfiles/pngsuite/basi0g01.png", "testfiles/pngsuite/basi0g02.png",
+    "testfiles/pngsuite/basi0g04.png", "testfiles/pngsuite/basi0g08.png",
+    "testfiles/pngsuite/basi2c08.png", "testfiles/pngsuite/basi3p01.png",
+    "testfiles/pngsuite/basi3p02.png", "testfiles/pngsuite/basi3p04.png",
+    "testfiles/pngsuite/basi3p08.png", "testfiles/pngsuite/basi4a08.png",
+    "testfiles/pngsuite/basi6a08.png", "testfiles/pngsuite/basn0g01.png",
+    "testfiles/pngsuite/basn0g02.png", "testfiles/pngsuite/basn0g04.png",
+    "testfiles/pngsuite/basn0g08.png", "testfiles/pngsuite/basn2c08.png",
+    "testfiles/pngsuite/basn3p01.png", "testfiles/pngsuite/basn3p02.png",
+    "testfiles/pngsuite/basn3p04.png", "testfiles/pngsuite/basn3p08.png",
+    "testfiles/pngsuite/basn4a08.png", "testfiles/pngsuite/basn6a08.png",
+    "testfiles/pngsuite/exif2c08.png", "testfiles/pngsuite/g03n2c08.png",
+    "testfiles/pngsuite/g03n3p04.png", "testfiles/pngsuite/g04n2c08.png",
+    "testfiles/pngsuite/g04n3p04.png", "testfiles/pngsuite/g05n2c08.png",
+    "testfiles/pngsuite/g05n3p04.png", "testfiles/pngsuite/g07n2c08.png",
+    "testfiles/pngsuite/g07n3p04.png", "testfiles/pngsuite/g10n2c08.png",
+    "testfiles/pngsuite/g10n3p04.png", "testfiles/pngsuite/g25n2c08.png",
+    "testfiles/pngsuite/g25n3p04.png", "testfiles/pngsuite/s02i3p01.png",
+    "testfiles/pngsuite/s02n3p01.png", "testfiles/pngsuite/s03i3p01.png",
+    "testfiles/pngsuite/s03n3p01.png", "testfiles/pngsuite/s04i3p01.png",
+    "testfiles/pngsuite/s04n3p01.png", "testfiles/pngsuite/s05i3p02.png",
+    "testfiles/pngsuite/s05n3p02.png", "testfiles/pngsuite/s06i3p02.png",
+    "testfiles/pngsuite/s06n3p02.png", "testfiles/pngsuite/s07i3p02.png",
+    "testfiles/pngsuite/s07n3p02.png", "testfiles/pngsuite/s08i3p02.png",
+    "testfiles/pngsuite/s08n3p02.png", "testfiles/pngsuite/s09i3p02.png",
+    "testfiles/pngsuite/s09n3p02.png", "testfiles/pngsuite/s32i3p04.png",
+    "testfiles/pngsuite/s32n3p04.png", "testfiles/pngsuite/s33i3p04.png",
+    "testfiles/pngsuite/s33n3p04.png", "testfiles/pngsuite/s34i3p04.png",
+    "testfiles/pngsuite/s34n3p04.png", "testfiles/pngsuite/s35i3p04.png",
+    "testfiles/pngsuite/s35n3p04.png", "testfiles/pngsuite/s36i3p04.png",
+    "testfiles/pngsuite/s36n3p04.png", "testfiles/pngsuite/s37i3p04.png",
+    "testfiles/pngsuite/s37n3p04.png", "testfiles/pngsuite/s38i3p04.png",
+    "testfiles/pngsuite/s38n3p04.png", "testfiles/pngsuite/s39i3p04.png",
+    "testfiles/pngsuite/s39n3p04.png", "testfiles/pngsuite/s40i3p04.png",
+    "testfiles/pngsuite/s40n3p04.png", "testfiles/pngsuite/tbbn0g04.png",
+    "testfiles/pngsuite/tbbn3p08.png", "testfiles/pngsuite/tbgn3p08.png",
+    "testfiles/pngsuite/tbrn2c08.png", "testfiles/pngsuite/tbwn3p08.png",
+    "testfiles/pngsuite/tbyn3p08.png", "testfiles/pngsuite/tm3n3p02.png",
+    "testfiles/pngsuite/tp0n0g08.png", "testfiles/pngsuite/tp0n2c08.png",
+    "testfiles/pngsuite/tp0n3p08.png", "testfiles/pngsuite/tp1n3p08.png"
+  };
+  static const char * const pngsuite_labels[80] =
+  {					// PngSuite test labels
+    "basi0g01", "basi0g02", "basi0g04", "basi0g08", "basi2c08", "basi3p01",
+    "basi3p02", "basi3p04", "basi3p08", "basi4a08", "basi6a08", "basn0g01",
+    "basn0g02", "basn0g04", "basn0g08", "basn2c08", "basn3p01", "basn3p02",
+    "basn3p04", "basn3p08", "basn4a08", "basn6a08", "exif2c08", "g03n2c08",
+    "g03n3p04", "g04n2c08", "g04n3p04", "g05n2c08", "g05n3p04", "g07n2c08",
+    "g07n3p04", "g10n2c08", "g10n3p04", "g25n2c08", "g25n3p04", "s02i3p01",
+    "s02n3p01", "s03i3p01", "s03n3p01", "s04i3p01", "s04n3p01", "s05i3p02",
+    "s05n3p02", "s06i3p02", "s06n3p02", "s07i3p02", "s07n3p02", "s08i3p02",
+    "s08n3p02", "s09i3p02", "s09n3p02", "s32i3p04", "s32n3p04", "s33i3p04",
+    "s33n3p04", "s34i3p04", "s34n3p04", "s35i3p04", "s35n3p04", "s36i3p04",
+    "s36n3p04", "s37i3p04", "s37n3p04", "s38i3p04", "s38n3p04", "s39i3p04",
+    "s39n3p04", "s40i3p04", "s40n3p04", "tbbn0g04", "tbbn3p08", "tbgn3p08",
+    "tbrn2c08", "tbwn3p08", "tbyn3p08", "tm3n3p02", "tp0n0g08", "tp0n2c08",
+    "tp0n3p08", "tp1n3p08"
+  };
+#endif // HAVE_LIBPNG
 
 
   // Import the PNG test images
@@ -3023,6 +3088,7 @@ write_png_test(pdfio_file_t *pdf,		// I - PDF file
   else
     return (1);
 
+  ////// PDFio PNG image test page...
   // Create the page dictionary, object, and stream...
   fputs("pdfioDictCreate: ", stdout);
   if ((dict = pdfioDictCreate(pdf)) != NULL)
@@ -3167,6 +3233,109 @@ write_png_test(pdfio_file_t *pdf,		// I - PDF file
     puts("PASS");
   else
     return (1);
+
+#ifdef HAVE_LIBPNG
+  ////// PngSuite page
+  // Create the image objects...
+  for (i = 0; i < (sizeof(pngsuite_files) / sizeof(pngsuite_files[0])); i ++)
+  {
+    fprintf(stdout, "pdfioFileCreateImageObjFromFile(\"%s\"): ", pngsuite_files[i]);
+    if ((pngsuite[i] = pdfioFileCreateImageObjFromFile(pdf, pngsuite_files[i], false)) != NULL)
+      puts("PASS");
+    else
+      return (1);
+  }
+
+  // Create the page dictionary, object, and stream...
+  fputs("pdfioDictCreate: ", stdout);
+  if ((dict = pdfioDictCreate(pdf)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  for (i = 0; i < (sizeof(pngsuite_files) / sizeof(pngsuite_files[0])); i ++)
+  {
+    fprintf(stdout, "pdfioPageDictAddImage(\"%s\"): ", pngsuite_labels[i]);
+    snprintf(imgname, sizeof(imgname), "IM%u", (unsigned)(i + 1));
+    if (pdfioPageDictAddImage(dict, pdfioStringCreate(pdf, imgname), pngsuite[i]))
+      puts("PASS");
+    else
+      return (1);
+  }
+
+  fputs("pdfioPageDictAddFont(F1): ", stdout);
+  if (pdfioPageDictAddFont(dict, "F1", font))
+    puts("PASS");
+  else
+    return (1);
+
+  printf("pdfioFileCreatePage(%d): ", number + 1);
+
+  if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+    puts("PASS");
+  else
+    return (1);
+
+  if (write_header_footer(st, "PngSuite Test Page", number + 1))
+    goto error;
+
+  // Show content...
+  fputs("pdfioContentSetTextFont(\"F1\", 9.0): ", stdout);
+  if (pdfioContentSetTextFont(st, "F1", 8.0))
+    puts("PASS");
+  else
+    goto error;
+
+  for (i = 0; i < (sizeof(pngsuite_files) / sizeof(pngsuite_files[0])); i ++)
+  {
+    double x = (i % 8) * 69.0 + 36;	// X position
+    double y = 671 - (i / 8) * 64.0;	// Y position
+
+    fputs("pdfioContentTextBegin(): ", stdout);
+    if (pdfioContentTextBegin(st))
+      puts("PASS");
+    else
+      goto error;
+
+    printf("pdfioContentTextMoveTo(%g, %g): ", x, y);
+    if (pdfioContentTextMoveTo(st, x, y))
+      puts("PASS");
+    else
+      goto error;
+
+    printf("pdfioContentTextShow(\"%s\"): ", pngsuite_labels[i]);
+    if (pdfioContentTextShow(st, false, pngsuite_labels[i]))
+      puts("PASS");
+    else
+      goto error;
+
+    fputs("pdfioContentTextEnd(): ", stdout);
+    if (pdfioContentTextEnd(st))
+      puts("PASS");
+    else
+      goto error;
+  }
+
+  for (i = 0; i < (sizeof(pngsuite_files) / sizeof(pngsuite_files[0])); i ++)
+  {
+    double x = (i % 8) * 69.0 + 36;	// X position
+    double y = 671 - (i / 8) * 64.0;	// Y position
+
+    snprintf(imgname, sizeof(imgname), "IM%u", (unsigned)(i + 1));
+    printf("pdfioContentDrawImage(\"%s\"): ", imgname);
+    if (pdfioContentDrawImage(st, imgname, x, y + 9, 32, 32))
+      puts("PASS");
+    else
+      goto error;
+  }
+
+  // Close the object and stream...
+  fputs("pdfioStreamClose: ", stdout);
+  if (pdfioStreamClose(st))
+    puts("PASS");
+  else
+    return (1);
+#endif // HAVE_LIBPNG
 
   return (0);
 
@@ -3367,6 +3536,7 @@ write_unit_file(
 			*gray_jpg,	// gray.jpg image
 			*helvetica,	// Helvetica font
 			*page;		// Page from test PDF file
+  int			pagenum = 1;	// Current page number
   pdfio_dict_t		*catalog;	// Catalog dictionary
 
 
@@ -3506,9 +3676,13 @@ write_unit_file(
   else
     return (1);
 
+  pagenum ++;
+
   // Write a page with a color image...
-  if (write_jpeg_test(outpdf, "Color JPEG Test", 2, helvetica, color_jpg))
+  if (write_jpeg_test(outpdf, "Color JPEG Test", pagenum, helvetica, color_jpg))
     return (1);
+
+  pagenum ++;
 
   // Copy the third page from the test PDF file...
   fputs("pdfioFileGetPage(2): ", stdout);
@@ -3523,39 +3697,60 @@ write_unit_file(
   else
     return (1);
 
+  pagenum ++;
+
   // Write a page with a grayscale image...
-  if (write_jpeg_test(outpdf, "Grayscale JPEG Test", 4, helvetica, gray_jpg))
+  if (write_jpeg_test(outpdf, "Grayscale JPEG Test", pagenum, helvetica, gray_jpg))
     return (1);
+  pagenum ++;
 
   // Write a page with PNG images...
-  if (write_png_test(outpdf, 5, helvetica))
+  if (write_png_tests(outpdf, pagenum, helvetica))
     return (1);
 
+#ifdef HAVE_LIBPNG
+  pagenum += 2;
+#else
+  pagenum ++;
+#endif // HAVE_LIBPNG
+
   // Write a page that tests multiple color spaces...
-  if (write_color_test(outpdf, 6, helvetica))
+  if (write_color_test(outpdf, pagenum, helvetica))
     return (1);
+
+  pagenum ++;
 
   // Write a page with test images...
   *first_image = pdfioFileGetNumObjs(outpdf) + 1;
-  if (write_images_test(outpdf, 7, helvetica))
+  if (write_images_test(outpdf, pagenum, helvetica))
     return (1);
+
+  pagenum ++;
 
   // Write a page width alpha (soft masks)...
-  if (write_alpha_test(outpdf, 8, helvetica))
+  if (write_alpha_test(outpdf, pagenum, helvetica))
     return (1);
+
+  pagenum ++;
 
   // Test TrueType fonts...
-  if (write_font_test(outpdf, 9, helvetica, "testfiles/OpenSans-Regular.ttf", false))
+  if (write_font_test(outpdf, pagenum, helvetica, "testfiles/OpenSans-Regular.ttf", false))
     return (1);
 
-  if (write_font_test(outpdf, 10, helvetica, "testfiles/OpenSans-Regular.ttf", true))
+  pagenum ++;
+
+  if (write_font_test(outpdf, pagenum, helvetica, "testfiles/OpenSans-Regular.ttf", true))
     return (1);
 
-  if (write_font_test(outpdf, 11, helvetica, "testfiles/NotoSansJP-Regular.otf", true))
+  pagenum ++;
+
+  if (write_font_test(outpdf, pagenum, helvetica, "testfiles/NotoSansJP-Regular.otf", true))
     return (1);
+
+  pagenum ++;
 
   // Print this text file...
-  if (write_text_test(outpdf, 12, helvetica, "README.md"))
+  if (write_text_test(outpdf, pagenum, helvetica, "README.md"))
     return (1);
 
   fputs("pdfioFileGetNumPages: ", stdout);

@@ -465,10 +465,134 @@ pdfioDictGetString(pdfio_dict_t *dict,	// I - Dictionary
   else if (value && value->type == PDFIO_VALTYPE_BINARY && value->value.binary.datalen < 4096)
   {
     // Convert binary string to regular string...
-    char	temp[4096];		// Temporary string
+    char	temp[4096],		// Temporary string
+		*tempptr;		// Pointer into temporary string
+    unsigned char *dataptr;		// Pointer into the data string
 
-    memcpy(temp, value->value.binary.data, value->value.binary.datalen);
-    temp[value->value.binary.datalen] = '\0';
+    if (!(value->value.binary.datalen & 1) && !memcmp(value->value.binary.data, "\377\376", 2))
+    {
+      // Copy UTF-16 BE
+      int	ch;			// Unicode character
+      size_t	remaining;		// Remaining bytes
+
+      for (dataptr = value->value.binary.data + 2, remaining = value->value.binary.datalen - 2, tempptr = temp; remaining > 1 && tempptr < (temp + sizeof(temp) - 5); dataptr += 2, remaining -= 2)
+      {
+        ch = (dataptr[0] << 8) | dataptr[1];
+
+        if (ch >= 0xd800 && ch <= 0xdbff && remaining > 3)
+	{
+	  // Multi-word UTF-16 char...
+          int lch;			// Lower bits
+
+	  lch = (dataptr[2] << 8) | dataptr[3];
+
+          if (lch < 0xdc00 || lch >= 0xdfff)
+	    break;
+
+          ch        = (((ch & 0x3ff) << 10) | (lch & 0x3ff)) + 0x10000;
+          dataptr   += 2;
+          remaining -= 2;
+	}
+	else if (ch >= 0xfffe)
+	{
+	  continue;
+	}
+
+        if (ch < 128)
+        {
+          // ASCII
+          *tempptr++ = (char)ch;
+        }
+        else if (ch < 4096)
+        {
+          // 2-byte UTF-8
+          *tempptr++ = (char)(0xc0 | (ch >> 6));
+          *tempptr++ = (char)(0x80 | (ch & 0x3f));
+        }
+        else if (ch < 65536)
+        {
+          // 3-byte UTF-8
+          *tempptr++ = (char)(0xe0 | (ch >> 12));
+          *tempptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+          *tempptr++ = (char)(0x80 | (ch & 0x3f));
+        }
+        else
+        {
+          // 4-byte UTF-8
+          *tempptr++ = (char)(0xe0 | (ch >> 18));
+          *tempptr++ = (char)(0x80 | ((ch >> 12) & 0x3f));
+          *tempptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+          *tempptr++ = (char)(0x80 | (ch & 0x3f));
+        }
+      }
+
+      *tempptr = '\0';
+    }
+    else if (!(value->value.binary.datalen & 1) && !memcmp(value->value.binary.data, "\376\377", 2))
+    {
+      // Copy UTF-16 LE
+      int	ch;			// Unicode character
+      size_t	remaining;		// Remaining bytes
+
+      for (dataptr = value->value.binary.data + 2, remaining = value->value.binary.datalen - 2, tempptr = temp; remaining > 1 && tempptr < (temp + sizeof(temp) - 5); dataptr += 2, remaining -= 2)
+      {
+        ch = (dataptr[1] << 8) | dataptr[0];
+
+        if (ch >= 0xd800 && ch <= 0xdbff && remaining > 3)
+	{
+	  // Multi-word UTF-16 char...
+          int lch;			// Lower bits
+
+	  lch = (dataptr[3] << 8) | dataptr[2];
+
+          if (lch < 0xdc00 || lch >= 0xdfff)
+	    break;
+
+          ch        = (((ch & 0x3ff) << 10) | (lch & 0x3ff)) + 0x10000;
+          dataptr   += 2;
+          remaining -= 2;
+	}
+	else if (ch >= 0xfffe)
+	{
+	  continue;
+	}
+
+        if (ch < 128)
+        {
+          // ASCII
+          *tempptr++ = (char)ch;
+        }
+        else if (ch < 4096)
+        {
+          // 2-byte UTF-8
+          *tempptr++ = (char)(0xc0 | (ch >> 6));
+          *tempptr++ = (char)(0x80 | (ch & 0x3f));
+        }
+        else if (ch < 65536)
+        {
+          // 3-byte UTF-8
+          *tempptr++ = (char)(0xe0 | (ch >> 12));
+          *tempptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+          *tempptr++ = (char)(0x80 | (ch & 0x3f));
+        }
+        else
+        {
+          // 4-byte UTF-8
+          *tempptr++ = (char)(0xe0 | (ch >> 18));
+          *tempptr++ = (char)(0x80 | ((ch >> 12) & 0x3f));
+          *tempptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+          *tempptr++ = (char)(0x80 | (ch & 0x3f));
+        }
+      }
+
+      *tempptr = '\0';
+    }
+    else
+    {
+      // Copy as-is...
+      memcpy(temp, value->value.binary.data, value->value.binary.datalen);
+      temp[value->value.binary.datalen] = '\0';
+    }
 
     free(value->value.binary.data);
     value->type         = PDFIO_VALTYPE_STRING;

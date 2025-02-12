@@ -29,6 +29,15 @@ if test $(grep AC_INIT configure.ac | awk '{print $2}') != "[$version],"; then
     exit 1
 fi
 
+if test $(head -4 CHANGES.md | tail -1 | awk '{print $1}') != "v$version"; then
+    echo "Still need to update CHANGES.md version number."
+    exit 1
+fi
+if test $(head -4 CHANGES.md | tail -1 | awk '{print $3}') = "YYYY-MM-DD"; then
+    echo "Still need to update CHANGES.md release date."
+    exit 1
+fi
+
 if test $(grep PDFIO_VERSION= configure | awk -F \" '{print $2}') != "$version"; then
     echo "Still need to run 'autoconf -f'."
     exit 1

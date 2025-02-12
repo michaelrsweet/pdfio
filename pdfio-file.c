@@ -1529,6 +1529,7 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
 			cur_obj,	// Current object
 			num_objs = 0;	// Number of objects
   pdfio_obj_t		*objs[16384];	// Objects
+  int			count;		// Count of objects
 
 
   PDFIO_DEBUG("load_obj_stream(obj=%p(%d))\n", obj, (int)obj->number);
@@ -1540,12 +1541,17 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
     return (false);
   }
 
+  count = (int)pdfioDictGetNumber(pdfioObjGetDict(obj), "N");
+
+  PDFIO_DEBUG("load_obj_stream: N=%d\n", count);
+
   _pdfioTokenInit(&tb, obj->pdf, (_pdfio_tconsume_cb_t)pdfioStreamConsume, (_pdfio_tpeek_cb_t)pdfioStreamPeek, st);
 
   // Read the object numbers from the beginning of the stream...
-  while (_pdfioTokenGet(&tb, buffer, sizeof(buffer)))
+  while (count > 0 && _pdfioTokenGet(&tb, buffer, sizeof(buffer)))
   {
     // Stop if this isn't an object number...
+    PDFIO_DEBUG("load_obj_stream: %s\n", buffer);
     if (!isdigit(buffer[0] & 255))
       break;
 
@@ -1568,21 +1574,19 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
     // Skip offset
     _pdfioTokenGet(&tb, buffer, sizeof(buffer));
     PDFIO_DEBUG("load_obj_stream: %ld at offset %s\n", (long)number, buffer);
+
+    // One less compressed object...
+    count --;
   }
 
-  if (!buffer[0])
-  {
-    pdfioStreamClose(st);
-    return (false);
-  }
-
-  _pdfioTokenPush(&tb, buffer);
+  PDFIO_DEBUG("load_obj_stream: num_objs=%lu\n", (unsigned long)num_objs);
 
   // Read the objects themselves...
   for (cur_obj = 0; cur_obj < num_objs; cur_obj ++)
   {
     if (!_pdfioValueRead(obj->pdf, obj, &tb, &(objs[cur_obj]->value), 0))
     {
+      _pdfioFileError(obj->pdf, "Unable to read compressed object.");
       pdfioStreamClose(st);
       return (false);
     }
@@ -1732,7 +1736,7 @@ load_xref(
       pdfio_stream_t	*st;		// Stream
       unsigned char	buffer[32];	// Read buffer
       size_t		num_sobjs = 0,	// Number of object streams
-			sobjs[8192];	// Object streams to load
+			sobjs[16384];	// Object streams to load
       pdfio_obj_t	*current;	// Current object
 
       if ((number = strtoimax(line, &ptr, 10)) < 1)

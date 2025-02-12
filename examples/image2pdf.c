@@ -1,7 +1,7 @@
 //
 // Image example for PDFio.
 //
-// Copyright © 2023-2024 by Michael R Sweet.
+// Copyright © 2023-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -22,8 +22,8 @@
 
 bool					// O - True on success, false on failure
 create_pdf_image_file(
-    const char *pdfname,		// I - PDF filename
     const char *imagename,		// I - Image filename
+    const char *pdfname,		// I - PDF filename
     const char *caption)		// I - Caption filename
 {
   pdfio_file_t   *pdf;			// PDF file
@@ -35,6 +35,15 @@ create_pdf_image_file(
   double         swidth, sheight;	// Scaled width and height on page
   double         tx, ty;		// Position on page
 
+
+  // Default the caption...
+  if (!caption)
+  {
+    if ((caption = strrchr(imagename, '/')) != NULL)
+      caption ++;
+    else
+      caption = imagename;
+  }
 
   // Create the PDF file...
   pdf = pdfioFileCreate(pdfname, /*version*/NULL, /*media_box*/NULL,

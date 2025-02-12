@@ -1,13 +1,23 @@
 Changes in PDFio
 ================
 
-
-v1.4.1 - YYYY-MM-DD
+v1.5.0 - YYYY-MM-DD
 -------------------
 
+- Added support for using libpng to embed PNG images in PDF output (Issue #90)
+- Updated the pdf2txt example to support font encodings.
+
+
+v1.4.1 - 2025-01-24
+-------------------
+
+- Added license files for the example fonts now bundled with PDFio (Issue #91)
 - Fixed the link libraries for the example source code (Issue #86)
 - Fixed handling of the Info object (Issue #87)
 - Fixed opening of PDF files less than 1024 bytes in length (Issue #87)
+- Fixed potential `NULL` dereference when reading (Issue #89)
+- Fixed reading of compressed object streams (Issue #92)
+- Fixed reading of UTF-16 string values (Issue #92)
 
 
 v1.4.0 - 2024-12-26
