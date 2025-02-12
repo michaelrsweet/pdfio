@@ -17,7 +17,7 @@ jobs:
     - name: Update Build Environment
       run: sudo apt-get update --fix-missing -y
     - name: Install Prerequisites
-      run: sudo apt-get install -y cppcheck zlib1g-dev libpng16-dev
+      run: sudo apt-get install -y cppcheck zlib1g-dev libpng-dev
     - name: Configure PDFio
       run: ./configure --enable-debug --enable-sanitizer --enable-maintainer
     - name: Build PDFio

@@ -32,7 +32,7 @@ jobs:
         run: sudo apt-get update --fix-missing -y
 
       - name: Install Prerequisites
-        run: sudo apt-get install -y zlib1g-dev
+        run: sudo apt-get install -y zlib1g-dev libpng-dev
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
