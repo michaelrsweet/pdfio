@@ -60,7 +60,7 @@ typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
 static bool		create_cp1252(pdfio_file_t *pdf);
-static pdfio_obj_t	*create_image(pdfio_dict_t *dict, const unsigned char *data, size_t width, size_t height, size_t num_colors, bool alpha);
+static pdfio_obj_t	*create_image(pdfio_dict_t *dict, const unsigned char *data, size_t width, size_t height, size_t depth, size_t num_colors, bool alpha);
 #ifdef HAVE_LIBPNG
 static void		png_error_func(png_structp pp, png_const_charp message);
 static void		png_read_func(png_structp png_ptr, png_bytep data, size_t length);
@@ -2027,7 +2027,7 @@ pdfioFileCreateImageObjFromData(
     pdfioDictSetName(dict, "ColorSpace", defcolors[num_colors]);
 
   // Create the image object(s)...
-  return (create_image(dict, data, width, height, num_colors, alpha));
+  return (create_image(dict, data, width, height, 8, num_colors, alpha));
 }
 
 
@@ -2484,6 +2484,11 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
          int          fd)		// I - File descriptor
 {
   pdfio_obj_t	*obj = NULL;		// Object
+  double	gamma = 2.2,		// Gamma value
+		wx = 0.0, wy = 0.0,	// White point chromacity
+		rx = 0.0, ry = 0.0,	// Red chromacity
+		gx = 0.0, gy = 0.0,	// Green chromacity
+		bx = 0.0, by = 0.0;	// Blue chromacity
 #ifdef HAVE_LIBPNG
   png_structp	pp = NULL;		// PNG read pointer
   png_infop	info = NULL;		// PNG info pointers
@@ -2493,9 +2498,14 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 		color_type,		// PNG color mode
 		width,			// Width in columns
 		height,			// Height in lines
+		depth,			// Bit depth
 		num_colors = 0,		// Number of colors
-		bpp;			// Bytes per pixel
+		linesize;		// Bytes per line
   bool		alpha;			// Alpha transparency?
+  png_color	*palette;		// Color palette information
+  int		num_palette;		// Number of colors
+  int		num_trans;		// Number of transparent colors
+  png_color_16	*trans;			// Transparent colors
 
 
   PDFIO_DEBUG("copy_png(dict=%p, fd=%d)\n", (void *)dict, fd);
@@ -2539,51 +2549,28 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 
   width      = png_get_image_width(pp, info);
   height     = png_get_image_height(pp, info);
+  depth      = png_get_bit_depth(pp, info);
   color_type = png_get_color_type(pp, info);
 
-  if (color_type & PNG_COLOR_MASK_COLOR)
+  if (color_type & PNG_COLOR_MASK_PALETTE)
+    num_colors = 1;
+  else if (color_type & PNG_COLOR_MASK_COLOR)
     num_colors = 3;
   else
     num_colors = 1;
 
-  PDFIO_DEBUG("copy_png: width=%u, height=%u, color_type=%u, num_colors=%d\n", width, height, color_type, num_colors);
+  PDFIO_DEBUG("copy_png: width=%u, height=%u, depth=%u, color_type=%u, num_colors=%d\n", width, height, depth, color_type, num_colors);
 
   // Set decoding options...
-  if (png_get_valid(pp, info, PNG_INFO_tRNS))
-  {
-    // Map transparency to alpha
-    png_set_tRNS_to_alpha(pp);
-    color_type |= PNG_COLOR_MASK_ALPHA;
-  }
+  alpha    = (color_type & PNG_COLOR_MASK_ALPHA) != 0;
+  linesize = (width * num_colors * depth + 7) / 8;
+  if (alpha)
+    linesize += width;
 
-  if (png_get_bit_depth(pp, info) > 8)
-  {
-    // Strip the bottom bits of 16-bit values
-    png_set_strip_16(pp);
-  }
-  else if (png_get_bit_depth(pp, info) < 8)
-  {
-    // Expand 1, 2, and 4-bit values to 8 bits
-    if (num_colors == 1)
-      png_set_expand_gray_1_2_4_to_8(pp);
-    else
-      png_set_packing(pp);
-  }
-
-#if 1
-  if (color_type & PNG_COLOR_MASK_PALETTE)
-  {
-    // Convert indexed images to RGB...
-    png_set_palette_to_rgb(pp);
-    num_colors = 3;
-  }
-#endif // 0
-
-  alpha = (color_type & PNG_COLOR_MASK_ALPHA) != 0;
-  bpp   = num_colors + (alpha ? 1 : 0);
+  PDFIO_DEBUG("copy_png: alpha=%s, linesize=%u\n", alpha ? "true" : "false", (unsigned)linesize);
 
   // Allocate memory for the image...
-  if ((pixels = (unsigned char *)calloc(height, width * bpp)) == NULL)
+  if ((pixels = (unsigned char *)calloc(height, linesize)) == NULL)
   {
     _pdfioFileError(dict->pdf, "Unable to allocate memory for PNG image: %s", strerror(errno));
     goto finish_png;
@@ -2596,7 +2583,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   }
 
   for (i = 0; i < height; i ++)
-    rows[i] = pixels + i * width * bpp;
+    rows[i] = pixels + i * linesize;
 
   // Read the image...
   for (i = png_set_interlace_handling(pp); i > 0; i --)
@@ -2605,13 +2592,67 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   // Add image dictionary information...
   pdfioDictSetNumber(dict, "Width", width);
   pdfioDictSetNumber(dict, "Height", height);
-  pdfioDictSetNumber(dict, "BitsPerComponent", 8);
+  pdfioDictSetNumber(dict, "BitsPerComponent", depth);
 
   // Grab any color space/palette information...
-  pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, num_colors, PDFIO_CS_SRGB));
+  if (png_get_PLTE(pp, info, &palette, &num_palette))
+  {
+    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPalette(dict->pdf, num_palette, (unsigned char *)palette));
+  }
+  else if (png_get_cHRM(pp, info, &wx, &wy, &rx, &ry, &gx, &gy, &bx, &by) && png_get_gAMA(pp, info, &gamma))
+  {
+    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPrimaries(dict->pdf, num_colors, gamma, wx, wy, rx, ry, gx, gy, bx, by));
+  }
+  else
+  {
+    // Default to sRGB...
+    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, num_colors, PDFIO_CS_SRGB));
+  }
+
+  if (png_get_tRNS(pp, info, /*trans_alpha*/NULL, &num_trans, &trans))
+  {
+    int			m;		// Looping var
+    pdfio_array_t	*mask;		// Mask array
+
+    mask = pdfioArrayCreate(dict->pdf);
+
+    if (color_type & PNG_COLOR_MASK_PALETTE)
+    {
+      // List color indices that are transparent...
+      for (m = 0; m < num_trans; m ++)
+      {
+	pdfioArrayAppendNumber(mask, trans[m].index);
+	pdfioArrayAppendNumber(mask, trans[m].index);
+      }
+    }
+    else if (num_colors == 1)
+    {
+      // List grayscale values that are transparent...
+      for (m = 0; m < num_trans; m ++)
+      {
+	pdfioArrayAppendNumber(mask, trans[m].gray >> (16 - depth));
+	pdfioArrayAppendNumber(mask, trans[m].gray >> (16 - depth));
+      }
+    }
+    else
+    {
+      // List RGB color values that are transparent...
+      for (m = 0; m < num_trans; m ++)
+      {
+	pdfioArrayAppendNumber(mask, trans[m].red >> (16 - depth));
+	pdfioArrayAppendNumber(mask, trans[m].green >> (16 - depth));
+	pdfioArrayAppendNumber(mask, trans[m].blue >> (16 - depth));
+	pdfioArrayAppendNumber(mask, trans[m].red >> (16 - depth));
+	pdfioArrayAppendNumber(mask, trans[m].green >> (16 - depth));
+	pdfioArrayAppendNumber(mask, trans[m].blue >> (16 - depth));
+      }
+    }
+
+    pdfioDictSetArray(dict, "Mask", mask);
+  }
 
   // Create the image object...
-  obj = create_image(dict, pixels, width, height, num_colors, alpha);
+  obj = create_image(dict, pixels, width, height, depth, num_colors, alpha);
 
   finish_png:
 
@@ -2648,11 +2689,6 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   unsigned char	bit_depth = 0,		// Bit depth
 		color_type = 0,		// Color type
 		interlace = 0;		// Interlace type
-  double	gamma = 2.2,		// Gamma value
-		wx = 0.0, wy = 0.0,	// White point chromacity
-		rx = 0.0, ry = 0.0,	// Red chromacity
-		gx = 0.0, gy = 0.0,	// Green chromacity
-		bx = 0.0, by = 0.0;	// Blue chromacity
   pdfio_array_t	*mask = NULL;		// Color masking array
 
 
@@ -2803,7 +2839,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 	    return (NULL);
 	  }
 
-          num_colors = (color_type == _PDFIO_PNG_TYPE_RGB || color_type == _PDFIO_PNG_TYPE_RGBA) ? 3 : 1;
+          num_colors = color_type == _PDFIO_PNG_TYPE_RGB ? 3 : 1;
 
 	  pdfioDictSetNumber(dict, "Width", width);
 	  pdfioDictSetNumber(dict, "Height", height);
@@ -3304,6 +3340,7 @@ create_image(
     const unsigned char *data,		// I - Image data
     size_t              width,		// I - Width in columns
     size_t              height,		// I - Height in lines
+    size_t              depth,		// I - Bit depth
     size_t              num_colors,	// I - Number of colors
     bool                alpha)		// I - `true` if there is transparency
 {
@@ -3316,7 +3353,9 @@ create_image(
 					// Mask image object, if any
   pdfio_stream_t	*st;		// Image stream
   size_t		x, y,		// X and Y position in image
-			bpp,		// Bytes per pixel
+			bpc = depth / 8,// Bytes per component
+			bpp = num_colors * bpc,
+					// Bytes per pixel (less alpha)
 			linelen;	// Line length
   const unsigned char	*dataptr;	// Pointer into image data
   unsigned char		*line = NULL,	// Current line
@@ -3324,8 +3363,7 @@ create_image(
 
 
   // Allocate memory for one line of data...
-  bpp     = alpha ? num_colors + 1 : num_colors;
-  linelen = num_colors * width;
+  linelen = (width * num_colors * depth + 7) / 8;
 
   if ((line = malloc(linelen)) == NULL)
     return (NULL);
@@ -3353,7 +3391,7 @@ create_image(
       return (NULL);
     }
 
-    pdfioDictSetNumber(decode, "BitsPerComponent", 8);
+    pdfioDictSetNumber(decode, "BitsPerComponent", depth);
     pdfioDictSetNumber(decode, "Colors", 1);
     pdfioDictSetNumber(decode, "Columns", width);
     pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
@@ -3373,12 +3411,23 @@ create_image(
       return (NULL);
     }
 
-    for (y = height, dataptr = data + num_colors; y > 0; y --)
+    for (y = height, dataptr = data + bpp; y > 0; y --)
     {
-      for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
-        *lineptr++ = *dataptr;
+      if (bpc == 1)
+      {
+	for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
+	  *lineptr++ = *dataptr++;
+      }
+      else
+      {
+	for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
+	{
+	  *lineptr++ = *dataptr++;
+	  *lineptr++ = *dataptr++;
+	}
+      }
 
-      pdfioStreamWrite(st, line, width);
+      pdfioStreamWrite(st, line, width * bpc);
     }
 
     pdfioStreamClose(st);
@@ -3394,7 +3443,7 @@ create_image(
     return (NULL);
   }
 
-  pdfioDictSetNumber(decode, "BitsPerComponent", 8);
+  pdfioDictSetNumber(decode, "BitsPerComponent", depth);
   pdfioDictSetNumber(decode, "Colors", num_colors);
   pdfioDictSetNumber(decode, "Columns", width);
   pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
@@ -3418,29 +3467,15 @@ create_image(
   {
     if (alpha)
     {
-      switch (num_colors)
+      if (bpp == 1)
       {
-	case 1 :
-	    for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
-	      *lineptr++ = *dataptr;
-	    break;
-	case 3 :
-	    for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
-	    {
-	      *lineptr++ = dataptr[0];
-	      *lineptr++ = dataptr[1];
-	      *lineptr++ = dataptr[2];
-	    }
-	    break;
-	case 4 :
-	    for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
-	    {
-	      *lineptr++ = dataptr[0];
-	      *lineptr++ = dataptr[1];
-	      *lineptr++ = dataptr[2];
-	      *lineptr++ = dataptr[3];
-	    }
-	    break;
+	for (x = width, lineptr = line; x > 0; x --, dataptr += bpc)
+	  *lineptr++ = *dataptr++;
+      }
+      else
+      {
+	for (x = width, lineptr = line; x > 0; x --, dataptr += bpp + bpc, lineptr += bpp)
+	  memcpy(lineptr, dataptr, bpp);
       }
 
       pdfioStreamWrite(st, line, linelen);
