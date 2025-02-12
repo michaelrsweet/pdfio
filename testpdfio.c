@@ -3088,7 +3088,6 @@ write_png_tests(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
-#ifdef HAVE_LIBPNG
   ////// PDFio PNG image test page...
   // Create the page dictionary, object, and stream...
   fputs("pdfioDictCreate: ", stdout);
@@ -3235,6 +3234,7 @@ write_png_tests(pdfio_file_t *pdf,	// I - PDF file
   else
     return (1);
 
+#ifdef HAVE_LIBPNG
   ////// PngSuite page
   // Create the image objects...
   for (i = 0; i < (sizeof(pngsuite_files) / sizeof(pngsuite_files[0])); i ++)
