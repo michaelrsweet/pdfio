@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2025-01-24" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2025-02-13" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -3880,6 +3880,14 @@ const char * pdfioFileGetKeywords (
     pdfio_file_t *pdf
 );
 .fi
+.SS pdfioFileGetModificationDate
+Get the most recent modification date for a PDF file.
+.PP
+.nf
+time_t  pdfioFileGetModificationDate (
+    pdfio_file_t *pdf
+);
+.fi
 .SS pdfioFileGetName
 Get a PDF's filename.
 .PP
@@ -4025,6 +4033,15 @@ Set the keywords string for a PDF file.
 void pdfioFileSetKeywords (
     pdfio_file_t *pdf,
     const char *value
+);
+.fi
+.SS pdfioFileSetModificationDate
+Set the modification date for a PDF file.
+.PP
+.nf
+void pdfioFileSetModificationDate (
+    pdfio_file_t *pdf,
+    time_t value
 );
 .fi
 .SS pdfioFileSetPermissions

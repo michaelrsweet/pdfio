@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<title>PDFio Programming Manual v1.4.1</title>
+<title>PDFio Programming Manual v1.5.0</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.8">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
 <meta name="copyright" content="Copyright © 2021-2025 by Michael R Sweet">
-<meta name="version" content="1.4.1">
+<meta name="version" content="1.5.0">
 <style type="text/css"><!--
 body {
   background: white;
@@ -251,7 +251,7 @@ span.string {
 <body>
 <div class="header">
 <p><img class="title" src="pdfio-512.png"></p>
-<h1 class="title">PDFio Programming Manual v1.4.1</h1>
+<h1 class="title">PDFio Programming Manual v1.5.0</h1>
 <p>Michael R Sweet</p>
 <p>Copyright © 2021-2025 by Michael R Sweet</p>
 </div>
@@ -417,6 +417,7 @@ span.string {
 <li><a href="#pdfioFileGetCreator">pdfioFileGetCreator</a></li>
 <li><a href="#pdfioFileGetID">pdfioFileGetID</a></li>
 <li><a href="#pdfioFileGetKeywords">pdfioFileGetKeywords</a></li>
+<li><a href="#pdfioFileGetModificationDate">pdfioFileGetModificationDate</a></li>
 <li><a href="#pdfioFileGetName">pdfioFileGetName</a></li>
 <li><a href="#pdfioFileGetNumObjs">pdfioFileGetNumObjs</a></li>
 <li><a href="#pdfioFileGetNumPages">pdfioFileGetNumPages</a></li>
@@ -432,6 +433,7 @@ span.string {
 <li><a href="#pdfioFileSetCreationDate">pdfioFileSetCreationDate</a></li>
 <li><a href="#pdfioFileSetCreator">pdfioFileSetCreator</a></li>
 <li><a href="#pdfioFileSetKeywords">pdfioFileSetKeywords</a></li>
+<li><a href="#pdfioFileSetModificationDate">pdfioFileSetModificationDate</a></li>
 <li><a href="#pdfioFileSetPermissions">pdfioFileSetPermissions</a></li>
 <li><a href="#pdfioFileSetSubject">pdfioFileSetSubject</a></li>
 <li><a href="#pdfioFileSetTitle">pdfioFileSetTitle</a></li>
@@ -4223,6 +4225,17 @@ time_t pdfioFileGetCreationDate(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);<
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Keywords string or <code>NULL</code> for none</p>
+<h3 class="function"><a id="pdfioFileGetModificationDate">pdfioFileGetModificationDate</a></h3>
+<p class="description">Get the most recent modification date for a PDF file.</p>
+<p class="code">
+time_t pdfioFileGetModificationDate(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Modification date or <code>0</code> for none</p>
 <h3 class="function"><a id="pdfioFileGetName">pdfioFileGetName</a></h3>
 <p class="description">Get a PDF's filename.</p>
 <p class="code">
@@ -4411,6 +4424,17 @@ writes error messages to <code>stderr</code>.</p>
 <p class="description">Set the keywords string for a PDF file.</p>
 <p class="code">
 <span class="reserved">void</span> pdfioFileSetKeywords(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *value);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>value</th>
+<td class="description">Value</td></tr>
+</tbody></table>
+<h3 class="function"><a id="pdfioFileSetModificationDate">pdfioFileSetModificationDate</a></h3>
+<p class="description">Set the modification date for a PDF file.</p>
+<p class="code">
+<span class="reserved">void</span> pdfioFileSetModificationDate(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, time_t value);</p>
 <h4 class="parameters">Parameters</h4>
 <table class="list"><tbody>
 <tr><th>pdf</th>

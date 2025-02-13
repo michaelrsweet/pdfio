@@ -802,11 +802,11 @@ pdfioFileGetKeywords(pdfio_file_t *pdf)	// I - PDF file
 
 
 //
-// 'pdfioFileGetModDate()' - Get the most recent modification date for a PDF file.
+// 'pdfioFileGetModificationDate()' - Get the most recent modification date for a PDF file.
 //
 
 time_t					// O - Modification date or `0` for none
-pdfioFileGetModDate(
+pdfioFileGetModificationDate(
     pdfio_file_t *pdf)			// I - PDF file
 {
   return (pdf && pdf->info_obj ? pdfioDictGetDate(pdfioObjGetDict(pdf->info_obj), "ModDate") : 0);
@@ -1135,6 +1135,20 @@ pdfioFileSetKeywords(
 {
   if (pdf && pdf->info_obj)
     pdfioDictSetString(pdf->info_obj->value.value.dict, "Keywords", pdfioStringCreate(pdf, value));
+}
+
+
+//
+// 'pdfioFileSetModificationDate()' - Set the modification date for a PDF file.
+//
+
+void
+pdfioFileSetModificationDate(
+    pdfio_file_t *pdf,			// I - PDF file
+    time_t       value)			// I - Value
+{
+  if (pdf && pdf->info_obj)
+    pdfioDictSetDate(pdf->info_obj->value.value.dict, "ModDate", value);
 }
 
 

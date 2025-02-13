@@ -4,6 +4,7 @@ Changes in PDFio
 v1.5.0 - YYYY-MM-DD
 -------------------
 
+- Added `pdfioFileGetModDate()` API (Issue #88)
 - Added support for using libpng to embed PNG images in PDF output (Issue #90)
 - Updated the pdf2txt example to support font encodings.
 

@@ -201,7 +201,7 @@ extern time_t		pdfioFileGetCreationDate(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetCreator(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern pdfio_array_t	*pdfioFileGetID(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetKeywords(pdfio_file_t *pdf) _PDFIO_PUBLIC;
-extern time_t		pdfioFileGetModDate(pdfio_file_t *pdf) _PDFIO_PUBLIC;
+extern time_t		pdfioFileGetModificationDate(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern const char	*pdfioFileGetName(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern size_t		pdfioFileGetNumObjs(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern size_t		pdfioFileGetNumPages(pdfio_file_t *pdf) _PDFIO_PUBLIC;
@@ -217,6 +217,7 @@ extern void		pdfioFileSetAuthor(pdfio_file_t *pdf, const char *value) _PDFIO_PUB
 extern void		pdfioFileSetCreationDate(pdfio_file_t *pdf, time_t value) _PDFIO_PUBLIC;
 extern void		pdfioFileSetCreator(pdfio_file_t *pdf, const char *value) _PDFIO_PUBLIC;
 extern void		pdfioFileSetKeywords(pdfio_file_t *pdf, const char *value) _PDFIO_PUBLIC;
+extern void		pdfioFileSetModificationDate(pdfio_file_t *pdf, time_t value) _PDFIO_PUBLIC;
 extern bool		pdfioFileSetPermissions(pdfio_file_t *pdf, pdfio_permission_t permissions, pdfio_encryption_t encryption, const char *owner_password, const char *user_password) _PDFIO_PUBLIC;
 extern void		pdfioFileSetSubject(pdfio_file_t *pdf, const char *value) _PDFIO_PUBLIC;
 extern void		pdfioFileSetTitle(pdfio_file_t *pdf, const char *value) _PDFIO_PUBLIC;
