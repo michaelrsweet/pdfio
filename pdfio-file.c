@@ -802,6 +802,18 @@ pdfioFileGetKeywords(pdfio_file_t *pdf)	// I - PDF file
 
 
 //
+// 'pdfioFileGetModDate()' - Get the most recent modification date for a PDF file.
+//
+
+time_t					// O - Modification date or `0` for none
+pdfioFileGetModDate(
+    pdfio_file_t *pdf)			// I - PDF file
+{
+  return (pdf && pdf->info_obj ? pdfioDictGetDate(pdfioObjGetDict(pdf->info_obj), "ModDate") : 0);
+}
+
+
+//
 // 'pdfioFileGetName()' - Get a PDF's filename.
 //
 
