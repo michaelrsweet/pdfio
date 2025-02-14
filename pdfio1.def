@@ -12,6 +12,7 @@ _pdfioCryptoRC4Init
 _pdfioCryptoSHA256Append
 _pdfioCryptoSHA256Finish
 _pdfioCryptoSHA256Init
+_pdfioTokenInit
 _pdfioValueDebug
 _pdfioValueRead
 pdfioArrayAppendArray
