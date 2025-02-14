@@ -134,6 +134,7 @@ pdfioFileCreate
 pdfioFileCreateArrayObj
 pdfioFileCreateFontObjFromBase
 pdfioFileCreateFontObjFromFile
+pdfioFileCreateICCObjFromData
 pdfioFileCreateICCObjFromFile
 pdfioFileCreateImageObjFromData
 pdfioFileCreateImageObjFromFile
