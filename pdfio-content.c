@@ -40,7 +40,7 @@
 
 #define _PDFIO_JPEG_SOI		0xd8	// Start of image
 #define _PDFIO_JPEG_EOI		0xd9	// End of image
-#define _PDFIO_JPEG_SOS		0xda	// Start of stream
+#define _PDFIO_JPEG_SOS		0xda	// Start of scan
 
 #define _PDFIO_JPEG_APP0	0xe0	// APP0 extension
 #define _PDFIO_JPEG_APP1	0xe1	// APP1 extension
@@ -2669,6 +2669,9 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   int		num_palette;		// Number of colors
   int		num_trans;		// Number of transparent colors
   png_color_16	*trans;			// Transparent colors
+  png_charp	icc_name;		// ICC profile name
+  png_bytep	icc_data;		// ICC profile data
+  png_uint_32	icc_datalen;		// Length of ICC profile data
 
 
   PDFIO_DEBUG("copy_png(dict=%p, fd=%d)\n", (void *)dict, fd);
@@ -2761,6 +2764,12 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   if (png_get_PLTE(pp, info, &palette, &num_palette))
   {
     pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPalette(dict->pdf, num_palette, (unsigned char *)palette));
+  }
+  else if (png_get_iCCP(pp, info, &icc_name, /*compression_type*/NULL, &icc_data, &icc_datalen))
+  {
+    PDFIO_DEBUG("copy_png: ICC color profile '%s'\n", icc_name);
+    pdfio_obj_t	*icc_obj = pdfioFileCreateICCObjFromData(dict->pdf, icc_data, icc_datalen, num_colors);
+    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromICCObj(dict->pdf, icc_obj));
   }
   else if (png_get_cHRM(pp, info, &wx, &wy, &rx, &ry, &gx, &gy, &bx, &by) && png_get_gAMA(pp, info, &gamma))
   {
