@@ -13,6 +13,7 @@
 
 #include <pdfio.h>
 #include <time.h>
+#include <math.h>
 
 
 //
@@ -25,18 +26,26 @@ main(int  argc,				// I - Number of command-line arguments
 {
   const char	*filename;		// PDF filename
   pdfio_file_t	*pdf;			// PDF file
+  pdfio_dict_t	*catalog;		// Catalog dictionary
   const char	*author,		// Author name
   		*creator,		// Creator name
-  		*producer;		// Producer name
+  		*producer,		// Producer name
+		*title;			// Title
   time_t	creation_date,		// Creation date
-		mod_date;		// Modification date
+		modification_date;	// Modification date
   struct tm	*creation_tm,		// Creation date/time information
-		*mod_tm;		// Mod. date/time information
+		*modification_tm;	// Modification date/time information
   char		creation_text[256],	// Creation date/time as a string
-		mod_text[256];		// Mod. date/time human fmt string
-  const char	*title;			// Title
+		modification_text[256],	// Modification date/time human fmt string
+		range_text[255];	// Page range text
   size_t	num_pages;		// PDF number of pages
-  bool		has_acroform;		// AcroForm or not
+  bool		has_acroform;		// Does the file have an AcroForm?
+  pdfio_obj_t	*page;			// Object
+  pdfio_dict_t	*page_dict;		// Object dictionary
+  size_t	cur,			// Current page index
+		prev;			// Previous page index
+  pdfio_rect_t	cur_box,		// Current MediaBox
+		prev_box;		// Previous MediaBox
 
 
   // Get the filename from the command-line...
@@ -55,12 +64,14 @@ main(int  argc,				// I - Number of command-line arguments
   if (pdf == NULL)
     return (1);
 
-  // Get the title, author...
-  author = pdfioFileGetAuthor(pdf);
-  title  = pdfioFileGetTitle(pdf);
-  creator = pdfioFileGetCreator(pdf);
-  producer = pdfioFileGetProducer(pdf);
-  num_pages = pdfioFileGetNumPages(pdf);
+  // Get the title, author, etc...
+  catalog      = pdfioFileGetCatalog(pdf);
+  author       = pdfioFileGetAuthor(pdf);
+  creator      = pdfioFileGetCreator(pdf);
+  has_acroform = pdfioDictGetObj(catalog, "AcroForm") != NULL ? true : false;
+  num_pages    = pdfioFileGetNumPages(pdf);
+  producer     = pdfioFileGetProducer(pdf);
+  title        = pdfioFileGetTitle(pdf);
 
   // Get the creation date and convert to a string...
   if ((creation_date = pdfioFileGetCreationDate(pdf)) > 0)
@@ -74,81 +85,75 @@ main(int  argc,				// I - Number of command-line arguments
   }
 
   // Get the modification date and convert to a string...
-  if ((mod_date = pdfioFileGetModDate(pdf)) > 0)
+  if ((modification_date = pdfioFileGetModificationDate(pdf)) > 0)
   {
-    mod_tm   = localtime(&mod_date);
-    strftime(mod_text, sizeof(mod_text), "%c", mod_tm);
+    modification_tm = localtime(&modification_date);
+    strftime(modification_text, sizeof(modification_text), "%c", modification_tm);
   }
   else
   {
-    snprintf(mod_text, sizeof(mod_text), "-- not set --");
-  }
-
-  // Detect simply if AcroFrom is a dict in catalog
-  {
-    pdfio_dict_t	*dict;			// some Object dictionary
-   
-    dict = pdfioFileGetCatalog(pdf);
-    has_acroform = (dict != NULL && pdfioDictGetObj(dict, "AcroForm") != NULL)?
-                   true : false;
+    snprintf(modification_text, sizeof(modification_text), "-- not set --");
   }
 
   // Print file information to stdout...
   printf("%s:\n", filename);
-  printf("         Title: %s\n", title ? title : "-- not set --");
-  printf("        Author: %s\n", author ? author : "-- not set --");
-  printf("       Creator: %s\n", creator ? creator : "-- not set --");
-  printf("      Producer: %s\n", producer ? producer : "-- not set --");
-  printf("    Created On: %s\n", creation_text);
-  printf("   Modified On: %s\n", mod_text);
-  printf("       Version: %s\n", pdfioFileGetVersion(pdf));
-  printf("      AcroForm: %s\n", has_acroform ? "Yes" : "No");
-  printf("  Number Pages: %u\n", (unsigned)num_pages);
-  printf("    MediaBoxes:");
-  // There can be a different MediaBox per page
-  // Loop and report MediaBox and number of consecutive pages of this size
+  printf("           Title: %s\n", title ? title : "-- not set --");
+  printf("          Author: %s\n", author ? author : "-- not set --");
+  printf("         Creator: %s\n", creator ? creator : "-- not set --");
+  printf("        Producer: %s\n", producer ? producer : "-- not set --");
+  printf("      Created On: %s\n", creation_text);
+  printf("     Modified On: %s\n", modification_text);
+  printf("         Version: %s\n", pdfioFileGetVersion(pdf));
+  printf("        AcroForm: %s\n", has_acroform ? "Yes" : "No");
+  printf(" Number of Pages: %u\n", (unsigned)num_pages);
+
+  // Report the MediaBox for all of the pages
+  prev_box.x1 = prev_box.x2 = prev_box.y1 = prev_box.y2 = 0.0;
+
+  for (cur = 0, prev = 0; cur < num_pages; cur ++)
   {
-    pdfio_obj_t		*obj;			// Object
-    pdfio_dict_t	*dict;			// Object dictionary
-    pdfio_rect_t 	prev,			// MediaBox previous
-     			now;			// MediaBox now
-    size_t 		n,			// Page index
-          		nprev;			// Number previous prev size
-
-    // MediaBox should be set at least on the root
-    for (n = nprev = 0; n < num_pages; n++)
+    // Find the MediaBox for this page in the page tree...
+    for (page = pdfioFileGetPage(pdf, cur);
+         page != NULL;
+         page = pdfioDictGetObj(page_dict, "Parent"))
     {
-      obj = pdfioFileGetPage(pdf, n);
-      while (obj != NULL)
-      {
-        dict = pdfioObjGetDict(obj);
-        if (pdfioDictGetRect(dict, "MediaBox", &now))
-        {
-          if ( 
-                nprev == 0
-                || (
-                     now.x1 != prev.x1 || now.y1 != prev.y1
-                     || now.x2 != prev.x2 || now.y2 != prev.y2
-                   )
-             )
-          {
-            if (nprev) printf("(%zd) ", nprev);
-            prev = now;
-            printf("[%.7g %.7g %.7g %.7g]", now.x1, now.y1, now.x2, now.y2);
-            nprev = 1;
-          }
-          else
-            ++nprev;
-	  obj = NULL;
-        }
-        else
-	  obj = pdfioDictGetObj(dict, "Parent");
-      }
-    }
-    printf("(%zd)", nprev);
-  }
-  printf("\n");
+      cur_box.x1 = cur_box.x2 = cur_box.y1 = cur_box.y2 = 0.0;
+      page_dict  = pdfioObjGetDict(page);
 
+      if (pdfioDictGetRect(page_dict, "MediaBox", &cur_box))
+        break;
+    }
+
+    // If this MediaBox is different from the previous one, show the range of
+    // pages that have that size...
+    if (cur == 0 ||
+        fabs(cur_box.x1 - prev_box.x1) > 0.01 ||
+        fabs(cur_box.y1 - prev_box.y1) > 0.01 ||
+        fabs(cur_box.x2 - prev_box.x2) > 0.01 ||
+        fabs(cur_box.y2 - prev_box.y2) > 0.01)
+    {
+      if (cur > prev)
+      {
+        snprintf(range_text, sizeof(range_text), "Pages %u-%u",
+                 (unsigned)(prev + 1), (unsigned)cur);
+        printf("%16s: [%g %g %g %g]\n", range_text,
+               prev_box.x1, prev_box.y1, prev_box.x2, prev_box.y2);
+      }
+
+      // Start a new series of pages with the new size...
+      prev     = cur;
+      prev_box = cur_box;
+    }
+  }
+
+  // Show the last range as needed...
+  if (cur > prev)
+  {
+    snprintf(range_text, sizeof(range_text), "Pages %u-%u",
+	     (unsigned)(prev + 1), (unsigned)cur);
+    printf("%16s: [%g %g %g %g]\n", range_text,
+	   prev_box.x1, prev_box.y1, prev_box.x2, prev_box.y2);
+  }
 
   // Close the PDF file...
   pdfioFileClose(pdf);
