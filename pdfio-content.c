@@ -2665,6 +2665,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 		num_colors = 0,		// Number of colors
 		linesize;		// Bytes per line
   bool		alpha;			// Alpha transparency?
+  int		srgb_intent;		// sRGB color?
   png_color	*palette;		// Color palette information
   int		num_palette;		// Number of colors
   int		num_trans;		// Number of transparent colors
@@ -2771,8 +2772,14 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
     pdfio_obj_t	*icc_obj = pdfioFileCreateICCObjFromData(dict->pdf, icc_data, icc_datalen, num_colors);
     pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromICCObj(dict->pdf, icc_obj));
   }
+  else if (png_get_sRGB(pp, info, &srgb_intent))
+  {
+    PDFIO_DEBUG("copy_png: Explicit sRGB\n");
+    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, num_colors, PDFIO_CS_SRGB));
+  }
   else if (png_get_cHRM(pp, info, &wx, &wy, &rx, &ry, &gx, &gy, &bx, &by) && png_get_gAMA(pp, info, &gamma))
   {
+    PDFIO_DEBUG("copy_png: Color primaries [%g %g %g %g %g %g %g %g], gamma %g\n", wx, wy, rx, ry, gx, gy, bx, by, gamma);
     pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPrimaries(dict->pdf, num_colors, gamma, wx, wy, rx, ry, gx, gy, bx, by));
   }
   else
