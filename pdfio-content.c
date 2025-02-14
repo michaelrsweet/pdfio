@@ -24,6 +24,30 @@
 // Local constants...
 //
 
+#define _PDFIO_JPEG_SOF0	0xc0	// Start of frame (0)
+#define _PDFIO_JPEG_SOF1	0xc1	// Start of frame (1)
+#define _PDFIO_JPEG_SOF2	0xc2	// Start of frame (2)
+#define _PDFIO_JPEG_SOF3	0xc3	// Start of frame (3)
+#define _PDFIO_JPEG_SOF5	0xc5	// Start of frame (5)
+#define _PDFIO_JPEG_SOF6	0xc6	// Start of frame (6)
+#define _PDFIO_JPEG_SOF7	0xc7	// Start of frame (7)
+#define _PDFIO_JPEG_SOF9	0xc9	// Start of frame (9)
+#define _PDFIO_JPEG_SOF10	0xca	// Start of frame (10)
+#define _PDFIO_JPEG_SOF11	0xcb	// Start of frame (11)
+#define _PDFIO_JPEG_SOF13	0xcd	// Start of frame (13)
+#define _PDFIO_JPEG_SOF14	0xce	// Start of frame (14)
+#define _PDFIO_JPEG_SOF15	0xcf	// Start of frame (15)
+
+#define _PDFIO_JPEG_SOI		0xd8	// Start of image
+#define _PDFIO_JPEG_EOI		0xd9	// End of image
+#define _PDFIO_JPEG_SOS		0xda	// Start of stream
+
+#define _PDFIO_JPEG_APP0	0xe0	// APP0 extension
+#define _PDFIO_JPEG_APP1	0xe1	// APP1 extension
+#define _PDFIO_JPEG_APP2	0xe2	// APP2 extension
+
+#define _PDFIO_JPEG_MARKER	0xff
+
 #define _PDFIO_PNG_CHUNK_IDAT	0x49444154	// Image data
 #define _PDFIO_PNG_CHUNK_IEND	0x49454e44	// Image end
 #define _PDFIO_PNG_CHUNK_IHDR	0x49484452	// Image header
@@ -1887,7 +1911,61 @@ pdfioFileCreateFontObjFromFile(
 
 
 //
-// 'pdfioFileCreateICCObjFromFile()' - Add an ICC profile object to a PDF file.
+// 'pdfioFileCreateICCObjFromData()' - Add ICC profile data to a PDF file.
+//
+
+pdfio_obj_t *				// O - Object
+pdfioFileCreateICCObjFromData(
+    pdfio_file_t        *pdf,		// I - PDF file
+    const unsigned char *data,		// I - ICC profile buffer
+    size_t              datalen,	// I - Length of ICC profile
+    size_t              num_colors)	// I - Number of color components (1, 3, or 4)
+{
+  pdfio_dict_t	*dict;			// ICC profile dictionary
+  pdfio_obj_t	*obj;			// ICC profile object
+  pdfio_stream_t *st;			// ICC profile stream
+
+
+  // Range check input...
+  if (!pdf)
+    return (NULL);
+
+  if (!data || !datalen)
+  {
+    _pdfioFileError(pdf, "No ICC profile data specified.");
+    return (NULL);
+  }
+
+  if (num_colors != 1 && num_colors != 3 && num_colors != 4)
+  {
+    _pdfioFileError(pdf, "Unsupported number of colors (%lu) for ICC profile.", (unsigned long)num_colors);
+    return (NULL);
+  }
+
+  // Create the ICC profile object...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+    return (NULL);
+
+  pdfioDictSetNumber(dict, "N", num_colors);
+  pdfioDictSetName(dict, "Filter", "FlateDecode");
+
+  if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+    return (NULL);
+
+  if ((st = pdfioObjCreateStream(obj, PDFIO_FILTER_FLATE)) == NULL)
+    return (NULL);
+
+  if (!pdfioStreamWrite(st, data, datalen))
+    obj = NULL;
+
+  pdfioStreamClose(st);
+
+  return (obj);
+}
+
+
+//
+// 'pdfioFileCreateICCObjFromFile()' - Add an ICC profile file to a PDF file.
 //
 
 pdfio_obj_t *				// O - Object
@@ -2350,99 +2428,168 @@ static pdfio_obj_t *			// O - Object or `NULL` on error
 copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
           int          fd)		// I - File descriptor
 {
-  pdfio_obj_t	*obj;			// Object
+  pdfio_obj_t	*obj = NULL;		// Object
   pdfio_stream_t *st;			// Stream for JPEG data
   ssize_t	bytes;			// Bytes read
   unsigned char	buffer[16384],		// Read buffer
 		*bufptr,		// Pointer into buffer
 		*bufend;		// End of buffer
+  int		marker;			// JFIF marker byte
   size_t	length;			// Length of chunk
   unsigned	width = 0,		// Width in columns
 		height = 0,		// Height in lines
 		num_colors = 0;		// Number of colors
+  unsigned char	*icc_data = NULL;	// ICC profile data, if any
+  size_t	icc_datalen = 0;	// Length of ICC profile data
+  pdfio_obj_t	*icc_obj;		// ICC profile object
 
 
-  // Scan the file for a SOFn marker, then we can get the dimensions...
+  // Scan the file for APPn and SOFn markers to get the dimensions and color profile...
   bytes = read(fd, buffer, sizeof(buffer));
 
   for (bufptr = buffer + 2, bufend = buffer + bytes; bufptr < bufend;)
   {
-    if (*bufptr == 0xff)
+    if ((bufptr + 16) >= bufend)
     {
+      // Read more of the file...
+      if ((bytes = bufend - bufptr) > 0)
+	memmove(buffer, bufptr, (size_t)bytes);
+
+      bufptr = buffer;
+      bufend = buffer + bytes;
+
+      if ((bytes = read(fd, bufend, sizeof(buffer) - (size_t)bytes)) <= 0)
+      {
+	_pdfioFileError(dict->pdf, "Unable to read JPEG data - %s", strerror(errno));
+	goto finish;
+      }
+
+      bufend += bytes;
+    }
+
+    if (*bufptr == _PDFIO_JPEG_MARKER)
+    {
+      // Start of a marker in the file...
       bufptr ++;
 
-      if (bufptr >= bufend)
-      {
-       /*
-	* If we are at the end of the current buffer, re-fill and continue...
-	*/
-
-	if ((bytes = read(fd, buffer, sizeof(buffer))) <= 0)
-	  break;
-
-	bufptr = buffer;
-	bufend = buffer + bytes;
-      }
-
-      if (*bufptr == 0xff)
-	continue;
-
-      if ((bufptr + 16) >= bufend)
-      {
-       /*
-	* Read more of the marker...
-	*/
-
-	bytes = bufend - bufptr;
-
-	memmove(buffer, bufptr, (size_t)bytes);
-	bufptr = buffer;
-	bufend = buffer + bytes;
-
-	if ((bytes = read(fd, bufend, sizeof(buffer) - (size_t)bytes)) <= 0)
-	  break;
-
-	bufend += bytes;
-      }
-
+      marker = *bufptr;
       length = (size_t)((bufptr[1] << 8) | bufptr[2]);
+      bufptr += 3;
 
-      PDFIO_DEBUG("copy_jpeg: JPEG X'FF%02X' (length %u)\n", *bufptr, (unsigned)length);
+      if (marker == _PDFIO_JPEG_MARKER)
+	continue;
+      else if (marker == _PDFIO_JPEG_EOI || marker == _PDFIO_JPEG_SOS || length < 2)
+        break;
 
-      if ((*bufptr >= 0xc0 && *bufptr <= 0xc3) || (*bufptr >= 0xc5 && *bufptr <= 0xc7) || (*bufptr >= 0xc9 && *bufptr <= 0xcb) || (*bufptr >= 0xcd && *bufptr <= 0xcf))
+      PDFIO_DEBUG("copy_jpeg: JPEG X'FF%02X' (length %u)\n", marker, (unsigned)length);
+
+      length -= 2;
+
+      if ((marker >= _PDFIO_JPEG_SOF0 && marker <= _PDFIO_JPEG_SOF3) || (marker >= _PDFIO_JPEG_SOF5 && marker <= _PDFIO_JPEG_SOF7) || (marker >= _PDFIO_JPEG_SOF9 && marker <= _PDFIO_JPEG_SOF11) || (marker >= _PDFIO_JPEG_SOF13 && marker <= _PDFIO_JPEG_SOF15))
       {
         // SOFn marker, look for dimensions...
-        if (bufptr[3] != 8)
+        //
+        // Byte(s)  Description
+        // -------  -------------------
+        // 0        Bits per component
+        // 1-2      Height
+        // 3-4      Width
+        // 5        Number of colors
+        if (bufptr[0] != 8)
         {
-          _pdfioFileError(dict->pdf, "Unable to load %d-bit JPEG image.", bufptr[3]);
-          return (NULL);
+          _pdfioFileError(dict->pdf, "Unable to load %d-bit JPEG image.", bufptr[0]);
+	  goto finish;
         }
 
-	width      = (unsigned)((bufptr[6] << 8) | bufptr[7]);
-	height     = (unsigned)((bufptr[4] << 8) | bufptr[5]);
-	num_colors = bufptr[8];
-	break;
+	width      = (unsigned)((bufptr[3] << 8) | bufptr[4]);
+	height     = (unsigned)((bufptr[1] << 8) | bufptr[2]);
+	num_colors = bufptr[5];
+      }
+      else if (marker == _PDFIO_JPEG_APP2 && length > 14 && memcmp(bufptr, "ICC_PROFILE", 12))
+      {
+        // Portion of ICC profile
+        int	n = bufptr[12],		// Chunk number in profile (1-based)
+		count = bufptr[13];	// Number of chunks
+        unsigned char *icc_temp;	// New ICC buffer
+
+        // Discard "ICC_PROFILE\0" and chunk number/count...
+        bufptr += 14;
+        length -= 14;
+
+        // Expand our ICC buffer...
+        if ((icc_temp = realloc(icc_data, icc_datalen + length)) == NULL)
+          return (NULL);
+        else
+          icc_data = icc_temp;
+
+        // Read the chunk into the ICC buffer...
+        do
+        {
+	  if (bufptr >= bufend)
+	  {
+	    // Read more of the marker...
+	    if ((bytes = read(fd, buffer, sizeof(buffer))) <= 0)
+	    {
+	      _pdfioFileError(dict->pdf, "Unable to read JPEG data - %s", strerror(errno));
+	      goto finish;
+	    }
+
+            bufptr = buffer;
+	    bufend = buffer + bytes;
+	  }
+
+          // Copy from the file buffer to the ICC buffer
+          if ((bytes = bufend - bufptr) > length)
+	    bytes = (ssize_t)length;
+
+	  memcpy(icc_data + icc_datalen, bufptr, bytes);
+	  icc_datalen += (size_t)bytes;
+	  bufptr      += bytes;
+	  length      -= (size_t)bytes;
+	}
+	while (length > 0);
+
+        if (n == count && width > 0 && height > 0 && num_colors > 0)
+        {
+          // Have everything we need...
+          break;
+        }
+        else
+        {
+          // Continue reading...
+          continue;
+        }
       }
 
       // Skip past this marker...
-      bufptr ++;
-      bytes = bufend - bufptr;
-
-      while (length >= (size_t)bytes)
+      while (length > 0)
       {
-	length -= (size_t)bytes;
+        bytes = bufend - bufptr;
 
-	if ((bytes = read(fd, buffer, sizeof(buffer))) <= 0)
-	  break;
+        if (length > bytes)
+        {
+          // Consume everything we have and grab more...
+          length -= (size_t)bytes;
 
-	bufptr = buffer;
-	bufend = buffer + bytes;
+	  if ((bytes = read(fd, buffer, sizeof(buffer))) <= 0)
+	  {
+	    _pdfioFileError(dict->pdf, "Unable to read JPEG data - %s", strerror(errno));
+	    goto finish;
+	  }
+
+	  bufptr = buffer;
+	  bufend = buffer + bytes;
+	}
+	else
+	{
+	  // Enough at the end of the buffer...
+	  bufptr += length;
+	  length = 0;
+	}
       }
 
-      if (length > (size_t)bytes)
+      if (length > 0)
 	break;
-
-      bufptr += length;
     }
   }
 
@@ -2453,8 +2600,17 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
   pdfioDictSetNumber(dict, "Width", width);
   pdfioDictSetNumber(dict, "Height", height);
   pdfioDictSetNumber(dict, "BitsPerComponent", 8);
-  pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, num_colors, PDFIO_CS_SRGB));
   pdfioDictSetName(dict, "Filter", "DCTDecode");
+  if (icc_datalen > 0)
+  {
+    icc_obj = pdfioFileCreateICCObjFromData(dict->pdf, icc_data, icc_datalen, num_colors);
+    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromICCObj(dict->pdf, icc_obj));
+  }
+  else //if (pdfioDictGetArray(dict, "ColorSpace") == NULL)
+  {
+    // The default JPEG color space is sRGB...
+    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, num_colors, PDFIO_CS_SRGB));
+  }
 
   obj = pdfioFileCreateObj(dict->pdf, dict);
   st  = pdfioObjCreateStream(obj, PDFIO_FILTER_NONE);
@@ -2465,11 +2621,18 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
   while ((bytes = read(fd, buffer, sizeof(buffer))) > 0)
   {
     if (!pdfioStreamWrite(st, buffer, (size_t)bytes))
-      return (NULL);
+    {
+      obj = NULL;
+      break;
+    }
   }
 
   if (!pdfioStreamClose(st))
-    return (NULL);
+    obj = NULL;
+
+  finish:
+
+  free(icc_data);
 
   return (obj);
 }
