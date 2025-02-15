@@ -21,6 +21,7 @@ if test $# != 1; then
     exit 1
 fi
 
+status=0
 version=$1
 version_major=$(echo $1 | awk -F. '{print $1}')
 version_minor=$(echo $1 | awk -F. '{print $2}')
@@ -28,43 +29,52 @@ version_minor=$(echo $1 | awk -F. '{print $2}')
 # Check that version number has been updated everywhere...
 if test $(grep AC_INIT configure.ac | awk '{print $2}') != "[$version],"; then
     echo "Still need to update AC_INIT version in 'configure.ac'."
-    exit 1
+    status=1
 fi
 
 if test $(head -4 CHANGES.md | tail -1 | awk '{print $1}') != "v$version"; then
     echo "Still need to update CHANGES.md version number."
-    exit 1
+    status=1
 fi
 if test $(head -4 CHANGES.md | tail -1 | awk '{print $3}') = "YYYY-MM-DD"; then
     echo "Still need to update CHANGES.md release date."
-    exit 1
+    status=1
 fi
 
 if test $(grep PDFIO_VERSION= configure | awk -F \" '{print $2}') != "$version"; then
     echo "Still need to run 'autoconf -f'."
-    exit 1
+    status=1
 fi
 
 if test $(grep '<version>' pdfio_native.nuspec | sed -E -e '1,$s/^.*<version>([0-9.]+).*$/\1/') != "$version"; then
     echo "Still need to update version in 'pdfio_native.nuspec'."
-    exit 1
+    status=1
 fi
 
 if test $(grep '<version>' pdfio_native.redist.nuspec | sed -E -e '1,$s/^.*<version>([0-9.]+).*$/\1/') != "$version"; then
     echo "Still need to update version in 'pdfio_native.redist.nuspec'."
-    exit 1
+    status=1
 fi
 
 if test $(grep PDFIO_VERSION pdfio.h | awk -F \" '{print $2}') != "$version"; then
     echo "Still need to update PDFIO_VERSION in 'pdfio.h'."
-    exit 1
+    status=1
 fi
-if test $(grep PDFIO_VERSION_MAJOR pdfio.h | awk '{print $3}') != "$version_major"; then
+if test $(grep PDFIO_VERSION_MAJOR pdfio.h | awk '{print $4}') != "$version_major"; then
     echo "Still need to update PDFIO_VERSION_MAJOR in 'pdfio.h'."
-    exit 1
+    status=1
 fi
-if test $(grep PDFIO_VERSION_MINOR pdfio.h | awk '{print $3}') != "$version_minor"; then
+if test $(grep PDFIO_VERSION_MINOR pdfio.h | awk '{print $4}') != "$version_minor"; then
     echo "Still need to update PDFIO_VERSION_MINOR in 'pdfio.h'."
+    status=1
+fi
+
+if test $(grep VERSION pdfio1.def | awk '{print $2}') != "$version_major.$version_minor"; then
+    echo "Still need to update VERSION in 'pdfio1.def'."
+    status=1
+fi
+
+if test $status = 1; then
     exit 1
 fi
 
