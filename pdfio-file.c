@@ -25,6 +25,7 @@ static struct lconv	*get_lconv(void);
 static bool		load_obj_stream(pdfio_obj_t *obj);
 static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj, size_t depth);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset, pdfio_password_cb_t password_cb, void *password_data);
+static bool		repair_xref(pdfio_file_t *pdf, pdfio_password_cb_t password_cb, void *password_data);
 static bool		write_pages(pdfio_file_t *pdf);
 static bool		write_trailer(pdfio_file_t *pdf);
 
@@ -1070,7 +1071,10 @@ pdfioFileOpen(
   xref_offset = (off_t)strtol(ptr + 9, NULL, 10);
 
   if (!load_xref(pdf, xref_offset, password_cb, password_cbdata))
-    goto error;
+  {
+    if (!repair_xref(pdf, password_cb, password_cbdata))
+      goto error;
+  }
 
   return (pdf);
 
@@ -2161,6 +2165,159 @@ load_xref(
 
   PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
 
+  return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages"), 0));
+}
+
+
+//
+// 'repair_xref()' - Try to "repair" a PDF file and its cross-references...
+//
+
+static bool				// O - `true` on success, `false` on failure
+repair_xref(
+    pdfio_file_t        *pdf,		// I - PDF file
+    pdfio_password_cb_t password_cb,	// I - Password callback or `NULL` for none
+    void                *password_data)	// I - Password callback data, if any
+{
+  char		line[16384],		// Line from file
+		*ptr;			// Pointer into line
+  off_t		line_offset;		// Offset in file
+  intmax_t	number;			// Object number
+  int		generation;		// Generation number
+  size_t	i;			// Looping var
+  size_t	num_sobjs = 0;		// Number of object streams
+  pdfio_obj_t	*sobjs[16384];		// Object streams to load
+
+
+  // Read from the beginning of the file, looking for
+  if ((line_offset = _pdfioFileSeek(pdf, 0, SEEK_SET)) < 0)
+    return (false);
+
+  while (_pdfioFileGets(pdf, line, sizeof(line)))
+  {
+    // See if this is the start of an object...
+    if (line[0] >= '1' && line[0] <= '9')
+    {
+      // Maybe, look some more...
+      if ((number = strtoimax(line, &ptr, 10)) >= 1 && (generation = (int)strtol(ptr, &ptr, 10)) >= 0 && generation < 65536)
+      {
+        while (isspace(*ptr & 255))
+	  ptr ++;
+
+	if (!strncmp(ptr, "obj", 3))
+	{
+	  // Yes, start of an object...
+	  pdfio_obj_t	*obj;		// Object
+	  _pdfio_token_t tb;		// Token buffer/stack
+
+          PDFIO_DEBUG("OBJECT %ld %d at offset %ld\n", (long)number, generation, (long)line_offset);
+
+	  if ((obj = add_obj(pdf, (size_t)number, (unsigned short)generation, line_offset)) == NULL)
+	  {
+	    _pdfioFileError(pdf, "Unable to allocate memory for object.");
+	    return (false);
+	  }
+
+	  _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
+
+	  if (!_pdfioValueRead(pdf, obj, &tb, &obj->value, 0))
+	  {
+	    _pdfioFileError(pdf, "Unable to read cross-reference stream dictionary.");
+	    return (false);
+	  }
+
+	  if (_pdfioTokenGet(&tb, line, sizeof(line)) && strcmp(line, "stream"))
+	  {
+	    const char *type = pdfioObjGetType(obj);
+					// Object type
+
+	    _pdfioTokenFlush(&tb);
+	    obj->stream_offset = _pdfioFileTell(pdf);
+
+	    if (type && !strcmp(type, "ObjStm") && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
+	    {
+	      sobjs[num_sobjs] = obj;
+	      num_sobjs ++;
+	    }
+
+            if (type && !strcmp(type, "XRef") && !pdf->trailer_dict)
+            {
+              // Save the trailer dictionary...
+	      pdf->trailer_dict = pdfioObjGetDict(obj);
+	      pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
+	      pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
+            }
+	  }
+	}
+      }
+    }
+    else if (!strncmp(line, "trailer", 7) && (!line[7] || isspace(line[7] & 255) || line[7] == '<'))
+    {
+      // Trailer dictionary
+      _pdfio_token_t tb;		// Token buffer/stack
+      _pdfio_value_t trailer;		// Trailer
+
+      if (line[7])
+      {
+	// Probably the start of the trailer dictionary, rewind the file so
+	// we can read it...
+	_pdfioFileSeek(pdf, line_offset + 7, SEEK_SET);
+      }
+
+      PDFIO_DEBUG("TRAILER at offset %ld\n", (long)line_offset);
+
+      _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
+      if (!_pdfioValueRead(pdf, NULL, &tb, &trailer, 0))
+      {
+	_pdfioFileError(pdf, "Unable to read cross-reference stream dictionary.");
+	return (false);
+      }
+      else if (trailer.type != PDFIO_VALTYPE_DICT)
+      {
+	_pdfioFileError(pdf, "Trailer is not a dictionary.");
+	return (false);
+      }
+
+      _pdfioTokenFlush(&tb);
+
+      if (!pdf->trailer_dict)
+      {
+	// Save the trailer dictionary and grab the root (catalog) and info
+	// objects...
+	pdf->trailer_dict = trailer.value.dict;
+	pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
+	pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
+      }
+    }
+
+    // Get the offset for the next line...
+    line_offset = _pdfioFileTell(pdf);
+  }
+
+  // If the trailer contains an Encrypt key, try unlocking the file...
+  if (pdf->encrypt_obj && !_pdfioCryptoUnlock(pdf, password_cb, password_data))
+    return (false);
+
+  // Load any stream objects...
+  for (i = 0; i < num_sobjs; i ++)
+  {
+    if (!load_obj_stream(sobjs[i]))
+      return (false);
+  }
+
+  // Once we have all of the xref tables loaded, get the important objects and
+  // build the pages array...
+  pdf->info_obj = pdfioDictGetObj(pdf->trailer_dict, "Info");
+
+  if ((pdf->root_obj = pdfioDictGetObj(pdf->trailer_dict, "Root")) == NULL)
+  {
+    _pdfioFileError(pdf, "Missing Root object.");
+    return (false);
+  }
+
+  PDFIO_DEBUG("repair_xref: Root=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
+
+  // Load pages...
   return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages"), 0));
 }
 
