@@ -22,6 +22,8 @@ if test $# != 1; then
 fi
 
 version=$1
+version_major=$(echo $1 | awk -F. '{print $1}')
+version_minor=$(echo $1 | awk -F. '{print $2}')
 
 # Check that version number has been updated everywhere...
 if test $(grep AC_INIT configure.ac | awk '{print $2}') != "[$version],"; then
@@ -55,6 +57,14 @@ fi
 
 if test $(grep PDFIO_VERSION pdfio.h | awk -F \" '{print $2}') != "$version"; then
     echo "Still need to update PDFIO_VERSION in 'pdfio.h'."
+    exit 1
+fi
+if test $(grep PDFIO_VERSION_MAJOR pdfio.h | awk '{print $3}') != "$version_major"; then
+    echo "Still need to update PDFIO_VERSION_MAJOR in 'pdfio.h'."
+    exit 1
+fi
+if test $(grep PDFIO_VERSION_MINOR pdfio.h | awk '{print $3}') != "$version_minor"; then
+    echo "Still need to update PDFIO_VERSION_MINOR in 'pdfio.h'."
     exit 1
 fi
 

@@ -20,10 +20,12 @@ extern "C" {
 
 
 //
-// Version number...
+// Version numbers...
 //
 
-#  define PDFIO_VERSION		"1.4.1"
+#  define PDFIO_VERSION		"1.5.0"
+#  define PDFIO_VERSION_MAJOR	1
+#  define PDFIO_VERSION_MINOR	5
 
 
 //
