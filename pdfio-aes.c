@@ -1,7 +1,7 @@
 //
 // AES functions for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -76,18 +76,18 @@ static const uint8_t Rcon[11] =		// Round constants
 // Local functions...
 //
 
-static void	AddRoundKey(size_t round, state_t *state, const uint8_t *RoundKey);
-static void	SubBytes(state_t *state);
-static void	ShiftRows(state_t *state);
+static void	add_round_key(size_t round, state_t *state, const uint8_t *round_key);
+static void	sub_bytes(state_t *state);
+static void	shift_rows(state_t *state);
 static uint8_t	xtime(uint8_t x);
-static void	MixColumns(state_t *state);
-static uint8_t	Multiply(uint8_t x, uint8_t y);
-static void	InvMixColumns(state_t *state);
-static void	InvSubBytes(state_t *state);
-static void	InvShiftRows(state_t *state);
-static void	Cipher(state_t *state, const _pdfio_aes_t *ctx);
-static void	InvCipher(state_t *state, const _pdfio_aes_t *ctx);
-static void	XorWithIv(uint8_t *buf, const uint8_t *Iv);
+static void	mix_columns(state_t *state);
+static uint8_t	multiply(uint8_t x, uint8_t y);
+static void	inv_mix_columns(state_t *state);
+static void	inv_sub_bytes(state_t *state);
+static void	inv_shift_rows(state_t *state);
+static void	cipher(state_t *state, const _pdfio_aes_t *ctx);
+static void	inv_cipher(state_t *state, const _pdfio_aes_t *ctx);
+static void	xor_with_iv(uint8_t *buf, const uint8_t *Iv);
 
 
 //
@@ -106,7 +106,6 @@ _pdfioCryptoAESInit(
 		*rkptr,			// Current round_key values
 		*rkend,			// End of round_key values
 		tempa[4];		// Used for the column/row operations
-//  size_t	roundlen = keylen + 24;	// Length of round_key
   size_t	nwords = keylen / 4;	// Number of 32-bit words in key
 
 
@@ -188,8 +187,8 @@ _pdfioCryptoAESDecrypt(
   while (len > 15)
   {
     memcpy(next_iv, outbuffer, 16);
-    InvCipher((state_t *)outbuffer, ctx);
-    XorWithIv(outbuffer, ctx->iv);
+    inv_cipher((state_t *)outbuffer, ctx);
+    xor_with_iv(outbuffer, ctx->iv);
     memcpy(ctx->iv, next_iv, 16);
     outbuffer += 16;
     len -= 16;
@@ -231,8 +230,8 @@ _pdfioCryptoAESEncrypt(
 
   while (len > 15)
   {
-    XorWithIv(outbuffer, iv);
-    Cipher((state_t*)outbuffer, ctx);
+    xor_with_iv(outbuffer, iv);
+    cipher((state_t*)outbuffer, ctx);
     iv = outbuffer;
     outbuffer += 16;
     len -= 16;
@@ -244,8 +243,8 @@ _pdfioCryptoAESEncrypt(
     // Pad the final buffer with (16 - len)...
     memset(outbuffer + len, 16 - len, 16 - len);
 
-    XorWithIv(outbuffer, iv);
-    Cipher((state_t*)outbuffer, ctx);
+    xor_with_iv(outbuffer, iv);
+    cipher((state_t*)outbuffer, ctx);
     iv = outbuffer;
     outbytes += 16;
   }
@@ -257,24 +256,32 @@ _pdfioCryptoAESEncrypt(
 }
 
 
-// This function adds the round key to state.
+//
+// 'add_round_key()' - Add the round key to state.
+//
 // The round key is added to the state by an XOR function.
+//
+
 static void
-AddRoundKey(size_t round, state_t *state, const uint8_t *RoundKey)
+add_round_key(size_t        round,	// I - Which round
+              state_t       *state,	// I - Current state
+              const uint8_t *round_key)	// I - Key
 {
   unsigned	i;			// Looping var
   uint8_t	*sptr = (*state)[0];	// Pointer into state
 
 
-  for (RoundKey += round * 16, i = 16; i > 0; i --, sptr ++, RoundKey ++)
-    *sptr ^= *RoundKey;
+  for (round_key += round * 16, i = 16; i > 0; i --, sptr ++, round_key ++)
+    *sptr ^= *round_key;
 }
 
 
-// The SubBytes Function Substitutes the values in the
-// state matrix with values in an S-box.
+//
+// 'sub_bytes()' - Substitute the values in the state matrix with values in an S-box.
+//
+
 static void
-SubBytes(state_t *state)
+sub_bytes(state_t *state)		// I - Current state
 {
   unsigned	i;			// Looping var
   uint8_t	*sptr = (*state)[0];	// Pointer into state
@@ -284,11 +291,16 @@ SubBytes(state_t *state)
     *sptr = sbox[*sptr];
 }
 
-// The ShiftRows() function shifts the rows in the state to the left.
+
+//
+// 'shift_rows()' - Shift the rows in the state to the left.
+//
 // Each row is shifted with different offset.
 // Offset = Row number. So the first row is not shifted.
+//
+
 static void
-ShiftRows(state_t *state)
+shift_rows(state_t *state)		// I - Current state
 {
   uint8_t	*sptr = (*state)[0];	// Pointer into state
   uint8_t	temp;			// Temporary value
@@ -319,20 +331,28 @@ ShiftRows(state_t *state)
 }
 
 
-static uint8_t
-xtime(uint8_t x)
+//
+// 'xtime()' - Compute the AES xtime function.
+//
+
+static uint8_t				// O - xtime(x)
+xtime(uint8_t x)			// I - Column value
 {
   return ((uint8_t)((x << 1) ^ ((x >> 7) * 0x1b)));
 }
 
 
-// MixColumns function mixes the columns of the state matrix
+//
+// 'mix_columns()' - Mix the columns of the state matrix.
+//
+
 static void
-MixColumns(state_t *state)
+mix_columns(state_t *state)		// I - Current state
 {
   unsigned	i;			// Looping var
   uint8_t	*sptr = (*state)[0];	// Pointer into state
   uint8_t	Tmp, Tm, t;		// Temporary values
+
 
   for (i = 4; i > 0; i --, sptr += 4)
   {
@@ -357,11 +377,15 @@ MixColumns(state_t *state)
 }
 
 
-// Multiply is used to multiply numbers in the field GF(2^8)
+//
+// 'multiply()' - Multiply numbers in the field GF(2^8)
+//
 // Note: The last call to xtime() is unneeded, but often ends up generating a smaller binary
 //       The compiler seems to be able to vectorize the operation better this way.
 //       See https://github.com/kokke/tiny-AES-c/pull/34
-static uint8_t Multiply(uint8_t x, uint8_t y)
+//
+
+static uint8_t multiply(uint8_t x, uint8_t y)
 {
   return (((y & 1) * x) ^
 	  ((y>>1 & 1) * xtime(x)) ^
@@ -371,11 +395,15 @@ static uint8_t Multiply(uint8_t x, uint8_t y)
 }
 
 
-// MixColumns function mixes the columns of the state matrix.
+//
+// 'mix_columns()' - Mix the columns of the state matrix.
+//
 // The method used to multiply may be difficult to understand for the inexperienced.
 // Please use the references to gain more information.
+//
+
 static void
-InvMixColumns(state_t *state)
+inv_mix_columns(state_t *state)		// I - Current state
 {
   unsigned	i;			// Looping var
   uint8_t	*sptr = (*state)[0];	// Pointer into state
@@ -389,18 +417,20 @@ InvMixColumns(state_t *state)
     c = sptr[2];
     d = sptr[3];
 
-    *sptr++ = Multiply(a, 0x0e) ^ Multiply(b, 0x0b) ^ Multiply(c, 0x0d) ^ Multiply(d, 0x09);
-    *sptr++ = Multiply(a, 0x09) ^ Multiply(b, 0x0e) ^ Multiply(c, 0x0b) ^ Multiply(d, 0x0d);
-    *sptr++ = Multiply(a, 0x0d) ^ Multiply(b, 0x09) ^ Multiply(c, 0x0e) ^ Multiply(d, 0x0b);
-    *sptr++ = Multiply(a, 0x0b) ^ Multiply(b, 0x0d) ^ Multiply(c, 0x09) ^ Multiply(d, 0x0e);
+    *sptr++ = multiply(a, 0x0e) ^ multiply(b, 0x0b) ^ multiply(c, 0x0d) ^ multiply(d, 0x09);
+    *sptr++ = multiply(a, 0x09) ^ multiply(b, 0x0e) ^ multiply(c, 0x0b) ^ multiply(d, 0x0d);
+    *sptr++ = multiply(a, 0x0d) ^ multiply(b, 0x09) ^ multiply(c, 0x0e) ^ multiply(d, 0x0b);
+    *sptr++ = multiply(a, 0x0b) ^ multiply(b, 0x0d) ^ multiply(c, 0x09) ^ multiply(d, 0x0e);
   }
 }
 
 
-// The SubBytes Function Substitutes the values in the
-// state matrix with values in an S-box.
+//
+// 'sub_bytes()' - Substitute the values in the state matrix with values in an S-box.
+//
+
 static void
-InvSubBytes(state_t *state)
+inv_sub_bytes(state_t *state)		// I - Current state
 {
   unsigned	i;			// Looping var
   uint8_t	*sptr = (*state)[0];	// Pointer into state
@@ -411,8 +441,12 @@ InvSubBytes(state_t *state)
 }
 
 
+//
+// 'inv_shift_rows()' - Shift the rows in the state to the right.
+//
+
 static void
-InvShiftRows(state_t *state)
+inv_shift_rows(state_t *state)		// I - Current state
 {
   uint8_t	*sptr = (*state)[0];	// Pointer into state
   uint8_t	temp;			// Temporary value
@@ -443,40 +477,52 @@ InvShiftRows(state_t *state)
 }
 
 
-// Cipher is the main function that encrypts the PlainText.
+//
+// 'cipher()' - Encrypt the PlainText.
+//
+
 static void
-Cipher(state_t *state, const _pdfio_aes_t *ctx)
+cipher(state_t            *state,	// I - Current state
+       const _pdfio_aes_t *ctx)		// I - AES context
 {
-  size_t round = 0;
+  size_t round = 0;			// Current round
+
 
   // Add the First round key to the state before starting the rounds.
-  AddRoundKey(0, state, ctx->round_key);
+  add_round_key(0, state, ctx->round_key);
 
   // There will be Nr rounds.
   // The first Nr-1 rounds are identical.
   // These Nr rounds are executed in the loop below.
-  // Last one without MixColumns()
+  // Last one without mix_columns()
   for (round = 1; round < ctx->round_size; round ++)
   {
-    SubBytes(state);
-    ShiftRows(state);
-    MixColumns(state);
-    AddRoundKey(round, state, ctx->round_key);
+    sub_bytes(state);
+    shift_rows(state);
+    mix_columns(state);
+    add_round_key(round, state, ctx->round_key);
   }
+
   // Add round key to last round
-  SubBytes(state);
-  ShiftRows(state);
-  AddRoundKey(ctx->round_size, state, ctx->round_key);
+  sub_bytes(state);
+  shift_rows(state);
+  add_round_key(ctx->round_size, state, ctx->round_key);
 }
 
 
+//
+// 'inv_cipher()' - Decrypt the CipherText.
+//
+
 static void
-InvCipher(state_t *state, const _pdfio_aes_t *ctx)
+inv_cipher(state_t            *state,	// I - Current state
+           const _pdfio_aes_t *ctx)	// I - AES context
 {
-  size_t round;
+  size_t round;				// Current round
+
 
   // Add the First round key to the state before starting the rounds.
-  AddRoundKey(ctx->round_size, state, ctx->round_key);
+  add_round_key(ctx->round_size, state, ctx->round_key);
 
   // There will be Nr rounds.
   // The first Nr-1 rounds are identical.
@@ -484,20 +530,25 @@ InvCipher(state_t *state, const _pdfio_aes_t *ctx)
   // Last one without InvMixColumn()
   for (round = ctx->round_size - 1; ; round --)
   {
-    InvShiftRows(state);
-    InvSubBytes(state);
-    AddRoundKey(round, state, ctx->round_key);
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(round, state, ctx->round_key);
 
     if (round == 0)
       break;
 
-    InvMixColumns(state);
+    inv_mix_columns(state);
   }
 }
 
 
+//
+// 'xor_with_iv()' - XOR a block with the initialization vector.
+//
+
 static void
-XorWithIv(uint8_t *buf, const uint8_t *Iv)
+xor_with_iv(uint8_t       *buf,		// I - Block
+            const uint8_t *Iv)		// I - Initialization vector
 {
   // 16-byte block...
   *buf++ ^= *Iv++;
