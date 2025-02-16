@@ -2420,13 +2420,14 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     pdfioDictSetNumber(xref_dict, "Size", pdf->num_objs + 2);
     pdfioDictSetArray(xref_dict, "W", w_array);
     pdfioDictSetName(xref_dict, "Filter", "FlateDecode");
+    pdfioDictSetObj(xref_dict, "Info", pdf->info_obj);
+    pdfioDictSetObj(xref_dict, "Root", pdf->root_obj);
 
     if (pdf->encrypt_obj)
       pdfioDictSetObj(xref_dict, "Encrypt", pdf->encrypt_obj);
+
     if (pdf->id_array)
       pdfioDictSetArray(xref_dict, "ID", pdf->id_array);
-    pdfioDictSetObj(xref_dict, "Info", pdf->info_obj);
-    pdfioDictSetObj(xref_dict, "Root", pdf->root_obj);
 
     if ((xref_obj = pdfioFileCreateObj(pdf, xref_dict)) == NULL)
     {
