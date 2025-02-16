@@ -313,8 +313,9 @@ struct _pdfio_stream_s			// Stream
   z_stream	flate;			// Flate filter state
   _pdfio_predictor_t predictor;		// Predictor function, if any
   size_t	pbpixel,		// Size of a pixel in bytes
-		pbsize;			// Predictor buffer size, if any
-  unsigned char	cbuffer[4096],		// Compressed data buffer
+		pbsize,			// Predictor buffer size, if any
+		cbsize;			// Compressed data buffer size
+  unsigned char	*cbuffer,		// Compressed data buffer
 		*prbuffer,		// Raw buffer (previous line), as needed
 		*psbuffer;		// PNG filter buffer, as needed
   _pdfio_crypto_cb_t crypto_cb;		// Encryption/descryption callback, if any
@@ -384,7 +385,7 @@ extern void		*_pdfioObjGetExtension(pdfio_obj_t *obj) _PDFIO_INTERNAL;
 extern bool		_pdfioObjLoad(pdfio_obj_t *obj) _PDFIO_INTERNAL;
 extern void		_pdfioObjSetExtension(pdfio_obj_t *obj, void *data, _pdfio_extfree_t datafree) _PDFIO_INTERNAL;
 
-extern pdfio_stream_t	*_pdfioStreamCreate(pdfio_obj_t *obj, pdfio_obj_t *length_obj, pdfio_filter_t compression) _PDFIO_INTERNAL;
+extern pdfio_stream_t	*_pdfioStreamCreate(pdfio_obj_t *obj, pdfio_obj_t *length_obj, size_t cbsize, pdfio_filter_t compression) _PDFIO_INTERNAL;
 extern pdfio_stream_t	*_pdfioStreamOpen(pdfio_obj_t *obj, bool decode) _PDFIO_INTERNAL;
 
 extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) _PDFIO_INTERNAL;

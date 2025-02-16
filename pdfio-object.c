@@ -205,7 +205,7 @@ pdfioObjCreateStream(
   obj->pdf->current_obj = obj;
 
   // Return the new stream...
-  return (_pdfioStreamCreate(obj, length_obj, filter));
+  return (_pdfioStreamCreate(obj, length_obj, 0, filter));
 }
 
 

@@ -50,7 +50,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 
       while ((status = deflate(&st->flate, Z_FINISH)) != Z_STREAM_END)
       {
-        size_t	bytes = sizeof(st->cbuffer) - st->flate.avail_out,
+        size_t	bytes = st->cbsize - st->flate.avail_out,
 					// Bytes to write
 		outbytes;		// Actual bytes written
 
@@ -89,13 +89,13 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
         }
 
 	st->flate.next_out  = (Bytef *)st->cbuffer + bytes;
-	st->flate.avail_out = (uInt)(sizeof(st->cbuffer) - bytes);
+	st->flate.avail_out = (uInt)(st->cbsize - bytes);
       }
 
-      if (st->flate.avail_out < (uInt)sizeof(st->cbuffer))
+      if (st->flate.avail_out < (uInt)st->cbsize)
       {
         // Write any residuals...
-        size_t bytes = sizeof(st->cbuffer) - st->flate.avail_out;
+        size_t bytes = st->cbsize - st->flate.avail_out;
 					// Bytes to write
 
 	if (st->crypto_cb)
@@ -172,6 +172,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 
   st->pdf->current_obj = NULL;
 
+  free(st->cbuffer);
   free(st->prbuffer);
   free(st->psbuffer);
   free(st);
@@ -190,6 +191,7 @@ pdfio_stream_t *			// O - Stream or `NULL` on error
 _pdfioStreamCreate(
     pdfio_obj_t    *obj,		// I - Object
     pdfio_obj_t    *length_obj,		// I - Length object, if any
+    size_t         cbsize,		// I - Size of compression buffer
     pdfio_filter_t compression)		// I - Compression to apply
 {
   pdfio_stream_t	*st;		// Stream
@@ -302,8 +304,21 @@ _pdfioStreamCreate(
     else
       st->predictor = _PDFIO_PREDICTOR_NONE;
 
+    if (cbsize == 0)
+      cbsize = 4096;
+
+    st->cbsize = cbsize;
+    if ((st->cbuffer = malloc(cbsize)) == NULL)
+    {
+      _pdfioFileError(st->pdf, "Unable to allocate %lu bytes for Flate output buffer: %s", (unsigned long)cbsize, strerror(errno));
+      free(st->prbuffer);
+      free(st->psbuffer);
+      free(st);
+      return (NULL);
+    }
+
     st->flate.next_out  = (Bytef *)st->cbuffer;
-    st->flate.avail_out = (uInt)sizeof(st->cbuffer);
+    st->flate.avail_out = (uInt)cbsize;
 
     if ((status = deflateInit(&(st->flate), 9)) != Z_OK)
     {
@@ -567,11 +582,21 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       else
         st->predictor = _PDFIO_PREDICTOR_NONE;
 
+      st->cbsize = 4096;
+      if ((st->cbuffer = malloc(st->cbsize)) == NULL)
+      {
+	_pdfioFileError(st->pdf, "Unable to allocate %lu bytes for Flate compression buffer.", (unsigned long)st->cbsize);
+	free(st->prbuffer);
+	free(st->psbuffer);
+	free(st);
+	return (NULL);
+      }
+
       PDFIO_DEBUG("_pdfioStreamOpen: pos=%ld\n", (long)_pdfioFileTell(st->pdf));
-      if (sizeof(st->cbuffer) > st->remaining)
+      if (st->cbsize > st->remaining)
 	rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->remaining);
       else
-	rbytes = _pdfioFileRead(st->pdf, st->cbuffer, sizeof(st->cbuffer));
+	rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->cbsize);
 
       if (rbytes <= 0)
       {
@@ -1045,10 +1070,10 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       if (st->flate.avail_in == 0)
       {
 	// Read more from the file...
-	if (sizeof(st->cbuffer) > st->remaining)
+	if (st->cbsize > st->remaining)
 	  rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->remaining);
 	else
-	  rbytes = _pdfioFileRead(st->pdf, st->cbuffer, sizeof(st->cbuffer));
+	  rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->cbsize);
 
 	if (rbytes <= 0)
 	  return (-1);			// End of file...
@@ -1101,10 +1126,10 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	if (st->flate.avail_in == 0)
 	{
 	  // Read more from the file...
-	  if (sizeof(st->cbuffer) > st->remaining)
+	  if (st->cbsize > st->remaining)
 	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->remaining);
 	  else
-	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, sizeof(st->cbuffer));
+	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->cbsize);
 
 	  if (rbytes <= 0)
 	    return (-1);		// End of file...
@@ -1171,10 +1196,10 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	if (st->flate.avail_in == 0)
 	{
 	  // Read more from the file...
-	  if (sizeof(st->cbuffer) > st->remaining)
+	  if (st->cbsize > st->remaining)
 	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->remaining);
 	  else
-	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, sizeof(st->cbuffer));
+	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->cbsize);
 
 	  if (rbytes <= 0)
 	    return (-1);		// End of file...
@@ -1278,10 +1303,10 @@ stream_write(pdfio_stream_t *st,	// I - Stream
 
   while (st->flate.avail_in > 0)
   {
-    if (st->flate.avail_out < (sizeof(st->cbuffer) / 8))
+    if (st->flate.avail_out < (st->cbsize / 8))
     {
       // Flush the compression buffer...
-      size_t	cbytes = sizeof(st->cbuffer) - st->flate.avail_out,
+      size_t	cbytes = st->cbsize - st->flate.avail_out,
 		outbytes;
 
       if (st->crypto_cb)
@@ -1310,7 +1335,7 @@ stream_write(pdfio_stream_t *st,	// I - Stream
       }
 
       st->flate.next_out  = (Bytef *)st->cbuffer + cbytes;
-      st->flate.avail_out = (uInt)(sizeof(st->cbuffer) - cbytes);
+      st->flate.avail_out = (uInt)(st->cbsize - cbytes);
     }
 
     // Deflate what we can this time...
