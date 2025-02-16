@@ -2364,8 +2364,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
   // Write the xref table...
   xref_offset = _pdfioFileTell(pdf);
 
-  // TODO: Figure out how to do xref streams with encrypted output
-  if (strcmp(pdf->version, "1.5") >= 0 && !pdf->output_cb && !pdf->encrypt_obj)
+  if (strcmp(pdf->version, "1.5") >= 0 && !pdf->output_cb)
   {
     // Write a cross-reference stream...
     pdfio_dict_t	*xref_dict;	// Object dictionary
@@ -2374,6 +2373,11 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     pdfio_stream_t	*xref_st;	// Stream
     int			offsize;	// Size of object offsets
     unsigned char	buffer[10];	// Buffer entry
+    pdfio_encryption_t	encryption;	// PDF encryption mode
+
+    // Disable encryption while we write the xref stream...
+    encryption      = pdf->encryption;
+    pdf->encryption = PDFIO_ENCRYPTION_NONE;
 
     // Figure out how many bytes are needed for the object numbers
     if (xref_offset < 0xff)
@@ -2514,6 +2518,8 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     }
 
     pdfioStreamClose(xref_st);
+
+    pdf->encryption = encryption;
   }
   else
   {
