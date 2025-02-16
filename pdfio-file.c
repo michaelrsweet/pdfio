@@ -2358,59 +2358,214 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
   bool		ret = true;		// Return value
   off_t		xref_offset;		// Offset to xref table
   size_t	i;			// Looping var
+  pdfio_obj_t	*obj;			// Current object
 
 
   // Write the xref table...
-  // TODO: Look at adding support for xref streams...
   xref_offset = _pdfioFileTell(pdf);
 
-  if (!_pdfioFilePrintf(pdf, "xref\n0 %lu \n0000000000 65535 f \n", (unsigned long)pdf->num_objs + 1))
+  // TODO: Figure out how to do xref streams with encrypted output
+  if (strcmp(pdf->version, "1.5") >= 0 && !pdf->output_cb && !pdf->encrypt_obj)
   {
-    _pdfioFileError(pdf, "Unable to write cross-reference table.");
-    ret = false;
-    goto done;
-  }
+    // Write a cross-reference stream...
+    pdfio_dict_t	*xref_dict;	// Object dictionary
+    pdfio_array_t	*w_array;	// W array
+    pdfio_obj_t		*xref_obj;	// Object
+    pdfio_stream_t	*xref_st;	// Stream
+    int			offsize;	// Size of object offsets
+    unsigned char	buffer[10];	// Buffer entry
 
-  for (i = 0; i < pdf->num_objs; i ++)
-  {
-    pdfio_obj_t	*obj = pdf->objs[i];	// Current object
+    // Figure out how many bytes are needed for the object numbers
+    if (xref_offset < 0xff)
+      offsize = 1;
+    else if (xref_offset < 0xffff)
+      offsize = 2;
+    else if (xref_offset < 0xffffff)
+      offsize = 3;
+    else if (xref_offset < 0xffffffff)
+      offsize = 4;
+    else if (xref_offset < 0xffffffffff)
+      offsize = 5;
+    else if (xref_offset < 0xffffffffffff)
+      offsize = 6;
+    else if (xref_offset < 0xffffffffffffff)
+      offsize = 7;
+    else
+      offsize = 8;
 
-    if (!_pdfioFilePrintf(pdf, "%010lu %05u n \n", (unsigned long)obj->offset, obj->generation))
+    // Create the object...
+    if ((w_array = pdfioArrayCreate(pdf)) == NULL)
     {
       _pdfioFileError(pdf, "Unable to write cross-reference table.");
       ret = false;
       goto done;
     }
+
+    pdfioArrayAppendNumber(w_array, 1);
+    pdfioArrayAppendNumber(w_array, offsize);
+    pdfioArrayAppendNumber(w_array, 1);
+
+    if ((xref_dict = pdfioDictCreate(pdf)) == NULL)
+    {
+      _pdfioFileError(pdf, "Unable to write cross-reference table.");
+      ret = false;
+      goto done;
+    }
+
+    pdfioDictSetName(xref_dict, "Type", "XRef");
+    pdfioDictSetNumber(xref_dict, "Size", pdf->num_objs + 2);
+    pdfioDictSetArray(xref_dict, "W", w_array);
+    pdfioDictSetName(xref_dict, "Filter", "FlateDecode");
+
+    if (pdf->encrypt_obj)
+      pdfioDictSetObj(xref_dict, "Encrypt", pdf->encrypt_obj);
+    if (pdf->id_array)
+      pdfioDictSetArray(xref_dict, "ID", pdf->id_array);
+    pdfioDictSetObj(xref_dict, "Info", pdf->info_obj);
+    pdfioDictSetObj(xref_dict, "Root", pdf->root_obj);
+
+    if ((xref_obj = pdfioFileCreateObj(pdf, xref_dict)) == NULL)
+    {
+      _pdfioFileError(pdf, "Unable to write cross-reference table.");
+      ret = false;
+      goto done;
+    }
+
+    if ((xref_st = pdfioObjCreateStream(xref_obj, PDFIO_FILTER_FLATE)) == NULL)
+    {
+      _pdfioFileError(pdf, "Unable to write cross-reference table.");
+      ret = false;
+      goto done;
+    }
+
+    // Write the "free" 0 object...
+    memset(buffer, 0, sizeof(buffer));
+    pdfioStreamWrite(xref_st, buffer, offsize + 2);
+
+    // Then write the "allocated" objects...
+    buffer[0] = 1;
+
+    for (i = 0; i < pdf->num_objs; i ++)
+    {
+      obj = pdf->objs[i];		// Current object
+
+      switch (offsize)
+      {
+        case 1 :
+            buffer[1] = obj->offset & 255;
+            break;
+        case 2 :
+            buffer[1] = (obj->offset >> 8) & 255;
+            buffer[2] = obj->offset & 255;
+            break;
+        case 3 :
+            buffer[1] = (obj->offset >> 16) & 255;
+            buffer[2] = (obj->offset >> 8) & 255;
+            buffer[3] = obj->offset & 255;
+            break;
+        case 4 :
+            buffer[1] = (obj->offset >> 24) & 255;
+            buffer[2] = (obj->offset >> 16) & 255;
+            buffer[3] = (obj->offset >> 8) & 255;
+            buffer[4] = obj->offset & 255;
+            break;
+        case 5 :
+            buffer[1] = (obj->offset >> 32) & 255;
+            buffer[2] = (obj->offset >> 24) & 255;
+            buffer[3] = (obj->offset >> 16) & 255;
+            buffer[4] = (obj->offset >> 8) & 255;
+            buffer[5] = obj->offset & 255;
+            break;
+        case 6 :
+            buffer[1] = (obj->offset >> 40) & 255;
+            buffer[2] = (obj->offset >> 32) & 255;
+            buffer[3] = (obj->offset >> 24) & 255;
+            buffer[4] = (obj->offset >> 16) & 255;
+            buffer[5] = (obj->offset >> 8) & 255;
+            buffer[6] = obj->offset & 255;
+            break;
+        case 7 :
+            buffer[1] = (obj->offset >> 48) & 255;
+            buffer[2] = (obj->offset >> 40) & 255;
+            buffer[3] = (obj->offset >> 32) & 255;
+            buffer[4] = (obj->offset >> 24) & 255;
+            buffer[5] = (obj->offset >> 16) & 255;
+            buffer[6] = (obj->offset >> 8) & 255;
+            buffer[7] = obj->offset & 255;
+            break;
+        default :
+            buffer[1] = (obj->offset >> 56) & 255;
+            buffer[2] = (obj->offset >> 48) & 255;
+            buffer[3] = (obj->offset >> 40) & 255;
+            buffer[4] = (obj->offset >> 32) & 255;
+            buffer[5] = (obj->offset >> 24) & 255;
+            buffer[6] = (obj->offset >> 16) & 255;
+            buffer[7] = (obj->offset >> 8) & 255;
+            buffer[8] = obj->offset & 255;
+            break;
+      }
+
+      if (!pdfioStreamWrite(xref_st, buffer, offsize + 2))
+      {
+	_pdfioFileError(pdf, "Unable to write cross-reference table.");
+	ret = false;
+	goto done;
+      }
+    }
+
+    pdfioStreamClose(xref_st);
   }
-
-  // Write the trailer...
-  if (!_pdfioFilePuts(pdf, "trailer\n"))
+  else
   {
-    _pdfioFileError(pdf, "Unable to write trailer.");
-    ret = false;
-    goto done;
-  }
+    // Write a cross-reference table...
+    if (!_pdfioFilePrintf(pdf, "xref\n0 %lu \n0000000000 65535 f \n", (unsigned long)pdf->num_objs + 1))
+    {
+      _pdfioFileError(pdf, "Unable to write cross-reference table.");
+      ret = false;
+      goto done;
+    }
 
-  if ((pdf->trailer_dict = pdfioDictCreate(pdf)) == NULL)
-  {
-    _pdfioFileError(pdf, "Unable to create trailer.");
-    ret = false;
-    goto done;
-  }
+    for (i = 0; i < pdf->num_objs; i ++)
+    {
+      obj = pdf->objs[i];		// Current object
 
-  if (pdf->encrypt_obj)
-    pdfioDictSetObj(pdf->trailer_dict, "Encrypt", pdf->encrypt_obj);
-  if (pdf->id_array)
-    pdfioDictSetArray(pdf->trailer_dict, "ID", pdf->id_array);
-  pdfioDictSetObj(pdf->trailer_dict, "Info", pdf->info_obj);
-  pdfioDictSetObj(pdf->trailer_dict, "Root", pdf->root_obj);
-  pdfioDictSetNumber(pdf->trailer_dict, "Size", pdf->num_objs + 1);
+      if (!_pdfioFilePrintf(pdf, "%010lu %05u n \n", (unsigned long)obj->offset, obj->generation))
+      {
+	_pdfioFileError(pdf, "Unable to write cross-reference table.");
+	ret = false;
+	goto done;
+      }
+    }
 
-  if (!_pdfioDictWrite(pdf->trailer_dict, NULL, NULL))
-  {
-    _pdfioFileError(pdf, "Unable to write trailer.");
-    ret = false;
-    goto done;
+    // Write the trailer...
+    if (!_pdfioFilePuts(pdf, "trailer\n"))
+    {
+      _pdfioFileError(pdf, "Unable to write trailer.");
+      ret = false;
+      goto done;
+    }
+
+    if ((pdf->trailer_dict = pdfioDictCreate(pdf)) == NULL)
+    {
+      _pdfioFileError(pdf, "Unable to create trailer.");
+      ret = false;
+      goto done;
+    }
+
+    if (pdf->encrypt_obj)
+      pdfioDictSetObj(pdf->trailer_dict, "Encrypt", pdf->encrypt_obj);
+    if (pdf->id_array)
+      pdfioDictSetArray(pdf->trailer_dict, "ID", pdf->id_array);
+    pdfioDictSetObj(pdf->trailer_dict, "Info", pdf->info_obj);
+    pdfioDictSetObj(pdf->trailer_dict, "Root", pdf->root_obj);
+    pdfioDictSetNumber(pdf->trailer_dict, "Size", pdf->num_objs + 1);
+
+    if (!_pdfioDictWrite(pdf->trailer_dict, NULL, NULL))
+    {
+      _pdfioFileError(pdf, "Unable to write trailer.");
+      ret = false;
+      goto done;
+    }
   }
 
   if (!_pdfioFilePrintf(pdf, "\nstartxref\n%lu\n%%EOF\n", (unsigned long)xref_offset))

@@ -6,6 +6,8 @@ v1.5.0 - YYYY-MM-DD
 
 - Added support for embedded color profiles in JPEG images (Issue #7)
 - Added `pdfioFileCreateICCObjFromData` API.
+- Added support for writing cross-reference streams for PDF 1.5 and newer files
+  (Issue #10)
 - Added `pdfioFileGetModDate()` API (Issue #88)
 - Added support for using libpng to embed PNG images in PDF output (Issue #90)
 - Now support opening damaged PDF files (Issue #45)
