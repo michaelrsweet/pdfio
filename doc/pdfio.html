@@ -400,6 +400,7 @@ span.string {
 <li><a href="#pdfioFileCreateArrayObj">pdfioFileCreateArrayObj</a></li>
 <li><a href="#pdfioFileCreateFontObjFromBase">pdfioFileCreateFontObjFromBase</a></li>
 <li><a href="#pdfioFileCreateFontObjFromFile">pdfioFileCreateFontObjFromFile</a></li>
+<li><a href="#pdfioFileCreateICCObjFromData">pdfioFileCreateICCObjFromData</a></li>
 <li><a href="#pdfioFileCreateICCObjFromFile">pdfioFileCreateICCObjFromFile</a></li>
 <li><a href="#pdfioFileCreateImageObjFromData">pdfioFileCreateImageObjFromData</a></li>
 <li><a href="#pdfioFileCreateImageObjFromFile">pdfioFileCreateImageObjFromFile</a></li>
@@ -3814,7 +3815,8 @@ have been iterated.</p>
 name of the PDF file to create.<br>
 <br>
 The &quot;version&quot; argument specifies the PDF version number for the file or
-<code>NULL</code> for the default (&quot;2.0&quot;).<br>
+<code>NULL</code> for the default (&quot;2.0&quot;).  The value &quot;PCLm-1.0&quot; can be specified to
+produce the PCLm subset of PDF.<br>
 <br>
 The &quot;media_box&quot; and &quot;crop_box&quot; arguments specify the default MediaBox and
 CropBox for pages in the PDF file - if <code>NULL</code> then a default &quot;Universal&quot; size
@@ -3909,8 +3911,25 @@ Unicode.</p>
 characters (potentially full Unicode, but more typically a subset)
 or to only support the Windows CP1252 (ISO-8859-1 with additional
 characters such as the Euro symbol) subset of Unicode.</p>
+<h3 class="function"><a id="pdfioFileCreateICCObjFromData">pdfioFileCreateICCObjFromData</a></h3>
+<p class="description">Add ICC profile data to a PDF file.</p>
+<p class="code">
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateICCObjFromData(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">unsigned</span> <span class="reserved">char</span> *data, size_t datalen, size_t num_colors);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>data</th>
+<td class="description">ICC profile buffer</td></tr>
+<tr><th>datalen</th>
+<td class="description">Length of ICC profile</td></tr>
+<tr><th>num_colors</th>
+<td class="description">Number of color components (1, 3, or 4)</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Object</p>
 <h3 class="function"><a id="pdfioFileCreateICCObjFromFile">pdfioFileCreateICCObjFromFile</a></h3>
-<p class="description">Add an ICC profile object to a PDF file.</p>
+<p class="description">Add an ICC profile file to a PDF file.</p>
 <p class="code">
 <a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateICCObjFromFile(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *filename, size_t num_colors);</p>
 <h4 class="parameters">Parameters</h4>
@@ -4071,7 +4090,9 @@ output_cb(void *output_cbdata, const void *buffer, size_t bytes)
 </pre>
 
 The &quot;version&quot; argument specifies the PDF version number for the file or
-<code>NULL</code> for the default (&quot;2.0&quot;).<br>
+<code>NULL</code> for the default (&quot;2.0&quot;).  Unlike <a href="#pdfioFileCreate"><code>pdfioFileCreate</code></a> and
+<a href="#pdfioFileCreateTemporary"><code>pdfioFileCreateTemporary</code></a>, it is generally not safe to pass the
+&quot;PCLm-1.0&quot; version string.<br>
 <br>
 The &quot;media_box&quot; and &quot;crop_box&quot; arguments specify the default MediaBox and
 CropBox for pages in the PDF file - if <code>NULL</code> then a default &quot;Universal&quot; size
@@ -4139,8 +4160,19 @@ You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write t
 <p class="description">Create a temporary PDF file.</p>
 <p class="discussion">This function creates a PDF file with a unique filename in the current
 temporary directory.  The temporary file is stored in the string &quot;buffer&quot; an
-will have a &quot;.pdf&quot; extension.  Otherwise, this function works the same as
-the <a href="#pdfioFileCreate"><code>pdfioFileCreate</code></a> function.
+will have a &quot;.pdf&quot; extension.<br>
+<br>
+The &quot;version&quot; argument specifies the PDF version number for the file or
+<code>NULL</code> for the default (&quot;2.0&quot;).  The value &quot;PCLm-1.0&quot; can be specified to
+produce the PCLm subset of PDF.<br>
+<br>
+The &quot;media_box&quot; and &quot;crop_box&quot; arguments specify the default MediaBox and
+CropBox for pages in the PDF file - if <code>NULL</code> then a default &quot;Universal&quot; size
+of 8.27x11in (the intersection of US Letter and ISO A4) is used.<br>
+<br>
+The &quot;error_cb&quot; and &quot;error_cbdata&quot; arguments specify an error handler callback
+and its data pointer - if <code>NULL</code> the default error handler is used that
+writes error messages to <code>stderr</code>.
 
 </p>
 <h3 class="function"><a id="pdfioFileFindObj">pdfioFileFindObj</a></h3>

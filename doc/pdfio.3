@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2025-02-13" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2025-02-20" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -3561,7 +3561,8 @@ This function creates a new PDF file.  The "filename" argument specifies the
 name of the PDF file to create.
 .PP
 The "version" argument specifies the PDF version number for the file or
-\fBNULL\fR for the default ("2.0").
+\fBNULL\fR for the default ("2.0").  The value "PCLm-1.0" can be specified to
+produce the PCLm subset of PDF.
 .PP
 The "media_box" and "crop_box" arguments specify the default MediaBox and
 CropBox for pages in the PDF file - if \fBNULL\fR then a default "Universal" size
@@ -3643,8 +3644,19 @@ This function embeds a TrueType/OpenType font into a PDF file.  The
 characters (potentially full Unicode, but more typically a subset)
 or to only support the Windows CP1252 (ISO-8859-1 with additional
 characters such as the Euro symbol) subset of Unicode.
+.SS pdfioFileCreateICCObjFromData
+Add ICC profile data to a PDF file.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateICCObjFromData (
+    pdfio_file_t *pdf,
+    const unsigned char *data,
+    size_t datalen,
+    size_t num_colors
+);
+.fi
 .SS pdfioFileCreateICCObjFromFile
-Add an ICC profile object to a PDF file.
+Add an ICC profile file to a PDF file.
 .PP
 .nf
 pdfio_obj_t * pdfioFileCreateICCObjFromFile (
@@ -3767,7 +3779,9 @@ written:
 .fi
 
 The "version" argument specifies the PDF version number for the file or
-\fBNULL\fR for the default ("2.0").
+\fBNULL\fR for the default ("2.0").  Unlike \fIpdfioFileCreate\fR and
+\fIpdfioFileCreateTemporary\fR, it is generally not safe to pass the
+"PCLm-1.0" version string.
 .PP
 The "media_box" and "crop_box" arguments specify the default MediaBox and
 CropBox for pages in the PDF file - if \fBNULL\fR then a default "Universal" size

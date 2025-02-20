@@ -10,6 +10,7 @@ v1.5.0 - YYYY-MM-DD
   (Issue #10)
 - Added `pdfioFileGetModDate()` API (Issue #88)
 - Added support for using libpng to embed PNG images in PDF output (Issue #90)
+- Added support for writing the PCLm subset of PDF (Issue #99)
 - Now support opening damaged PDF files (Issue #45)
 - Updated the pdf2txt example to support font encodings.
 

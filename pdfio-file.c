@@ -165,7 +165,8 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
 // name of the PDF file to create.
 //
 // The "version" argument specifies the PDF version number for the file or
-// `NULL` for the default ("2.0").
+// `NULL` for the default ("2.0").  The value "PCLm-1.0" can be specified to
+// produce the PCLm subset of PDF.
 //
 // The "media_box" and "crop_box" arguments specify the default MediaBox and
 // CropBox for pages in the PDF file - if `NULL` then a default "Universal" size
@@ -397,7 +398,9 @@ _pdfioFileCreateObj(
 // ```
 //
 // The "version" argument specifies the PDF version number for the file or
-// `NULL` for the default ("2.0").
+// `NULL` for the default ("2.0").  Unlike @link pdfioFileCreate@ and
+// @link pdfioFileCreateTemporary@, it is generally not safe to pass the
+// "PCLm-1.0" version string.
 //
 // The "media_box" and "crop_box" arguments specify the default MediaBox and
 // CropBox for pages in the PDF file - if `NULL` then a default "Universal" size
@@ -532,8 +535,19 @@ pdfioFileCreateStringObj(
 //
 // This function creates a PDF file with a unique filename in the current
 // temporary directory.  The temporary file is stored in the string "buffer" an
-// will have a ".pdf" extension.  Otherwise, this function works the same as
-// the @link pdfioFileCreate@ function.
+// will have a ".pdf" extension.
+//
+// The "version" argument specifies the PDF version number for the file or
+// `NULL` for the default ("2.0").  The value "PCLm-1.0" can be specified to
+// produce the PCLm subset of PDF.
+//
+// The "media_box" and "crop_box" arguments specify the default MediaBox and
+// CropBox for pages in the PDF file - if `NULL` then a default "Universal" size
+// of 8.27x11in (the intersection of US Letter and ISO A4) is used.
+//
+// The "error_cb" and "error_cbdata" arguments specify an error handler callback
+// and its data pointer - if `NULL` the default error handler is used that
+// writes error messages to `stderr`.
 //
 // @since PDFio v1.1@
 //
@@ -1396,7 +1410,7 @@ create_common(
   pdf->output_cb   = output_cb;
   pdf->output_ctx  = output_cbdata;
   pdf->filename    = strdup(filename);
-  pdf->version     = strdup(version);
+  pdf->version     = strdup(!strncmp(version, "PCLm-", 5) ? "1.4" : version);
   pdf->mode        = _PDFIO_MODE_WRITE;
   pdf->error_cb    = error_cb;
   pdf->error_data  = error_cbdata;
@@ -1427,8 +1441,15 @@ create_common(
   }
 
   // Write a standard PDF header...
-  if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
+  if (!strncmp(version, "PCLm-", 5))
+  {
+    if (!_pdfioFilePrintf(pdf, "%%PDF-1.4\n%%%s\n", version))
+      goto error;
+  }
+  else if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
+  {
     goto error;
+  }
 
   // Create the pages object...
   if ((dict = pdfioDictCreate(pdf)) == NULL)
