@@ -1,20 +1,13 @@
 //
 // PDF object functions for PDFio.
 //
-// Copyright © 2021-2024 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
 //
 
 #include "pdfio-private.h"
-
-
-//
-// Local functions...
-//
-
-static bool	write_obj_header(pdfio_obj_t *obj);
 
 
 //
@@ -42,7 +35,7 @@ pdfioObjClose(pdfio_obj_t *obj)		// I - Object
   if (!obj->offset)
   {
     // Write the object value
-    if (!write_obj_header(obj))
+    if (!_pdfioObjWriteHeader(obj))
       return (false);
 
     // Write the "endobj" line...
@@ -195,7 +188,7 @@ pdfioObjCreateStream(
     }
   }
 
-  if (!write_obj_header(obj))
+  if (!_pdfioObjWriteHeader(obj))
     return (NULL);
 
   if (!_pdfioFilePuts(obj->pdf, "stream\n"))
@@ -582,11 +575,11 @@ _pdfioObjSetExtension(
 
 
 //
-// 'write_obj_header()' - Write the object header...
+// '_pdfioObjWriteHeader()' - Write the object header...
 //
 
-static bool				// O - `true` on success, `false` on failure
-write_obj_header(pdfio_obj_t *obj)	// I - Object
+bool					// O - `true` on success, `false` on failure
+_pdfioObjWriteHeader(pdfio_obj_t *obj)	// I - Object
 {
   obj->offset = _pdfioFileTell(obj->pdf);
 

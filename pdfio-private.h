@@ -1,7 +1,7 @@
 //
 // Private header file for PDFio.
 //
-// Copyright © 2021-2024 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -107,7 +107,7 @@ typedef enum _pdfio_mode_e		// Read/write mode
 typedef enum _pdfio_predictor_e		// PNG predictor constants
 {
   _PDFIO_PREDICTOR_NONE = 1,		// No predictor (default)
-  _PDFIO_PREDICTOR_TIFF2 = 2,		// TIFF2 predictor (???)
+  _PDFIO_PREDICTOR_TIFF2 = 2,		// TIFF predictor 2 (difference from left neighbor)
   _PDFIO_PREDICTOR_PNG_NONE = 10,	// PNG None predictor (same as `_PDFIO_PREDICTOR_NONE`)
   _PDFIO_PREDICTOR_PNG_SUB = 11,	// PNG Sub predictor
   _PDFIO_PREDICTOR_PNG_UP = 12,		// PNG Up predictor
@@ -384,6 +384,7 @@ extern void		_pdfioObjDelete(pdfio_obj_t *obj) _PDFIO_INTERNAL;
 extern void		*_pdfioObjGetExtension(pdfio_obj_t *obj) _PDFIO_INTERNAL;
 extern bool		_pdfioObjLoad(pdfio_obj_t *obj) _PDFIO_INTERNAL;
 extern void		_pdfioObjSetExtension(pdfio_obj_t *obj, void *data, _pdfio_extfree_t datafree) _PDFIO_INTERNAL;
+extern bool		_pdfioObjWriteHeader(pdfio_obj_t *obj) _PDFIO_INTERNAL;
 
 extern pdfio_stream_t	*_pdfioStreamCreate(pdfio_obj_t *obj, pdfio_obj_t *length_obj, size_t cbsize, pdfio_filter_t compression) _PDFIO_INTERNAL;
 extern pdfio_stream_t	*_pdfioStreamOpen(pdfio_obj_t *obj, bool decode) _PDFIO_INTERNAL;
