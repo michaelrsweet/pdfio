@@ -34,11 +34,6 @@ pdfioObjClose(pdfio_obj_t *obj)		// I - Object
   // Write what remains for the object...
   if (!obj->offset)
   {
-    // If we are writing a PDF 1.5 or later object, put all value-only objects
-    // in object streams...
-    if (obj != obj->pdf->encrypt_obj && obj != obj->pdf->info_obj && obj != obj->pdf->root_obj && strcmp(obj->pdf->version, "1.5") >= 0)
-      return (true);
-
     // Write the object value
     if (!_pdfioObjWriteHeader(obj))
       return (false);
