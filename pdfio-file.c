@@ -26,6 +26,7 @@ static bool		load_obj_stream(pdfio_obj_t *obj);
 static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj, size_t depth);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset, pdfio_password_cb_t password_cb, void *password_data);
 static bool		repair_xref(pdfio_file_t *pdf, pdfio_password_cb_t password_cb, void *password_data);
+static bool		write_obj_streams(pdfio_file_t *pdf);
 static bool		write_pages(pdfio_file_t *pdf);
 static bool		write_trailer(pdfio_file_t *pdf);
 
@@ -121,7 +122,7 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
   {
     ret = false;
 
-    if (pdfioObjClose(pdf->info_obj) && write_pages(pdf) && pdfioObjClose(pdf->root_obj) && write_trailer(pdf))
+    if (pdfioObjClose(pdf->info_obj) && write_pages(pdf) && write_obj_streams(pdf) && pdfioObjClose(pdf->root_obj) && write_trailer(pdf))
       ret = _pdfioFileFlush(pdf);
   }
 
@@ -2340,6 +2341,37 @@ repair_xref(
 
   // Load pages...
   return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages"), 0));
+}
+
+
+//
+// 'write_obj_streams()' - Write object streams...
+//
+
+static bool				// O - `true` on success, `false` on error
+write_obj_streams(pdfio_file_t *pdf)	// I - PDF file
+{
+  size_t	i;			// Looping var
+  pdfio_obj_t	*obj;			// Current object
+
+
+  // Object streams are part of PDF 1.5 and later...
+  if (strcmp(pdf->version, "1.5") < 0)
+    return (true);
+
+  // Loop through the file objects and write any to an object stream...
+  for (i = 0; i < pdf->num_objs; i ++)
+  {
+    obj = pdf->objs[i];
+
+    if (obj->offset > 0)
+      continue;
+
+    if (!_pdfioObjWriteHeader(obj) || !_pdfioFilePuts(pdf, "endobj\n"))
+      return (false);
+  }
+
+  return (true);
 }
 
 
