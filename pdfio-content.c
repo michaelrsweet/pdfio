@@ -2587,9 +2587,6 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
 	  length = 0;
 	}
       }
-
-      if (length > 0)
-	break;
     }
   }
 
