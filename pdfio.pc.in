@@ -7,7 +7,7 @@ Name: pdfio
 Description: PDF read/write library
 Version: @PDFIO_VERSION@
 URL: https://www.msweet.org/pdfio
-Requires: @PKGCONFIG_REQUIRES@
+Cflags: @PKGCONFIG_CFLAGS@
 Libs: @PKGCONFIG_LIBS@
 Libs.private: @PKGCONFIG_LIBS_PRIVATE@
-Cflags: @PKGCONFIG_CFLAGS@
+Requires: @PKGCONFIG_REQUIRES@

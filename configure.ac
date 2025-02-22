@@ -134,8 +134,8 @@ AS_IF([test "x$PKGCONFIG" != x -a x$enable_libpng != xno], [
 	AC_DEFINE([HAVE_LIBPNG], 1, [Have PNG library?])
 	CPPFLAGS="$($PKGCONFIG --cflags libpng16) -DHAVE_LIBPNG=1 $CPPFLAGS"
 	LIBS="$($PKGCONFIG --libs libpng16) -lz $LIBS"
-	PKGCONFIG_LIBPNG="libpng >= 1.6,"
 	PKGCONFIG_LIBS_PRIVATE="$($PKGCONFIG --libs libpng16) $PKGCONFIG_LIBS_PRIVATE"
+	PKGCONFIG_REQUIRES="libpng >= 1.6,$PKGCONFIG_REQUIRES"
     ], [
 	AC_MSG_RESULT([no]);
 	AS_IF([test x$enable_libpng = xyes], [

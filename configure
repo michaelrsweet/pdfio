@@ -4128,8 +4128,8 @@ printf "%s\n" "#define HAVE_LIBPNG 1" >>confdefs.h
 
 	CPPFLAGS="$($PKGCONFIG --cflags libpng16) -DHAVE_LIBPNG=1 $CPPFLAGS"
 	LIBS="$($PKGCONFIG --libs libpng16) -lz $LIBS"
-	PKGCONFIG_LIBPNG="libpng >= 1.6,"
 	PKGCONFIG_LIBS_PRIVATE="$($PKGCONFIG --libs libpng16) $PKGCONFIG_LIBS_PRIVATE"
+	PKGCONFIG_REQUIRES="libpng >= 1.6,$PKGCONFIG_REQUIRES"
 
 else $as_nop
 
