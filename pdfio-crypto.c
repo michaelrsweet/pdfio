@@ -1,7 +1,7 @@
 //
 // Cryptographic support functions for PDFio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -466,6 +466,7 @@ _pdfioCryptoMakeReader(
 
       if (memcmp(pdf->password, pdf_user_key, 32) && memcmp(own_user_key, pdf_user_key, 16))
       {
+        _pdfioFileError(pdf, "Unable to unlock file.");
 	*ivlen = 0;
 	return (NULL);
       }
@@ -483,6 +484,7 @@ _pdfioCryptoMakeReader(
   switch (pdf->encryption)
   {
     default :
+        _pdfioFileError(pdf, "Unsupported encryption algorithm.");
         *ivlen = 0;
         return (NULL);
 

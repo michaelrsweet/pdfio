@@ -1,7 +1,7 @@
 //
 // PDF stream functions for PDFio.
 //
-// Copyright © 2021-2024 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -140,7 +140,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
     // Update the length as needed...
     if (st->length_obj)
     {
-      st->length_obj->value.value.number = st->obj->stream_length;
+      st->length_obj->value.value.number = (double)st->obj->stream_length;
       pdfioObjClose(st->length_obj);
     }
     else if (st->obj->length_offset)
@@ -440,14 +440,14 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
 
   if ((st->remaining = pdfioObjGetLength(obj)) == 0)
   {
-    free(st);
-    return (NULL);
+    _pdfioFileError(obj->pdf, "No stream data.");
+    goto error;
   }
 
   if (_pdfioFileSeek(st->pdf, obj->stream_offset, SEEK_SET) != obj->stream_offset)
   {
-    free(st);
-    return (NULL);
+    _pdfioFileError(obj->pdf, "Unable to seek to stream data.");
+    goto error;
   }
 
   type = pdfioObjGetType(obj);
@@ -460,11 +460,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
     ivlen = (size_t)_pdfioFilePeek(st->pdf, iv, sizeof(iv));
 
     if ((st->crypto_cb = _pdfioCryptoMakeReader(st->pdf, obj, &st->crypto_ctx, iv, &ivlen)) == NULL)
-    {
-      // TODO: Add error message?
-      free(st);
-      return (NULL);
-    }
+      goto error;
 
     PDFIO_DEBUG("_pdfioStreamOpen: ivlen=%d\n", (int)ivlen);
     if (ivlen > 0)
@@ -495,8 +491,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       {
 	// TODO: Implement compound filters...
 	_pdfioFileError(st->pdf, "Unsupported compound stream filter.");
-	free(st);
-	return (NULL);
+	goto error;
       }
 
       // No filter, read as-is...
@@ -529,8 +524,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       else if (bpc < 1 || bpc == 3 || (bpc > 4 && bpc < 8) || (bpc > 8 && bpc < 16) || bpc > 16)
       {
         _pdfioFileError(st->pdf, "Unsupported BitsPerColor value %d.", bpc);
-        free(st);
-        return (NULL);
+	goto error;
       }
 
       if (colors == 0)
@@ -540,8 +534,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       else if (colors < 0 || colors > 4)
       {
         _pdfioFileError(st->pdf, "Unsupported Colors value %d.", colors);
-        free(st);
-        return (NULL);
+	goto error;
       }
 
       if (columns == 0)
@@ -551,15 +544,13 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       else if (columns < 0)
       {
         _pdfioFileError(st->pdf, "Unsupported Columns value %d.", columns);
-        free(st);
-        return (NULL);
+	goto error;
       }
 
       if ((predictor > 2 && predictor < 10) || predictor > 15)
       {
         _pdfioFileError(st->pdf, "Unsupported Predictor function %d.", predictor);
-        free(st);
-        return (NULL);
+	goto error;
       }
       else if (predictor > 1)
       {
@@ -573,23 +564,19 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
         if ((st->prbuffer = calloc(1, st->pbsize - 1)) == NULL || (st->psbuffer = calloc(1, st->pbsize)) == NULL)
         {
           _pdfioFileError(st->pdf, "Unable to allocate %lu bytes for Predictor buffers.", (unsigned long)st->pbsize);
-	  free(st->prbuffer);
-	  free(st->psbuffer);
-	  free(st);
-	  return (NULL);
+	  goto error;
         }
       }
       else
+      {
         st->predictor = _PDFIO_PREDICTOR_NONE;
+      }
 
       st->cbsize = 4096;
       if ((st->cbuffer = malloc(st->cbsize)) == NULL)
       {
 	_pdfioFileError(st->pdf, "Unable to allocate %lu bytes for Flate compression buffer.", (unsigned long)st->cbsize);
-	free(st->prbuffer);
-	free(st->psbuffer);
-	free(st);
-	return (NULL);
+	goto error;
       }
 
       PDFIO_DEBUG("_pdfioStreamOpen: pos=%ld\n", (long)_pdfioFileTell(st->pdf));
@@ -601,10 +588,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       if (rbytes <= 0)
       {
 	_pdfioFileError(st->pdf, "Unable to read bytes for stream.");
-	free(st->prbuffer);
-	free(st->psbuffer);
-	free(st);
-	return (NULL);
+	goto error;
       }
 
       if (st->crypto_cb)
@@ -618,10 +602,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       if ((status = inflateInit(&(st->flate))) != Z_OK)
       {
 	_pdfioFileError(st->pdf, "Unable to start Flate filter: %s", zstrerror(status));
-	free(st->prbuffer);
-	free(st->psbuffer);
-	free(st);
-	return (NULL);
+	goto error;
       }
 
       st->remaining -= st->flate.avail_in;
@@ -635,8 +616,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
     {
       // Something else we don't support
       _pdfioFileError(st->pdf, "Unsupported stream filter '/%s'.", filter);
-      free(st);
-      return (NULL);
+      goto error;
     }
   }
   else
@@ -646,6 +626,16 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
   }
 
   return (st);
+
+  // If we get here something went wrong...
+  error:
+
+  free(st->cbuffer);
+  free(st->prbuffer);
+  free(st->psbuffer);
+  free(st);
+  return (NULL);
+
 }
 
 

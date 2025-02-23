@@ -98,7 +98,7 @@ _pdfioFileFlush(pdfio_file_t *pdf)	// I - PDF file
     if (!write_buffer(pdf, pdf->buffer, (size_t)(pdf->bufptr - pdf->buffer)))
       return (false);
 
-    pdf->bufpos += pdf->bufptr - pdf->buffer;
+    pdf->bufpos += (off_t)(pdf->bufptr - pdf->buffer);
   }
 
   pdf->bufptr = pdf->buffer;
@@ -216,7 +216,7 @@ _pdfioFilePeek(pdfio_file_t *pdf,	// I - PDF file
     PDFIO_DEBUG("_pdfioFilePeek: Sliding buffer, total=%ld\n", (long)total);
 
     memmove(pdf->buffer, pdf->bufptr, total);
-    pdf->bufpos += pdf->bufptr - pdf->buffer;
+    pdf->bufpos += (off_t)(pdf->bufptr - pdf->buffer);
     pdf->bufptr = pdf->buffer;
     pdf->bufend = pdf->buffer + total;
 
@@ -317,14 +317,14 @@ _pdfioFileRead(pdfio_file_t *pdf,	// I - PDF file
       // Advance current position in file as needed...
       if (pdf->bufend)
       {
-	pdf->bufpos += pdf->bufend - pdf->buffer;
+	pdf->bufpos += (off_t)(pdf->bufend - pdf->buffer);
 	pdf->bufptr = pdf->bufend = NULL;
       }
 
       // Read directly from the file...
       if ((rbytes = read_buffer(pdf, bufptr, bytes)) > 0)
       {
-	pdf->bufpos += rbytes;
+	pdf->bufpos += (off_t)rbytes;
 	continue;
       }
       else if (rbytes < 0 && (errno == EINTR || errno == EAGAIN))
@@ -361,14 +361,14 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
   // Adjust offset for relative seeks...
   if (whence == SEEK_CUR)
   {
-    offset += pdf->bufpos + (pdf->bufptr - pdf->buffer);
+    offset += pdf->bufpos + (off_t)(pdf->bufptr - pdf->buffer);
     whence = SEEK_SET;
   }
 
   if (pdf->mode == _PDFIO_MODE_READ)
   {
     // Reading, see if we already have the data we need...
-    if (whence != SEEK_END && offset >= pdf->bufpos && pdf->bufend && offset < (pdf->bufpos + pdf->bufend - pdf->buffer))
+    if (whence != SEEK_END && offset >= pdf->bufpos && pdf->bufend && offset < (off_t)(pdf->bufpos + pdf->bufend - pdf->buffer))
     {
       // Yes, seek within existing buffer...
       pdf->bufptr = pdf->buffer + (offset - pdf->bufpos);

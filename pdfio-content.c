@@ -322,7 +322,7 @@ pdfioArrayCreateColorFromPalette(
 
   pdfioArrayAppendName(indexed_color, "Indexed");
   pdfioArrayAppendName(indexed_color, "DeviceRGB");
-  pdfioArrayAppendNumber(indexed_color, num_colors - 1);
+  pdfioArrayAppendNumber(indexed_color, (double)(num_colors - 1));
   pdfioArrayAppendBinary(indexed_color, colors, num_colors * 3);
 
   return (indexed_color);
@@ -1814,14 +1814,14 @@ pdfioFileCreateFontObjFromFile(
       if ((i - start) > 1)
       {
         // Encode a repeating sequence...
-        pdfioArrayAppendNumber(w_array, start);
-        pdfioArrayAppendNumber(w_array, i - 1);
+        pdfioArrayAppendNumber(w_array, (double)start);
+        pdfioArrayAppendNumber(w_array, (double)(i - 1));
         pdfioArrayAppendNumber(w_array, w0);
       }
       else
       {
         // Encode a non-repeating sequence...
-        pdfioArrayAppendNumber(w_array, start);
+        pdfioArrayAppendNumber(w_array, (double)start);
 
         if ((temp_array = pdfioArrayCreate(pdf)) == NULL)
 	  goto done;
@@ -1946,7 +1946,7 @@ pdfioFileCreateICCObjFromData(
   if ((dict = pdfioDictCreate(pdf)) == NULL)
     return (NULL);
 
-  pdfioDictSetNumber(dict, "N", num_colors);
+  pdfioDictSetNumber(dict, "N", (double)num_colors);
   pdfioDictSetName(dict, "Filter", "FlateDecode");
 
   if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
@@ -2012,7 +2012,7 @@ pdfioFileCreateICCObjFromFile(
     return (NULL);
   }
 
-  pdfioDictSetNumber(dict, "N", num_colors);
+  pdfioDictSetNumber(dict, "N", (double)num_colors);
   pdfioDictSetName(dict, "Filter", "FlateDecode");
 
   if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
@@ -2095,8 +2095,8 @@ pdfioFileCreateImageObjFromData(
   pdfioDictSetName(dict, "Type", "XObject");
   pdfioDictSetName(dict, "Subtype", "Image");
   pdfioDictSetBoolean(dict, "Interpolate", interpolate);
-  pdfioDictSetNumber(dict, "Width", width);
-  pdfioDictSetNumber(dict, "Height", height);
+  pdfioDictSetNumber(dict, "Width", (double)width);
+  pdfioDictSetNumber(dict, "Height", (double)height);
   pdfioDictSetNumber(dict, "BitsPerComponent", 8);
 
   if (color_data)
@@ -2539,7 +2539,7 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
 	  }
 
           // Copy from the file buffer to the ICC buffer
-          if ((bytes = bufend - bufptr) > length)
+          if ((bytes = bufend - bufptr) > (ssize_t)length)
 	    bytes = (ssize_t)length;
 
 	  memcpy(icc_data + icc_datalen, bufptr, bytes);
@@ -2566,7 +2566,7 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
       {
         bytes = bufend - bufptr;
 
-        if (length > bytes)
+        if (length > (size_t)bytes)
         {
           // Consume everything we have and grab more...
           length -= (size_t)bytes;
@@ -2591,7 +2591,10 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
   }
 
   if (width == 0 || height == 0 || (num_colors != 1 && num_colors != 3))
-    return (NULL);
+  {
+    _pdfioFileError(dict->pdf, "Unable to find JPEG dimensions or image data.");
+    goto finish;
+  }
 
   // Create the image object...
   pdfioDictSetNumber(dict, "Width", width);
@@ -3567,9 +3570,9 @@ create_image(
       return (NULL);
     }
 
-    pdfioDictSetNumber(decode, "BitsPerComponent", depth);
+    pdfioDictSetNumber(decode, "BitsPerComponent", (double)depth);
     pdfioDictSetNumber(decode, "Colors", 1);
-    pdfioDictSetNumber(decode, "Columns", width);
+    pdfioDictSetNumber(decode, "Columns", (double)width);
     pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
     pdfioDictSetDict(mask_dict, "DecodeParms", decode);
 
@@ -3619,9 +3622,9 @@ create_image(
     return (NULL);
   }
 
-  pdfioDictSetNumber(decode, "BitsPerComponent", depth);
-  pdfioDictSetNumber(decode, "Colors", num_colors);
-  pdfioDictSetNumber(decode, "Columns", width);
+  pdfioDictSetNumber(decode, "BitsPerComponent", (double)depth);
+  pdfioDictSetNumber(decode, "Colors", (double)num_colors);
+  pdfioDictSetNumber(decode, "Columns", (double)width);
   pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
   pdfioDictSetDict(dict, "DecodeParms", decode);
 

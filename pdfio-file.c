@@ -1799,7 +1799,7 @@ load_xref(
 	return (false);
       }
 
-      if (_pdfioFileSeek(pdf, line_offset + ptr + 3 - line, SEEK_SET) < 0)
+      if (_pdfioFileSeek(pdf, line_offset + (off_t)(ptr + 3 - line), SEEK_SET) < 0)
       {
         _pdfioFileError(pdf, "Unable to seek to xref object %lu %u.", (unsigned long)number, (unsigned)generation);
         return (false);
@@ -1941,7 +1941,7 @@ load_xref(
             if (w[0] == 0 || buffer[0] == 1)
             {
               // Location of object...
-	      current->offset = offset;
+	      current->offset = (off_t)offset;
 	    }
 	    else if (number != offset)
 	    {
@@ -1978,7 +1978,7 @@ load_xref(
 	  else if (!current)
 	  {
 	    // Add this object...
-	    if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
+	    if (!add_obj(pdf, (size_t)number, (unsigned short)generation, (off_t)offset))
 	      return (false);
 	  }
 
@@ -2105,7 +2105,7 @@ load_xref(
 	  if (pdfioFileFindObj(pdf, (size_t)number))
 	    continue;			// Don't replace newer object...
 
-	  if (!add_obj(pdf, (size_t)number, (unsigned short)generation, offset))
+	  if (!add_obj(pdf, (size_t)number, (unsigned short)generation, (off_t)offset))
 	    return (false);
 	}
 
@@ -2361,7 +2361,7 @@ write_pages(pdfio_file_t *pdf)		// I - PDF file
   for (i = 0; i < pdf->num_pages; i ++)
     pdfioArrayAppendObj(kids, pdf->pages[i]);
 
-  pdfioDictSetNumber(pdf->pages_obj->value.value.dict, "Count", pdf->num_pages);
+  pdfioDictSetNumber(pdf->pages_obj->value.value.dict, "Count", (double)pdf->num_pages);
   pdfioDictSetArray(pdf->pages_obj->value.value.dict, "Kids", kids);
 
   // Write the Pages object...
@@ -2438,7 +2438,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     }
 
     pdfioDictSetName(xref_dict, "Type", "XRef");
-    pdfioDictSetNumber(xref_dict, "Size", pdf->num_objs + 2);
+    pdfioDictSetNumber(xref_dict, "Size", (double)(pdf->num_objs + 2));
     pdfioDictSetArray(xref_dict, "W", w_array);
     pdfioDictSetName(xref_dict, "Filter", "FlateDecode");
     pdfioDictSetObj(xref_dict, "Info", pdf->info_obj);
@@ -2586,7 +2586,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
       pdfioDictSetArray(pdf->trailer_dict, "ID", pdf->id_array);
     pdfioDictSetObj(pdf->trailer_dict, "Info", pdf->info_obj);
     pdfioDictSetObj(pdf->trailer_dict, "Root", pdf->root_obj);
-    pdfioDictSetNumber(pdf->trailer_dict, "Size", pdf->num_objs + 1);
+    pdfioDictSetNumber(pdf->trailer_dict, "Size", (double)(pdf->num_objs + 1));
 
     if (!_pdfioDictWrite(pdf->trailer_dict, NULL, NULL))
     {

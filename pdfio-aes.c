@@ -241,7 +241,7 @@ _pdfioCryptoAESEncrypt(
   if (len > 0)
   {
     // Pad the final buffer with (16 - len)...
-    memset(outbuffer + len, 16 - len, 16 - len);
+    memset(outbuffer + len, (int)(16 - len), 16 - len);
 
     xor_with_iv(outbuffer, iv);
     cipher((state_t*)outbuffer, ctx);
