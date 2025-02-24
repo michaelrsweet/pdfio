@@ -3,7 +3,7 @@
 //
 //     https://github.com/michaelrsweet/ttf
 //
-// Copyright © 2018-2024 by Michael R Sweet.
+// Copyright © 2018-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -1460,7 +1460,7 @@ read_cmap(ttf_t *font)			// I - Font
 	  // array...
 	  for (gidx = 0, group = groups; gidx < nGroups; gidx ++, group ++)
 	  {
-            for (ch = group->startCharCode; ch <= group->endCharCode && ch < TTF_FONT_MAX_CHAR; ch ++)
+            for (ch = group->startCharCode; ch <= group->endCharCode && ch < font->num_cmap; ch ++)
               cmapptr[ch] = (int)(group->startGlyphID + ch - group->startCharCode);
           }
 
@@ -1551,7 +1551,7 @@ read_cmap(ttf_t *font)			// I - Font
 	  // array...
 	  for (gidx = 0, group = groups; gidx < nGroups; gidx ++, group ++)
 	  {
-            for (ch = group->startCharCode; ch <= group->endCharCode && ch < TTF_FONT_MAX_CHAR; ch ++)
+            for (ch = group->startCharCode; ch <= group->endCharCode && ch < font->num_cmap; ch ++)
               cmapptr[ch] = (int)group->glyphID;
           }
 

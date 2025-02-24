@@ -13,6 +13,7 @@ v1.5.0 - YYYY-MM-DD
 - Added support for writing the PCLm subset of PDF (Issue #99)
 - Now support opening damaged PDF files (Issue #45)
 - Updated the pdf2txt example to support font encodings.
+- Fixed a potential heap overflow in the TrueType font code.
 
 
 v1.4.1 - 2025-01-24
