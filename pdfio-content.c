@@ -355,7 +355,7 @@ pdfioArrayCreateColorFromPrimaries(
   double	matrix[3][3];		// CIE XYZ transform matrix
 
 
-  PDFIO_DEBUG("pdfioFileCreateCalibratedColorFromPrimaries(pdf=%p, num_colors=%lu, gamma=%g, wx=%g, wy=%g, rx=%g, ry=%g, gx=%g, gy=%g, bx=%g, by=%g)\n", pdf, (unsigned long)num_colors, gamma, wx, wy, rx, ry, gx, gy, bx, by);
+  PDFIO_DEBUG("pdfioFileCreateCalibratedColorFromPrimaries(pdf=%p, num_colors=%lu, gamma=%.6f, wx=%.6f, wy=%.6f, rx=%.6f, ry=%.6f, gx=%.6f, gy=%.6f, bx=%.6f, by=%.6f)\n", pdf, (unsigned long)num_colors, gamma, wx, wy, rx, ry, gx, gy, bx, by);
 
   // Range check input...
   if (!pdf || (num_colors != 1 && num_colors != 3) || gamma <= 0.0 || ry == 0.0 || gy == 0.0 || by == 0.0)
@@ -393,8 +393,8 @@ pdfioArrayCreateColorFromPrimaries(
   matrix[2][1] = Yc;
   matrix[2][2] = Zc;
 
-  PDFIO_DEBUG("pdfioFileCreateCalibratedColorFromPrimaries: white_point=[%g %g %g]\n", white_point[0], white_point[1], white_point[2]);
-  PDFIO_DEBUG("pdfioFileCreateCalibratedColorFromPrimaries: matrix=[%g %g %g %g %g %g %g %g %g]\n", matrix[0][0], matrix[1][0], matrix[2][0], matrix[0][1], matrix[1][1], matrix[2][2], matrix[0][2], matrix[1][2], matrix[2][1]);
+  PDFIO_DEBUG("pdfioFileCreateCalibratedColorFromPrimaries: white_point=[%.6f %.6f %.6f]\n", white_point[0], white_point[1], white_point[2]);
+  PDFIO_DEBUG("pdfioFileCreateCalibratedColorFromPrimaries: matrix=[%.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f]\n", matrix[0][0], matrix[1][0], matrix[2][0], matrix[0][1], matrix[1][1], matrix[2][2], matrix[0][2], matrix[1][2], matrix[2][1]);
 
   // Now that we have the white point and matrix, use those to make the color array...
   return (pdfioArrayCreateColorFromMatrix(pdf, num_colors, gamma, matrix, white_point));
@@ -476,7 +476,7 @@ pdfioContentDrawImage(
     double         width,		// I - Width of image
     double         height)		// I - Height of image
 {
-  return (pdfioStreamPrintf(st, "q %g 0 0 %g %g %g cm/%s Do Q\n", width, height, x, y, name));
+  return (pdfioStreamPrintf(st, "q %.6f 0 0 %.6f %.6f %.6f cm/%s Do Q\n", width, height, x, y, name));
 }
 
 
@@ -516,7 +516,7 @@ pdfioContentMatrixConcat(
     pdfio_stream_t *st,			// I - Stream
     pdfio_matrix_t m)			// I - Transform matrix
 {
-  return (pdfioStreamPrintf(st, "%g %g %g %g %g %g cm\n", m[0][0], m[0][1], m[1][0], m[1][1], m[2][0], m[2][1]));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f %.6f %.6f %.6f cm\n", m[0][0], m[0][1], m[1][0], m[1][1], m[2][0], m[2][1]));
 }
 
 
@@ -535,7 +535,7 @@ pdfioContentMatrixRotate(
 					// Sine
 
 
-  return (pdfioStreamPrintf(st, "%g %g %g %g 0 0 cm\n", dcos, -dsin, dsin, dcos));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f %.6f 0 0 cm\n", dcos, -dsin, dsin, dcos));
 }
 
 
@@ -549,7 +549,7 @@ pdfioContentMatrixScale(
     double         sx,			// I - X scale
     double         sy)			// I - Y scale
 {
-  return (pdfioStreamPrintf(st, "%g 0 0 %g 0 0 cm\n", sx, sy));
+  return (pdfioStreamPrintf(st, "%.6f 0 0 %.6f 0 0 cm\n", sx, sy));
 }
 
 
@@ -563,7 +563,7 @@ pdfioContentMatrixTranslate(
     double         tx,			// I - X offset
     double         ty)			// I - Y offset
 {
-  return (pdfioStreamPrintf(st, "1 0 0 1 %g %g cm\n", tx, ty));
+  return (pdfioStreamPrintf(st, "1 0 0 1 %.6f %.6f cm\n", tx, ty));
 }
 
 
@@ -593,7 +593,7 @@ pdfioContentPathCurve(
     double         x3,			// I - X position 3
     double         y3)			// I - Y position 3
 {
-  return (pdfioStreamPrintf(st, "%g %g %g %g %g %g c\n", x1, y1, x2, y2, x3, y3));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f %.6f %.6f %.6f c\n", x1, y1, x2, y2, x3, y3));
 }
 
 
@@ -609,7 +609,7 @@ pdfioContentPathCurve13(
     double         x3,			// I - X position 3
     double         y3)			// I - Y position 3
 {
-  return (pdfioStreamPrintf(st, "%g %g %g %g v\n", x1, y1, x3, y3));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f %.6f v\n", x1, y1, x3, y3));
 }
 
 
@@ -625,7 +625,7 @@ pdfioContentPathCurve23(
     double         x3,			// I - X position 3
     double         y3)			// I - Y position 3
 {
-  return (pdfioStreamPrintf(st, "%g %g %g %g y\n", x2, y2, x3, y3));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f %.6f y\n", x2, y2, x3, y3));
 }
 
 
@@ -650,7 +650,7 @@ pdfioContentPathLineTo(
     double         x,			// I - X position
     double         y)			// I - Y position
 {
-  return (pdfioStreamPrintf(st, "%g %g l\n", x, y));
+  return (pdfioStreamPrintf(st, "%.6f %.6f l\n", x, y));
 }
 
 
@@ -664,7 +664,7 @@ pdfioContentPathMoveTo(
     double         x,			// I - X position
     double         y)			// I - Y position
 {
-  return (pdfioStreamPrintf(st, "%g %g m\n", x, y));
+  return (pdfioStreamPrintf(st, "%.6f %.6f m\n", x, y));
 }
 
 
@@ -680,7 +680,7 @@ pdfioContentPathRect(
     double         width,		// I - Width
     double         height)		// I - Height
 {
-  return (pdfioStreamPrintf(st, "%g %g %g %g re\n", x, y, width, height));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f %.6f re\n", x, y, width, height));
 }
 
 
@@ -722,11 +722,11 @@ pdfioContentSetDashPattern(
     double         off)			// I - Off length
 {
   if (on <= 0.0 && off <= 0.0)
-    return (pdfioStreamPrintf(st, "[] %g d\n", phase));
+    return (pdfioStreamPrintf(st, "[] %.6f d\n", phase));
   else if (fabs(on - off) < 0.001)
-    return (pdfioStreamPrintf(st, "[%g] %g d\n", on, phase));
+    return (pdfioStreamPrintf(st, "[%.6f] %.6f d\n", on, phase));
   else
-    return (pdfioStreamPrintf(st, "[%g %g] %g d\n", on, off, phase));
+    return (pdfioStreamPrintf(st, "[%.6f %.6f] %.6f d\n", on, off, phase));
 }
 
 
@@ -742,7 +742,7 @@ pdfioContentSetFillColorDeviceCMYK(
     double         y,			// I - Yellow value (0.0 to 1.0)
     double         k)			// I - Black value (0.0 to 1.0)
 {
-  return (pdfioStreamPrintf(st, "%g %g %g %g k\n", c, m, y, k));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f %.6f k\n", c, m, y, k));
 }
 
 
@@ -755,7 +755,7 @@ pdfioContentSetFillColorDeviceGray(
     pdfio_stream_t *st,			// I - Stream
     double         g)			// I - Gray value (0.0 to 1.0)
 {
-  return (pdfioStreamPrintf(st, "%g g\n", g));
+  return (pdfioStreamPrintf(st, "%.6f g\n", g));
 }
 
 
@@ -770,7 +770,7 @@ pdfioContentSetFillColorDeviceRGB(
     double         g,			// I - Green value (0.0 to 1.0)
     double         b)			// I - Blue value (0.0 to 1.0)
 {
-  return (pdfioStreamPrintf(st, "%g %g %g rg\n", r, g, b));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f rg\n", r, g, b));
 }
 
 
@@ -783,7 +783,7 @@ pdfioContentSetFillColorGray(
     pdfio_stream_t *st,			// I - Stream
     double         g)			// I - Gray value (0.0 to 1.0)
 {
-  return (pdfioStreamPrintf(st, "%g sc\n", g));
+  return (pdfioStreamPrintf(st, "%.6f sc\n", g));
 }
 
 
@@ -798,7 +798,7 @@ pdfioContentSetFillColorRGB(
     double         g,			// I - Green value (0.0 to 1.0)
     double         b)			// I - Blue value (0.0 to 1.0)
 {
-  return (pdfioStreamPrintf(st, "%g %g %g sc\n", r, g, b));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f sc\n", r, g, b));
 }
 
 
@@ -824,7 +824,7 @@ pdfioContentSetFlatness(
     pdfio_stream_t *st,			// I - Stream
     double         flatness)		// I - Flatness value (0.0 to 100.0)
 {
-  return (pdfioStreamPrintf(st, "%g i\n", flatness));
+  return (pdfioStreamPrintf(st, "%.6f i\n", flatness));
 }
 
 
@@ -863,7 +863,7 @@ pdfioContentSetLineWidth(
     pdfio_stream_t *st,			// I - Stream
     double         width)		// I - Line width value
 {
-  return (pdfioStreamPrintf(st, "%g w\n", width));
+  return (pdfioStreamPrintf(st, "%.6f w\n", width));
 }
 
 
@@ -876,7 +876,7 @@ pdfioContentSetMiterLimit(
     pdfio_stream_t *st,			// I - Stream
     double         limit)		// I - Miter limit value
 {
-  return (pdfioStreamPrintf(st, "%g M\n", limit));
+  return (pdfioStreamPrintf(st, "%.6f M\n", limit));
 }
 
 
@@ -892,7 +892,7 @@ pdfioContentSetStrokeColorDeviceCMYK(
     double         y,			// I - Yellow value (0.0 to 1.0)
     double         k)			// I - Black value (0.0 to 1.0)
 {
-  return (pdfioStreamPrintf(st, "%g %g %g %g K\n", c, m, y, k));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f %.6f K\n", c, m, y, k));
 }
 
 
@@ -905,7 +905,7 @@ pdfioContentSetStrokeColorDeviceGray(
     pdfio_stream_t *st,			// I - Stream
     double         g)			// I - Gray value (0.0 to 1.0)
 {
-  return (pdfioStreamPrintf(st, "%g G\n", g));
+  return (pdfioStreamPrintf(st, "%.6f G\n", g));
 }
 
 
@@ -920,7 +920,7 @@ pdfioContentSetStrokeColorDeviceRGB(
     double         g,			// I - Green value (0.0 to 1.0)
     double         b)			// I - Blue value (0.0 to 1.0)
 {
-  return (pdfioStreamPrintf(st, "%g %g %g RG\n", r, g, b));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f RG\n", r, g, b));
 }
 
 
@@ -933,7 +933,7 @@ pdfioContentSetStrokeColorGray(
     pdfio_stream_t *st,			// I - Stream
     double         g)			// I - Gray value (0.0 to 1.0)
 {
-  return (pdfioStreamPrintf(st, "%g SC\n", g));
+  return (pdfioStreamPrintf(st, "%.6f SC\n", g));
 }
 
 
@@ -948,7 +948,7 @@ pdfioContentSetStrokeColorRGB(
     double         g,			// I - Green value (0.0 to 1.0)
     double         b)			// I - Blue value (0.0 to 1.0)
 {
-  return (pdfioStreamPrintf(st, "%g %g %g SC\n", r, g, b));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f SC\n", r, g, b));
 }
 
 
@@ -974,7 +974,7 @@ pdfioContentSetTextCharacterSpacing(
     pdfio_stream_t *st,			// I - Stream
     double         spacing)		// I - Character spacing
 {
-  return (pdfioStreamPrintf(st, "%g Tc\n", spacing));
+  return (pdfioStreamPrintf(st, "%.6f Tc\n", spacing));
 }
 
 
@@ -988,7 +988,7 @@ pdfioContentSetTextFont(
     const char     *name,		// I - Font name
     double         size)		// I - Font size
 {
-  return (pdfioStreamPrintf(st, "/%s %g Tf\n", name, size));
+  return (pdfioStreamPrintf(st, "/%s %.6f Tf\n", name, size));
 }
 
 
@@ -1001,7 +1001,7 @@ pdfioContentSetTextLeading(
     pdfio_stream_t *st,			// I - Stream
     double         leading)		// I - Leading (line height) value
 {
-  return (pdfioStreamPrintf(st, "%g TL\n", leading));
+  return (pdfioStreamPrintf(st, "%.6f TL\n", leading));
 }
 
 
@@ -1014,7 +1014,7 @@ pdfioContentSetTextMatrix(
     pdfio_stream_t *st,			// I - Stream
     pdfio_matrix_t m)			// I - Transform matrix
 {
-  return (pdfioStreamPrintf(st, "%g %g %g %g %g %g Tm\n", m[0][0], m[0][1], m[1][0], m[1][1], m[2][0], m[2][1]));
+  return (pdfioStreamPrintf(st, "%.6f %.6f %.6f %.6f %.6f %.6f Tm\n", m[0][0], m[0][1], m[1][0], m[1][1], m[2][0], m[2][1]));
 }
 
 
@@ -1040,7 +1040,7 @@ pdfioContentSetTextRise(
     pdfio_stream_t *st,			// I - Stream
     double         rise)		// I - Y offset
 {
-  return (pdfioStreamPrintf(st, "%g Ts\n", rise));
+  return (pdfioStreamPrintf(st, "%.6f Ts\n", rise));
 }
 
 
@@ -1053,7 +1053,7 @@ pdfioContentSetTextWordSpacing(
     pdfio_stream_t *st,			// I - Stream
     double         spacing)		// I - Spacing between words
 {
-  return (pdfioStreamPrintf(st, "%g Tw\n", spacing));
+  return (pdfioStreamPrintf(st, "%.6f Tw\n", spacing));
 }
 
 
@@ -1066,7 +1066,7 @@ pdfioContentSetTextXScaling(
     pdfio_stream_t *st,			// I - Stream
     double         percent)		// I - Horizontal scaling in percent
 {
-  return (pdfioStreamPrintf(st, "%g Tz\n", percent));
+  return (pdfioStreamPrintf(st, "%.6f Tz\n", percent));
 }
 
 
@@ -1246,7 +1246,7 @@ pdfioContentTextMoveLine(
     double         tx,			// I - X offset
     double         ty)			// I - Y offset
 {
-  return (pdfioStreamPrintf(st, "%g %g TD\n", tx, ty));
+  return (pdfioStreamPrintf(st, "%.6f %.6f TD\n", tx, ty));
 }
 
 
@@ -1260,7 +1260,7 @@ pdfioContentTextMoveTo(
     double         tx,			// I - X offset
     double         ty)			// I - Y offset
 {
-  return (pdfioStreamPrintf(st, "%g %g Td\n", tx, ty));
+  return (pdfioStreamPrintf(st, "%.6f %.6f Td\n", tx, ty));
 }
 
 
@@ -1315,7 +1315,7 @@ pdfioContentTextNewLineShow(
   if (ws > 0.0 || cs > 0.0)
   {
     // Use " operator to show text with word and character spacing...
-    if (!pdfioStreamPrintf(st, "%g %g", ws, cs))
+    if (!pdfioStreamPrintf(st, "%.6f %.6f", ws, cs))
       return (false);
 
     op = '\"';
@@ -1463,7 +1463,7 @@ pdfioContentTextShowJustified(
   {
     if (offsets[i] != 0.0f)
     {
-      if (!pdfioStreamPrintf(st, "%g", offsets[i]))
+      if (!pdfioStreamPrintf(st, "%.6f", offsets[i]))
         return (false);
     }
 
@@ -1880,6 +1880,9 @@ pdfioFileCreateFontObjFromFile(
   else
   {
     // Simple (CP1282 or custom encoding) 8-bit font...
+    int			ch;		// Character
+    pdfio_array_t	*w_array;	// Widths array
+
     if (ttfGetMaxChar(font) >= 255 && !pdf->cp1252_obj && !create_cp1252(pdf))
       goto done;
 
@@ -1890,8 +1893,30 @@ pdfioFileCreateFontObjFromFile(
     pdfioDictSetName(dict, "Type", "Font");
     pdfioDictSetName(dict, "Subtype", "TrueType");
     pdfioDictSetName(dict, "BaseFont", basefont);
+    pdfioDictSetNumber(dict, "FirstChar", 32);
     if (ttfGetMaxChar(font) >= 255)
+    {
       pdfioDictSetObj(dict, "Encoding", pdf->cp1252_obj);
+      pdfioDictSetNumber(dict, "LastChar", 255);
+    }
+    else
+    {
+      pdfioDictSetNumber(dict, "LastChar", ttfGetMaxChar(font));
+    }
+
+    // Build a Widths array for CP1252/WinAnsiEncoding
+    if ((w_array = pdfioArrayCreate(pdf)) == NULL)
+      goto done;
+
+    for (ch = 32; ch < 256 && ch < ttfGetMaxChar(font); ch ++)
+    {
+      if (ch >= 0x80 && ch < 0xa0)
+	pdfioArrayAppendNumber(w_array, ttfGetWidth(font, _pdfio_cp1252[ch - 0x80]));
+      else
+	pdfioArrayAppendNumber(w_array, ttfGetWidth(font, ch));
+    }
+
+    pdfioDictSetArray(dict, "Widths", w_array);
 
     pdfioDictSetObj(dict, "FontDescriptor", desc_obj);
 
@@ -2779,7 +2804,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   }
   else if (png_get_cHRM(pp, info, &wx, &wy, &rx, &ry, &gx, &gy, &bx, &by) && png_get_gAMA(pp, info, &gamma))
   {
-    PDFIO_DEBUG("copy_png: Color primaries [%g %g %g %g %g %g %g %g], gamma %g\n", wx, wy, rx, ry, gx, gy, bx, by, gamma);
+    PDFIO_DEBUG("copy_png: Color primaries [%.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f], gamma %.6f\n", wx, wy, rx, ry, gx, gy, bx, by, gamma);
     pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPrimaries(dict->pdf, num_colors, gamma, wx, wy, rx, ry, gx, gy, bx, by));
   }
   else
@@ -2894,8 +2919,8 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 
           if (!st)
           {
-	    PDFIO_DEBUG("copy_png: wx=%g, wy=%g, rx=%g, ry=%g, gx=%g, gy=%g, bx=%g, by=%g\n", wx, wy, rx, ry, gx, gy, bx, by);
-	    PDFIO_DEBUG("copy_png: gamma=%g\n", gamma);
+	    PDFIO_DEBUG("copy_png: wx=%.6f, wy=%.6f, rx=%.6f, ry=%.6f, gx=%.6f, gy=%.6f, bx=%.6f, by=%.6f\n", wx, wy, rx, ry, gx, gy, bx, by);
+	    PDFIO_DEBUG("copy_png: gamma=%.6f\n", gamma);
 
             if (!pdfioDictGetArray(dict, "ColorSpace"))
             {
@@ -3240,265 +3265,14 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 static bool				// O - `true` on success, `false` on failure
 create_cp1252(pdfio_file_t *pdf)	// I - PDF file
 {
-  int		ch;			// Current character
-  bool		chindex;		// Need character index?
   pdfio_dict_t	*cp1252_dict;		// Encoding dictionary
-  pdfio_array_t	*cp1252_array;		// Differences array
-  static const char * const cp1252[] =	// Glyphs for CP1252 encoding
-  {
-    "space",
-    "exclam",
-    "quotedbl",
-    "numbersign",
-    "dollar",
-    "percent",
-    "ampersand",
-    "quotesingle",
-    "parenleft",
-    "parenright",
-    "asterisk",
-    "plus",
-    "comma",
-    "hyphen",
-    "period",
-    "slash",
-    "zero",
-    "one",
-    "two",
-    "three",
-    "four",
-    "five",
-    "six",
-    "seven",
-    "eight",
-    "nine",
-    "colon",
-    "semicolon",
-    "less",
-    "equal",
-    "greater",
-    "question",
-    "at",
-    "A",
-    "B",
-    "C",
-    "D",
-    "E",
-    "F",
-    "G",
-    "H",
-    "I",
-    "J",
-    "K",
-    "L",
-    "M",
-    "N",
-    "O",
-    "P",
-    "Q",
-    "R",
-    "S",
-    "T",
-    "U",
-    "V",
-    "W",
-    "X",
-    "Y",
-    "Z",
-    "bracketleft",
-    "backslash",
-    "bracketright",
-    "asciicircum",
-    "underscore",
-    "grave",
-    "a",
-    "b",
-    "c",
-    "d",
-    "e",
-    "f",
-    "g",
-    "h",
-    "i",
-    "j",
-    "k",
-    "l",
-    "m",
-    "n",
-    "o",
-    "p",
-    "q",
-    "r",
-    "s",
-    "t",
-    "u",
-    "v",
-    "w",
-    "x",
-    "y",
-    "z",
-    "braceleft",
-    "bar",
-    "braceright",
-    "asciitilde",
-    "",
-    "Euro",
-    "",
-    "quotesinglbase",
-    "florin",
-    "quotedblbase",
-    "ellipsis",
-    "dagger",
-    "daggerdbl",
-    "circumflex",
-    "perthousand",
-    "Scaron",
-    "guilsinglleft",
-    "OE",
-    "",
-    "Zcaron",
-    "",
-    "",
-    "quoteleft",
-    "quoteright",
-    "quotedblleft",
-    "quotedblright",
-    "bullet",
-    "endash",
-    "emdash",
-    "tilde",
-    "trademark",
-    "scaron",
-    "guilsinglright",
-    "oe",
-    "",
-    "zcaron",
-    "Ydieresis",
-    "space",
-    "exclamdown",
-    "cent",
-    "sterling",
-    "currency",
-    "yen",
-    "brokenbar",
-    "section",
-    "dieresis",
-    "copyright",
-    "ordfeminine",
-    "guillemotleft",
-    "logicalnot",
-    "minus",
-    "registered",
-    "macron",
-    "degree",
-    "plusminus",
-    "twosuperior",
-    "threesuperior",
-    "acute",
-    "mu",
-    "paragraph",
-    "periodcentered",
-    "cedilla",
-    "onesuperior",
-    "ordmasculine",
-    "guillemotright",
-    "onequarter",
-    "onehalf",
-    "threequarters",
-    "questiondown",
-    "Agrave",
-    "Aacute",
-    "Acircumflex",
-    "Atilde",
-    "Adieresis",
-    "Aring",
-    "AE",
-    "Ccedilla",
-    "Egrave",
-    "Eacute",
-    "Ecircumflex",
-    "Edieresis",
-    "Igrave",
-    "Iacute",
-    "Icircumflex",
-    "Idieresis",
-    "Eth",
-    "Ntilde",
-    "Ograve",
-    "Oacute",
-    "Ocircumflex",
-    "Otilde",
-    "Odieresis",
-    "multiply",
-    "Oslash",
-    "Ugrave",
-    "Uacute",
-    "Ucircumflex",
-    "Udieresis",
-    "Yacute",
-    "Thorn",
-    "germandbls",
-    "agrave",
-    "aacute",
-    "acircumflex",
-    "atilde",
-    "adieresis",
-    "aring",
-    "ae",
-    "ccedilla",
-    "egrave",
-    "eacute",
-    "ecircumflex",
-    "edieresis",
-    "igrave",
-    "iacute",
-    "icircumflex",
-    "idieresis",
-    "eth",
-    "ntilde",
-    "ograve",
-    "oacute",
-    "ocircumflex",
-    "otilde",
-    "odieresis",
-    "divide",
-    "oslash",
-    "ugrave",
-    "uacute",
-    "ucircumflex",
-    "udieresis",
-    "yacute",
-    "thorn",
-    "ydieresis"
-  };
 
 
-  if ((cp1252_dict = pdfioDictCreate(pdf)) == NULL || (cp1252_array = pdfioArrayCreate(pdf)) == NULL)
+  if ((cp1252_dict = pdfioDictCreate(pdf)) == NULL)
     return (false);
 
-  for (ch = 0, chindex = true; ch < (int)(sizeof(cp1252) / sizeof(cp1252[0])); ch ++)
-  {
-    if (cp1252[ch][0])
-    {
-      // Add this character...
-      if (chindex)
-      {
-	// Add the initial index...
-	pdfioArrayAppendNumber(cp1252_array, ch + 32);
-	chindex = false;
-      }
-
-      pdfioArrayAppendName(cp1252_array, cp1252[ch]);
-    }
-    else
-    {
-      // Flag that we need a new index...
-      chindex = true;
-    }
-  }
-
   pdfioDictSetName(cp1252_dict, "Type", "Encoding");
-  pdfioDictSetArray(cp1252_dict, "Differences", cp1252_array);
+  pdfioDictSetName(cp1252_dict, "BaseEncoding", "WinAnsiEncoding");
 
   if ((pdf->cp1252_obj = pdfioFileCreateObj(pdf, cp1252_dict)) == NULL)
     return (false);

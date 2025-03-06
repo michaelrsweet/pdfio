@@ -15,6 +15,9 @@ v1.5.0 - 2025-03-06
 - Updated documentation (Issue #95)
 - Updated the pdf2txt example to support font encodings.
 - Fixed potential heap/integer overflow issues in the TrueType cmap code.
+- Fixed an output issue for extremely small `double` values with the
+  `pdfioContent` APIs.
+- Fixed a missing Widths array issue for embedded TrueType fonts.
 
 
 v1.4.1 - 2025-01-24
