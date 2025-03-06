@@ -1,7 +1,7 @@
 Changes in PDFio
 ================
 
-v1.5.0 - YYYY-MM-DD
+v1.5.0 - 2025-03-06
 -------------------
 
 - Added support for embedded color profiles in JPEG images (Issue #7)
