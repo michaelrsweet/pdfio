@@ -3797,9 +3797,19 @@ write_string(pdfio_stream_t *st,	// I - Stream
 
     if (unicode)
     {
-      // Write a two-byte character...
-      if (!pdfioStreamPrintf(st, "%04X", ch))
-	return (false);
+      // Write UTF-16 in hex...
+      if (ch < 0x100000)
+      {
+        // Two-byte UTF-16
+	if (!pdfioStreamPrintf(st, "%04X", ch))
+	  return (false);
+      }
+      else
+      {
+        // Four-byte UTF-16
+	if (!pdfioStreamPrintf(st, "%04X%04X", 0xd800 | ((ch >> 10) & 0x03ff), 0xdc00 | (ch & 0x03ff)))
+	  return (false);
+      }
     }
     else
     {

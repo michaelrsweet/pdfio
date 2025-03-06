@@ -377,15 +377,16 @@ pdfioStreamConsume(pdfio_stream_t *st,	// I - Stream
 //
 // 'pdfioStreamGetToken()' - Read a single PDF token from a stream.
 //
-// This function reads a single PDF token from a stream.  Operator tokens,
-// boolean values, and numbers are returned as-is in the provided string buffer.
-// String values start with the opening parenthesis ('(') but have all escaping
-// resolved and the terminating parenthesis removed.  Hexadecimal string values
-// start with the opening angle bracket ('<') and have all whitespace and the
-// terminating angle bracket removed.
+// This function reads a single PDF token from a stream, skipping all whitespace
+// and comments.  Operator tokens, boolean values, and numbers are returned
+// as-is in the provided string buffer.  String values start with the opening
+// parenthesis ('(') but have all escaping resolved and the terminating
+// parenthesis removed.  Hexadecimal string values start with the opening angle
+// bracket ('<') and have all whitespace and the terminating angle bracket
+// removed.
 //
 
-bool					// O - `true` on success, `false` on EOF
+bool					// O - `true` on success, `false` on end-of-stream or error
 pdfioStreamGetToken(
     pdfio_stream_t *st,			// I - Stream
     char           *buffer,		// I - String buffer

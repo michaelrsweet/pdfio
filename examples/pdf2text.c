@@ -1089,6 +1089,7 @@ static name_map_t	unicode_map[] =
 
 static void	load_encoding(pdfio_obj_t *page_obj, const char *name, int encoding[256]);
 static void	put_utf8(int ch);
+static void	puts_utf16(const char *s);
 
 
 //
@@ -1154,7 +1155,7 @@ main(int  argc,				// I - Number of command-line arguments
           // End of an array for justified text...
           in_array = false;
         }
-        else if (!first && (isdigit(buffer[0]) || buffer[0] == '-') && fabs(atof(buffer)) > 100)
+        else if (!first && in_array && (isdigit(buffer[0]) || buffer[0] == '-') && fabs(atof(buffer)) > 100)
         {
           // Whitespace in a justified text block...
           putchar(' ');
@@ -1162,11 +1163,17 @@ main(int  argc,				// I - Number of command-line arguments
 	else if (buffer[0] == '(')
 	{
           // Text string using an 8-bit encoding
-	  if (first)
-	    first = false;
+	  first = false;
 
           for (bufptr = buffer + 1; *bufptr; bufptr ++)
             put_utf8(encoding[*bufptr & 255]);
+	}
+	else if (buffer[0] == '<')
+	{
+          // Unicode text string
+	  first = false;
+
+          puts_utf16(buffer + 1);
 	}
 	else if (buffer[0] == '/')
 	{
@@ -1267,6 +1274,7 @@ load_encoding(
 
   if ((font_dict = pdfioDictGetDict(resources_dict, "Font")) == NULL)
   {
+    // Font resources not a dictionary, see if it is an object...
     if ((font_obj = pdfioDictGetObj(resources_dict, "Font")) != NULL)
       font_dict = pdfioObjGetDict(font_obj);
 
@@ -1360,5 +1368,53 @@ put_utf8(int ch)			// I - Character
     putchar(0xe0 | (ch >> 12));
     putchar(0x80 | ((ch >> 6) & 0x3f));
     putchar(0x80 | (ch & 0x3f));
+  }
+}
+
+
+//
+// 'puts_utf16()' - Output a hex-encoded UTF-16 string.
+//
+
+static void
+puts_utf16(const char *s)		// I - Hex string
+{
+  size_t	length = strlen(s) / 4;	// Length of string
+  int		ch;			// Character
+  char		temp[5];		// Hex characters
+
+
+  temp[4] = '\0';
+
+  while (length > 0)
+  {
+    // Get the next Unicode character...
+    temp[0] = *s++;
+    temp[1] = *s++;
+    temp[2] = *s++;
+    temp[3] = *s++;
+    length --;
+
+    if ((ch = strtol(temp, NULL, 16)) < 0)
+      break;
+
+    if (ch >= 0xd800 && ch <= 0xdbff && length > 0)
+    {
+      // Multi-word UTF-16 char...
+      int lch;			// Lower bits
+
+      temp[0] = *s++;
+      temp[1] = *s++;
+      temp[2] = *s++;
+      temp[3] = *s++;
+      length --;
+
+      if ((lch = strtol(temp, NULL, 16)) < 0 || lch < 0xdc00 || lch >= 0xdfff)
+	break;
+
+      ch = (((ch & 0x3ff) << 10) | (lch & 0x3ff)) + 0x10000;
+    }
+
+    put_utf8(ch);
   }
 }

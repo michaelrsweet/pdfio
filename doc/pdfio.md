@@ -15,7 +15,7 @@ goals of PDFio are:
 PDFio is *not* concerned with rendering or viewing a PDF file, although a PDF
 RIP or viewer could be written using it.
 
-PDFio is Copyright © 2021-2024 by Michael R Sweet and is licensed under the
+PDFio is Copyright © 2021-2025 by Michael R Sweet and is licensed under the
 Apache License Version 2.0 with an (optional) exception to allow linking against
 GPL2/LGPL2 software.  See the files "LICENSE" and "NOTICE" for more information.
 
@@ -28,7 +28,10 @@ PDFio requires the following to build the software:
 - A C99 compiler such as Clang, GCC, or MS Visual C
 - A POSIX-compliant `make` program
 - A POSIX-compliant `sh` program
-- ZLIB (<https://www.zlib.net>) 1.0 or higher
+- ZLIB (<https://www.zlib.net/>) 1.0 or higher
+
+PDFio will also use libpng 1.6 or higher (<https://www.libpng.org/>) to provide
+enhanced PNG image support.
 
 IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
 
@@ -941,37 +944,98 @@ main(int  argc,                         // I - Number of command-line arguments
 Extract Text from PDF File
 --------------------------
 
-The `pdf2text.c` example code extracts non-Unicode text from a PDF file by
-scanning each page for strings and text drawing commands.  Since it doesn't
-look at the font encoding or support Unicode text, it is really only useful to
-extract plain ASCII text from a PDF file.  And since it writes text in the order
-it appears in the page stream, it may not come out in the same order as appears
-on the page.
+The `pdf2text.c` example code extracts text from a PDF file and writes it to the
+standard output.  Unlike some other PDF tools, it outputs the text in the order
+it is seen in each page stream so the output might appear "jumbled" if the PDF
+producer doesn't output text in reading order.  The code is able to handle
+different font encodings and produces UTF-8 output.
 
 The [`pdfioStreamGetToken`](@@) function is used to read individual tokens from
-the page streams.  Tokens starting with the open parenthesis are text strings,
-while PDF operators are left as-is.  We use some simple logic to make sure that
-we include spaces between text strings and add newlines for the text operators
-that start a new line in a text block:
+the page streams:
 
 ```c
 pdfio_stream_t *st;              // Page stream
+char           buffer[1024],     // Token buffer
+               *bufptr,          // Pointer into buffer
+               name[256];        // Current (font) name
 bool           first = true;     // First string on line?
-char           buffer[1024];     // Token buffer
+int            encoding[256];    // Font encoding to Unicode
+bool           in_array = false; // Are we in an array?
 
 // Read PDF tokens from the page stream...
 while (pdfioStreamGetToken(st, buffer, sizeof(buffer)))
 {
-  if (buffer[0] == '(')
+```
+
+Justified text can be found inside arrays ("[ ... ]"), so we look for the array
+delimiter tokens and any (spacing) numbers inside an array.  Experimentation has
+shown that numbers greater than 100 can be treated as whitespace:
+
+```c
+  if (!strcmp(buffer, "["))
+  {
+    // Start of an array for justified text...
+    in_array = true;
+  }
+  else if (!strcmp(buffer, "]"))
+  {
+    // End of an array for justified text...
+    in_array = false;
+  }
+  else if (!first && in_array && (isdigit(buffer[0]) || buffer[0] == '-') && fabs(atof(buffer)) > 100)
+  {
+    // Whitespace in a justified text block...
+    putchar(' ');
+  }
+```
+
+Tokens starting with '(' or '<' are text fragments.  8-bit text starting with
+'(' needs to be mapped to Unicode using the current font encoding while hex
+strings starting with '<' are UTF-16 (Unicode) that need to be converted to
+UTF-8:
+
+```c
+  else if (buffer[0] == '(')
   {
     // Text string using an 8-bit encoding
-    if (first)
-      first = false;
-    else if (buffer[1] != ' ')
-      putchar(' ');
+    first = false;
 
-    fputs(buffer + 1, stdout);
+    for (bufptr = buffer + 1; *bufptr; bufptr ++)
+      put_utf8(encoding[*bufptr & 255]);
   }
+  else if (buffer[0] == '<')
+  {
+    // Unicode text string
+    first = false;
+
+    puts_utf16(buffer + 1);
+  }
+```
+
+Simple (8-bit) fonts include an encoding table that maps the 8-bit characters to
+one of 1051 Unicode glyph names.  Since each font can use a different encoding,
+we look for font names starting with '/' and the "Tf" (set text font) operator
+token and load that font's encoding using the
+[load_encoding](#the-loadencoding-function) function:
+
+```c
+  else if (buffer[0] == '/')
+  {
+    // Save name...
+    strncpy(name, buffer + 1, sizeof(name) - 1);
+    name[sizeof(name) - 1] = '\0';
+  }
+  else if (!strcmp(buffer, "Tf") && name[0])
+  {
+    // Set font...
+    load_encoding(obj, name, encoding);
+  }
+```
+
+Finally, some text operators start a new line in a text block, so when we see
+their tokens we output a newline:
+
+```c
   else if (!strcmp(buffer, "Td") || !strcmp(buffer, "TD") || !strcmp(buffer, "T*") ||
            !strcmp(buffer, "\'") || !strcmp(buffer, "\""))
   {
@@ -980,9 +1044,160 @@ while (pdfioStreamGetToken(st, buffer, sizeof(buffer)))
     first = true;
   }
 }
+```
 
-if (!first)
-  putchar('\n');
+
+### The `load_encoding` Function
+
+The `load_encoding` function looks up the named font in the page's "Resources"
+dictionary.  Every PDF simple font contains an "Encoding" dictionary with a base
+encoding ("WinANSI", "MacRoman", or "MacExpert") and a differences array that
+lists character indexes and glyph names for an 8-bit font.
+
+We start by initializing the encoding array to the default WinANSI encoding and
+looking up the font object for the named font:
+
+```c
+static void
+load_encoding(
+    pdfio_obj_t   *page_obj,            // I - Page object
+    const char    *name,                // I - Font name
+    int           encoding[256])        // O - Encoding table
+{
+  size_t        i, j;                   // Looping vars
+  pdfio_dict_t  *page_dict,             // Page dictionary
+                *resources_dict,        // Resources dictionary
+                *font_dict;             // Font dictionary
+  pdfio_obj_t   *font_obj,              // Font object
+                *encoding_obj;          // Encoding object
+  static int    win_ansi[32] =          // WinANSI characters from 128 to 159
+  {
+    ...
+  };
+  static int    mac_roman[128] =        // MacRoman characters from 128 to 255
+  {
+    ...
+  };
+
+
+  // Initialize the encoding to be the "standard" WinAnsi...
+  for (i = 0; i < 128; i ++)
+    encoding[i] = i;
+  for (i = 160; i < 256; i ++)
+    encoding[i] = i;
+  memcpy(encoding + 128, win_ansi, sizeof(win_ansi));
+
+  // Find the named font...
+  if ((page_dict = pdfioObjGetDict(page_obj)) == NULL)
+    return;
+
+  if ((resources_dict = pdfioDictGetDict(page_dict, "Resources")) == NULL)
+    return;
+
+  if ((font_dict = pdfioDictGetDict(resources_dict, "Font")) == NULL)
+  {
+    // Font resources not a dictionary, see if it is an object...
+    if ((font_obj = pdfioDictGetObj(resources_dict, "Font")) != NULL)
+      font_dict = pdfioObjGetDict(font_obj);
+
+    if (!font_dict)
+      return;
+  }
+
+  if ((font_obj = pdfioDictGetObj(font_dict, name)) == NULL)
+    return;
+```
+
+Once we have found the font we see if it has an "Encoding" dictionary:
+
+```c
+  pdfio_dict_t  *encoding_dict;         // Encoding dictionary
+
+  if ((encoding_obj = pdfioDictGetObj(pdfioObjGetDict(font_obj), "Encoding")) == NULL)
+    return;
+
+  if ((encoding_dict = pdfioObjGetDict(encoding_obj)) == NULL)
+    return;
+```
+
+Once we have the encoding dictionary we can get the "BaseEncoding" and
+"Differences" values:
+
+```c
+  const char    *base_encoding;         // BaseEncoding name
+  pdfio_array_t *differences;           // Differences array
+
+  // OK, have the encoding object, build the encoding using it...
+  base_encoding = pdfioDictGetName(encoding_dict, "BaseEncoding");
+  differences   = pdfioDictGetArray(encoding_dict, "Differences");
+```
+
+If the base encoding is "MacRomainEncoding", we need to reset the upper 128
+characters in the encoding array match it:
+
+```c
+  if (base_encoding && !strcmp(base_encoding, "MacRomanEncoding"))
+  {
+    // Map upper 128
+    memcpy(encoding + 128, mac_roman, sizeof(mac_roman));
+  }
+
+```
+
+Then we loop through the differences array, keeping track of the current index
+within the encoding array.  A number indicates a new index while a name is the
+Unicode glyph for the current index:
+
+```c
+  typedef struct name_map_s
+  {
+    const char    *name;                // Character name
+    int           unicode;              // Unicode value
+  } name_map_t;
+
+  static name_map_t unicode_map[1051];  // List of glyph names
+
+  if (differences)
+  {
+    // Apply differences
+    size_t      count = pdfioArrayGetSize(differences);
+                                        // Number of differences
+    const char  *name;                  // Character name
+    size_t      idx = 0;                // Index in encoding array
+
+    for (i = 0; i < count; i ++)
+    {
+      switch (pdfioArrayGetType(differences, i))
+      {
+        case PDFIO_VALTYPE_NUMBER :
+            // Get the index of the next character...
+            idx = (size_t)pdfioArrayGetNumber(differences, i);
+            break;
+
+        case PDFIO_VALTYPE_NAME :
+            // Lookup name and apply to encoding...
+            if (idx < 0 || idx > 255)
+              break;
+
+            name = pdfioArrayGetName(differences, i);
+            for (j = 0; j < (sizeof(unicode_map) / sizeof(unicode_map[0])); j ++)
+            {
+              if (!strcmp(name, unicode_map[j].name))
+              {
+                encoding[idx] = unicode_map[j].unicode;
+                break;
+              }
+            }
+            idx ++;
+            break;
+
+        default :
+            // Do nothing for other values
+            break;
+      }
+    }
+  }
+}
 ```
 
 

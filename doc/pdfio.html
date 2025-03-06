@@ -525,7 +525,7 @@ span.string {
 </li>
 </ul>
 <p>PDFio is <em>not</em> concerned with rendering or viewing a PDF file, although a PDF RIP or viewer could be written using it.</p>
-<p>PDFio is Copyright © 2021-2024 by Michael R Sweet and is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GPL2/LGPL2 software. See the files &quot;LICENSE&quot; and &quot;NOTICE&quot; for more information.</p>
+<p>PDFio is Copyright © 2021-2025 by Michael R Sweet and is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GPL2/LGPL2 software. See the files &quot;LICENSE&quot; and &quot;NOTICE&quot; for more information.</p>
 <h3 class="title" id="requirements">Requirements</h3>
 <p>PDFio requires the following to build the software:</p>
 <ul>
@@ -535,9 +535,10 @@ span.string {
 </li>
 <li><p>A POSIX-compliant <code>sh</code> program</p>
 </li>
-<li><p>ZLIB (<a href="https://www.zlib.net">https://www.zlib.net</a>) 1.0 or higher</p>
+<li><p>ZLIB (<a href="https://www.zlib.net/">https://www.zlib.net/</a>) 1.0 or higher</p>
 </li>
 </ul>
+<p>PDFio will also use libpng 1.6 or higher (<a href="https://www.libpng.org/">https://www.libpng.org/</a>) to provide enhanced PNG image support.</p>
 <p>IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.</p>
 <h3 class="title" id="installing-pdfio">Installing PDFio</h3>
 <p>PDFio comes with a configure script that creates a portable makefile that will work on any POSIX-compliant system with ZLIB installed. To make it, run:</p>
@@ -1215,26 +1216,69 @@ main(<span class="reserved">int</span>  argc,                         <span clas
 }
 </code></pre>
 <h3 class="title" id="extract-text-from-pdf-file">Extract Text from PDF File</h3>
-<p>The <code>pdf2text.c</code> example code extracts non-Unicode text from a PDF file by scanning each page for strings and text drawing commands. Since it doesn't look at the font encoding or support Unicode text, it is really only useful to extract plain ASCII text from a PDF file. And since it writes text in the order it appears in the page stream, it may not come out in the same order as appears on the page.</p>
-<p>The <a href="#pdfioStreamGetToken"><code>pdfioStreamGetToken</code></a> function is used to read individual tokens from the page streams. Tokens starting with the open parenthesis are text strings, while PDF operators are left as-is. We use some simple logic to make sure that we include spaces between text strings and add newlines for the text operators that start a new line in a text block:</p>
+<p>The <code>pdf2text.c</code> example code extracts text from a PDF file and writes it to the standard output. Unlike some other PDF tools, it outputs the text in the order it is seen in each page stream so the output might appear &quot;jumbled&quot; if the PDF producer doesn't output text in reading order. The code is able to handle different font encodings and produces UTF-8 output.</p>
+<p>The <a href="#pdfioStreamGetToken"><code>pdfioStreamGetToken</code></a> function is used to read individual tokens from the page streams:</p>
 <pre><code class="language-c">pdfio_stream_t *st;              <span class="comment">// Page stream</span>
+<span class="reserved">char</span>           buffer[<span class="number">1024</span>],     <span class="comment">// Token buffer</span>
+               *bufptr,          <span class="comment">// Pointer into buffer</span>
+               name[<span class="number">256</span>];        <span class="comment">// Current (font) name</span>
 <span class="reserved">bool</span>           first = <span class="reserved">true</span>;     <span class="comment">// First string on line?</span>
-<span class="reserved">char</span>           buffer[<span class="number">1024</span>];     <span class="comment">// Token buffer</span>
+<span class="reserved">int</span>            encoding[<span class="number">256</span>];    <span class="comment">// Font encoding to Unicode</span>
+<span class="reserved">bool</span>           in_array = <span class="reserved">false</span>; <span class="comment">// Are we in an array?</span>
 
 <span class="comment">// Read PDF tokens from the page stream...</span>
 <span class="reserved">while</span> (pdfioStreamGetToken(st, buffer, <span class="reserved">sizeof</span>(buffer)))
 {
-  <span class="reserved">if</span> (buffer[<span class="number">0</span>] == <span class="string">'('</span>)
+</code></pre>
+<p>Justified text can be found inside arrays (&quot;[ ... ]&quot;), so we look for the array delimiter tokens and any (spacing) numbers inside an array. Experimentation has shown that numbers greater than 100 can be treated as whitespace:</p>
+<pre><code class="language-c">  <span class="reserved">if</span> (!strcmp(buffer, <span class="string">&quot;[&quot;</span>))
+  {
+    <span class="comment">// Start of an array for justified text...</span>
+    in_array = <span class="reserved">true</span>;
+  }
+  <span class="reserved">else</span> <span class="reserved">if</span> (!strcmp(buffer, <span class="string">&quot;]&quot;</span>))
+  {
+    <span class="comment">// End of an array for justified text...</span>
+    in_array = <span class="reserved">false</span>;
+  }
+  <span class="reserved">else</span> <span class="reserved">if</span> (!first &amp;&amp; in_array &amp;&amp; (isdigit(buffer[<span class="number">0</span>]) || buffer[<span class="number">0</span>] == <span class="string">'-'</span>) &amp;&amp; fabs(atof(buffer)) &gt; <span class="number">100</span>)
+  {
+    <span class="comment">// Whitespace in a justified text block...</span>
+    putchar(<span class="string">' '</span>);
+  }
+</code></pre>
+<p>Tokens starting with '(' or '&lt;' are text fragments. 8-bit text starting with '(' needs to be mapped to Unicode using the current font encoding while hex strings starting with '&lt;' are UTF-16 (Unicode) that need to be converted to UTF-8:</p>
+<pre><code class="language-c">  <span class="reserved">else</span> <span class="reserved">if</span> (buffer[<span class="number">0</span>] == <span class="string">'('</span>)
   {
     <span class="comment">// Text string using an 8-bit encoding</span>
-    <span class="reserved">if</span> (first)
-      first = <span class="reserved">false</span>;
-    <span class="reserved">else</span> <span class="reserved">if</span> (buffer[<span class="number">1</span>] != <span class="string">' '</span>)
-      putchar(<span class="string">' '</span>);
+    first = <span class="reserved">false</span>;
 
-    fputs(buffer + <span class="number">1</span>, stdout);
+    <span class="reserved">for</span> (bufptr = buffer + <span class="number">1</span>; *bufptr; bufptr ++)
+      put_utf8(encoding[*bufptr &amp; <span class="number">255</span>]);
   }
-  <span class="reserved">else</span> <span class="reserved">if</span> (!strcmp(buffer, <span class="string">&quot;Td&quot;</span>) || !strcmp(buffer, <span class="string">&quot;TD&quot;</span>) || !strcmp(buffer, <span class="string">&quot;T*&quot;</span>) ||
+  <span class="reserved">else</span> <span class="reserved">if</span> (buffer[<span class="number">0</span>] == <span class="string">'&lt;'</span>)
+  {
+    <span class="comment">// Unicode text string</span>
+    first = <span class="reserved">false</span>;
+
+    puts_utf16(buffer + <span class="number">1</span>);
+  }
+</code></pre>
+<p>Simple (8-bit) fonts include an encoding table that maps the 8-bit characters to one of 1051 Unicode glyph names. Since each font can use a different encoding, we look for font names starting with '/' and the &quot;Tf&quot; (set text font) operator token and load that font's encoding using the <a href="#the-loadencoding-function">load_encoding</a> function:</p>
+<pre><code class="language-c">  <span class="reserved">else</span> <span class="reserved">if</span> (buffer[<span class="number">0</span>] == <span class="string">'/'</span>)
+  {
+    <span class="comment">// Save name...</span>
+    strncpy(name, buffer + <span class="number">1</span>, <span class="reserved">sizeof</span>(name) - <span class="number">1</span>);
+    name[<span class="reserved">sizeof</span>(name) - <span class="number">1</span>] = <span class="string">'\0'</span>;
+  }
+  <span class="reserved">else</span> <span class="reserved">if</span> (!strcmp(buffer, <span class="string">&quot;Tf&quot;</span>) &amp;&amp; name[<span class="number">0</span>])
+  {
+    <span class="comment">// Set font...</span>
+    load_encoding(obj, name, encoding);
+  }
+</code></pre>
+<p>Finally, some text operators start a new line in a text block, so when we see their tokens we output a newline:</p>
+<pre><code class="language-c">  <span class="reserved">else</span> <span class="reserved">if</span> (!strcmp(buffer, <span class="string">&quot;Td&quot;</span>) || !strcmp(buffer, <span class="string">&quot;TD&quot;</span>) || !strcmp(buffer, <span class="string">&quot;T*&quot;</span>) ||
            !strcmp(buffer, <span class="string">&quot;\'&quot;</span>) || !strcmp(buffer, <span class="string">&quot;\&quot;&quot;</span>))
   {
     <span class="comment">// Text operators that advance to the next line in the block</span>
@@ -1242,9 +1286,133 @@ main(<span class="reserved">int</span>  argc,                         <span clas
     first = <span class="reserved">true</span>;
   }
 }
+</code></pre>
+<h4 id="the-loadencoding-function">The <code>load_encoding</code> Function</h4>
+<p>The <code>load_encoding</code> function looks up the named font in the page's &quot;Resources&quot; dictionary. Every PDF simple font contains an &quot;Encoding&quot; dictionary with a base encoding (&quot;WinANSI&quot;, &quot;MacRoman&quot;, or &quot;MacExpert&quot;) and a differences array that lists character indexes and glyph names for an 8-bit font.</p>
+<p>We start by initializing the encoding array to the default WinANSI encoding and looking up the font object for the named font:</p>
+<pre><code class="language-c"><span class="reserved">static</span> <span class="reserved">void</span>
+load_encoding(
+    pdfio_obj_t   *page_obj,            <span class="comment">// I - Page object</span>
+    <span class="reserved">const</span> <span class="reserved">char</span>    *name,                <span class="comment">// I - Font name</span>
+    <span class="reserved">int</span>           encoding[<span class="number">256</span>])        <span class="comment">// O - Encoding table</span>
+{
+  size_t        i, j;                   <span class="comment">// Looping vars</span>
+  pdfio_dict_t  *page_dict,             <span class="comment">// Page dictionary</span>
+                *resources_dict,        <span class="comment">// Resources dictionary</span>
+                *font_dict;             <span class="comment">// Font dictionary</span>
+  pdfio_obj_t   *font_obj,              <span class="comment">// Font object</span>
+                *encoding_obj;          <span class="comment">// Encoding object</span>
+  <span class="reserved">static</span> <span class="reserved">int</span>    win_ansi[<span class="number">32</span>] =          <span class="comment">// WinANSI characters from 128 to 159</span>
+  {
+    ...
+  };
+  <span class="reserved">static</span> <span class="reserved">int</span>    mac_roman[<span class="number">128</span>] =        <span class="comment">// MacRoman characters from 128 to 255</span>
+  {
+    ...
+  };
 
-<span class="reserved">if</span> (!first)
-  putchar(<span class="string">'\n'</span>);
+
+  <span class="comment">// Initialize the encoding to be the &quot;standard&quot; WinAnsi...</span>
+  <span class="reserved">for</span> (i = <span class="number">0</span>; i &lt; <span class="number">128</span>; i ++)
+    encoding[i] = i;
+  <span class="reserved">for</span> (i = <span class="number">160</span>; i &lt; <span class="number">256</span>; i ++)
+    encoding[i] = i;
+  memcpy(encoding + <span class="number">128</span>, win_ansi, <span class="reserved">sizeof</span>(win_ansi));
+
+  <span class="comment">// Find the named font...</span>
+  <span class="reserved">if</span> ((page_dict = pdfioObjGetDict(page_obj)) == NULL)
+    <span class="reserved">return</span>;
+
+  <span class="reserved">if</span> ((resources_dict = pdfioDictGetDict(page_dict, <span class="string">&quot;Resources&quot;</span>)) == NULL)
+    <span class="reserved">return</span>;
+
+  <span class="reserved">if</span> ((font_dict = pdfioDictGetDict(resources_dict, <span class="string">&quot;Font&quot;</span>)) == NULL)
+  {
+    <span class="comment">// Font resources not a dictionary, see if it is an object...</span>
+    <span class="reserved">if</span> ((font_obj = pdfioDictGetObj(resources_dict, <span class="string">&quot;Font&quot;</span>)) != NULL)
+      font_dict = pdfioObjGetDict(font_obj);
+
+    <span class="reserved">if</span> (!font_dict)
+      <span class="reserved">return</span>;
+  }
+
+  <span class="reserved">if</span> ((font_obj = pdfioDictGetObj(font_dict, name)) == NULL)
+    <span class="reserved">return</span>;
+</code></pre>
+<p>Once we have found the font we see if it has an &quot;Encoding&quot; dictionary:</p>
+<pre><code class="language-c">  pdfio_dict_t  *encoding_dict;         <span class="comment">// Encoding dictionary</span>
+
+  <span class="reserved">if</span> ((encoding_obj = pdfioDictGetObj(pdfioObjGetDict(font_obj), <span class="string">&quot;Encoding&quot;</span>)) == NULL)
+    <span class="reserved">return</span>;
+
+  <span class="reserved">if</span> ((encoding_dict = pdfioObjGetDict(encoding_obj)) == NULL)
+    <span class="reserved">return</span>;
+</code></pre>
+<p>Once we have the encoding dictionary we can get the &quot;BaseEncoding&quot; and &quot;Differences&quot; values:</p>
+<pre><code class="language-c">  <span class="reserved">const</span> <span class="reserved">char</span>    *base_encoding;         <span class="comment">// BaseEncoding name</span>
+  pdfio_array_t *differences;           <span class="comment">// Differences array</span>
+
+  <span class="comment">// OK, have the encoding object, build the encoding using it...</span>
+  base_encoding = pdfioDictGetName(encoding_dict, <span class="string">&quot;BaseEncoding&quot;</span>);
+  differences   = pdfioDictGetArray(encoding_dict, <span class="string">&quot;Differences&quot;</span>);
+</code></pre>
+<p>If the base encoding is &quot;MacRomainEncoding&quot;, we need to reset the upper 128 characters in the encoding array match it:</p>
+<pre><code class="language-c">  <span class="reserved">if</span> (base_encoding &amp;&amp; !strcmp(base_encoding, <span class="string">&quot;MacRomanEncoding&quot;</span>))
+  {
+    <span class="comment">// Map upper 128</span>
+    memcpy(encoding + <span class="number">128</span>, mac_roman, <span class="reserved">sizeof</span>(mac_roman));
+  }
+</code></pre>
+<p>Then we loop through the differences array, keeping track of the current index within the encoding array. A number indicates a new index while a name is the Unicode glyph for the current index:</p>
+<pre><code class="language-c">  <span class="reserved">typedef</span> <span class="reserved">struct</span> name_map_s
+  {
+    <span class="reserved">const</span> <span class="reserved">char</span>    *name;                <span class="comment">// Character name</span>
+    <span class="reserved">int</span>           unicode;              <span class="comment">// Unicode value</span>
+  } name_map_t;
+
+  <span class="reserved">static</span> name_map_t unicode_map[<span class="number">1051</span>];  <span class="comment">// List of glyph names</span>
+
+  <span class="reserved">if</span> (differences)
+  {
+    <span class="comment">// Apply differences</span>
+    size_t      count = pdfioArrayGetSize(differences);
+                                        <span class="comment">// Number of differences</span>
+    <span class="reserved">const</span> <span class="reserved">char</span>  *name;                  <span class="comment">// Character name</span>
+    size_t      idx = <span class="number">0</span>;                <span class="comment">// Index in encoding array</span>
+
+    <span class="reserved">for</span> (i = <span class="number">0</span>; i &lt; count; i ++)
+    {
+      <span class="reserved">switch</span> (pdfioArrayGetType(differences, i))
+      {
+        <span class="reserved">case</span> PDFIO_VALTYPE_NUMBER :
+            <span class="comment">// Get the index of the next character...</span>
+            idx = (size_t)pdfioArrayGetNumber(differences, i);
+            <span class="reserved">break</span>;
+
+        <span class="reserved">case</span> PDFIO_VALTYPE_NAME :
+            <span class="comment">// Lookup name and apply to encoding...</span>
+            <span class="reserved">if</span> (idx &lt; <span class="number">0</span> || idx &gt; <span class="number">255</span>)
+              <span class="reserved">break</span>;
+
+            name = pdfioArrayGetName(differences, i);
+            <span class="reserved">for</span> (j = <span class="number">0</span>; j &lt; (<span class="reserved">sizeof</span>(unicode_map) / <span class="reserved">sizeof</span>(unicode_map[<span class="number">0</span>])); j ++)
+            {
+              <span class="reserved">if</span> (!strcmp(name, unicode_map[j].name))
+              {
+                encoding[idx] = unicode_map[j].unicode;
+                <span class="reserved">break</span>;
+              }
+            }
+            idx ++;
+            <span class="reserved">break</span>;
+
+        <span class="reserved">default</span> :
+            <span class="comment">// Do nothing for other values</span>
+            <span class="reserved">break</span>;
+      }
+    }
+  }
+}
 </code></pre>
 <h3 class="title" id="create-a-pdf-file-with-text-and-an-image">Create a PDF File With Text and an Image</h3>
 <p>The <code>image2pdf.c</code> example code creates a PDF file containing a JPEG or PNG image file and optional caption on a single page. The <code>create_pdf_image_file</code> function creates the PDF file, embeds a base font and the named JPEG or PNG image file, and then creates a page with the image centered on the page with any text centered below:</p>
@@ -4874,14 +5042,15 @@ size_t pdfioPageGetNumStreams(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page);</p>
 <td class="description">Size of string buffer</td></tr>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
-<p class="description"><code>true</code> on success, <code>false</code> on EOF</p>
+<p class="description"><code>true</code> on success, <code>false</code> on end-of-stream or error</p>
 <h4 class="discussion">Discussion</h4>
-<p class="discussion">This function reads a single PDF token from a stream.  Operator tokens,
-boolean values, and numbers are returned as-is in the provided string buffer.
-String values start with the opening parenthesis ('(') but have all escaping
-resolved and the terminating parenthesis removed.  Hexadecimal string values
-start with the opening angle bracket ('&lt;') and have all whitespace and the
-terminating angle bracket removed.</p>
+<p class="discussion">This function reads a single PDF token from a stream, skipping all whitespace
+and comments.  Operator tokens, boolean values, and numbers are returned
+as-is in the provided string buffer.  String values start with the opening
+parenthesis ('(') but have all escaping resolved and the terminating
+parenthesis removed.  Hexadecimal string values start with the opening angle
+bracket ('&lt;') and have all whitespace and the terminating angle bracket
+removed.</p>
 <h3 class="function"><a id="pdfioStreamPeek">pdfioStreamPeek</a></h3>
 <p class="description">Peek at data in a stream.</p>
 <p class="code">
