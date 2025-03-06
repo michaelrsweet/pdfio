@@ -14,7 +14,7 @@ v1.5.0 - YYYY-MM-DD
 - Now support opening damaged PDF files (Issue #45)
 - Updated documentation (Issue #95)
 - Updated the pdf2txt example to support font encodings.
-- Fixed a potential heap overflow in the TrueType font code.
+- Fixed potential heap/integer overflow issues in the TrueType cmap code.
 
 
 v1.4.1 - 2025-01-24

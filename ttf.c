@@ -1423,7 +1423,7 @@ read_cmap(ttf_t *font)			// I - Font
 	    group->startGlyphID  = read_ulong(font);
 	    TTF_DEBUG("read_cmap: [%u] startCharCode=%u, endCharCode=%u, startGlyphID=%u\n", gidx, group->startCharCode, group->endCharCode, group->startGlyphID);
 
-            if (group->startCharCode > group->endCharCode)
+            if (group->startCharCode > group->endCharCode || group->startCharCode >= TTF_FONT_MAX_CHAR || group->endCharCode >= TTF_FONT_MAX_CHAR)
             {
 	      errorf(font, "Bad cmap table segment %u to %u.", group->startCharCode, group->endCharCode);
 	      free(groups);
@@ -1514,7 +1514,7 @@ read_cmap(ttf_t *font)			// I - Font
 	    group->glyphID       = read_ulong(font);
 	    TTF_DEBUG("read_cmap: [%u] startCharCode=%u, endCharCode=%u, glyphID=%u\n", gidx, group->startCharCode, group->endCharCode, group->glyphID);
 
-            if (group->startCharCode > group->endCharCode)
+            if (group->startCharCode > group->endCharCode || group->startCharCode >= TTF_FONT_MAX_CHAR || group->endCharCode >= TTF_FONT_MAX_CHAR)
             {
 	      errorf(font, "Bad cmap table segment %u to %u.", group->startCharCode, group->endCharCode);
 	      free(groups);
