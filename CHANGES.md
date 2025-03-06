@@ -18,6 +18,7 @@ v1.5.0 - 2025-03-06
 - Fixed an output issue for extremely small `double` values with the
   `pdfioContent` APIs.
 - Fixed a missing Widths array issue for embedded TrueType fonts.
+- Fixed some Unicode font embedding issues.
 
 
 v1.4.1 - 2025-01-24

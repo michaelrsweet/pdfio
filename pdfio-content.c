@@ -1656,8 +1656,7 @@ pdfioFileCreateFontObjFromFile(
 			*to_unicode;	// ToUnicode dictionary
     pdfio_obj_t		*cid2gid_obj,	// CIDToGIDMap object
 			*to_unicode_obj;// ToUnicode object
-    size_t		i,		// Looping var
-			start,		// Start character
+    size_t		i, j,		// Looping vars
 			num_cmap;	// Number of CMap entries
     const int		*cmap;		// CMap entries
     int			min_glyph,	// First glyph
@@ -1709,7 +1708,7 @@ pdfioFileCreateFontObjFromFile(
     for (i = 0, bufptr = buffer, bufend = buffer + sizeof(buffer); i < num_cmap; i ++)
     {
       PDFIO_DEBUG("pdfioFileCreateFontObjFromFile: cmap[%u]=%d\n", (unsigned)i, cmap[i]);
-      if (cmap[i] < 0)
+      if (cmap[i] < 0 || cmap[i] >= (int)(sizeof(glyphs) / sizeof(glyphs[0])))
       {
         // Map undefined glyph to .notdef...
         *bufptr++ = 0;
@@ -1788,9 +1787,6 @@ pdfioFileCreateFontObjFromFile(
 		    "1 begincodespacerange\n"
 		    "<0000> <FFFF>\n"
 		    "endcodespacerange\n"
-		    "1 beginbfrange\n"
-		    "<0000> <FFFF> <0000>\n"
-                    "endbfrange\n"
                     "endcmap\n"
                     "CMapName currentdict /CMap defineresource pop\n"
                     "end\n"
@@ -1806,39 +1802,51 @@ pdfioFileCreateFontObjFromFile(
     if ((w_array = pdfioArrayCreate(pdf)) == NULL)
       goto done;
 
-    for (start = 0, w0 = ttfGetWidth(font, 0), w1 = 0, i = 1; i < 65536; start = i, w0 = w1, i ++)
+    for (i = 0, w0 = ttfGetWidth(font, 0), w1 = 0; i < 65536; w0 = w1)
     {
-      while (i < 65536 && (w1 = ttfGetWidth(font, (int)i)) == w0)
-        i ++;
-
-      if ((i - start) > 1)
+      for (j = 1; (i + j) < 65536; j ++)
       {
-        // Encode a repeating sequence...
-        pdfioArrayAppendNumber(w_array, (double)start);
-        pdfioArrayAppendNumber(w_array, (double)(i - 1));
-        pdfioArrayAppendNumber(w_array, w0);
+        if ((w1 = ttfGetWidth(font, (int)(i + j))) != w0)
+          break;
+      }
+
+      if (j >= 4)
+      {
+        // Encode a long sequence of zeros...
+	// Encode a repeating sequence...
+	pdfioArrayAppendNumber(w_array, (double)i);
+	pdfioArrayAppendNumber(w_array, (double)(i + j - 1));
+	pdfioArrayAppendNumber(w_array, w0);
+
+	i += j;
       }
       else
       {
         // Encode a non-repeating sequence...
-        pdfioArrayAppendNumber(w_array, (double)start);
+        pdfioArrayAppendNumber(w_array, (double)i);
 
         if ((temp_array = pdfioArrayCreate(pdf)) == NULL)
 	  goto done;
 
         pdfioArrayAppendNumber(temp_array, w0);
-        for (w0 = w1, i ++; i < 65536; w0 = w1, i ++)
+        for (i ++; i < 65536 && pdfioArrayGetSize(temp_array) < 8191; i ++, w0 = w1)
         {
-          if ((w1 = ttfGetWidth(font, (int)i)) == w0 && i < 65535)
-            break;
+          if ((w1 = ttfGetWidth(font, (int)i)) == w0 && i < 65530)
+          {
+            size_t j;			// Look-ahead
 
-	  pdfioArrayAppendNumber(temp_array, w0);
+            for (j = 1; j < 4; j ++)
+            {
+              if (ttfGetWidth(font, (int)(i + j)) != w0)
+                break;
+            }
+
+            if (j >= 4)
+	      break;
+	  }
+
+	  pdfioArrayAppendNumber(temp_array, w1);
         }
-
-        if (i == 65536)
-	  pdfioArrayAppendNumber(temp_array, w0);
-	else
-	  i --;
 
         pdfioArrayAppendArray(w_array, temp_array);
       }
