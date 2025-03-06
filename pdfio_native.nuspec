@@ -17,6 +17,7 @@
         <tags>pdf file native</tags>
 	<dependencies>
 	    <dependency id="pdfio_native.redist" version="1.5.0" />
+	    <dependency id="libpng_native.redist" version="1.6.30" />
 	    <dependency id="zlib_native.redist" version="1.2.11" />
 	</dependencies>
     </metadata>

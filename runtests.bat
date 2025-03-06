@@ -7,6 +7,8 @@
 
 :: Copy dependent DLLs to the named build directory
 echo Copying DLLs
+copy packages\libpng_native.redist.1.6.30\build\native\bin\x64\Debug\*.dll %1
+copy packages\libpng_native.redist.1.6.30\build\native\bin\x64\Release\*.dll %1
 copy packages\zlib_native.redist.1.2.11\build\native\bin\x64\Debug\*.dll %1
 copy packages\zlib_native.redist.1.2.11\build\native\bin\x64\Release\*.dll %1
 
