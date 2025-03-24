@@ -1,7 +1,7 @@
 //
 // PDF dictionary functions for PDFio.
 //
-// Copyright © 2021-2024 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -1168,7 +1168,7 @@ _pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
   // Write all of the key/value pairs...
   for (i = dict->num_pairs, pair = dict->pairs; i > 0; i --, pair ++)
   {
-    if (!_pdfioFilePrintf(pdf, "/%s", pair->key))
+    if (!_pdfioFilePrintf(pdf, "%N", pair->key))
       return (false);
 
     if (length && !strcmp(pair->key, "Length") && pair->value.type == PDFIO_VALTYPE_NUMBER && pair->value.value.number <= 0.0)

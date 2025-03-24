@@ -476,7 +476,7 @@ pdfioContentDrawImage(
     double         width,		// I - Width of image
     double         height)		// I - Height of image
 {
-  return (pdfioStreamPrintf(st, "q %.6f 0 0 %.6f %.6f %.6f cm/%s Do Q\n", width, height, x, y, name));
+  return (pdfioStreamPrintf(st, "q %.6f 0 0 %.6f %.6f %.6f cm%N Do Q\n", width, height, x, y, name));
 }
 
 
@@ -811,7 +811,7 @@ pdfioContentSetFillColorSpace(
     pdfio_stream_t *st,			// I - Stream
     const char     *name)		// I - Color space name
 {
-  return (pdfioStreamPrintf(st, "/%s cs\n", name));
+  return (pdfioStreamPrintf(st, "%N cs\n", name));
 }
 
 
@@ -961,7 +961,7 @@ pdfioContentSetStrokeColorSpace(
     pdfio_stream_t *st,			// I - Stream
     const char     *name)		// I - Color space name
 {
-  return (pdfioStreamPrintf(st, "/%s CS\n", name));
+  return (pdfioStreamPrintf(st, "%N CS\n", name));
 }
 
 
@@ -988,7 +988,7 @@ pdfioContentSetTextFont(
     const char     *name,		// I - Font name
     double         size)		// I - Font size
 {
-  return (pdfioStreamPrintf(st, "/%s %.6f Tf\n", name, size));
+  return (pdfioStreamPrintf(st, "%N %.6f Tf\n", name, size));
 }
 
 

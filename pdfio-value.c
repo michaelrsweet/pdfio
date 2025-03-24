@@ -1,7 +1,7 @@
 //
 // PDF value functions for PDFio.
 //
-// Copyright © 2021-2024 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -637,7 +637,7 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
 	  }
 	  else
 	  {
-	    return (_pdfioFilePrintf(pdf, "(%s)", datestr));
+	    return (_pdfioFilePrintf(pdf, "%S", datestr));
 	  }
         }
 
@@ -648,13 +648,13 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
         return (_pdfioFilePrintf(pdf, " %lu %u R", (unsigned long)v->value.indirect.number, v->value.indirect.generation));
 
     case PDFIO_VALTYPE_NAME :
-        return (_pdfioFilePrintf(pdf, "/%s", v->value.name));
+        return (_pdfioFilePrintf(pdf, "%N", v->value.name));
 
     case PDFIO_VALTYPE_NULL :
         return (_pdfioFilePuts(pdf, " null"));
 
     case PDFIO_VALTYPE_NUMBER :
-        return (_pdfioFilePrintf(pdf, " %g", v->value.number));
+        return (_pdfioFilePrintf(pdf, " %.6f", v->value.number));
 
     case PDFIO_VALTYPE_STRING :
         if (obj && pdf->encryption)
@@ -695,47 +695,7 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
         else
         {
           // Write unencrypted string...
-          const char *start,		// Start of fragment
-		     *end;		// End of fragment
-
-          if (!_pdfioFilePuts(pdf, "("))
-            return (false);
-
-          // Write a quoted string value...
-          for (start = v->value.string; *start; start = end)
-          {
-            // Find the next character that needs to be quoted...
-            for (end = start; *end; end ++)
-            {
-              if (*end == '\\' || *end == ')' || (*end & 255) < ' ')
-                break;
-            }
-
-            if (end > start)
-            {
-              // Write unquoted (safe) characters...
-	      if (!_pdfioFileWrite(pdf, start, (size_t)(end - start)))
-		return (false);
-	    }
-
-            if (*end)
-            {
-              // Quote this character...
-              bool success;		// Did the write work?
-
-              if (*end == '\\' || *end == ')')
-                success = _pdfioFilePrintf(pdf, "\\%c", *end);
-              else
-                success = _pdfioFilePrintf(pdf, "\\%03o", *end);
-
-              if (!success)
-                return (false);
-
-              end ++;
-            }
-          }
-
-          return (_pdfioFilePuts(pdf, ")"));
+          return (_pdfioFilePrintf(pdf, "%S", v->value.string));
         }
   }
 

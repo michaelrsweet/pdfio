@@ -21,7 +21,7 @@ AC_PREREQ([2.70])
 
 
 dnl Package name and version...
-AC_INIT([pdfio], [1.5.0], [https://github.com/michaelrsweet/pdfio/issues], [pdfio], [https://www.msweet.org/pdfio])
+AC_INIT([pdfio], [1.5.1], [https://github.com/michaelrsweet/pdfio/issues], [pdfio], [https://www.msweet.org/pdfio])
 
 PDFIO_VERSION="AC_PACKAGE_VERSION"
 PDFIO_VERSION_MAJOR="`echo AC_PACKAGE_VERSION | awk -F. '{print $1}'`"

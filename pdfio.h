@@ -23,7 +23,7 @@ extern "C" {
 // Version numbers...
 //
 
-#  define PDFIO_VERSION		"1.5.0"
+#  define PDFIO_VERSION		"1.5.1"
 #  define PDFIO_VERSION_MAJOR	1
 #  define PDFIO_VERSION_MINOR	5
 
@@ -34,11 +34,9 @@ extern "C" {
 
 #  if defined(__has_extension) || defined(__GNUC__)
 #    define _PDFIO_PUBLIC	__attribute__ ((visibility("default")))
-#    define _PDFIO_FORMAT(a,b)	__attribute__ ((__format__(__printf__, a,b)))
 #    define _PDFIO_DEPRECATED	__attribute__ ((deprecated)) _PDFIO_PUBLIC
 #  else
 #    define _PDFIO_PUBLIC
-#    define _PDFIO_FORMAT(a,b)
 #    define _PDFIO_DEPRECATED
 #  endif // __has_extension || __GNUC__
 
@@ -183,7 +181,7 @@ extern bool		pdfioDictSetNumber(pdfio_dict_t *dict, const char *key, double valu
 extern bool		pdfioDictSetObj(pdfio_dict_t *dict, const char *key, pdfio_obj_t *value) _PDFIO_PUBLIC;
 extern bool		pdfioDictSetRect(pdfio_dict_t *dict, const char *key, pdfio_rect_t *value) _PDFIO_PUBLIC;
 extern bool		pdfioDictSetString(pdfio_dict_t *dict, const char *key, const char *value) _PDFIO_PUBLIC;
-extern bool		pdfioDictSetStringf(pdfio_dict_t *dict, const char *key, const char *format, ...) _PDFIO_PUBLIC _PDFIO_FORMAT(3,4);
+extern bool		pdfioDictSetStringf(pdfio_dict_t *dict, const char *key, const char *format, ...) _PDFIO_PUBLIC;
 
 extern bool		pdfioFileClose(pdfio_file_t *pdf) _PDFIO_PUBLIC;
 extern pdfio_file_t	*pdfioFileCreate(const char *filename, const char *version, pdfio_rect_t *media_box, pdfio_rect_t *crop_box, pdfio_error_cb_t error_cb, void *error_data) _PDFIO_PUBLIC;
@@ -245,14 +243,14 @@ extern bool		pdfioStreamClose(pdfio_stream_t *st) _PDFIO_PUBLIC;
 extern bool		pdfioStreamConsume(pdfio_stream_t *st, size_t bytes) _PDFIO_PUBLIC;
 extern bool		pdfioStreamGetToken(pdfio_stream_t *st, char *buffer, size_t bufsize) _PDFIO_PUBLIC;
 extern ssize_t		pdfioStreamPeek(pdfio_stream_t *st, void *buffer, size_t bytes) _PDFIO_PUBLIC;
-extern bool		pdfioStreamPrintf(pdfio_stream_t *st, const char *format, ...) _PDFIO_PUBLIC _PDFIO_FORMAT(2,3);
+extern bool		pdfioStreamPrintf(pdfio_stream_t *st, const char *format, ...) _PDFIO_PUBLIC;
 extern bool		pdfioStreamPutChar(pdfio_stream_t *st, int ch) _PDFIO_PUBLIC;
 extern bool		pdfioStreamPuts(pdfio_stream_t *st, const char *s) _PDFIO_PUBLIC;
 extern ssize_t		pdfioStreamRead(pdfio_stream_t *st, void *buffer, size_t bytes) _PDFIO_PUBLIC;
 extern bool		pdfioStreamWrite(pdfio_stream_t *st, const void *buffer, size_t bytes) _PDFIO_PUBLIC;
 
 extern char		*pdfioStringCreate(pdfio_file_t *pdf, const char *s)  _PDFIO_PUBLIC;
-extern char		*pdfioStringCreatef(pdfio_file_t *pdf, const char *format, ...) _PDFIO_FORMAT(2,3) _PDFIO_PUBLIC;
+extern char		*pdfioStringCreatef(pdfio_file_t *pdf, const char *format, ...)  _PDFIO_PUBLIC;
 
 
 #  ifdef __cplusplus

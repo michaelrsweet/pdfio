@@ -1,7 +1,7 @@
 //
 // PDF string functions for PDFio.
 //
-// Copyright © 2021-2024 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -15,6 +15,83 @@
 //
 
 static size_t	find_string(pdfio_file_t *pdf, const char *s, int *rdiff);
+
+
+//
+// '_pdfio_strlcpy()' - Safe string copy.
+//
+
+size_t					// O - Length of source string
+_pdfio_strlcpy(char       *dst,		// I - Destination string buffer
+               const char *src,		// I - Source string
+               size_t     dstsize)	// I - Size of destination
+{
+  size_t	srclen;			// Length of source string
+
+
+  // Range check input...
+  if (!dst || !src || dstsize == 0)
+  {
+    if (dst)
+      *dst = '\0';
+    return (0);
+  }
+
+  // Figure out how much room is needed...
+  dstsize --;
+
+  srclen = strlen(src);
+
+  // Copy the appropriate amount...
+  if (srclen <= dstsize)
+  {
+    // Source string will fit...
+    memmove(dst, src, srclen);
+    dst[srclen] = '\0';
+  }
+  else
+  {
+    // Source string too big, copy what we can and clean up the end...
+    char *ptr = dst + dstsize - 1,	// Pointer into string
+	*end = ptr + 1;			// Pointer to end of string
+
+    memmove(dst, src, dstsize);
+    dst[dstsize] = '\0';
+
+    // Validate last character in destination buffer...
+    if (ptr > dst && *ptr & 0x80)
+    {
+      while ((*ptr & 0xc0) == 0x80 && ptr > dst)
+	ptr --;
+
+      if ((*ptr & 0xe0) == 0xc0)
+      {
+	// Verify 2-byte UTF-8 sequence...
+	if ((end - ptr) != 2)
+	  *ptr = '\0';
+      }
+      else if ((*ptr & 0xf0) == 0xe0)
+      {
+	// Verify 3-byte UTF-8 sequence...
+	if ((end - ptr) != 3)
+	  *ptr = '\0';
+      }
+      else if ((*ptr & 0xf8) == 0xf0)
+      {
+	// Verify 4-byte UTF-8 sequence...
+	if ((end - ptr) != 4)
+	  *ptr = '\0';
+      }
+      else if (*ptr & 0x80)
+      {
+	// Invalid sequence at end...
+	*ptr = '\0';
+      }
+    }
+  }
+
+  return (srclen);
+}
 
 
 //
@@ -112,10 +189,9 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
 
 
   // Loop through the format string, formatting as needed...
-  bufptr  = buffer;
-  bufend  = buffer + bufsize - 1;
-  *bufend = '\0';
-  bytes   = 0;
+  bufptr = buffer;
+  bufend = buffer + bufsize - 1;
+  bytes  = 0;
 
   while (*format)
   {
@@ -178,14 +254,12 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
 	}
 	else
 	{
-	  prec = 0;
-
 	  while (isdigit(*format & 255))
 	  {
 	    if (tptr < (tformat + sizeof(tformat) - 1))
 	      *tptr++ = *format;
 
-	    prec = prec * 10 + *format++ - '0';
+            format ++;
 	  }
 	}
       }
@@ -259,7 +333,7 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
 
             if (bufptr < bufend)
 	    {
-	      strncpy(bufptr, temp, (size_t)(bufend - bufptr - 1));
+	      _pdfio_strlcpy(bufptr, temp, (size_t)(bufend - bufptr + 1));
 	      bufptr += strlen(bufptr);
 	    }
 	    break;
@@ -289,7 +363,7 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
 
 	    if (bufptr < bufend)
 	    {
-	      strncpy(bufptr, temp, (size_t)(bufend - bufptr - 1));
+	      _pdfio_strlcpy(bufptr, temp, (size_t)(bufend - bufptr + 1));
 	      bufptr += strlen(bufptr);
 	    }
 	    break;
@@ -304,7 +378,7 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
 
 	    if (bufptr < bufend)
 	    {
-	      strncpy(bufptr, temp, (size_t)(bufend - bufptr - 1));
+	      _pdfio_strlcpy(bufptr, temp, (size_t)(bufend - bufptr + 1));
 	      bufptr += strlen(bufptr);
 	    }
 	    break;
@@ -329,17 +403,109 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
 	    }
 	    break;
 
-	case 's' : // String
+	case 'S' : // PDF string
 	    if ((s = va_arg(ap, char *)) == NULL)
 	      s = "(null)";
+
+            // PDF strings start with "("...
+            if (bufptr < bufend)
+              *bufptr++ = '(';
+
+            bytes ++;
+
+            // Loop through the literal string...
+            while (*s)
+            {
+              // Escape special characters
+              if (*s == '\\' || *s == '(' || *s == ')')
+              {
+                // Simple escape...
+                if (bufptr < bufend)
+                  *bufptr++ = '\\';
+
+                if (bufptr < bufend)
+                  *bufptr++ = *s;
+
+                bytes += 2;
+              }
+              else if (*s < ' ')
+              {
+                // Octal escape...
+                snprintf(bufptr, (size_t)(bufend - bufptr + 1), "\\%03o", *s & 255);
+                bufptr += strlen(bufptr);
+                bytes += 4;
+              }
+              else
+              {
+                // Literal character...
+                if (bufptr < bufend)
+                  *bufptr++ = *s;
+                bytes ++;
+              }
+
+              s ++;
+            }
+
+            // PDF strings end with ")"...
+            if (bufptr < bufend)
+              *bufptr++ = ')';
+
+            bytes ++;
+	    break;
+
+	case 's' : // Literal string
+	    if ((s = va_arg(ap, char *)) == NULL)
+	      s = "(null)";
+
+            if (width != 0)
+            {
+              // Format string to fit inside the specified width...
+	      if ((size_t)(width + 1) > sizeof(temp))
+	        break;
+
+              snprintf(temp, sizeof(temp), tformat, s);
+              s = temp;
+            }
 
             bytes += strlen(s);
 
 	    if (bufptr < bufend)
 	    {
-	      strncpy(bufptr, s, (size_t)(bufend - bufptr - 1));
+	      _pdfio_strlcpy(bufptr, s, (size_t)(bufend - bufptr + 1));
 	      bufptr += strlen(bufptr);
 	    }
+	    break;
+
+        case 'N' : // Output name string with proper escaping
+	    if ((s = va_arg(ap, char *)) == NULL)
+	      s = "(null)";
+
+	    // PDF names start with "/"...
+            if (bufptr < bufend)
+              *bufptr++ = '/';
+
+            bytes ++;
+
+            // Loop through the name string...
+            while (*s)
+            {
+              if (*s < 0x21 || *s > 0x7e || *s == '#')
+              {
+                // Output #XX for character...
+                snprintf(bufptr, (size_t)(bufend - bufptr + 1), "#%02X", *s & 255);
+                bufptr += strlen(bufptr);
+                bytes += 3;
+              }
+              else
+              {
+                // Output literal character...
+                if (bufptr < bufend)
+                  *bufptr++ = *s;
+                bytes ++;
+              }
+
+              s ++;
+            }
 	    break;
 
 	case 'n' : // Output number of chars so far
@@ -358,11 +524,7 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
   }
 
   // Nul-terminate the string and return the number of characters needed.
-  if (bufptr < bufend)
-  {
-    // Everything fit in the buffer...
-    *bufptr = '\0';
-  }
+  *bufptr = '\0';
 
   PDFIO_DEBUG("_pdfio_vsnprintf: Returning %ld \"%s\"\n", (long)bytes, buffer);
 

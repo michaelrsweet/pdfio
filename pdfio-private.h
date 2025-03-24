@@ -327,6 +327,7 @@ struct _pdfio_stream_s			// Stream
 // Functions...
 //
 
+extern size_t		_pdfio_strlcpy(char *dst, const char *src, size_t dstsize) _PDFIO_INTERNAL;
 extern double		_pdfio_strtod(pdfio_file_t *pdf, const char *s) _PDFIO_INTERNAL;
 extern ssize_t		_pdfio_vsnprintf(pdfio_file_t *pdf, char *buffer, size_t bufsize, const char *format, va_list ap) _PDFIO_INTERNAL;
 
@@ -367,13 +368,13 @@ extern bool		_pdfioFileAddPage(pdfio_file_t *pdf, pdfio_obj_t *obj) _PDFIO_INTER
 extern bool		_pdfioFileConsume(pdfio_file_t *pdf, size_t bytes) _PDFIO_INTERNAL;
 extern pdfio_obj_t	*_pdfioFileCreateObj(pdfio_file_t *pdf, pdfio_file_t *srcpdf, _pdfio_value_t *value) _PDFIO_INTERNAL;
 extern bool		_pdfioFileDefaultError(pdfio_file_t *pdf, const char *message, void *data) _PDFIO_INTERNAL;
-extern bool		_pdfioFileError(pdfio_file_t *pdf, const char *format, ...) _PDFIO_FORMAT(2,3) _PDFIO_INTERNAL;
+extern bool		_pdfioFileError(pdfio_file_t *pdf, const char *format, ...) _PDFIO_INTERNAL;
 extern pdfio_obj_t	*_pdfioFileFindMappedObj(pdfio_file_t *pdf, pdfio_file_t *src_pdf, size_t src_number) _PDFIO_INTERNAL;
 extern bool		_pdfioFileFlush(pdfio_file_t *pdf) _PDFIO_INTERNAL;
 extern int		_pdfioFileGetChar(pdfio_file_t *pdf) _PDFIO_INTERNAL;
 extern bool		_pdfioFileGets(pdfio_file_t *pdf, char *buffer, size_t bufsize) _PDFIO_INTERNAL;
 extern ssize_t		_pdfioFilePeek(pdfio_file_t *pdf, void *buffer, size_t bytes) _PDFIO_INTERNAL;
-extern bool		_pdfioFilePrintf(pdfio_file_t *pdf, const char *format, ...) _PDFIO_FORMAT(2,3) _PDFIO_INTERNAL;
+extern bool		_pdfioFilePrintf(pdfio_file_t *pdf, const char *format, ...) _PDFIO_INTERNAL;
 extern bool		_pdfioFilePuts(pdfio_file_t *pdf, const char *s) _PDFIO_INTERNAL;
 extern ssize_t		_pdfioFileRead(pdfio_file_t *pdf, void *buffer, size_t bytes) _PDFIO_INTERNAL;
 extern off_t		_pdfioFileSeek(pdfio_file_t *pdf, off_t offset, int whence) _PDFIO_INTERNAL;
