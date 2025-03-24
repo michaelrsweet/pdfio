@@ -15,6 +15,7 @@
 //
 
 static int	compare_pairs(_pdfio_pair_t *a, _pdfio_pair_t *b);
+static bool	escape_spaces(char *buffer, size_t len, const char *input);
 
 
 //
@@ -1156,6 +1157,7 @@ _pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
   pdfio_file_t	*pdf = dict->pdf;	// PDF file
   size_t	i;			// Looping var
   _pdfio_pair_t	*pair;			// Current key/value pair
+  char		buffer[8102];		// String buffer
 
 
   if (length)
@@ -1168,7 +1170,10 @@ _pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
   // Write all of the key/value pairs...
   for (i = dict->num_pairs, pair = dict->pairs; i > 0; i --, pair ++)
   {
-    if (!_pdfioFilePrintf(pdf, "/%s", pair->key))
+    if (!escape_spaces(buffer, sizeof(buffer), pair->key))
+      return false;
+
+    if (!_pdfioFilePrintf(pdf, "/%s", buffer))
       return (false);
 
     if (length && !strcmp(pair->key, "Length") && pair->value.type == PDFIO_VALTYPE_NUMBER && pair->value.value.number <= 0.0)
@@ -1196,4 +1201,48 @@ compare_pairs(_pdfio_pair_t *a,		// I - First pair
               _pdfio_pair_t *b)		// I - Second pair
 {
   return (strcmp(a->key, b->key));
+}
+
+
+//
+// 'escape_spaces()' - Replace ' ' for #20, intended for dict name keys.
+//
+
+static bool				// O - True on success
+escape_spaces(char *buffer,		// I - Buffer for escaped output string
+              size_t len,		// I - Buffer size in bytes
+              const char *input)	// I - Input string
+{
+  size_t cur = 0;
+
+  while (*input != '\0') {
+    if (*input == ' ')
+    {
+      if (cur + 3 > len)
+	return (false);
+
+      *buffer++ = '#';
+      *buffer++ = '2';
+      *buffer++ = '0';
+
+      cur += 3;
+    }
+    else
+    {
+      if (cur + 1 > len)
+	return (false);
+
+      *buffer++ = *input;
+      cur++;
+    }
+
+    input++;
+  }
+
+  if (cur + 1 > len)
+    return (false);
+
+  *buffer = '\0';
+
+  return (true);
 }
