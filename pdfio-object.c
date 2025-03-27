@@ -307,7 +307,8 @@ pdfioObjGetLength(pdfio_obj_t *obj)	// I - Object
 
   if ((lenobj = pdfioDictGetObj(obj->value.value.dict, "Length")) == NULL)
   {
-    _pdfioFileError(obj->pdf, "Unable to get length of stream.");
+    if (!_pdfioDictGetValue(obj->value.value.dict, "Length"))
+      _pdfioFileError(obj->pdf, "Unable to get length of stream.");
     return (0);
   }
 

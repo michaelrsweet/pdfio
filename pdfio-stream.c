@@ -439,7 +439,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
   st->pdf = obj->pdf;
   st->obj = obj;
 
-  if ((st->remaining = pdfioObjGetLength(obj)) == 0)
+  if ((st->remaining = pdfioObjGetLength(obj)) == 0 && !_pdfioDictGetValue(pdfioObjGetDict(obj), "Length"))
   {
     _pdfioFileError(obj->pdf, "No stream data.");
     goto error;
