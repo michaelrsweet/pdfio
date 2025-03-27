@@ -16,6 +16,7 @@
 /examples/md2pdf
 /examples/pdf2text
 /examples/pdfioinfo
+/examples/pdfiomerge
 /Makefile
 /packages
 /pdfio.pc

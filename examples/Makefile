@@ -24,7 +24,8 @@ TARGETS		=	\
 			image2pdf \
 			md2pdf \
 			pdf2text \
-			pdfioinfo
+			pdfioinfo \
+			pdfiomerge
 
 
 # Make everything
@@ -59,6 +60,11 @@ pdf2text:	pdf2text.c
 # pdfioinfo
 pdfioinfo:	pdfioinfo.c
 	$(CC) $(CFLAGS) -o $@ pdfioinfo.c $(LIBS)
+
+
+# pdfiomerge
+pdfiomerge:	pdfiomerge.c
+	$(CC) $(CFLAGS) -o $@ pdfiomerge.c $(LIBS)
 
 
 # Common dependencies...
