@@ -1,7 +1,7 @@
 Changes in PDFio
 ================
 
-v1.5.1 - YYYY-MM-DD
+v1.5.1 - 2025-03-28
 -------------------
 
 - Fixed output of special characters in name values (Issue #106)
