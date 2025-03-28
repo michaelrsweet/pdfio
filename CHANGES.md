@@ -8,6 +8,7 @@ v1.5.1 - YYYY-MM-DD
 - Fixed output of special characters in string values (Issue #107)
 - Fixed output of large integers in dictionaries (Issue #108)
 - Fixed handling of 0-length streams (Issue #111)
+- Fixed detection of UTF-16 Big-Endian strings (Issue #112)
 
 
 v1.5.0 - 2025-03-06
