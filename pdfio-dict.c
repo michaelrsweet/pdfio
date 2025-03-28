@@ -469,7 +469,7 @@ pdfioDictGetString(pdfio_dict_t *dict,	// I - Dictionary
 		*tempptr;		// Pointer into temporary string
     unsigned char *dataptr;		// Pointer into the data string
 
-    if (!(value->value.binary.datalen & 1) && !memcmp(value->value.binary.data, "\377\376", 2))
+    if (!(value->value.binary.datalen & 1) && !memcmp(value->value.binary.data, "\376\377", 2))
     {
       // Copy UTF-16 BE
       int	ch;			// Unicode character
@@ -528,7 +528,7 @@ pdfioDictGetString(pdfio_dict_t *dict,	// I - Dictionary
 
       *tempptr = '\0';
     }
-    else if (!(value->value.binary.datalen & 1) && !memcmp(value->value.binary.data, "\376\377", 2))
+    else if (!(value->value.binary.datalen & 1) && !memcmp(value->value.binary.data, "\377\376", 2))
     {
       // Copy UTF-16 LE
       int	ch;			// Unicode character
