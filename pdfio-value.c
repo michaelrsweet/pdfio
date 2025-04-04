@@ -351,7 +351,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
     if ((v->value.dict = _pdfioDictRead(pdf, obj, tb, depth + 1)) == NULL)
       return (NULL);
   }
-  else if (!strncmp(token, "(D:", 3) && (timeval = get_date_time(token + 1)) != 0)
+  else if ((timeval = get_date_time(token + 1)) != 0)
   {
     v->type       = PDFIO_VALTYPE_DATE;
     v->value.date = timeval;
@@ -707,31 +707,59 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
 // 'get_date_time()' - Convert PDF date/time value to time_t.
 //
 
-static time_t				// O - Time in seconds
+static time_t				// O - Time in seconds or `0` for none
 get_date_time(const char *s)		// I - PDF date/time value
 {
   int		i;			// Looping var
   struct tm	dateval;		// Date value
-  int		offset;			// Date offset
+  int		offset = 0;		// Date offset in seconds
+  time_t	t;			// Time value
 
 
   PDFIO_DEBUG("get_date_time(s=\"%s\")\n", s);
 
   // Possible date value of the form:
   //
-  //   (D:YYYYMMDDhhmmssZ)
-  //   (D:YYYYMMDDhhmmss+HH'mm)
-  //   (D:YYYYMMDDhhmmss-HH'mm)
+  //   D:YYYYMMDDhhmmssZ
+  //   D:YYYYMMDDhhmmss+HH'mm
+  //   D:YYYYMMDDhhmmss-HH'mm
   //
+
+  if (strncmp(s, "D:", 2))
+    return (0);
 
   for (i = 2; i < 16; i ++)
   {
+    // Look for date/time digits...
     if (!isdigit(s[i] & 255) || !s[i])
       break;
   }
 
-  if (i >= 16)
+  if (i < 6 || (i & 1))
   {
+    // Short year or missing digit...
+    return (0);
+  }
+
+  memset(&dateval, 0, sizeof(dateval));
+
+  dateval.tm_year = (s[2] - '0') * 1000 + (s[3] - '0') * 100 + (s[4] - '0') * 10 + s[5] - '0' - 1900;
+  if (i > 6)
+    dateval.tm_mon  = (s[6] - '0') * 10 + s[7] - '0' - 1;
+  if (i > 8)
+    dateval.tm_mday = (s[8] - '0') * 10 + s[9] - '0';
+  else
+    dateval.tm_mday = 1;
+  if (i > 10)
+    dateval.tm_hour = (s[10] - '0') * 10 + s[11] - '0';
+  if (i > 12)
+    dateval.tm_min  = (s[12] - '0') * 10 + s[13] - '0';
+  if (i > 14)
+    dateval.tm_sec  = (s[14] - '0') * 10 + s[15] - '0';
+
+  if (i >= 16 && s[i])
+  {
+    // Get zone info...
     if (s[i] == 'Z')
     {
       // UTC...
@@ -742,14 +770,20 @@ get_date_time(const char *s)		// I - PDF date/time value
       // Timezone offset from UTC...
       if (isdigit(s[i + 1] & 255) && isdigit(s[i + 2] & 255) && s[i + 3] == '\'' && isdigit(s[i + 4] & 255) && isdigit(s[i + 5] & 255))
       {
+	offset = (s[i + 1] - '0') * 36000 + (s[i + 2] - '0') * 3600 + (s[i + 4] - '0') * 600 + (s[i + 5] - '0') * 60;
+	if (s[i] == '-')
+	  offset = -offset;
+
 	i += 6;
+
+	// Accept trailing quote, per PDF spec...
 	if (s[i] == '\'')
 	  i ++;
       }
     }
-    else if (!s[i])
+    else
     {
-      // Missing zone info, invalid date string...
+      // Random zone info, invalid date string...
       return (0);
     }
   }
@@ -760,26 +794,24 @@ get_date_time(const char *s)		// I - PDF date/time value
     return (0);
   }
 
-  // Date value...
-  memset(&dateval, 0, sizeof(dateval));
+  // Convert date value to time_t...
+#if _WIN32
+  if ((t = _mkgmtime(&dateval)) < 0)
+    return (0);
+#elif defined(HAVE_TIMEGM)
+  if ((t = timegm(&dateval)) < 0)
+    return (0);
+#else
+  if ((t = mktime(&dateval)) < 0)
+    return (0);
 
-  dateval.tm_year = (s[2] - '0') * 1000 + (s[3] - '0') * 100 + (s[4] - '0') * 10 + s[5] - '0' - 1900;
-  dateval.tm_mon  = (s[6] - '0') * 10 + s[7] - '0' - 1;
-  dateval.tm_mday = (s[8] - '0') * 10 + s[9] - '0';
-  dateval.tm_hour = (s[10] - '0') * 10 + s[11] - '0';
-  dateval.tm_min  = (s[12] - '0') * 10 + s[13] - '0';
-  dateval.tm_sec  = (s[14] - '0') * 10 + s[15] - '0';
+#  if defined(HAVE_TM_GMTOFF)
+  localtime_r(&t, &dateval);
+  t -= dateval.tm_gmtoff;
+#  else
+  t -= timezone;
+#  endif // HAVE_TM_GMTOFF
+#endif // _WIN32
 
-  if (s[16] == 'Z')
-  {
-    offset = 0;
-  }
-  else
-  {
-    offset = (s[17] - '0') * 600 + (s[18] - '0') * 60 + (s[19] - '0') * 10 + s[20] - '0';
-    if (s[16] == '-')
-      offset = -offset;
-  }
-
-  return (mktime(&dateval) + offset);
+  return (t + offset);
 }

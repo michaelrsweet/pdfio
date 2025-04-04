@@ -21,7 +21,7 @@ AC_PREREQ([2.70])
 
 
 dnl Package name and version...
-AC_INIT([pdfio], [1.5.1], [https://github.com/michaelrsweet/pdfio/issues], [pdfio], [https://www.msweet.org/pdfio])
+AC_INIT([pdfio], [1.5.2], [https://github.com/michaelrsweet/pdfio/issues], [pdfio], [https://www.msweet.org/pdfio])
 
 PDFIO_VERSION="AC_PACKAGE_VERSION"
 PDFIO_VERSION_MAJOR="`echo AC_PACKAGE_VERSION | awk -F. '{print $1}'`"
@@ -86,6 +86,27 @@ AC_MSG_CHECKING([for install-sh script])
 INSTALL="$(pwd)/install-sh"
 AC_SUBST([INSTALL])
 AC_MSG_RESULT([using $INSTALL])
+
+
+dnl Check for date/time functionality...
+AC_CHECK_FUNC([timegm], [
+    AC_DEFINE([HAVE_TIMEGM], [1], [Do we have the timegm function?])
+    CPPFLAGS="-DHAVE_TIMEGM=1 $CPPFLAGS"
+])
+
+AC_MSG_CHECKING([for tm_gmtoff member in tm structure])
+AC_COMPILE_IFELSE([
+    AC_LANG_PROGRAM([[#include <time.h>]], [[
+        struct tm t;
+	int o = t.tm_gmtoff;
+    ]])
+], [
+    AC_MSG_RESULT([yes])
+    AC_DEFINE([HAVE_TM_GMTOFF], [1], [Have tm_gmtoff member in struct tm?])
+    CPPFLAGS="-DHAVE_TM_GMTOFF=1 $CPPFLAGS"
+], [
+    AC_MSG_RESULT([no])
+])
 
 
 dnl Check for pkg-config, which is used for some other tests later on...

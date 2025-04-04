@@ -5,6 +5,7 @@ Changes in PDFio
 v1.5.2 - YYYY-MM-DD
 -------------------
 
+- Fixed parsing of certain date/time values (Issue #115)
 - Fixed support for empty name values (Issue #116)
 
 
