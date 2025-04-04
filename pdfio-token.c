@@ -1,7 +1,7 @@
 //
 // PDF token parsing functions for PDFio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -527,13 +527,6 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	    *bufptr = '\0';
 	    return (false);
 	  }
-	}
-
-	if (bufptr == (buffer + 1))
-	{
-	  _pdfioFileError(tb->pdf, "Empty name.");
-	  *bufptr = '\0';
-	  return (false);
 	}
 	break;
 

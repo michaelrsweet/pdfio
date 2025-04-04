@@ -1,6 +1,13 @@
 Changes in PDFio
 ================
 
+
+v1.5.2 - YYYY-MM-DD
+-------------------
+
+- Fixed support for empty name values (Issue #116)
+
+
 v1.5.1 - 2025-03-28
 -------------------
 
