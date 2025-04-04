@@ -125,7 +125,8 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
   _pdfio_crypto_ctx_t	ctx;		// Decryption context
   _pdfio_crypto_cb_t	cb;		// Decryption callback
   size_t		ivlen;		// Number of initialization vector bytes
-  uint8_t		temp[32768];	// Temporary buffer for decryption
+  uint8_t		temp[PDFIO_MAX_STRING + 32];
+					// Temporary buffer for decryption
   size_t		templen;	// Number of actual data bytes
   time_t		timeval;	// Date/time value
 
@@ -300,7 +301,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
                 _pdfio_value_t *v,	// I - Value
                 size_t         depth)	// I - Depth of value
 {
-  char		token[32768];		// Token buffer
+  char		token[PDFIO_MAX_STRING];// Token buffer
   time_t	timeval;		// Date/time value
 #ifdef DEBUG
   static const char * const valtypes[] =
@@ -546,7 +547,8 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
     case PDFIO_VALTYPE_BINARY :
         {
           size_t	databytes;	// Bytes to write
-          uint8_t	temp[32768],	// Temporary buffer for encryption
+          uint8_t	temp[PDFIO_MAX_STRING + 32],
+					// Temporary buffer for encryption
 			*dataptr;	// Pointer into data
 
           if (obj && pdf->encryption)
@@ -609,7 +611,8 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
 	  if (obj && pdf->encryption)
 	  {
 	    // Write encrypted string...
-	    uint8_t	temp[32768],	// Encrypted bytes
+	    uint8_t	temp[PDFIO_MAX_STRING + 32],
+					// Encrypted bytes
 			*tempptr;	// Pointer into encrypted bytes
 	    _pdfio_crypto_ctx_t ctx;	// Encryption context
 	    _pdfio_crypto_cb_t cb;	// Encryption callback
@@ -660,7 +663,8 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
         if (obj && pdf->encryption)
         {
           // Write encrypted string...
-          uint8_t	temp[32768],	// Encrypted bytes
+          uint8_t	temp[PDFIO_MAX_STRING + 32],
+					// Encrypted bytes
 			*tempptr;	// Pointer into encrypted bytes
           _pdfio_crypto_ctx_t ctx;	// Encryption context
           _pdfio_crypto_cb_t cb;	// Encryption callback
