@@ -1833,8 +1833,6 @@ pdfioFileCreateFontObjFromFile(
         {
           if ((w1 = ttfGetWidth(font, (int)i)) == w0 && i < 65530)
           {
-            size_t j;			// Look-ahead
-
             for (j = 1; j < 4; j ++)
             {
               if (ttfGetWidth(font, (int)(i + j)) != w0)
