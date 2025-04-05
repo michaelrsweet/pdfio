@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<title>PDFio Programming Manual v1.5.0</title>
+<title>PDFio Programming Manual v1.5.2</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.8">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
 <meta name="copyright" content="Copyright © 2021-2025 by Michael R Sweet">
-<meta name="version" content="1.5.0">
+<meta name="version" content="1.5.2">
 <style type="text/css"><!--
 body {
   background: white;
@@ -251,7 +251,7 @@ span.string {
 <body>
 <div class="header">
 <p><img class="title" src="pdfio-512.png"></p>
-<h1 class="title">PDFio Programming Manual v1.5.0</h1>
+<h1 class="title">PDFio Programming Manual v1.5.2</h1>
 <p>Michael R Sweet</p>
 <p>Copyright © 2021-2025 by Michael R Sweet</p>
 </div>
@@ -1165,11 +1165,26 @@ main(<span class="reserved">int</span>  argc,                         <span clas
 {
   <span class="reserved">const</span> <span class="reserved">char</span>    *filename;              <span class="comment">// PDF filename</span>
   pdfio_file_t  *pdf;                   <span class="comment">// PDF file</span>
-  <span class="reserved">const</span> <span class="reserved">char</span>    *author;                <span class="comment">// Author name</span>
-  time_t        creation_date;          <span class="comment">// Creation date</span>
-  <span class="reserved">struct</span> tm     *creation_tm;           <span class="comment">// Creation date/time information</span>
-  <span class="reserved">char</span>          creation_text[<span class="number">256</span>];     <span class="comment">// Creation date/time as a string</span>
-  <span class="reserved">const</span> <span class="reserved">char</span>    *title;                 <span class="comment">// Title</span>
+  pdfio_dict_t  *catalog;               <span class="comment">// Catalog dictionary</span>
+  <span class="reserved">const</span> <span class="reserved">char</span>    *author,                <span class="comment">// Author name</span>
+                *creator,               <span class="comment">// Creator name</span>
+                *producer,              <span class="comment">// Producer name</span>
+                *title;                 <span class="comment">// Title</span>
+  time_t        creation_date,          <span class="comment">// Creation date</span>
+                modification_date;      <span class="comment">// Modification date</span>
+  <span class="reserved">struct</span> tm     *creation_tm,           <span class="comment">// Creation date/time information</span>
+                *modification_tm;       <span class="comment">// Modification date/time information</span>
+  <span class="reserved">char</span>          creation_text[<span class="number">256</span>],     <span class="comment">// Creation date/time as a string</span>
+                modification_text[<span class="number">256</span>], <span class="comment">// Modification date/time human fmt string</span>
+                range_text[<span class="number">255</span>];        <span class="comment">// Page range text</span>
+  size_t        num_pages;              <span class="comment">// PDF number of pages</span>
+  <span class="reserved">bool</span>          has_acroform;           <span class="comment">// Does the file have an AcroForm?</span>
+  pdfio_obj_t   *page;                  <span class="comment">// Object</span>
+  pdfio_dict_t  *page_dict;             <span class="comment">// Object dictionary</span>
+  size_t        cur,                    <span class="comment">// Current page index</span>
+                prev;                   <span class="comment">// Previous page index</span>
+  pdfio_rect_t  cur_box,                <span class="comment">// Current MediaBox</span>
+                prev_box;               <span class="comment">// Previous MediaBox</span>
 
 
   <span class="comment">// Get the filename from the command-line...</span>
@@ -1182,14 +1197,20 @@ main(<span class="reserved">int</span>  argc,                         <span clas
   filename = argv[<span class="number">1</span>];
 
   <span class="comment">// Open the PDF file with the default callbacks...</span>
-  pdf = pdfioFileOpen(filename, <span class="comment">/*password_cb*/</span>NULL, <span class="comment">/*password_cbdata*/</span>NULL,
-                      <span class="comment">/*error_cb*/</span>NULL, <span class="comment">/*error_cbdata*/</span>NULL);
+  pdf = pdfioFileOpen(filename, <span class="comment">/*password_cb*/</span>NULL,
+                      <span class="comment">/*password_cbdata*/</span>NULL, <span class="comment">/*error_cb*/</span>NULL,
+                      <span class="comment">/*error_cbdata*/</span>NULL);
   <span class="reserved">if</span> (pdf == NULL)
     <span class="reserved">return</span> (<span class="number">1</span>);
 
-  <span class="comment">// Get the title and author...</span>
-  author = pdfioFileGetAuthor(pdf);
-  title  = pdfioFileGetTitle(pdf);
+  <span class="comment">// Get the title, author, etc...</span>
+  catalog      = pdfioFileGetCatalog(pdf);
+  author       = pdfioFileGetAuthor(pdf);
+  creator      = pdfioFileGetCreator(pdf);
+  has_acroform = pdfioDictGetType(catalog, <span class="string">&quot;AcroForm&quot;</span>) != PDFIO_VALTYPE_NONE;
+  num_pages    = pdfioFileGetNumPages(pdf);
+  producer     = pdfioFileGetProducer(pdf);
+  title        = pdfioFileGetTitle(pdf);
 
   <span class="comment">// Get the creation date and convert to a string...</span>
   <span class="reserved">if</span> ((creation_date = pdfioFileGetCreationDate(pdf)) &gt; <span class="number">0</span>)
@@ -1202,12 +1223,76 @@ main(<span class="reserved">int</span>  argc,                         <span clas
     snprintf(creation_text, <span class="reserved">sizeof</span>(creation_text), <span class="string">&quot;-- not set --&quot;</span>);
   }
 
+  <span class="comment">// Get the modification date and convert to a string...</span>
+  <span class="reserved">if</span> ((modification_date = pdfioFileGetModificationDate(pdf)) &gt; <span class="number">0</span>)
+  {
+    modification_tm = localtime(&amp;modification_date);
+    strftime(modification_text, <span class="reserved">sizeof</span>(modification_text), <span class="string">&quot;%c&quot;</span>, modification_tm);
+  }
+  <span class="reserved">else</span>
+  {
+    snprintf(modification_text, <span class="reserved">sizeof</span>(modification_text), <span class="string">&quot;-- not set --&quot;</span>);
+  }
+
   <span class="comment">// Print file information to stdout...</span>
   printf(<span class="string">&quot;%s:\n&quot;</span>, filename);
-  printf(<span class="string">&quot;         Title: %s\n&quot;</span>, title ? title : <span class="string">&quot;-- not set --&quot;</span>);
-  printf(<span class="string">&quot;        Author: %s\n&quot;</span>, author ? author : <span class="string">&quot;-- not set --&quot;</span>);
-  printf(<span class="string">&quot;    Created On: %s\n&quot;</span>, creation_text);
-  printf(<span class="string">&quot;  Number Pages: %u\n&quot;</span>, (<span class="reserved">unsigned</span>)pdfioFileGetNumPages(pdf));
+  printf(<span class="string">&quot;           Title: %s\n&quot;</span>, title ? title : <span class="string">&quot;-- not set --&quot;</span>);
+  printf(<span class="string">&quot;          Author: %s\n&quot;</span>, author ? author : <span class="string">&quot;-- not set --&quot;</span>);
+  printf(<span class="string">&quot;         Creator: %s\n&quot;</span>, creator ? creator : <span class="string">&quot;-- not set --&quot;</span>);
+  printf(<span class="string">&quot;        Producer: %s\n&quot;</span>, producer ? producer : <span class="string">&quot;-- not set --&quot;</span>);
+  printf(<span class="string">&quot;      Created On: %s\n&quot;</span>, creation_text);
+  printf(<span class="string">&quot;     Modified On: %s\n&quot;</span>, modification_text);
+  printf(<span class="string">&quot;         Version: %s\n&quot;</span>, pdfioFileGetVersion(pdf));
+  printf(<span class="string">&quot;        AcroForm: %s\n&quot;</span>, has_acroform ? <span class="string">&quot;Yes&quot;</span> : <span class="string">&quot;No&quot;</span>);
+  printf(<span class="string">&quot; Number of Pages: %u\n&quot;</span>, (<span class="reserved">unsigned</span>)num_pages);
+
+  <span class="comment">// Report the MediaBox for all of the pages</span>
+  prev_box.x1 = prev_box.x2 = prev_box.y1 = prev_box.y2 = <span class="number">0.0</span>;
+
+  <span class="reserved">for</span> (cur = <span class="number">0</span>, prev = <span class="number">0</span>; cur &lt; num_pages; cur ++)
+  {
+    <span class="comment">// Find the MediaBox for this page in the page tree...</span>
+    <span class="reserved">for</span> (page = pdfioFileGetPage(pdf, cur);
+         page != NULL;
+         page = pdfioDictGetObj(page_dict, <span class="string">&quot;Parent&quot;</span>))
+    {
+      cur_box.x1 = cur_box.x2 = cur_box.y1 = cur_box.y2 = <span class="number">0.0</span>;
+      page_dict  = pdfioObjGetDict(page);
+
+      <span class="reserved">if</span> (pdfioDictGetRect(page_dict, <span class="string">&quot;MediaBox&quot;</span>, &amp;cur_box))
+        <span class="reserved">break</span>;
+    }
+
+    <span class="comment">// If this MediaBox is different from the previous one, show the range of</span>
+    <span class="comment">// pages that have that size...</span>
+    <span class="reserved">if</span> (cur == <span class="number">0</span> ||
+        fabs(cur_box.x1 - prev_box.x1) &gt; <span class="number">0.01</span> ||
+        fabs(cur_box.y1 - prev_box.y1) &gt; <span class="number">0.01</span> ||
+        fabs(cur_box.x2 - prev_box.x2) &gt; <span class="number">0.01</span> ||
+        fabs(cur_box.y2 - prev_box.y2) &gt; <span class="number">0.01</span>)
+    {
+      <span class="reserved">if</span> (cur &gt; prev)
+      {
+        snprintf(range_text, <span class="reserved">sizeof</span>(range_text), <span class="string">&quot;Pages %u-%u&quot;</span>,
+                 (<span class="reserved">unsigned</span>)(prev + <span class="number">1</span>), (<span class="reserved">unsigned</span>)cur);
+        printf(<span class="string">&quot;%16s: [%g %g %g %g]\n&quot;</span>, range_text,
+               prev_box.x1, prev_box.y1, prev_box.x2, prev_box.y2);
+      }
+
+      <span class="comment">// Start a new series of pages with the new size...</span>
+      prev     = cur;
+      prev_box = cur_box;
+    }
+  }
+
+  <span class="comment">// Show the last range as needed...</span>
+  <span class="reserved">if</span> (cur &gt; prev)
+  {
+    snprintf(range_text, <span class="reserved">sizeof</span>(range_text), <span class="string">&quot;Pages %u-%u&quot;</span>,
+             (<span class="reserved">unsigned</span>)(prev + <span class="number">1</span>), (<span class="reserved">unsigned</span>)cur);
+    printf(<span class="string">&quot;%16s: [%g %g %g %g]\n&quot;</span>, range_text,
+           prev_box.x1, prev_box.y1, prev_box.x2, prev_box.y2);
+  }
 
   <span class="comment">// Close the PDF file...</span>
   pdfioFileClose(pdf);
@@ -5081,6 +5166,10 @@ ssize_t pdfioStreamPeek(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, <span 
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function writes a formatted string to a stream.  In addition to the
+standard <code>printf</code> format characters, you can use &quot;%N&quot; to format a PDF name
+value (&quot;/Name&quot;) and &quot;%S&quot; to format a PDF string (&quot;(String)&quot;) value.</p>
 <h3 class="function"><a id="pdfioStreamPutChar">pdfioStreamPutChar</a></h3>
 <p class="description">Write a single character to a stream.</p>
 <p class="code">

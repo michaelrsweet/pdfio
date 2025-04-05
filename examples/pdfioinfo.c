@@ -68,7 +68,7 @@ main(int  argc,				// I - Number of command-line arguments
   catalog      = pdfioFileGetCatalog(pdf);
   author       = pdfioFileGetAuthor(pdf);
   creator      = pdfioFileGetCreator(pdf);
-  has_acroform = pdfioDictGetObj(catalog, "AcroForm") != NULL ? true : false;
+  has_acroform = pdfioDictGetType(catalog, "AcroForm") != PDFIO_VALTYPE_NONE;
   num_pages    = pdfioFileGetNumPages(pdf);
   producer     = pdfioFileGetProducer(pdf);
   title        = pdfioFileGetTitle(pdf);
