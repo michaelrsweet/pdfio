@@ -858,13 +858,13 @@ get_date_time(const char *s)		// I - PDF date/time value
 
   // Convert date value to time_t...
 #if _WIN32
-  if ((t = _mkgmtime(&dateval)) < 0)
+  if ((t = _mkgmtime(&dateval)) <= 0)
     return (0);
 #elif defined(HAVE_TIMEGM)
-  if ((t = timegm(&dateval)) < 0)
+  if ((t = timegm(&dateval)) <= 0)
     return (0);
 #else
-  if ((t = mktime(&dateval)) < 0)
+  if ((t = mktime(&dateval)) <= 0)
     return (0);
 
 #  if defined(HAVE_TM_GMTOFF)
@@ -875,5 +875,5 @@ get_date_time(const char *s)		// I - PDF date/time value
 #  endif // HAVE_TM_GMTOFF
 #endif // _WIN32
 
-  return (t + offset);
+  return (t - offset);
 }
