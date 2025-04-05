@@ -110,6 +110,8 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
 {
   bool		ret = true;		// Return value
   size_t	i;			// Looping var
+  _pdfio_strbuf_t *current,		// Current string buffer
+		*next;			// Next string buffer
 
 
   // Range check input
@@ -151,6 +153,12 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
   for (i = 0; i < pdf->num_strings; i ++)
     free(pdf->strings[i]);
   free(pdf->strings);
+
+  for (current = pdf->strbuffers; current; current = next)
+  {
+    next = current->next;
+    free(current);
+  }
 
   free(pdf);
 

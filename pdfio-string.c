@@ -533,6 +533,41 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
+// '_pdfioStringAllocBuffer()' - Allocate a string buffer.
+//
+
+char *					// O - Buffer or `NULL` on error
+_pdfioStringAllocBuffer(
+    pdfio_file_t *pdf)			// I - PDF file
+{
+  _pdfio_strbuf_t	*current;	// Current string buffer
+
+
+  // See if we have an available string buffer...
+  for (current = pdf->strbuffers; current; current = current->next)
+  {
+    if (!current->bufused)
+    {
+      current->bufused = true;
+      return (current->buffer);
+    }
+  }
+
+  // Didn't find one, allocate a new one...
+  if ((current = calloc(1, sizeof(_pdfio_strbuf_t))) == NULL)
+    return (NULL);
+
+  // Add to the linked list of string buffers...
+  current->next    = pdf->strbuffers;
+  current->bufused = true;
+
+  pdf->strbuffers = current;
+
+  return (current->buffer);
+}
+
+
+//
 // 'pdfioStringCreate()' - Create a durable literal string.
 //
 // This function creates a literal string associated with the PDF file
@@ -639,6 +674,29 @@ pdfioStringCreatef(
 
   // Create the string from the buffer...
   return (pdfioStringCreate(pdf, buffer));
+}
+
+
+//
+// '_pdfioStringFreeBuffer()' - Free a string buffer.
+//
+
+void
+_pdfioStringFreeBuffer(
+    pdfio_file_t *pdf,			// I - PDF file
+    char         *buffer)		// I - String buffer
+{
+  _pdfio_strbuf_t	*current;	// Current string buffer
+
+
+  for (current = pdf->strbuffers; current; current = current->next)
+  {
+    if (current->buffer == buffer)
+    {
+      current->bufused = false;
+      break;
+    }
+  }
 }
 
 

@@ -225,6 +225,14 @@ typedef struct _pdfio_objmap_s		// PDF object map
   size_t	src_number;		// Source object number
 } _pdfio_objmap_t;
 
+typedef struct _pdfio_strbuf_s		// PDF string buffer
+{
+  struct _pdfio_strbuf_s *next;		// Next string buffer
+  bool		bufused;		// Is this string buffer being used?
+  char		buffer[PDFIO_MAX_STRING + 32];
+					// String buffer
+} _pdfio_strbuf_t;
+
 struct _pdfio_file_s			// PDF file structure
 {
   char		*filename;		// Filename
@@ -284,6 +292,7 @@ struct _pdfio_file_s			// PDF file structure
   size_t	num_strings,		// Number of strings
 		alloc_strings;		// Allocated strings
   char		**strings;		// Nul-terminated strings
+  _pdfio_strbuf_t *strbuffers;		// String buffers
 };
 
 struct _pdfio_obj_s			// Object
@@ -391,6 +400,8 @@ extern bool		_pdfioObjWriteHeader(pdfio_obj_t *obj) _PDFIO_INTERNAL;
 extern pdfio_stream_t	*_pdfioStreamCreate(pdfio_obj_t *obj, pdfio_obj_t *length_obj, size_t cbsize, pdfio_filter_t compression) _PDFIO_INTERNAL;
 extern pdfio_stream_t	*_pdfioStreamOpen(pdfio_obj_t *obj, bool decode) _PDFIO_INTERNAL;
 
+extern char		*_pdfioStringAllocBuffer(pdfio_file_t *pdf);
+extern void		_pdfioStringFreeBuffer(pdfio_file_t *pdf, char *buffer);
 extern bool		_pdfioStringIsAllocated(pdfio_file_t *pdf, const char *s) _PDFIO_INTERNAL;
 
 extern void		_pdfioTokenClear(_pdfio_token_t *tb) _PDFIO_INTERNAL;

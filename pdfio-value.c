@@ -125,8 +125,7 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
   _pdfio_crypto_ctx_t	ctx;		// Decryption context
   _pdfio_crypto_cb_t	cb;		// Decryption callback
   size_t		ivlen;		// Number of initialization vector bytes
-  uint8_t		temp[PDFIO_MAX_STRING + 32];
-					// Temporary buffer for decryption
+  uint8_t		*temp = NULL;	// Temporary buffer for decryption
   size_t		templen;	// Number of actual data bytes
   time_t		timeval;	// Date/time value
 
@@ -153,9 +152,14 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
 
     case PDFIO_VALTYPE_BINARY :
 	// Decrypt the binary string...
-	if (v->value.binary.datalen > (sizeof(temp) - 32))
+	if (v->value.binary.datalen > PDFIO_MAX_STRING)
 	{
 	  _pdfioFileError(pdf, "Unable to read encrypted binary string - too long.");
+	  return (false);
+	}
+	else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(pdf)) == NULL)
+	{
+	  _pdfioFileError(pdf, "Unable to read encrypted binary string - out of memory.");
 	  return (false);
 	}
 
@@ -172,6 +176,8 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
 	  v->value.binary.datalen = templen - temp[templen - 1];
 	else
 	  v->value.binary.datalen = templen;
+
+        _pdfioStringFreeBuffer(pdf, (char *)temp);
 	break;
 
     case PDFIO_VALTYPE_STRING :
@@ -301,7 +307,9 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
                 _pdfio_value_t *v,	// I - Value
                 size_t         depth)	// I - Depth of value
 {
-  char		token[PDFIO_MAX_STRING];// Token buffer
+  _pdfio_value_t *ret = NULL;		// Return value
+  char		*token = _pdfioStringAllocBuffer(pdf);
+					// Token buffer
   time_t	timeval;		// Date/time value
 #ifdef DEBUG
   static const char * const valtypes[] =
@@ -323,8 +331,11 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 
   PDFIO_DEBUG("_pdfioValueRead(pdf=%p, obj=%p, v=%p)\n", pdf, obj, v);
 
-  if (!_pdfioTokenGet(tb, token, sizeof(token)))
-    return (NULL);
+  if (!token)
+    goto done;
+
+  if (!_pdfioTokenGet(tb, token, PDFIO_MAX_STRING))
+    goto done;
 
   if (!strcmp(token, "["))
   {
@@ -332,12 +343,14 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
     if (depth >= PDFIO_MAX_DEPTH)
     {
       _pdfioFileError(pdf, "Too many nested arrays.");
-      return (NULL);
+      goto done;
     }
 
     v->type = PDFIO_VALTYPE_ARRAY;
     if ((v->value.array = _pdfioArrayRead(pdf, obj, tb, depth + 1)) == NULL)
-      return (NULL);
+      goto done;
+
+    ret = v;
   }
   else if (!strcmp(token, "<<"))
   {
@@ -345,29 +358,34 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
     if (depth >= PDFIO_MAX_DEPTH)
     {
       _pdfioFileError(pdf, "Too many nested dictionaries.");
-      return (NULL);
+      goto done;
     }
 
     v->type = PDFIO_VALTYPE_DICT;
     if ((v->value.dict = _pdfioDictRead(pdf, obj, tb, depth + 1)) == NULL)
-      return (NULL);
+      goto done;
+
+    ret = v;
   }
   else if ((timeval = get_date_time(token + 1)) != 0)
   {
     v->type       = PDFIO_VALTYPE_DATE;
     v->value.date = timeval;
+    ret           = v;
   }
   else if (token[0] == '(')
   {
     // String
     v->type         = PDFIO_VALTYPE_STRING;
     v->value.string = pdfioStringCreate(pdf, token + 1);
+    ret           = v;
   }
   else if (token[0] == '/')
   {
     // Name
     v->type       = PDFIO_VALTYPE_NAME;
     v->value.name = pdfioStringCreate(pdf, token + 1);
+    ret           = v;
   }
   else if (token[0] == '<')
   {
@@ -380,7 +398,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
     if ((v->value.binary.data = (unsigned char *)malloc(v->value.binary.datalen)) == NULL)
     {
       _pdfioFileError(pdf, "Out of memory for hex string.");
-      return (NULL);
+      goto done;
     }
 
     // Convert hex to binary...
@@ -407,6 +425,8 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 
       *dataptr++ = (unsigned char)d;
     }
+
+    ret = v;
   }
   else if (strchr("0123456789-+.", token[0]) != NULL)
   {
@@ -494,7 +514,8 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 
 	  PDFIO_DEBUG("_pdfioValueRead: Returning indirect value %lu %u R.\n", (unsigned long)v->value.indirect.number, v->value.indirect.generation);
 
-	  return (v);
+	  ret = v;
+	  goto done;
 	}
       }
     }
@@ -502,27 +523,41 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
     // If we get here, we have a number...
     v->type         = PDFIO_VALTYPE_NUMBER;
     v->value.number = _pdfio_strtod(pdf, token);
+    ret             = v;
   }
   else if (!strcmp(token, "true") || !strcmp(token, "false"))
   {
     // Boolean value
     v->type          = PDFIO_VALTYPE_BOOLEAN;
     v->value.boolean = !strcmp(token, "true");
+    ret              = v;
   }
   else if (!strcmp(token, "null"))
   {
     // null value
     v->type = PDFIO_VALTYPE_NULL;
+    ret     = v;
   }
   else
   {
     _pdfioFileError(pdf, "Unexpected '%s' token seen.", token);
-    return (NULL);
   }
 
-  PDFIO_DEBUG("_pdfioValueRead: Returning %s value.\n", valtypes[v->type]);
+  done:
 
-  return (v);
+  if (token)
+    _pdfioStringFreeBuffer(pdf, token);
+
+  if (ret)
+  {
+    PDFIO_DEBUG("_pdfioValueRead: Returning %s value.\n", valtypes[ret->type]);
+    return (ret);
+  }
+  else
+  {
+    PDFIO_DEBUG("_pdfioValueRead: Returning NULL.\n");
+    return (NULL);
+  }
 }
 
 
@@ -547,9 +582,10 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
     case PDFIO_VALTYPE_BINARY :
         {
           size_t	databytes;	// Bytes to write
-          uint8_t	temp[PDFIO_MAX_STRING + 32],
-					// Temporary buffer for encryption
+          uint8_t	*temp = NULL,	// Temporary buffer for encryption
 			*dataptr;	// Pointer into data
+          bool          ret = false;	// Return value
+
 
           if (obj && pdf->encryption)
           {
@@ -558,9 +594,14 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
 	    _pdfio_crypto_cb_t cb;	// Encryption callback
 	    size_t	ivlen;		// Number of initialization vector bytes
 
-            if (v->value.binary.datalen > (sizeof(temp) - 32))
+            if (v->value.binary.datalen > PDFIO_MAX_STRING)
             {
 	      _pdfioFileError(pdf, "Unable to write encrypted binary string - too long.");
+	      return (false);
+            }
+            else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(pdf)) == NULL)
+            {
+	      _pdfioFileError(pdf, "Unable to write encrypted binary string - out of memory.");
 	      return (false);
             }
 
@@ -575,18 +616,25 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
           }
 
           if (!_pdfioFilePuts(pdf, "<"))
-            return (false);
+            goto bindone;
 
           for (; databytes > 1; databytes -= 2, dataptr += 2)
           {
             if (!_pdfioFilePrintf(pdf, "%02X%02X", dataptr[0], dataptr[1]))
-              return (false);
+              goto bindone;
           }
 
-          if (databytes > 0)
-            return (_pdfioFilePrintf(pdf, "%02X>", dataptr[0]));
-          else
-            return (_pdfioFilePuts(pdf, ">"));
+          if (databytes > 0 && !_pdfioFilePrintf(pdf, "%02X", dataptr[0]))
+            goto bindone;
+
+	  ret = _pdfioFilePuts(pdf, ">");
+
+          bindone:
+
+          if (temp)
+            _pdfioStringFreeBuffer(pdf, (char *)temp);
+
+          return (ret);
         }
 
     case PDFIO_VALTYPE_BOOLEAN :
@@ -611,8 +659,7 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
 	  if (obj && pdf->encryption)
 	  {
 	    // Write encrypted string...
-	    uint8_t	temp[PDFIO_MAX_STRING + 32],
-					// Encrypted bytes
+	    uint8_t	temp[64],	// Encrypted bytes
 			*tempptr;	// Pointer into encrypted bytes
 	    _pdfio_crypto_ctx_t ctx;	// Encryption context
 	    _pdfio_crypto_cb_t cb;	// Encryption callback
@@ -663,8 +710,7 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
         if (obj && pdf->encryption)
         {
           // Write encrypted string...
-          uint8_t	temp[PDFIO_MAX_STRING + 32],
-					// Encrypted bytes
+          uint8_t	*temp = NULL,	// Encrypted bytes
 			*tempptr;	// Pointer into encrypted bytes
           _pdfio_crypto_ctx_t ctx;	// Encryption context
           _pdfio_crypto_cb_t cb;	// Encryption callback
@@ -672,10 +718,16 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
 					// Length of value
 			ivlen,		// Number of initialization vector bytes
 			tempbytes;	// Number of output bytes
+	  bool		ret = false;	// Return value
 
-          if (len > (sizeof(temp) - 32))
+          if (len > PDFIO_MAX_STRING)
           {
             _pdfioFileError(pdf, "Unable to write encrypted string - too long.");
+            return (false);
+          }
+          else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(pdf)) == NULL)
+          {
+            _pdfioFileError(pdf, "Unable to write encrypted string - out of memory.");
             return (false);
           }
 
@@ -683,18 +735,24 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
           tempbytes = (cb)(&ctx, temp + ivlen, (const uint8_t *)v->value.string, len) + ivlen;
 
           if (!_pdfioFilePuts(pdf, "<"))
-            return (false);
+            goto strdone;
 
           for (tempptr = temp; tempbytes > 1; tempbytes -= 2, tempptr += 2)
           {
             if (!_pdfioFilePrintf(pdf, "%02X%02X", tempptr[0], tempptr[1]))
-              return (false);
+              goto strdone;
           }
 
-          if (tempbytes > 0)
-            return (_pdfioFilePrintf(pdf, "%02X>", *tempptr));
-          else
-	    return (_pdfioFilePuts(pdf, ">"));
+          if (tempbytes > 0 && !_pdfioFilePrintf(pdf, "%02X", *tempptr))
+            goto strdone;
+
+	  ret = _pdfioFilePuts(pdf, ">");
+
+          strdone :
+
+          _pdfioStringFreeBuffer(pdf, (char *)temp);
+
+          return (ret);
         }
         else
         {
