@@ -860,18 +860,19 @@ get_date_time(const char *s)		// I - PDF date/time value
 #if _WIN32
   if ((t = _mkgmtime(&dateval)) <= 0)
     return (0);
+
 #elif defined(HAVE_TIMEGM)
   if ((t = timegm(&dateval)) <= 0)
     return (0);
+
 #else
   if ((t = mktime(&dateval)) <= 0)
     return (0);
 
 #  if defined(HAVE_TM_GMTOFF)
-  localtime_r(&t, &dateval);
-  t -= dateval.tm_gmtoff;
+  t += dateval.tm_gmtoff - 3600 * dateval.tm_isdst;
 #  else
-  t -= timezone;
+  t += timezone - 3600 * dateval.tm_isdst;
 #  endif // HAVE_TM_GMTOFF
 #endif // _WIN32
 
