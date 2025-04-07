@@ -2218,6 +2218,9 @@ repair_xref(
   pdfio_obj_t	*sobjs[16384];		// Object streams to load
 
 
+  // Let caller know something is wrong...
+  _pdfioFileError(pdf, "WARNING: Cross-reference table is damaged, attempting to rebuild.");
+
   // Read from the beginning of the file, looking for
   if ((line_offset = _pdfioFileSeek(pdf, 0, SEEK_SET)) < 0)
     return (false);
