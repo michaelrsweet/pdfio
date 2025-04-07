@@ -870,9 +870,15 @@ get_date_time(const char *s)		// I - PDF date/time value
     return (0);
 
 #  if defined(HAVE_TM_GMTOFF)
+  // Adjust the time value using the "tm_gmtoff" and "tm_isdst" members.  As
+  // noted by M-HT on Github, this DST hack will fail in timezones where the
+  // DST offset is not one hour, such as Australia/Lord_Howe.  Fortunately,
+  // this is unusual and most systems support the "timegm" function...
   t += dateval.tm_gmtoff - 3600 * dateval.tm_isdst;
 #  else
-  t += timezone - 3600 * dateval.tm_isdst;
+  // Adjust the time value using the even more legacy "timezone" variable,
+  // which also reflects any DST offset...
+  t += timezone;
 #  endif // HAVE_TM_GMTOFF
 #endif // _WIN32
 
