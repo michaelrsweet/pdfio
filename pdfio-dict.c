@@ -737,11 +737,6 @@ _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
       _pdfioFileError(pdf, "Invalid dictionary contents.");
       break;
     }
-    else if (_pdfioDictGetValue(dict, key + 1))
-    {
-      _pdfioFileError(pdf, "Duplicate dictionary key '%s'.", key + 1);
-      return (NULL);
-    }
 
     // Then get the next value...
     PDFIO_DEBUG("_pdfioDictRead: Reading value for '%s'.\n", key + 1);
@@ -751,8 +746,15 @@ _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
       _pdfioFileError(pdf, "Missing value for dictionary key '%s'.", key + 1);
       break;
     }
-
-    if (!_pdfioDictSetValue(dict, pdfioStringCreate(pdf, key + 1), &value))
+    else if (_pdfioDictGetValue(dict, key + 1))
+    {
+      // Issue 118: Discard duplicate key/value pairs, in the future this will
+      // be a warning message...
+      _pdfioFileError(pdf, "WARNING: Discarding value for duplicate dictionary key '%s'.", key + 1);
+      _pdfioValueDelete(&value);
+      continue;
+    }
+    else if (!_pdfioDictSetValue(dict, pdfioStringCreate(pdf, key + 1), &value))
       break;
 
     PDFIO_DEBUG("_pdfioDictRead: Set %s.\n", key);
