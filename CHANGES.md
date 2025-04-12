@@ -11,6 +11,7 @@ v1.5.2 - YYYY-MM-DD
 - Fixed form detection in `pdfioinfo` example code (Issue #114)
 - Fixed parsing of certain date/time values (Issue #115)
 - Fixed support for empty name values (Issue #116)
+- Fixed range checking in `pdfioImageGetBytesPerLine` (Issue #121)
 
 
 v1.5.1 - 2025-03-28

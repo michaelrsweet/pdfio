@@ -2233,7 +2233,7 @@ pdfioFileCreateImageObjFromFile(
 // 'pdfioImageGetBytesPerLine()' - Get the number of bytes to read for each line.
 //
 
-size_t					// O - Number of bytes per line
+size_t					// O - Number of bytes per line or `0` on error
 pdfioImageGetBytesPerLine(
     pdfio_obj_t *obj)			// I - Image object
 {
@@ -2279,7 +2279,25 @@ pdfioImageGetBytesPerLine(
       colors = 1;
   }
 
-  return ((size_t)((width * colors * bpc + 7) / 8));
+  if (width < 0)
+  {
+    _pdfioFileError(obj->pdf, "Invalid image width %d.", width);
+    return (0);
+  }
+  else if (bpc != 1 && bpc != 2 && bpc != 4 && bpc != 8 && bpc != 16)
+  {
+    _pdfioFileError(obj->pdf, "Invalid image bits per component %d.", bpc);
+    return (0);
+  }
+  else if (colors < 1 || colors > 4)
+  {
+    _pdfioFileError(obj->pdf, "Invalid image number of colors %d.", colors);
+    return (0);
+  }
+  else
+  {
+    return ((size_t)((width * colors * bpc + 7) / 8));
+  }
 }
 
 
