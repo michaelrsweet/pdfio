@@ -3,7 +3,7 @@
     <metadata>
         <id>pdfio_native.redist</id>
         <title>PDFio Library for VS2019+</title>
-        <version>1.5.2</version>
+        <version>1.6.0</version>
         <authors>Michael R Sweet</authors>
         <owners>michaelrsweet</owners>
         <projectUrl>https://github.com/michaelrsweet/pappl</projectUrl>
