@@ -5,7 +5,8 @@ Changes in PDFio
 v1.6.0 - YYYY-MM-DD
 -------------------
 
-
+- Added `pdfioFileCreateFontObjFromData` function for embedding fonts in
+  memory (Issue #120)
 
 
 v1.5.2 - 2025-04-12

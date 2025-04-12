@@ -128,6 +128,7 @@ extern bool		pdfioContentTextShowJustified(pdfio_stream_t *st, bool unicode, siz
 
 // Resource helpers...
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromBase(pdfio_file_t *pdf, const char *name) _PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateFontObjFromData(pdfio_file_t *pdf, const void *data, size_t datasize, bool unicode) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromFile(pdfio_file_t *pdf, const char *filename, bool unicode) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateICCObjFromData(pdfio_file_t *pdf, const unsigned char *data, size_t datalen, size_t num_colors) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateICCObjFromFile(pdfio_file_t *pdf, const char *filename, size_t num_colors) _PDFIO_PUBLIC;

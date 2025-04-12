@@ -3,7 +3,7 @@
 //
 //     https://github.com/michaelrsweet/ttf
 //
-// Copyright © 2018-2024 by Michael R Sweet.
+// Copyright © 2018-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -14,6 +14,10 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <sys/stat.h>
 #include "ttf.h"
 
 
@@ -81,9 +85,13 @@ test_font(const char *filename)		// I - Font filename
   int		i,			// Looping var
 		errors = 0;		// Number of errors
   ttf_t		*font;			// Font
+  struct stat	fileinfo;		// Font file information
+  FILE		*fp = NULL;		// File pointer
+  void		*data = NULL;		// Memory buffer for font file
   const char	*value;			// Font (string) value
   int		intvalue;		// Font (integer) value
   float		realvalue;		// Font (real) value
+  char		psname[1024];		// Postscript font name
   ttf_rect_t	bounds;			// Bounds
   ttf_rect_t	extents;		// Extents
   size_t	num_fonts;		// Number of fonts
@@ -220,6 +228,9 @@ test_font(const char *filename)		// I - Font filename
   if ((value = ttfGetPostScriptName(font)) != NULL)
   {
     printf("PASS (%s)\n", value);
+
+    strncpy(psname, value, sizeof(psname) - 1);
+    psname[sizeof(psname) - 1] = '\0';
   }
   else
   {
@@ -300,6 +311,86 @@ test_font(const char *filename)		// I - Font filename
     puts("PASS (false)");
 
   ttfDelete(font);
+  font = NULL;
+
+  // Now copy the font to memory and open it that way...
+  printf("fopen(\"%s\", \"rb\"): ", filename);
+  if ((fp = fopen(filename, "rb")) == NULL)
+  {
+    printf("FAIL (%s)\n", strerror(errno));
+    errors ++;
+  }
+  else
+  {
+    printf("PASS (%d)\n", fileno(fp));
+    printf("fstat(%d): ", fileno(fp));
+    if (fstat(fileno(fp), &fileinfo))
+    {
+      printf("FAIL (%s)\n", strerror(errno));
+      errors ++;
+    }
+    else
+    {
+      printf("PASS (%lu bytes)\n", (unsigned long)fileinfo.st_size);
+
+      fputs("malloc(): ", stdout);
+      if ((data = malloc((size_t)fileinfo.st_size)) == NULL)
+      {
+	printf("FAIL (%s)\n", strerror(errno));
+	errors ++;
+      }
+      else
+      {
+	puts("PASS");
+        fputs("fread(): ", stdout);
+        if (fread(data, (size_t)fileinfo.st_size, 1, fp) != 1)
+        {
+	  printf("FAIL (%s)\n", strerror(errno));
+	  errors ++;
+        }
+        else
+        {
+          puts("PASS");
+          fputs("ttfCreateData(): ", stdout);
+          if ((font = ttfCreateData(data, (size_t)fileinfo.st_size, /*idx*/0, error_cb, /*err_data*/NULL)) == NULL)
+          {
+            puts("FAIL");
+            errors ++;
+          }
+          else
+          {
+            puts("PASS");
+
+	    fputs("ttfGetPostScriptName: ", stdout);
+	    if ((value = ttfGetPostScriptName(font)) != NULL)
+	    {
+	      if (!strcmp(value, psname))
+	      {
+		printf("PASS (%s)\n", value);
+	      }
+	      else
+	      {
+		printf("FAIL (got \"%s\", expected \"%s\")\n", value, psname);
+		errors ++;
+	      }
+	    }
+	    else
+	    {
+	      puts("FAIL");
+	      errors ++;
+	    }
+          }
+        }
+      }
+    }
+
+    if (fp)
+      fclose(fp);
+
+    free(data);
+
+    ttfDelete(font);
+  }
 
   return (errors);
 }
