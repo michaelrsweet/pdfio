@@ -2,7 +2,7 @@ Changes in PDFio
 ================
 
 
-v1.5.2 - YYYY-MM-DD
+v1.5.2 - 2025-04-12
 -------------------
 
 - Updated maximum allowed PDF string size to 64k (Issue #117)
