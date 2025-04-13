@@ -339,6 +339,7 @@ struct _pdfio_stream_s			// Stream
 
 extern size_t		_pdfio_strlcpy(char *dst, const char *src, size_t dstsize) _PDFIO_INTERNAL;
 extern double		_pdfio_strtod(pdfio_file_t *pdf, const char *s) _PDFIO_INTERNAL;
+extern void		_pdfio_utf16cpy(char *dst, const unsigned char *src, size_t srclen, size_t dstsize) _PDFIO_INTERNAL;
 extern ssize_t		_pdfio_vsnprintf(pdfio_file_t *pdf, char *buffer, size_t bufsize, const char *format, va_list ap) _PDFIO_INTERNAL;
 
 extern bool		_pdfioArrayDecrypt(pdfio_file_t *pdf, pdfio_obj_t *obj, pdfio_array_t *a, size_t depth) _PDFIO_INTERNAL;
