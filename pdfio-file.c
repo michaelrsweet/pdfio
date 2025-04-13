@@ -8,6 +8,7 @@
 //
 
 #include "pdfio-private.h"
+#include "pdfio-content.h"
 #ifndef O_BINARY
 #  define O_BINARY 0
 #endif // !O_BINARY
@@ -474,8 +475,9 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
 
   pdfioDictSetObj(dict, "Parent", pdf->pages_obj);
 
-  if (!_pdfioDictGetValue(dict, "Resources"))
-    pdfioDictSetDict(dict, "Resources", pdfioDictCreate(pdf));
+  pdfioPageDictAddColorSpace(dict, "DefaultGray", pdfioArrayCreateColorFromStandard(pdf, 1, PDFIO_CS_SRGB));
+  pdfioPageDictAddColorSpace(dict, "DefaultRGB", pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_SRGB));
+  pdfioPageDictAddColorSpace(dict, "DefaultCMYK", pdfioArrayCreateColorFromStandard(pdf, 4, PDFIO_CS_CGATS001));
 
   if (!_pdfioDictGetValue(dict, "Type"))
     pdfioDictSetName(dict, "Type", "Page");

@@ -1,0 +1,5 @@
+https://github.com/saucecontrol/Compact-ICC-Profiles
+
+All profiles in this collection are released to the public domain under the
+Creative Commons CC0 license.  They are free from restrictions on distribution
+and use to the extent allowed by law.

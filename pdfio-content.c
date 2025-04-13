@@ -10,6 +10,7 @@
 #include "pdfio-private.h"
 #include "pdfio-content.h"
 #include "pdfio-base-font-widths.h"
+#include "pdfio-cgats001-compat.h"
 #include "ttf.h"
 #ifdef HAVE_LIBPNG
 #  include <png.h>
@@ -406,13 +407,14 @@ pdfioArrayCreateColorFromPrimaries(
 // 'pdfioArrayCreateColorFromStandard()' - Create a color array for a standard color space.
 //
 // This function creates a color array for a standard `PDFIO_CS_` enumerated color space.
-// The "num_colors" argument must be `1` for grayscale and `3` for RGB color.
+// The "num_colors" argument must be `1` for grayscale, `3` for RGB color, and
+// `4` for CMYK color.
 //
 
 pdfio_array_t *				// O - Color array
 pdfioArrayCreateColorFromStandard(
     pdfio_file_t *pdf,			// I - PDF file
-    size_t       num_colors,		// I - Number of colors (1 or 3)
+    size_t       num_colors,		// I - Number of colors (1, 3, or 4)
     pdfio_cs_t   cs)			// I - Color space enumeration
 {
   static const double	adobe_matrix[3][3] = { { 0.57667, 0.18556, 0.18823 }, { 0.29734, 0.62736, 0.07529 }, { 0.02703, 0.07069, 0.99134 } };
@@ -426,7 +428,7 @@ pdfioArrayCreateColorFromStandard(
   {
     return (NULL);
   }
-  else if (num_colors != 1 && num_colors != 3)
+  else if ((cs != PDFIO_CS_CGATS001 && num_colors != 1 && num_colors != 3) || (cs == PDFIO_CS_CGATS001 && num_colors != 4))
   {
     _pdfioFileError(pdf, "Unsupported number of colors %u.", (unsigned)num_colors);
     return (NULL);
@@ -436,10 +438,18 @@ pdfioArrayCreateColorFromStandard(
   {
     case PDFIO_CS_ADOBE :
         return (pdfioArrayCreateColorFromMatrix(pdf, num_colors, 2.2, adobe_matrix, d65_white_point));
+
     case PDFIO_CS_P3_D65 :
         return (pdfioArrayCreateColorFromMatrix(pdf, num_colors, 2.2, p3_d65_matrix, d65_white_point));
+
     case PDFIO_CS_SRGB :
         return (pdfioArrayCreateColorFromMatrix(pdf, num_colors, 2.2, srgb_matrix, d65_white_point));
+
+    case PDFIO_CS_CGATS001 :
+        if (!pdf->cgats001_obj)
+          pdf->cgats001_obj = pdfioFileCreateICCObjFromData(pdf, CGATS001Compat_v2_micro_icc, sizeof(CGATS001Compat_v2_micro_icc), num_colors);
+
+        return (pdfioArrayCreateColorFromICCObj(pdf, pdf->cgats001_obj));
 
     default :
         _pdfioFileError(pdf, "Unsupported color space number %d.", (int)cs);
@@ -2138,6 +2148,10 @@ pdfioPageDictAddColorSpace(
       return (false);
   }
 
+  // See if this name is already set...
+  if (_pdfioDictGetValue(colorspace, name))
+    return (false);			// Yes, return false
+
   // Now set the color space reference and return...
   return (pdfioDictSetArray(colorspace, name, data));
 }
@@ -2399,7 +2413,7 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
     }
   }
 
-  if (width == 0 || height == 0 || (num_colors != 1 && num_colors != 3))
+  if (width == 0 || height == 0 || (num_colors != 1 && num_colors != 3 && num_colors != 4))
   {
     _pdfioFileError(dict->pdf, "Unable to find JPEG dimensions or image data.");
     goto finish;
@@ -2417,8 +2431,11 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
   }
   else //if (pdfioDictGetArray(dict, "ColorSpace") == NULL)
   {
-    // The default JPEG color space is sRGB...
-    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, num_colors, PDFIO_CS_SRGB));
+    // The default JPEG color space is sRGB or CGATS001 (CMYK)...
+    if (num_colors == 4)
+      pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, num_colors, PDFIO_CS_CGATS001));
+    else
+      pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, num_colors, PDFIO_CS_SRGB));
   }
 
   obj = pdfioFileCreateObj(dict->pdf, dict);

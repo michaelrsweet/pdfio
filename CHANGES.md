@@ -5,6 +5,12 @@ Changes in PDFio
 v1.6.0 - YYYY-MM-DD
 -------------------
 
+- Added "standard" `PDFIO_CS_CGATS001` color space for non-device CMYK
+  (Issue #104)
+- Added CMYK JPEG support with embedded ICC profiles or using the CGATS001
+  profile (Issue #104)
+- Now add default grayscale, RGB, and CMYK profile resources to pages as needed
+  (Issue #104)
 - Added `pdfioFileCreateFontObjFromData` function for embedding fonts in
   memory (Issue #120)
 

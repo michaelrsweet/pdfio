@@ -1,7 +1,7 @@
 //
 // Public content header file for PDFio.
 //
-// Copyright © 2021-2023 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -23,7 +23,8 @@ typedef enum pdfio_cs_e			// Standard color spaces
 {
   PDFIO_CS_ADOBE,			// AdobeRGB 1998
   PDFIO_CS_P3_D65,			// Display P3
-  PDFIO_CS_SRGB				// sRGB
+  PDFIO_CS_SRGB,			// sRGB
+  PDFIO_CS_CGATS001			// CGATS001 (CMYK)
 } pdfio_cs_t;
 
 typedef enum pdfio_linecap_e		// Line capping modes
