@@ -1490,6 +1490,103 @@ pdfioContentTextShowJustified(
 
 
 //
+// 'pdfioFileAddOutputIntent()' - Add an OutputIntent to a file.
+//
+// This function adds an OutputIntent dictionary to the PDF file catalog.
+// The "subtype" argument specifies the intent subtype and is typically
+// "GTS_PDFX" for PDF/X, "GTS_PDFA1" for PDF/A, or "ISO_PDFE1" for PDF/E.
+// Passing `NULL` defaults the subtype to "GTS_PDFA1".
+//
+// The "condition" argument specifies a short name for the output intent, while
+// the "info" argument specifies a longer description for the output intent.
+// Both can be `NULL` to omit this information.
+//
+// The "cond_id" argument specifies a unique identifier such as a registration
+// ("CGATS001") or color space name ("sRGB").  The "reg_name" argument provides
+// a URL for the identifier.
+//
+// The "profile" argument specifies an ICC profile object for the output
+// condition.  If `NULL`, the PDF consumer will attempt to look up the correct
+// profile using the "cond_id" value.
+//
+// @since PDFio 1.6@
+//
+
+void
+pdfioFileAddOutputIntent(
+    pdfio_file_t *pdf,			// I - PDF file
+    const char   *subtype,		// I - Intent subtype (standard)
+    const char   *condition,		// I - Condition name or `NULL` for none
+    const char   *cond_id,		// I - Identifier such as registration name or `NULL` for none
+    const char   *reg_name,		// I - Registry URL or `NULL` for none
+    const char   *info,			// I - Description or `NULL` for none
+    pdfio_obj_t  *profile)		// I - ICC profile object or `NULL` for none
+{
+  pdfio_array_t	*output_intents;	// OutputIntents array in catalog
+  pdfio_dict_t	*intent;		// Current output intent
+
+
+  // Range check input...
+  if (!pdf)
+    return;
+
+  if (!subtype)
+  {
+    _pdfioFileError(pdf, "Output intent subtype cannot be NULL.");
+    return;
+  }
+
+  // Get the OutputIntents array...
+  if ((output_intents = pdfioDictGetArray(pdfioObjGetDict(pdf->info_obj), "OutputIntents")) != NULL)
+  {
+    // See if we already have an intent for the given subtype...
+    size_t	i,			// Looping var
+		count;			// Number of output intents
+
+    for (i = 0, count = pdfioArrayGetSize(output_intents); i < count; i ++)
+    {
+      if ((intent = pdfioArrayGetDict(output_intents, i)) != NULL)
+      {
+        const char *csubtype = pdfioDictGetName(intent, "S");
+					// Current subtype
+
+        if (csubtype && !strcmp(csubtype, subtype))
+          return;
+      }
+    }
+  }
+  else
+  {
+    // Create the OutputIntents array...
+    if ((output_intents = pdfioArrayCreate(pdf)) == NULL)
+      return;
+
+    pdfioDictSetArray(pdfioObjGetDict(pdf->info_obj), "OutputIntents", output_intents);
+  }
+
+  // Create an intent dictionary...
+  if ((intent = pdfioDictCreate(pdf)) == NULL)
+    return;
+
+  pdfioDictSetName(intent, "Type", "OutputIntent");
+  pdfioDictSetName(intent, "S", pdfioStringCreate(pdf, subtype));
+  if (condition)
+    pdfioDictSetString(intent, "OutputCondition", pdfioStringCreate(pdf, condition));
+  if (cond_id)
+    pdfioDictSetString(intent, "OutputConditionIdentifier", pdfioStringCreate(pdf, cond_id));
+  if (reg_name)
+    pdfioDictSetString(intent, "RegistryName", pdfioStringCreate(pdf, reg_name));
+  if (info)
+    pdfioDictSetString(intent, "Info", pdfioStringCreate(pdf, info));
+  if (profile)
+    pdfioDictSetObj(intent, "DestOutputProfile", profile);
+
+  // Add the dictionary to the output intents...
+  pdfioArrayAppendDict(output_intents, intent);
+}
+
+
+//
 // 'pdfioFileCreateBaseFontObj()' - Create one of the base 14 PDF fonts.
 //
 // This function creates one of the base 14 PDF fonts. The "name" parameter

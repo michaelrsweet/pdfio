@@ -9,10 +9,12 @@ v1.6.0 - YYYY-MM-DD
   (Issue #104)
 - Added CMYK JPEG support with embedded ICC profiles or using the CGATS001
   profile (Issue #104)
-- Now add default grayscale, RGB, and CMYK profile resources to pages as needed
-  (Issue #104)
+- Added `pdfioFileAddOutputIntent` function to adding output intent information
+  to a PDF file (Issue #104)
 - Added `pdfioFileCreateFontObjFromData` function for embedding fonts in
   memory (Issue #120)
+- Now add default grayscale, RGB, and CMYK profile resources to pages as needed
+  (Issue #104)
 
 
 v1.5.3 - YYYY-MM-DD

@@ -124,6 +124,10 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
   {
     ret = false;
 
+    // Add default OutputIntent for PDF/A CMYK printing...
+    pdfioFileAddOutputIntent(pdf, /*subtype*/"GTS_PDFA1", /*condition*/"CMYK", /*cond_id*/"CGATS001", /*reg_name*/NULL, /*info*/"CMYK Printing", /*profile*/pdf->cgats001_obj);
+
+    // Close and write out the last bits...
     if (pdfioObjClose(pdf->info_obj) && write_pages(pdf) && pdfioObjClose(pdf->root_obj) && write_trailer(pdf))
       ret = _pdfioFileFlush(pdf);
   }

@@ -128,6 +128,7 @@ extern bool		pdfioContentTextShowf(pdfio_stream_t *st, bool unicode, const char 
 extern bool		pdfioContentTextShowJustified(pdfio_stream_t *st, bool unicode, size_t num_fragments, const double *offsets, const char * const *fragments) _PDFIO_PUBLIC;
 
 // Resource helpers...
+extern void		pdfioFileAddOutputIntent(pdfio_file_t *pdf, const char *subtype, const char *condition, const char *cond_id, const char *reg_name, const char *info, pdfio_obj_t *profile) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromBase(pdfio_file_t *pdf, const char *name) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromData(pdfio_file_t *pdf, const void *data, size_t datasize, bool unicode) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromFile(pdfio_file_t *pdf, const char *filename, bool unicode) _PDFIO_PUBLIC;
