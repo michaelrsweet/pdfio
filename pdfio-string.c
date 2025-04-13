@@ -486,6 +486,59 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
 	    }
 	    break;
 
+	case 'H' : // XML/HTML string
+	    if ((s = va_arg(ap, char *)) == NULL)
+	      s = "(null)";
+
+            // Loop through the literal string...
+            while (*s)
+            {
+              // Escape special characters
+              if (*s == '&')
+              {
+                // &amp;
+                if (bufptr < bufend)
+                {
+                  _pdfio_strlcpy(bufptr, "&amp;", (size_t)(bufend - bufptr + 1));
+                  bufptr += strlen(bufptr);
+                }
+
+                bytes += 5;
+              }
+              else if (*s == '<')
+              {
+                // &lt;
+                if (bufptr < bufend)
+                {
+                  _pdfio_strlcpy(bufptr, "&lt;", (size_t)(bufend - bufptr + 1));
+                  bufptr += strlen(bufptr);
+                }
+
+                bytes += 4;
+              }
+              else if (*s == '>')
+              {
+                // &gt;
+                if (bufptr < bufend)
+                {
+                  _pdfio_strlcpy(bufptr, "&gt;", (size_t)(bufend - bufptr + 1));
+                  bufptr += strlen(bufptr);
+                }
+
+                bytes += 4;
+              }
+              else
+              {
+                // Literal character...
+                if (bufptr < bufend)
+                  *bufptr++ = *s;
+                bytes ++;
+              }
+
+              s ++;
+            }
+	    break;
+
 	case 'S' : // PDF string
 	    if ((s = va_arg(ap, char *)) == NULL)
 	      s = "(null)";

@@ -22,11 +22,13 @@ static pdfio_obj_t	*add_obj(pdfio_file_t *pdf, size_t number, unsigned short gen
 static int		compare_objmaps(_pdfio_objmap_t *a, _pdfio_objmap_t *b);
 static pdfio_file_t	*create_common(const char *filename, int fd, pdfio_output_cb_t output_cb, void *output_cbdata, const char *version, pdfio_rect_t *media_box, pdfio_rect_t *crop_box, pdfio_error_cb_t error_cb, void *error_cbdata);
 static const char	*get_info_string(pdfio_file_t *pdf, const char *key);
+static char		*get_iso_date(time_t t, char *buffer, size_t bufsize);
 static struct lconv	*get_lconv(void);
 static bool		load_obj_stream(pdfio_obj_t *obj);
 static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj, size_t depth);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset, pdfio_password_cb_t password_cb, void *password_data);
 static bool		repair_xref(pdfio_file_t *pdf, pdfio_password_cb_t password_cb, void *password_data);
+static bool		write_metadata(pdfio_file_t *pdf);
 static bool		write_pages(pdfio_file_t *pdf);
 static bool		write_trailer(pdfio_file_t *pdf);
 
@@ -128,7 +130,7 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
     pdfioFileAddOutputIntent(pdf, /*subtype*/"GTS_PDFA1", /*condition*/"CMYK", /*cond_id*/"CGATS001", /*reg_name*/NULL, /*info*/"CMYK Printing", /*profile*/NULL);
 
     // Close and write out the last bits...
-    if (pdfioObjClose(pdf->info_obj) && write_pages(pdf) && pdfioObjClose(pdf->root_obj) && write_trailer(pdf))
+    if (write_metadata(pdf) && pdfioObjClose(pdf->info_obj) && write_pages(pdf) && pdfioObjClose(pdf->root_obj) && write_trailer(pdf))
       ret = _pdfioFileFlush(pdf);
   }
 
@@ -1537,6 +1539,32 @@ get_info_string(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
+// 'get_iso_date()' - Convert a time_t value to an ISO 8601 date/time value.
+//
+
+static char *				// O - Date string
+get_iso_date(time_t t,			// I - Time value in seconds
+             char   *buffer,		// I - Date buffer
+             size_t bufsize)		// I - Size of date buffer
+{
+  struct tm	d;			// Date values
+
+
+  // Convert time to UTC date
+#if _WIN32
+  gmtime_s(&d, &t);
+#else
+  gmtime_r(&t, &d);
+#endif // _WIN32
+
+  // Format the string and return...
+  snprintf(buffer, bufsize, "%04d-%02d-%02dT%02d:%02d:%02dZ", d.tm_year + 1900, d.tm_mon + 1, d.tm_mday, d.tm_hour, d.tm_min, d.tm_sec);
+
+  return (buffer);
+}
+
+
+//
 // 'get_lconv()' - Get any locale-specific numeric information.
 //
 
@@ -2357,6 +2385,89 @@ repair_xref(
 
   // Load pages...
   return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages"), 0));
+}
+
+
+//
+// 'write_metadata()' - Write an XMP metadata stream.
+//
+
+static bool				// O - `true` on success, `false` on failure
+write_metadata(pdfio_file_t *pdf)	// I - PDF file
+{
+  pdfio_dict_t	*dict;			// XMP object dictionary
+  pdfio_obj_t	*obj;			// XMP object
+  pdfio_stream_t *st;			// XMP stream
+  bool		status = true;		// Write status
+  const char	*value;			// Value from info dictionary
+  time_t	t;			// Date/time value in seconds
+  char		d[64];			// Date/time string (ISO 8601)
+
+
+  // Create the Metadata object...
+  if ((dict = pdfioDictCreate(pdf)) == NULL)
+    return (false);
+
+  pdfioDictSetName(dict, "Type", "Metadata");
+  pdfioDictSetName(dict, "Subtype", "XML");
+
+  if ((obj = pdfioFileCreateObj(pdf, dict)) == NULL)
+    return (false);
+
+  // Write the XMP stream...
+  if ((st = pdfioObjCreateStream(obj, PDFIO_FILTER_NONE)) == NULL)
+    return (false);
+
+  status &= pdfioStreamPuts(st, "<?xpacket begin=\"\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>\n");
+  status &= pdfioStreamPuts(st, "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\">\n");
+  status &= pdfioStreamPuts(st, "    <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n");
+
+  status &= pdfioStreamPuts(st, "        <rdf:Description rdf:about=\"\" xmlns:xmp=\"http://ns.adobe.com/xap/1.0/\">\n");
+  t = pdfioFileGetCreationDate(pdf);
+  status &= pdfioStreamPrintf(st, "            <xmp:CreateDate>%H</xmp:CreateDate>\n", get_iso_date(t, d, sizeof(d)));
+  if ((value = pdfioFileGetCreator(pdf)) != NULL)
+    status &= pdfioStreamPrintf(st, "            <xmp:CreatorTool>%H</xmp:CreatorTool>\n", value);
+  status &= pdfioStreamPrintf(st, "            <xmp:MetadataDate>%H</xmp:MetadataDate>\n", d);
+  if ((t = pdfioFileGetModificationDate(pdf)) > 0)
+    status &= pdfioStreamPrintf(st, "            <xmp:ModifyDate>%H</xmp:ModifyDate>\n", get_iso_date(t, d, sizeof(d)));
+  status &= pdfioStreamPuts(st, "        </rdf:Description>\n");
+
+  status &= pdfioStreamPuts(st, "        <rdf:Description rdf:about=\"\" xmlns:pdf=\"http://ns.adobe.com/pdf/1.3/\">\n");
+  status &= pdfioStreamPrintf(st, "            <pdf:Producer>%H</pdf:Producer>\n", pdfioFileGetProducer(pdf));
+  if ((value = pdfioFileGetKeywords(pdf)) != NULL)
+    status &= pdfioStreamPrintf(st, "            <pdf:Keywords>%H</pdf:Keywords>\n", value);
+  status &= pdfioStreamPuts(st, "        </rdf:Description>\n");
+
+  status &= pdfioStreamPuts(st, "        <rdf:Description rdf:about=\"\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n");
+  status &= pdfioStreamPrintf(st, "            <dc:format>application/pdf</dc:format>\n");
+  if ((value = pdfioFileGetTitle(pdf)) != NULL)
+    status &= pdfioStreamPrintf(st, "            <dc:title><rdf:Alt><rdf:li xml:lang=\"x-default\">%H</rdf:li></rdf:Alt></dc:title>\n", value);
+  if ((value = pdfioFileGetAuthor(pdf)) != NULL)
+    status &= pdfioStreamPrintf(st, "            <dc:creator><rdf:Seq><rdf:li>%H</rdf:li></rdf:Seq></dc:creator>\n", value);
+  if ((value = pdfioFileGetSubject(pdf)) != NULL)
+    status &= pdfioStreamPrintf(st, "            <dc:description><rdf:Alt><rdf:li xml:lang=\"x-default\">%H</rdf:li></rdf:Alt></dc:description>\n", value);
+  status &= pdfioStreamPuts(st, "        </rdf:Description>\n");
+
+  // TODO: Need a better way to choose the output profile - something that lets
+  // us choose the base PDF version and PDF/A, PDF/E, PDF/X, etc.
+#if 0
+  status &= pdfioStreamPuts(st, "        <rdf:Description rdf:about=\"\" xmlns:pdfaid=\"http://www.aiim.org/pdfa/ns/id/\">\n");
+  status &= pdfioStreamPuts(st, "            <pdfaid:conformance>A</pdfaid:conformance>\n");
+  status &= pdfioStreamPuts(st, "            <pdfaid:part>1</pdfaid:part>\n");
+  status &= pdfioStreamPuts(st, "        </rdf:Description>\n");
+#endif // 0
+
+  status &= pdfioStreamPuts(st, "    </rdf:RDF>\n");
+  status &= pdfioStreamPuts(st, "</x:xmpmeta>\n");
+  status &= pdfioStreamPuts(st, "<?xpacket end=\"r\"?>\n");
+
+  status &= pdfioStreamClose(st);
+
+  if (!status)
+    return (false);
+
+  // If we get this far, add the Metadata key/value to the catalog/root object.
+  return (pdfioDictSetObj(pdfioFileGetCatalog(pdf), "Metadata", obj));
 }
 
 

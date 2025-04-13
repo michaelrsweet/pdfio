@@ -5,6 +5,7 @@ Changes in PDFio
 v1.6.0 - YYYY-MM-DD
 -------------------
 
+- Added generation of XMP metadata when writing PDFs (Issue #103)
 - Added "standard" `PDFIO_CS_CGATS001` color space for non-device CMYK
   (Issue #104)
 - Added CMYK JPEG support with embedded ICC profiles or using the CGATS001
