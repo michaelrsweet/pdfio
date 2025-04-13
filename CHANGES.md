@@ -2,6 +2,12 @@ Changes in PDFio
 ================
 
 
+v1.5.3 - YYYY-MM-DD
+-------------------
+
+- Fixed decryption of PDF files "protected" by 40-bit RC4.
+
+
 v1.5.2 - 2025-04-12
 -------------------
 

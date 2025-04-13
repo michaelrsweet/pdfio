@@ -172,7 +172,7 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
 	// Copy the decrypted string back to the value and adjust the length...
 	memcpy(v->value.binary.data, temp, templen);
 
-	if (pdf->encryption >= PDFIO_ENCRYPTION_AES_128)
+	if (pdf->encryption >= PDFIO_ENCRYPTION_AES_128 && temp[templen - 1] <= templen)
 	  v->value.binary.datalen = templen - temp[templen - 1];
 	else
 	  v->value.binary.datalen = templen;
@@ -183,9 +183,14 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
     case PDFIO_VALTYPE_STRING :
         // Decrypt regular string...
         templen = strlen(v->value.string);
-	if (templen > (sizeof(temp) - 33))
+	if (templen > (PDFIO_MAX_STRING - 1))
 	{
 	  _pdfioFileError(pdf, "Unable to read encrypted string - too long.");
+	  return (false);
+	}
+	else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(pdf)) == NULL)
+	{
+	  _pdfioFileError(pdf, "Unable to read encrypted binary string - out of memory.");
 	  return (false);
 	}
 
@@ -194,6 +199,10 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
 	  return (false);
 
 	templen = (cb)(&ctx, temp, (uint8_t *)v->value.string + ivlen, templen - ivlen);
+
+	if (pdf->encryption >= PDFIO_ENCRYPTION_AES_128 && temp[templen - 1] <= templen)
+	  templen -= temp[templen - 1];
+
 	temp[templen] = '\0';
 
         if ((timeval = get_date_time((char *)temp)) != 0)
@@ -207,6 +216,8 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
           // Copy the decrypted string back to the value...
 	  v->value.string = pdfioStringCreate(pdf, (char *)temp);
 	}
+
+        _pdfioStringFreeBuffer(pdf, (char *)temp);
         break;
   }
 
