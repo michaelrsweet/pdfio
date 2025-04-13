@@ -205,7 +205,26 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
 
 	temp[templen] = '\0';
 
-        if ((timeval = get_date_time((char *)temp)) != 0)
+        if ((templen & 1) == 0 && (!memcmp(temp, "\376\377", 2) || !memcmp(temp, "\377\376", 2)))
+        {
+          // Convert UTF-16 to UTF-8...
+          char	utf8[4096];		// Temporary string
+
+          _pdfio_utf16cpy(utf8, temp, templen, sizeof(utf8));
+
+	  if ((timeval = get_date_time((char *)utf8)) != 0)
+	  {
+	    // Change the type to date...
+	    v->type       = PDFIO_VALTYPE_DATE;
+	    v->value.date = timeval;
+	  }
+	  else
+	  {
+	    // Copy the decrypted string back to the value...
+	    v->value.string = pdfioStringCreate(pdf, utf8);
+	  }
+        }
+        else if ((timeval = get_date_time((char *)temp)) != 0)
         {
           // Change the type to date...
           v->type       = PDFIO_VALTYPE_DATE;

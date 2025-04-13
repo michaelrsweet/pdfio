@@ -159,6 +159,89 @@ _pdfio_strtod(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
+// '_pdfio_utf16cpy()' - Convert UTF-16 to UTF-8.
+//
+
+void
+_pdfio_utf16cpy(
+    char                *dst,		// I - Destination buffer for UTF-8
+    const unsigned char *src,		// I - Source UTF-16
+    size_t              srclen,		// I - Length of UTF-16
+    size_t              dstsize)	// I - Destination buffer size
+{
+  char	*dstptr = dst,			// Pointer into buffer
+	*dstend = dst + dstsize - 5;	// End of buffer
+  int	ch;				// Unicode character
+  bool	is_be = !memcmp(src, "\376\377", 2);
+					// Big-endian strings?
+
+
+  // Loop through the UTF-16 string, converting to Unicode then UTF-8...
+  for (src += 2, srclen -= 2; srclen > 1 && dstptr < dstend; src += 2, srclen -= 2)
+  {
+    // Initial character...
+    if (is_be)
+      ch = (src[0] << 8) | src[1];
+    else
+      ch = (src[1] << 8) | src[0];
+
+    if (ch >= 0xd800 && ch <= 0xdbff && srclen > 3)
+    {
+      // Multi-word UTF-16 char...
+      int lch;			// Lower bits
+
+      if (is_be)
+	lch = (src[2] << 8) | src[3];
+      else
+	lch = (src[3] << 8) | src[2];
+
+      if (lch < 0xdc00 || lch >= 0xdfff)
+	break;
+
+      ch     = (((ch & 0x3ff) << 10) | (lch & 0x3ff)) + 0x10000;
+      src    += 2;
+      srclen -= 2;
+    }
+    else if (ch >= 0xfffe)
+    {
+      continue;
+    }
+
+    // Convert Unicode to UTF-8...
+    if (ch < 128)
+    {
+      // ASCII
+      *dstptr++ = (char)ch;
+    }
+    else if (ch < 4096)
+    {
+      // 2-byte UTF-8
+      *dstptr++ = (char)(0xc0 | (ch >> 6));
+      *dstptr++ = (char)(0x80 | (ch & 0x3f));
+    }
+    else if (ch < 65536)
+    {
+      // 3-byte UTF-8
+      *dstptr++ = (char)(0xe0 | (ch >> 12));
+      *dstptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+      *dstptr++ = (char)(0x80 | (ch & 0x3f));
+    }
+    else
+    {
+      // 4-byte UTF-8
+      *dstptr++ = (char)(0xe0 | (ch >> 18));
+      *dstptr++ = (char)(0x80 | ((ch >> 12) & 0x3f));
+      *dstptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
+      *dstptr++ = (char)(0x80 | (ch & 0x3f));
+    }
+  }
+
+  // Nul-terminate the UTF-8 string...
+  *dstptr = '\0';
+}
+
+
+//
 // '_pdfio_vsnprintf()' - Format a string.
 //
 // This function emulates vsnprintf() to avoid locale issues.
