@@ -409,13 +409,6 @@ _pdfioCryptoMakeReader(
   uint8_t	data[21];		// Key data
   _pdfio_md5_t	md5;			// MD5 state
   uint8_t	digest[16];		// MD5 digest value
-#if PDFIO_OBJ_CRYPT
-  pdfio_array_t	*id_array;		// Object ID array
-  unsigned char	*id_value;		// Object ID value
-  size_t	id_len;			// Length of object ID
-  uint8_t	temp_key[16];		// File key for object
-#endif // PDFIO_OBJ_CRYPT
-  uint8_t	*file_key;		// Computed file key to use
 
 
   PDFIO_DEBUG("_pdfioCryptoMakeReader(pdf=%p, obj=%p(%d), ctx=%p, iv=%p, ivlen=%p(%d))\n", pdf, obj, (int)obj->number, ctx, iv, ivlen, (int)*ivlen);
@@ -427,60 +420,6 @@ _pdfioCryptoMakeReader(
     return (NULL);
   }
 
-#if PDFIO_OBJ_CRYPT
-  if ((id_array = pdfioDictGetArray(pdfioObjGetDict(obj), "ID")) != NULL)
-  {
-    // Object has its own ID that will get used for encryption...
-    _pdfio_md5_t md5;			// MD5 context
-    uint8_t	file_digest[16];	// MD5 digest of file ID and pad
-    uint8_t	user_pad[32],		// Padded user password
-		own_user_key[32],	// Calculated user key
-		pdf_user_key[32];	// Decrypted user key
-
-    PDFIO_DEBUG("_pdfioCryptoMakeReader: Per-object file ID.\n");
-
-    if ((id_value = pdfioArrayGetBinary(id_array, 0, &id_len)) == NULL)
-    {
-      *ivlen = 0;
-      return (NULL);
-    }
-
-    _pdfioCryptoMD5Init(&md5);
-    _pdfioCryptoMD5Append(&md5, pdf_passpad, 32);
-    _pdfioCryptoMD5Append(&md5, id_value, id_len);
-    _pdfioCryptoMD5Finish(&md5, file_digest);
-
-    make_owner_key(pdf->encryption, pdf->password, pdf->owner_key, user_pad);
-    make_file_key(pdf->encryption, pdf->permissions, id_value, id_len, user_pad, pdf->owner_key, temp_key);
-    make_user_key(id_value, id_len, own_user_key);
-
-    if (memcmp(own_user_key, pdf->user_key, sizeof(own_user_key)))
-    {
-      PDFIO_DEBUG("_pdfioCryptoMakeReader: Not user password, trying owner password.\n");
-
-      make_file_key(pdf->encryption, pdf->permissions, id_value, id_len, pdf->password, pdf->owner_key, temp_key);
-      make_user_key(id_value, id_len, own_user_key);
-
-      memcpy(pdf_user_key, pdf->user_key, sizeof(pdf_user_key));
-      decrypt_user_key(pdf->encryption, temp_key, pdf_user_key);
-
-      if (memcmp(pdf->password, pdf_user_key, 32) && memcmp(own_user_key, pdf_user_key, 16))
-      {
-        _pdfioFileError(pdf, "Unable to unlock file.");
-	*ivlen = 0;
-	return (NULL);
-      }
-    }
-
-    file_key = temp_key;
-  }
-  else
-#endif // PDFIO_OBJ_CRYPT
-  {
-    // Use the default file key...
-    file_key = pdf->file_key;
-  }
-
   switch (pdf->encryption)
   {
     default :
@@ -490,7 +429,7 @@ _pdfioCryptoMakeReader(
 
     case PDFIO_ENCRYPTION_RC4_40 :
 	// Copy the key data for the MD5 hash.
-	memcpy(data, file_key, 5);
+	memcpy(data, pdf->file_key, 5);
 	data[5] = (uint8_t)obj->number;
 	data[6] = (uint8_t)(obj->number >> 8);
 	data[7] = (uint8_t)(obj->number >> 16);
@@ -517,7 +456,7 @@ _pdfioCryptoMakeReader(
 
     case PDFIO_ENCRYPTION_RC4_128 :
 	// Copy the key data for the MD5 hash.
-	memcpy(data, file_key, 16);
+	memcpy(data, pdf->file_key, 16);
 	data[16] = (uint8_t)obj->number;
 	data[17] = (uint8_t)(obj->number >> 8);
 	data[18] = (uint8_t)(obj->number >> 16);
