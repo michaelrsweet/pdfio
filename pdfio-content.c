@@ -1537,7 +1537,7 @@ pdfioFileAddOutputIntent(
   }
 
   // Get the OutputIntents array...
-  if ((output_intents = pdfioDictGetArray(pdfioObjGetDict(pdf->info_obj), "OutputIntents")) != NULL)
+  if ((output_intents = pdfioDictGetArray(pdfioFileGetCatalog(pdf), "OutputIntents")) != NULL)
   {
     // See if we already have an intent for the given subtype...
     size_t	i,			// Looping var
@@ -1561,7 +1561,7 @@ pdfioFileAddOutputIntent(
     if ((output_intents = pdfioArrayCreate(pdf)) == NULL)
       return;
 
-    pdfioDictSetArray(pdfioObjGetDict(pdf->info_obj), "OutputIntents", output_intents);
+    pdfioDictSetArray(pdfioFileGetCatalog(pdf), "OutputIntents", output_intents);
   }
 
   // Create an intent dictionary...
