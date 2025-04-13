@@ -267,6 +267,8 @@ pdfioFileCreateArrayObj(
 // This function creates a new object with a name value in a PDF file.
 // You must call @link pdfioObjClose@ to write the object to the file.
 //
+// @since PDFio v1.4@
+//
 
 pdfio_obj_t *				// O - New object
 pdfioFileCreateNameObj(
@@ -295,6 +297,8 @@ pdfioFileCreateNameObj(
 //
 // This function creates a new object with a number value in a PDF file.
 // You must call @link pdfioObjClose@ to write the object to the file.
+//
+// @since PDFio v1.2@
 //
 
 pdfio_obj_t *				// O - New object
@@ -525,6 +529,8 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
 //
 // This function creates a new object with a string value in a PDF file.
 // You must call @link pdfioObjClose@ to write the object to the file.
+//
+// @since PDFio v1.2@
 //
 
 pdfio_obj_t *				// O - New object

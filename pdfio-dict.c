@@ -20,6 +20,8 @@ static int	compare_pairs(_pdfio_pair_t *a, _pdfio_pair_t *b);
 //
 // 'pdfioDictClear()' - Remove a key/value pair from a dictionary.
 //
+// @since PDFio v1.4@
+//
 
 bool					// O - `true` if cleared, `false` otherwise
 pdfioDictClear(pdfio_dict_t *dict,	// I - Dictionary
@@ -345,6 +347,8 @@ pdfioDictGetDict(pdfio_dict_t *dict,	// I - Dictionary
 //
 // 'pdfioDictGetKey()' - Get the key for the specified pair.
 //
+// @since PDFio v1.4@
+//
 
 const char *				// O - Key for specified pair
 pdfioDictGetKey(pdfio_dict_t *dict,	// I - Dictionary
@@ -374,6 +378,8 @@ pdfioDictGetName(pdfio_dict_t *dict,	// I - Dictionary
 
 //
 // 'pdfioDictGetNumPairs()' - Get the number of key/value pairs in a dictionary.
+//
+// @since PDFio v1.4@
 //
 
 size_t					// O - Number of pairs
@@ -561,6 +567,8 @@ _pdfioDictGetValue(pdfio_dict_t *dict,	// I - Dictionary
 //
 // The iteration continues as long as the callback returns `true` or all keys
 // have been iterated.
+//
+// @since PDFio v1.1@
 //
 
 void

@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2025-04-12" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2025-04-13" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -2449,6 +2449,10 @@ PDFIO_CS_ADOBE
 .br
 AdobeRGB 1998
 .TP 5
+PDFIO_CS_CGATS001
+.br
+CGATS001 (CMYK)
+.TP 5
 PDFIO_CS_P3_D65
 .br
 Display P3
@@ -2477,7 +2481,7 @@ PDFIO_ENCRYPTION_RC4_128
 .TP 5
 PDFIO_ENCRYPTION_RC4_40
 .br
-40-bit RC4 encryption (PDF 1.3)
+40-bit RC4 encryption (PDF 1.3, reading only)
 .SS pdfio_filter_e
 Compression/decompression filters for streams
 .TP 5
@@ -2838,7 +2842,8 @@ pdfio_array_t * pdfioArrayCreateColorFromStandard (
 .fi
 .PP
 This function creates a color array for a standard \fBPDFIO_CS_\fR enumerated color space.
-The "num_colors" argument must be \fB1\fR for grayscale and \fB3\fR for RGB color.
+The "num_colors" argument must be \fB1\fR for grayscale, \fB3\fR for RGB color, and
+\fB4\fR for CMYK color.
 .SS pdfioArrayGetArray
 Get an array value from an array.
 .PP
@@ -2947,6 +2952,8 @@ bool  pdfioArrayRemove (
     size_t n
 );
 .fi
+.PP
+
 .SS pdfioContentClip
 Clip output to the current path.
 .PP
@@ -3083,6 +3090,8 @@ bool  pdfioContentPathEnd (
     pdfio_stream_t *st
 );
 .fi
+.PP
+
 .SS pdfioContentPathLineTo
 Add a straight line to the current path.
 .PP
@@ -3423,6 +3432,8 @@ double  pdfioContentTextMeasure (
 This function measures the given text string "s" and returns its width based
 on "size". The text string must always use the UTF-8 (Unicode) encoding but
 any control characters (such as newlines) are ignored.
+
+
 .SS pdfioContentTextMoveLine
 Move to the next line and offset.
 .PP
@@ -3451,6 +3462,8 @@ bool  pdfioContentTextNewLine (
     pdfio_stream_t *st
 );
 .fi
+.PP
+
 .SS pdfioContentTextNewLineShow
 Move to the next line and show text.
 .PP
@@ -3468,6 +3481,8 @@ This function moves to the next line and then shows some text with optional
 word and character spacing in a PDF content stream. The "unicode" argument
 specifies that the current font maps to full Unicode.  The "s" argument
 specifies a UTF-8 encoded string.
+
+
 .SS pdfioContentTextNewLineShowf
 Show formatted text.
 .PP
@@ -3486,6 +3501,8 @@ This function moves to the next line and shows some formatted text with
 optional word and character spacing in a PDF content stream. The "unicode"
 argument specifies that the current font maps to full Unicode.  The "format"
 argument specifies a UTF-8 encoded \fBprintf\fR-style format string.
+
+
 .SS pdfioContentTextShow
 Show text.
 .PP
@@ -3536,6 +3553,8 @@ bool  pdfioDictClear (
     const char *key
 );
 .fi
+.PP
+
 .SS pdfioDictCopy
 Copy a dictionary to a PDF file.
 .PP
@@ -3608,6 +3627,8 @@ const char * pdfioDictGetKey (
     size_t n
 );
 .fi
+.PP
+
 .SS pdfioDictGetName
 Get a key name value from a dictionary.
 .PP
@@ -3625,6 +3646,8 @@ size_t  pdfioDictGetNumPairs (
     pdfio_dict_t *dict
 );
 .fi
+.PP
+
 .SS pdfioDictGetNumber
 Get a key number value from a dictionary.
 .PP
@@ -3697,6 +3720,8 @@ function "cb":
 
 The iteration continues as long as the callback returns \fBtrue\fR or all keys
 have been iterated.
+
+
 .SS pdfioDictSetArray
 Set a key array in a dictionary.
 .PP
@@ -3818,6 +3843,39 @@ bool  pdfioDictSetStringf (
     ...
 );
 .fi
+.SS pdfioFileAddOutputIntent
+Add an OutputIntent to a file.
+.PP
+.nf
+void pdfioFileAddOutputIntent (
+    pdfio_file_t *pdf,
+    const char *subtype,
+    const char *condition,
+    const char *cond_id,
+    const char *reg_name,
+    const char *info,
+    pdfio_obj_t *profile
+);
+.fi
+.PP
+This function adds an OutputIntent dictionary to the PDF file catalog.
+The "subtype" argument specifies the intent subtype and is typically
+"GTS_PDFX" for PDF/X, "GTS_PDFA1" for PDF/A, or "ISO_PDFE1" for PDF/E.
+Passing \fBNULL\fR defaults the subtype to "GTS_PDFA1".
+.PP
+The "condition" argument specifies a short name for the output intent, while
+the "info" argument specifies a longer description for the output intent.
+Both can be \fBNULL\fR to omit this information.
+.PP
+The "cond_id" argument specifies a unique identifier such as a registration
+("CGATS001") or color space name ("sRGB").  The "reg_name" argument provides
+a URL for the identifier.
+.PP
+The "profile" argument specifies an ICC profile object for the output
+condition.  If \fBNULL\fR, the PDF consumer will attempt to look up the correct
+profile using the "cond_id" value.
+
+
 .SS pdfioFileClose
 Close a PDF file and free all memory used for it.
 .PP
@@ -3911,8 +3969,27 @@ specifies the font nane:
 Aside from "Symbol" and "Zapf-Dingbats", Base fonts use the Windows CP1252
 (ISO-8859-1 with additional characters such as the Euro symbol) subset of
 Unicode.
+.SS pdfioFileCreateFontObjFromData
+Add a font in memory to a PDF file.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateFontObjFromData (
+    pdfio_file_t *pdf,
+    const void *data,
+    size_t datasize,
+    bool unicode
+);
+.fi
+.PP
+This function embeds TrueType/OpenType font data into a PDF file.  The
+"unicode" parameter controls whether the font is encoded for two-byte
+characters (potentially full Unicode, but more typically a subset)
+or to only support the Windows CP1252 (ISO-8859-1 with additional
+characters such as the Euro symbol) subset of Unicode.
+
+
 .SS pdfioFileCreateFontObjFromFile
-Add a font object to a PDF file.
+Add a font file to a PDF file.
 .PP
 .nf
 pdfio_obj_t * pdfioFileCreateFontObjFromFile (
@@ -3922,7 +3999,7 @@ pdfio_obj_t * pdfioFileCreateFontObjFromFile (
 );
 .fi
 .PP
-This function embeds a TrueType/OpenType font into a PDF file.  The
+This function embeds a TrueType/OpenType font file into a PDF file.  The
 "unicode" parameter controls whether the font is encoded for two-byte
 characters (potentially full Unicode, but more typically a subset)
 or to only support the Windows CP1252 (ISO-8859-1 with additional
@@ -4011,6 +4088,8 @@ pdfio_obj_t * pdfioFileCreateNameObj (
 .PP
 This function creates a new object with a name value in a PDF file.
 You must call \fIpdfioObjClose\fR to write the object to the file.
+
+
 .SS pdfioFileCreateNumberObj
 Create a new object in a PDF file containing a number.
 .PP
@@ -4023,6 +4102,8 @@ pdfio_obj_t * pdfioFileCreateNumberObj (
 .PP
 This function creates a new object with a number value in a PDF file.
 You must call \fIpdfioObjClose\fR to write the object to the file.
+
+
 .SS pdfioFileCreateObj
 Create a new object in a PDF file.
 .PP
@@ -4101,6 +4182,8 @@ pdfio_obj_t * pdfioFileCreateStringObj (
 .PP
 This function creates a new object with a string value in a PDF file.
 You must call \fIpdfioObjClose\fR to write the object to the file.
+
+
 .SS pdfioFileCreateTemporary
 
 .PP
@@ -4474,6 +4557,8 @@ const char * pdfioObjGetName (
     pdfio_obj_t *obj
 );
 .fi
+.PP
+
 .SS pdfioObjGetNumber
 Get the object's number.
 .PP
@@ -4677,8 +4762,9 @@ bool  pdfioStreamPrintf (
 .fi
 .PP
 This function writes a formatted string to a stream.  In addition to the
-standard \fBprintf\fR format characters, you can use "%N" to format a PDF name
-value ("/Name") and "%S" to format a PDF string ("(String)") value.
+standard \fBprintf\fR format characters, you can use "%H" to format a HTML/XML
+string value, "%N" to format a PDF name value ("/Name"), and "%S" to format
+a PDF string ("(String)") value.
 .SS pdfioStreamPutChar
 Write a single character to a stream.
 .PP

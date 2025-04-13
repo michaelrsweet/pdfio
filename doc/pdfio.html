@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<title>PDFio Programming Manual v1.5.2</title>
+<title>PDFio Programming Manual v1.6.0</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.8">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
 <meta name="copyright" content="Copyright © 2021-2025 by Michael R Sweet">
-<meta name="version" content="1.5.2">
+<meta name="version" content="1.6.0">
 <style type="text/css"><!--
 body {
   background: white;
@@ -251,7 +251,7 @@ span.string {
 <body>
 <div class="header">
 <p><img class="title" src="pdfio-512.png"></p>
-<h1 class="title">PDFio Programming Manual v1.5.2</h1>
+<h1 class="title">PDFio Programming Manual v1.6.0</h1>
 <p>Michael R Sweet</p>
 <p>Copyright © 2021-2025 by Michael R Sweet</p>
 </div>
@@ -395,10 +395,12 @@ span.string {
 <li><a href="#pdfioDictSetRect">pdfioDictSetRect</a></li>
 <li><a href="#pdfioDictSetString">pdfioDictSetString</a></li>
 <li><a href="#pdfioDictSetStringf">pdfioDictSetStringf</a></li>
+<li><a href="#pdfioFileAddOutputIntent">pdfioFileAddOutputIntent</a></li>
 <li><a href="#pdfioFileClose">pdfioFileClose</a></li>
 <li><a href="#pdfioFileCreate">pdfioFileCreate</a></li>
 <li><a href="#pdfioFileCreateArrayObj">pdfioFileCreateArrayObj</a></li>
 <li><a href="#pdfioFileCreateFontObjFromBase">pdfioFileCreateFontObjFromBase</a></li>
+<li><a href="#pdfioFileCreateFontObjFromData">pdfioFileCreateFontObjFromData</a></li>
 <li><a href="#pdfioFileCreateFontObjFromFile">pdfioFileCreateFontObjFromFile</a></li>
 <li><a href="#pdfioFileCreateICCObjFromData">pdfioFileCreateICCObjFromData</a></li>
 <li><a href="#pdfioFileCreateICCObjFromFile">pdfioFileCreateICCObjFromFile</a></li>
@@ -2594,7 +2596,7 @@ dd-&gt;y = row_y - row-&gt;height;
 <tr><th>pdf</th>
 <td class="description">PDF file</td></tr>
 <tr><th>num_colors</th>
-<td class="description">Number of colors (1 or 3)</td></tr>
+<td class="description">Number of colors (1, 3, or 4)</td></tr>
 <tr><th>cs</th>
 <td class="description">Color space enumeration</td></tr>
 </tbody></table>
@@ -2602,7 +2604,8 @@ dd-&gt;y = row_y - row-&gt;height;
 <p class="description">Color array</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">This function creates a color array for a standard <code>PDFIO_CS_</code> enumerated color space.
-The &quot;num_colors&quot; argument must be <code>1</code> for grayscale and <code>3</code> for RGB color.</p>
+The &quot;num_colors&quot; argument must be <code>1</code> for grayscale, <code>3</code> for RGB color, and
+<code>4</code> for CMYK color.</p>
 <h3 class="function"><a id="pdfioArrayGetArray">pdfioArrayGetArray</a></h3>
 <p class="description">Get an array value from an array.</p>
 <p class="code">
@@ -2746,7 +2749,7 @@ size_t pdfioArrayGetSize(<a href="#pdfio_array_t">pdfio_array_t</a> *a);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Value type</p>
-<h3 class="function"><a id="pdfioArrayRemove">pdfioArrayRemove</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.4&#160;</span><a id="pdfioArrayRemove">pdfioArrayRemove</a></h3>
 <p class="description">Remove an array entry.</p>
 <p class="code">
 <span class="reserved">bool</span> pdfioArrayRemove(<a href="#pdfio_array_t">pdfio_array_t</a> *a, size_t n);</p>
@@ -2951,7 +2954,7 @@ using the <a href="#pdfioPageDictAddImage"><code>pdfioPageDictAddImage</code></a
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
-<h3 class="function"><a id="pdfioContentPathEnd">pdfioContentPathEnd</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.1&#160;</span><a id="pdfioContentPathEnd">pdfioContentPathEnd</a></h3>
 <p class="description">Clear the current path.</p>
 <p class="code">
 <span class="reserved">bool</span> pdfioContentPathEnd(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
@@ -3441,7 +3444,7 @@ are 0, a solid line is drawn.</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
-<h3 class="function"><a id="pdfioContentTextMeasure">pdfioContentTextMeasure</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.2&#160;</span><a id="pdfioContentTextMeasure">pdfioContentTextMeasure</a></h3>
 <p class="description">Measure a text string and return its width.</p>
 <p class="code">
 <span class="reserved">double</span> pdfioContentTextMeasure(<a href="#pdfio_obj_t">pdfio_obj_t</a> *font, <span class="reserved">const</span> <span class="reserved">char</span> *s, <span class="reserved">double</span> size);</p>
@@ -3459,7 +3462,9 @@ are 0, a solid line is drawn.</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">This function measures the given text string &quot;s&quot; and returns its width based
 on &quot;size&quot;. The text string must always use the UTF-8 (Unicode) encoding but
-any control characters (such as newlines) are ignored.</p>
+any control characters (such as newlines) are ignored.
+
+</p>
 <h3 class="function"><a id="pdfioContentTextMoveLine">pdfioContentTextMoveLine</a></h3>
 <p class="description">Move to the next line and offset.</p>
 <p class="code">
@@ -3490,7 +3495,7 @@ any control characters (such as newlines) are ignored.</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
-<h3 class="function"><a id="pdfioContentTextNewLine">pdfioContentTextNewLine</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.2&#160;</span><a id="pdfioContentTextNewLine">pdfioContentTextNewLine</a></h3>
 <p class="description">Move to the next line.</p>
 <p class="code">
 <span class="reserved">bool</span> pdfioContentTextNewLine(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
@@ -3501,7 +3506,7 @@ any control characters (such as newlines) are ignored.</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
-<h3 class="function"><a id="pdfioContentTextNewLineShow">pdfioContentTextNewLineShow</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.2&#160;</span><a id="pdfioContentTextNewLineShow">pdfioContentTextNewLineShow</a></h3>
 <p class="description">Move to the next line and show text.</p>
 <p class="code">
 <span class="reserved">bool</span> pdfioContentTextNewLineShow(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, <span class="reserved">double</span> ws, <span class="reserved">double</span> cs, <span class="reserved">bool</span> unicode, <span class="reserved">const</span> <span class="reserved">char</span> *s);</p>
@@ -3524,8 +3529,10 @@ any control characters (such as newlines) are ignored.</p>
 <p class="discussion">This function moves to the next line and then shows some text with optional
 word and character spacing in a PDF content stream. The &quot;unicode&quot; argument
 specifies that the current font maps to full Unicode.  The &quot;s&quot; argument
-specifies a UTF-8 encoded string.</p>
-<h3 class="function"><a id="pdfioContentTextNewLineShowf">pdfioContentTextNewLineShowf</a></h3>
+specifies a UTF-8 encoded string.
+
+</p>
+<h3 class="function"><span class="info">&#160;PDFio v1.2&#160;</span><a id="pdfioContentTextNewLineShowf">pdfioContentTextNewLineShowf</a></h3>
 <p class="description">Show formatted text.</p>
 <p class="code">
 <span class="reserved">bool</span> pdfioContentTextNewLineShowf(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, <span class="reserved">double</span> ws, <span class="reserved">double</span> cs, <span class="reserved">bool</span> unicode, <span class="reserved">const</span> <span class="reserved">char</span> *format, ...);</p>
@@ -3550,7 +3557,9 @@ specifies a UTF-8 encoded string.</p>
 <p class="discussion">This function moves to the next line and shows some formatted text with
 optional word and character spacing in a PDF content stream. The &quot;unicode&quot;
 argument specifies that the current font maps to full Unicode.  The &quot;format&quot;
-argument specifies a UTF-8 encoded <code>printf</code>-style format string.</p>
+argument specifies a UTF-8 encoded <code>printf</code>-style format string.
+
+</p>
 <h3 class="function"><a id="pdfioContentTextShow">pdfioContentTextShow</a></h3>
 <p class="description">Show text.</p>
 <p class="code">
@@ -3613,7 +3622,7 @@ argument specifies an array of UTF-8 encoded strings.</p>
 <p class="discussion">This function shows some formatted text in a PDF content stream. The
 &quot;unicode&quot; argument specifies that the current font maps to full Unicode.
 The &quot;format&quot; argument specifies a UTF-8 encoded <code>printf</code>-style format string.</p>
-<h3 class="function"><a id="pdfioDictClear">pdfioDictClear</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.4&#160;</span><a id="pdfioDictClear">pdfioDictClear</a></h3>
 <p class="description">Remove a key/value pair from a dictionary.</p>
 <p class="code">
 <span class="reserved">bool</span> pdfioDictClear(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
@@ -3717,7 +3726,7 @@ time_t pdfioDictGetDate(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, <span cl
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Value</p>
-<h3 class="function"><a id="pdfioDictGetKey">pdfioDictGetKey</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.4&#160;</span><a id="pdfioDictGetKey">pdfioDictGetKey</a></h3>
 <p class="description">Get the key for the specified pair.</p>
 <p class="code">
 <span class="reserved">const</span> <span class="reserved">char</span> *pdfioDictGetKey(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, size_t n);</p>
@@ -3743,7 +3752,7 @@ time_t pdfioDictGetDate(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, <span cl
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Value</p>
-<h3 class="function"><a id="pdfioDictGetNumPairs">pdfioDictGetNumPairs</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.4&#160;</span><a id="pdfioDictGetNumPairs">pdfioDictGetNumPairs</a></h3>
 <p class="description">Get the number of key/value pairs in a dictionary.</p>
 <p class="code">
 size_t pdfioDictGetNumPairs(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict);</p>
@@ -3821,7 +3830,7 @@ size_t pdfioDictGetNumPairs(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Value type</p>
-<h3 class="function"><a id="pdfioDictIterateKeys">pdfioDictIterateKeys</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.1&#160;</span><a id="pdfioDictIterateKeys">pdfioDictIterateKeys</a></h3>
 <p class="description">Iterate the keys in a dictionary.</p>
 <p class="code">
 <span class="reserved">void</span> pdfioDictIterateKeys(<a href="#pdfio_dict_t">pdfio_dict_t</a> *dict, <a href="#pdfio_dict_cb_t">pdfio_dict_cb_t</a> cb, <span class="reserved">void</span> *cb_data);</p>
@@ -3848,7 +3857,9 @@ my_dict_cb(pdfio_dict_t *dict, const char *key, void *cb_data)
 </pre>
 
 The iteration continues as long as the callback returns <code>true</code> or all keys
-have been iterated.</p>
+have been iterated.
+
+</p>
 <h3 class="function"><a id="pdfioDictSetArray">pdfioDictSetArray</a></h3>
 <p class="description">Set a key array in a dictionary.</p>
 <p class="code">
@@ -4031,6 +4042,46 @@ have been iterated.</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.6&#160;</span><a id="pdfioFileAddOutputIntent">pdfioFileAddOutputIntent</a></h3>
+<p class="description">Add an OutputIntent to a file.</p>
+<p class="code">
+<span class="reserved">void</span> pdfioFileAddOutputIntent(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *subtype, <span class="reserved">const</span> <span class="reserved">char</span> *condition, <span class="reserved">const</span> <span class="reserved">char</span> *cond_id, <span class="reserved">const</span> <span class="reserved">char</span> *reg_name, <span class="reserved">const</span> <span class="reserved">char</span> *info, <a href="#pdfio_obj_t">pdfio_obj_t</a> *profile);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>subtype</th>
+<td class="description">Intent subtype (standard)</td></tr>
+<tr><th>condition</th>
+<td class="description">Condition name or <code>NULL</code> for none</td></tr>
+<tr><th>cond_id</th>
+<td class="description">Identifier such as registration name or <code>NULL</code> for none</td></tr>
+<tr><th>reg_name</th>
+<td class="description">Registry URL or <code>NULL</code> for none</td></tr>
+<tr><th>info</th>
+<td class="description">Description or <code>NULL</code> for none</td></tr>
+<tr><th>profile</th>
+<td class="description">ICC profile object or <code>NULL</code> for none</td></tr>
+</tbody></table>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function adds an OutputIntent dictionary to the PDF file catalog.
+The &quot;subtype&quot; argument specifies the intent subtype and is typically
+&quot;GTS_PDFX&quot; for PDF/X, &quot;GTS_PDFA1&quot; for PDF/A, or &quot;ISO_PDFE1&quot; for PDF/E.
+Passing <code>NULL</code> defaults the subtype to &quot;GTS_PDFA1&quot;.<br>
+<br>
+The &quot;condition&quot; argument specifies a short name for the output intent, while
+the &quot;info&quot; argument specifies a longer description for the output intent.
+Both can be <code>NULL</code> to omit this information.<br>
+<br>
+The &quot;cond_id&quot; argument specifies a unique identifier such as a registration
+(&quot;CGATS001&quot;) or color space name (&quot;sRGB&quot;).  The &quot;reg_name&quot; argument provides
+a URL for the identifier.<br>
+<br>
+The &quot;profile&quot; argument specifies an ICC profile object for the output
+condition.  If <code>NULL</code>, the PDF consumer will attempt to look up the correct
+profile using the &quot;cond_id&quot; value.
+
+</p>
 <h3 class="function"><a id="pdfioFileClose">pdfioFileClose</a></h3>
 <p class="description">Close a PDF file and free all memory used for it.</p>
 <p class="code">
@@ -4143,8 +4194,33 @@ specifies the font nane:
 <p class="discussion">Aside from &quot;Symbol&quot; and &quot;Zapf-Dingbats&quot;, Base fonts use the Windows CP1252
 (ISO-8859-1 with additional characters such as the Euro symbol) subset of
 Unicode.</p>
+<h3 class="function"><span class="info">&#160;PDFio v1.6&#160;</span><a id="pdfioFileCreateFontObjFromData">pdfioFileCreateFontObjFromData</a></h3>
+<p class="description">Add a font in memory to a PDF file.</p>
+<p class="code">
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateFontObjFromData(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">void</span> *data, size_t datasize, <span class="reserved">bool</span> unicode);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>data</th>
+<td class="description">Font data in memory</td></tr>
+<tr><th>datasize</th>
+<td class="description">Size of font in memory</td></tr>
+<tr><th>unicode</th>
+<td class="description">Force Unicode</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Font object</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function embeds TrueType/OpenType font data into a PDF file.  The
+&quot;unicode&quot; parameter controls whether the font is encoded for two-byte
+characters (potentially full Unicode, but more typically a subset)
+or to only support the Windows CP1252 (ISO-8859-1 with additional
+characters such as the Euro symbol) subset of Unicode.
+
+</p>
 <h3 class="function"><a id="pdfioFileCreateFontObjFromFile">pdfioFileCreateFontObjFromFile</a></h3>
-<p class="description">Add a font object to a PDF file.</p>
+<p class="description">Add a font file to a PDF file.</p>
 <p class="code">
 <a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateFontObjFromFile(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *filename, <span class="reserved">bool</span> unicode);</p>
 <h4 class="parameters">Parameters</h4>
@@ -4159,7 +4235,7 @@ Unicode.</p>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Font object</p>
 <h4 class="discussion">Discussion</h4>
-<p class="discussion">This function embeds a TrueType/OpenType font into a PDF file.  The
+<p class="discussion">This function embeds a TrueType/OpenType font file into a PDF file.  The
 &quot;unicode&quot; parameter controls whether the font is encoded for two-byte
 characters (potentially full Unicode, but more typically a subset)
 or to only support the Windows CP1252 (ISO-8859-1 with additional
@@ -4260,7 +4336,7 @@ image on the page.<br>
 Note: Currently PNG support is limited to grayscale, RGB, or indexed files
 without interlacing or alpha.  Transparency (masking) based on color/index
 is supported.</blockquote>
-<h3 class="function"><a id="pdfioFileCreateNameObj">pdfioFileCreateNameObj</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.4&#160;</span><a id="pdfioFileCreateNameObj">pdfioFileCreateNameObj</a></h3>
 <p class="description">Create a new object in a PDF file containing a name.</p>
 <p class="code">
 <a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateNameObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *name);</p>
@@ -4275,8 +4351,10 @@ is supported.</blockquote>
 <p class="description">New object</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">This function creates a new object with a name value in a PDF file.
-You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write the object to the file.</p>
-<h3 class="function"><a id="pdfioFileCreateNumberObj">pdfioFileCreateNumberObj</a></h3>
+You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write the object to the file.
+
+</p>
+<h3 class="function"><span class="info">&#160;PDFio v1.2&#160;</span><a id="pdfioFileCreateNumberObj">pdfioFileCreateNumberObj</a></h3>
 <p class="description">Create a new object in a PDF file containing a number.</p>
 <p class="code">
 <a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateNumberObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">double</span> number);</p>
@@ -4291,7 +4369,9 @@ You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write t
 <p class="description">New object</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">This function creates a new object with a number value in a PDF file.
-You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write the object to the file.</p>
+You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write the object to the file.
+
+</p>
 <h3 class="function"><a id="pdfioFileCreateObj">pdfioFileCreateObj</a></h3>
 <p class="description">Create a new object in a PDF file.</p>
 <p class="code">
@@ -4372,7 +4452,7 @@ stored as indirect object references.</blockquote>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Contents stream</p>
-<h3 class="function"><a id="pdfioFileCreateStringObj">pdfioFileCreateStringObj</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.2&#160;</span><a id="pdfioFileCreateStringObj">pdfioFileCreateStringObj</a></h3>
 <p class="description">Create a new object in a PDF file containing a string.</p>
 <p class="code">
 <a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateStringObj(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *string);</p>
@@ -4387,7 +4467,9 @@ stored as indirect object references.</blockquote>
 <p class="description">New object</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">This function creates a new object with a string value in a PDF file.
-You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write the object to the file.</p>
+You must call <a href="#pdfioObjClose"><code>pdfioObjClose</code></a> to write the object to the file.
+
+</p>
 <h3 class="function"><a id="pdfioFileCreateTemporary">pdfioFileCreateTemporary</a></h3>
 <p class="description"></p>
 <p class="code">
@@ -4892,7 +4974,7 @@ size_t pdfioObjGetLength(<a href="#pdfio_obj_t">pdfio_obj_t</a> *obj);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Length in bytes or <code>0</code> for none</p>
-<h3 class="function"><a id="pdfioObjGetName">pdfioObjGetName</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.4&#160;</span><a id="pdfioObjGetName">pdfioObjGetName</a></h3>
 <p class="description">Get the name value associated with an object.</p>
 <p class="code">
 <span class="reserved">const</span> <span class="reserved">char</span> *pdfioObjGetName(<a href="#pdfio_obj_t">pdfio_obj_t</a> *obj);</p>
@@ -5168,8 +5250,9 @@ ssize_t pdfioStreamPeek(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, <span 
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">This function writes a formatted string to a stream.  In addition to the
-standard <code>printf</code> format characters, you can use &quot;%N&quot; to format a PDF name
-value (&quot;/Name&quot;) and &quot;%S&quot; to format a PDF string (&quot;(String)&quot;) value.</p>
+standard <code>printf</code> format characters, you can use &quot;%H&quot; to format a HTML/XML
+string value, &quot;%N&quot; to format a PDF name value (&quot;/Name&quot;), and &quot;%S&quot; to format
+a PDF string (&quot;(String)&quot;) value.</p>
 <h3 class="function"><a id="pdfioStreamPutChar">pdfioStreamPutChar</a></h3>
 <p class="description">Write a single character to a stream.</p>
 <p class="code">
@@ -5393,6 +5476,7 @@ typedef enum <a href="#pdfio_valtype_e">pdfio_valtype_e</a> pdfio_valtype_t;
 <h4 class="constants">Constants</h4>
 <table class="list"><tbody>
 <tr><th>PDFIO_CS_ADOBE </th><td class="description">AdobeRGB 1998</td></tr>
+<tr><th>PDFIO_CS_CGATS001 </th><td class="description">CGATS001 (CMYK)</td></tr>
 <tr><th>PDFIO_CS_P3_D65 </th><td class="description">Display P3</td></tr>
 <tr><th>PDFIO_CS_SRGB </th><td class="description">sRGB</td></tr>
 </tbody></table>
@@ -5403,7 +5487,7 @@ typedef enum <a href="#pdfio_valtype_e">pdfio_valtype_e</a> pdfio_valtype_t;
 <tr><th>PDFIO_ENCRYPTION_AES_128 </th><td class="description">128-bit AES encryption (PDF 1.6)</td></tr>
 <tr><th>PDFIO_ENCRYPTION_NONE </th><td class="description">No encryption</td></tr>
 <tr><th>PDFIO_ENCRYPTION_RC4_128 </th><td class="description">128-bit RC4 encryption (PDF 1.4)</td></tr>
-<tr><th>PDFIO_ENCRYPTION_RC4_40 </th><td class="description">40-bit RC4 encryption (PDF 1.3)</td></tr>
+<tr><th>PDFIO_ENCRYPTION_RC4_40 </th><td class="description">40-bit RC4 encryption (PDF 1.3, reading only)</td></tr>
 </tbody></table>
 <h3 class="enumeration"><a id="pdfio_filter_e">pdfio_filter_e</a></h3>
 <p class="description">Compression/decompression filters for streams</p>
