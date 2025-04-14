@@ -14,6 +14,8 @@ v1.6.0 - YYYY-MM-DD
   to a PDF file (Issue #104)
 - Added `pdfioFileCreateFontObjFromData` function for embedding fonts in
   memory (Issue #120)
+- Added `pdfioFileGetLanguage` and `pdfioFileSetLanguage` functions for getting
+  and setting the default/primary language of a PDF file (Issue #124)
 - Now add default grayscale, RGB, and CMYK profile resources to pages as needed
   (Issue #104)
 

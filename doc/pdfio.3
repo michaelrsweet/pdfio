@@ -4260,6 +4260,21 @@ const char * pdfioFileGetKeywords (
     pdfio_file_t *pdf
 );
 .fi
+.SS pdfioFileGetLanguage
+Get the language metadata for a PDF file.
+.PP
+.nf
+const char * pdfioFileGetLanguage (
+    pdfio_file_t *pdf
+);
+.fi
+.PP
+This function gets the (primary/default) language metadata, if any, for a PDF
+file.  The returned string is an IETF BCP 47 language tag of the form
+"lang-REGION".  For example, the string "en-CA" specifies Canadian English
+and the string "fr-CA" specifies Canadian French.
+
+
 .SS pdfioFileGetModificationDate
 Get the most recent modification date for a PDF file.
 .PP
@@ -4415,6 +4430,22 @@ void pdfioFileSetKeywords (
     const char *value
 );
 .fi
+.SS pdfioFileSetLanguage
+Set the language metadata for a PDF file.
+.PP
+.nf
+void pdfioFileSetLanguage (
+    pdfio_file_t *pdf,
+    const char *value
+);
+.fi
+.PP
+This function sets the (primary/default) language metadata for a PDF file.
+The "value" argument is an IETF BCP 47 language tag string of the form
+"lang-REGION".  For example, the string "en-CA" specifies Canadian English
+and the string "fr-CA" specifies Canadian French.
+
+
 .SS pdfioFileSetModificationDate
 Set the modification date for a PDF file.
 .PP

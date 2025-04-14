@@ -1399,18 +1399,18 @@ read_unit_file(const char *filename,	// I - File to read
   }
 
   fputs("pdfioDictGetString(Lang): ", stdout);
-  if ((s = pdfioDictGetString(catalog, "Lang")) != NULL && !strcmp(s, "en"))
+  if ((s = pdfioDictGetString(catalog, "Lang")) != NULL && !strcmp(s, "en-CA"))
   {
     puts("PASS");
   }
   else if (s)
   {
-    printf("FAIL (got '%s', expected 'en')\n", s);
+    printf("FAIL (got '%s', expected 'en-CA')\n", s);
     return (1);
   }
   else
   {
-    puts("FAIL (got NULL, expected 'en')");
+    puts("FAIL (got NULL, expected 'en-CA')");
     return (1);
   }
 
@@ -3555,7 +3555,6 @@ write_unit_file(
   // Set some catalog values...
   pdfioDictSetName(catalog, "PageLayout", "SinglePage");
   pdfioDictSetName(catalog, "PageMode", "UseThumbs");
-  pdfioDictSetString(catalog, "Lang", "en");
 
   // Set info values...
   fputs("pdfioFileGet/SetAuthor: ", stdout);
@@ -3606,6 +3605,23 @@ write_unit_file(
   else
   {
     puts("FAIL (got NULL, expected 'one fish,two fish,red fish,blue fish')");
+    return (1);
+  }
+
+  fputs("pdfioFileGet/SetLanguage: ", stdout);
+  pdfioFileSetLanguage(outpdf, "en-CA");
+  if ((s = pdfioFileGetLanguage(outpdf)) != NULL && !strcmp(s, "en-CA"))
+  {
+    puts("PASS");
+  }
+  else if (s)
+  {
+    printf("FAIL (got '%s', expected 'en-CA')\n", s);
+    return (1);
+  }
+  else
+  {
+    puts("FAIL (got NULL, expected 'en-CA')");
     return (1);
   }
 

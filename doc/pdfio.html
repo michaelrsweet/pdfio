@@ -420,6 +420,7 @@ span.string {
 <li><a href="#pdfioFileGetCreator">pdfioFileGetCreator</a></li>
 <li><a href="#pdfioFileGetID">pdfioFileGetID</a></li>
 <li><a href="#pdfioFileGetKeywords">pdfioFileGetKeywords</a></li>
+<li><a href="#pdfioFileGetLanguage">pdfioFileGetLanguage</a></li>
 <li><a href="#pdfioFileGetModificationDate">pdfioFileGetModificationDate</a></li>
 <li><a href="#pdfioFileGetName">pdfioFileGetName</a></li>
 <li><a href="#pdfioFileGetNumObjs">pdfioFileGetNumObjs</a></li>
@@ -436,6 +437,7 @@ span.string {
 <li><a href="#pdfioFileSetCreationDate">pdfioFileSetCreationDate</a></li>
 <li><a href="#pdfioFileSetCreator">pdfioFileSetCreator</a></li>
 <li><a href="#pdfioFileSetKeywords">pdfioFileSetKeywords</a></li>
+<li><a href="#pdfioFileSetLanguage">pdfioFileSetLanguage</a></li>
 <li><a href="#pdfioFileSetModificationDate">pdfioFileSetModificationDate</a></li>
 <li><a href="#pdfioFileSetPermissions">pdfioFileSetPermissions</a></li>
 <li><a href="#pdfioFileSetSubject">pdfioFileSetSubject</a></li>
@@ -4592,6 +4594,24 @@ time_t pdfioFileGetCreationDate(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);<
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Keywords string or <code>NULL</code> for none</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.6&#160;</span><a id="pdfioFileGetLanguage">pdfioFileGetLanguage</a></h3>
+<p class="description">Get the language metadata for a PDF file.</p>
+<p class="code">
+<span class="reserved">const</span> <span class="reserved">char</span> *pdfioFileGetLanguage(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Language or <code>NULL</code> for none</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function gets the (primary/default) language metadata, if any, for a PDF
+file.  The returned string is an IETF BCP 47 language tag of the form
+&quot;lang-REGION&quot;.  For example, the string &quot;en-CA&quot; specifies Canadian English
+and the string &quot;fr-CA&quot; specifies Canadian French.
+
+</p>
 <h3 class="function"><a id="pdfioFileGetModificationDate">pdfioFileGetModificationDate</a></h3>
 <p class="description">Get the most recent modification date for a PDF file.</p>
 <p class="code">
@@ -4798,6 +4818,24 @@ writes error messages to <code>stderr</code>.</p>
 <tr><th>value</th>
 <td class="description">Value</td></tr>
 </tbody></table>
+<h3 class="function"><span class="info">&#160;PDFio 1.6&#160;</span><a id="pdfioFileSetLanguage">pdfioFileSetLanguage</a></h3>
+<p class="description">Set the language metadata for a PDF file.</p>
+<p class="code">
+<span class="reserved">void</span> pdfioFileSetLanguage(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *value);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>value</th>
+<td class="description">Value</td></tr>
+</tbody></table>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function sets the (primary/default) language metadata for a PDF file.
+The &quot;value&quot; argument is an IETF BCP 47 language tag string of the form
+&quot;lang-REGION&quot;.  For example, the string &quot;en-CA&quot; specifies Canadian English
+and the string &quot;fr-CA&quot; specifies Canadian French.
+
+</p>
 <h3 class="function"><a id="pdfioFileSetModificationDate">pdfioFileSetModificationDate</a></h3>
 <p class="description">Set the modification date for a PDF file.</p>
 <p class="code">

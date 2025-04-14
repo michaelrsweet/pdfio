@@ -839,6 +839,24 @@ pdfioFileGetKeywords(pdfio_file_t *pdf)	// I - PDF file
 
 
 //
+// 'pdfioFileGetLanguage()' - Get the language metadata for a PDF file.
+//
+// This function gets the (primary/default) language metadata, if any, for a PDF
+// file.  The returned string is an IETF BCP 47 language tag of the form
+// "lang-REGION".  For example, the string "en-CA" specifies Canadian English
+// and the string "fr-CA" specifies Canadian French.
+//
+// @since PDFio 1.6@
+//
+
+const char *				// O - Language or `NULL` for none
+pdfioFileGetLanguage(pdfio_file_t *pdf)	// I - PDF file
+{
+  return (pdfioDictGetString(pdfioFileGetCatalog(pdf), "Lang"));
+}
+
+
+//
 // 'pdfioFileGetModificationDate()' - Get the most recent modification date for a PDF file.
 //
 
@@ -1175,6 +1193,26 @@ pdfioFileSetKeywords(
 {
   if (pdf && pdf->info_obj)
     pdfioDictSetString(pdf->info_obj->value.value.dict, "Keywords", pdfioStringCreate(pdf, value));
+}
+
+
+//
+// 'pdfioFileSetLanguage()' - Set the language metadata for a PDF file.
+//
+// This function sets the (primary/default) language metadata for a PDF file.
+// The "value" argument is an IETF BCP 47 language tag string of the form
+// "lang-REGION".  For example, the string "en-CA" specifies Canadian English
+// and the string "fr-CA" specifies Canadian French.
+//
+// @since PDFio 1.6@
+//
+
+void
+pdfioFileSetLanguage(
+    pdfio_file_t *pdf,			// I - PDF file
+    const char   *value)		// I - Value
+{
+  pdfioDictSetString(pdfioFileGetCatalog(pdf), "Lang", value);
 }
 
 
