@@ -31,13 +31,13 @@
 #    define lseek	_lseek
 #    define mkdir(d,p)	_mkdir(d)
 #    define open	_open
-#    define read	_read
+#    define read(f,b,s)	_read((f),(b),(unsigned)(s))
 #    define rmdir	_rmdir
 #    define snprintf	_snprintf
 #    define strdup	_strdup
 #    define unlink	_unlink
 #    define vsnprintf	_vsnprintf
-#    define write	_write
+#    define write(f,b,s) _write((f),(b),(unsigned)(s))
 #    ifndef F_OK
 #      define F_OK	00		// POSIX parameters/flags
 #      define W_OK	02
