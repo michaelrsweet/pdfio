@@ -10,7 +10,7 @@
 #ifndef PDFIO_PRIVATE_H
 #  define PDFIO_PRIVATE_H
 #  ifdef _WIN32
-#    define _CRT_SECURE_NO_WARNINGS	// Disable bogus VS warnings/errors...
+#    define _CRT_SECURE_NO_WARNINGS 1	// Disable bogus VS warnings/errors...
 #  endif // _WIN32
 #  include "pdfio.h"
 #  include <stdarg.h>

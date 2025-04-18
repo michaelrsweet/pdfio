@@ -33,6 +33,7 @@
 #  include <stdbool.h>
 #  include <string.h>
 #  if _WIN32
+#    include <io.h>
 #    define isatty(f) _isatty(f)
 #  else
 #    include <unistd.h>
