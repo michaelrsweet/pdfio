@@ -981,9 +981,14 @@ do_unit_tests(void)
   // First open the test PDF file...
   testBegin("pdfioFileOpen(\"testfiles/testpdfio.pdf\")");
   if ((inpdf = pdfioFileOpen("testfiles/testpdfio.pdf", /*password_cb*/NULL, /*password_data*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   // TODO: Test for known values in this test file.
 
@@ -1089,15 +1094,25 @@ do_unit_tests(void)
   // Create new encrypted PDF files...
   testBegin("pdfioFileCreate(\"testpdfio-rc4.pdf\", ...)");
   if ((outpdf = pdfioFileCreate("testpdfio-rc4.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileSetPermissions(all, RC4-128, no passwords)");
   if (pdfioFileSetPermissions(outpdf, PDFIO_PERMISSION_ALL, PDFIO_ENCRYPTION_RC4_128, NULL, NULL))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   if (write_unit_file(inpdf, "testpdfio-rc4.pdf", outpdf, &num_pages, &first_image))
     return (1);
@@ -1108,15 +1123,25 @@ do_unit_tests(void)
   // Create new encrypted PDF files...
   testBegin("pdfioFileCreate(\"testpdfio-rc4p.pdf\", ...)");
   if ((outpdf = pdfioFileCreate("testpdfio-rc4p.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileSetPermissions(no-print, RC4-128, passwords='owner' and 'user')");
   if (pdfioFileSetPermissions(outpdf, PDFIO_PERMISSION_ALL ^ PDFIO_PERMISSION_PRINT, PDFIO_ENCRYPTION_RC4_128, "owner", "user"))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   if (write_unit_file(inpdf, "testpdfio-rc4p.pdf", outpdf, &num_pages, &first_image))
     return (1);
@@ -1126,15 +1151,25 @@ do_unit_tests(void)
 
   testBegin("pdfioFileCreate(\"testpdfio-aes.pdf\", ...)");
   if ((outpdf = pdfioFileCreate("testpdfio-aes.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileSetPermissions(all, AES-128, no passwords)");
   if (pdfioFileSetPermissions(outpdf, PDFIO_PERMISSION_ALL, PDFIO_ENCRYPTION_AES_128, NULL, NULL))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   if (write_unit_file(inpdf, "testpdfio-aes.pdf", outpdf, &num_pages, &first_image))
     return (1);
@@ -1144,15 +1179,25 @@ do_unit_tests(void)
 
   testBegin("pdfioFileCreate(\"testpdfio-aesp.pdf\", ...)");
   if ((outpdf = pdfioFileCreate("testpdfio-aesp.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileSetPermissions(no-print, AES-128, passwords='owner' and 'user')");
   if (pdfioFileSetPermissions(outpdf, PDFIO_PERMISSION_ALL ^ PDFIO_PERMISSION_PRINT, PDFIO_ENCRYPTION_AES_128, "owner", "user"))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   if (write_unit_file(inpdf, "testpdfio-aesp.pdf", outpdf, &num_pages, &first_image))
     return (1);
@@ -1162,9 +1207,14 @@ do_unit_tests(void)
 
   testBegin("pdfioFileCreateTemporary");
   if ((outpdf = pdfioFileCreateTemporary(temppdf, sizeof(temppdf), NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  {
     testEndMessage(true, "%s", temppdf);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   if (write_unit_file(inpdf, "<temporary>", outpdf, &num_pages, &first_image))
     return (1);
@@ -1199,39 +1249,69 @@ draw_image(pdfio_stream_t *st,
 {
   testBegin("pdfioContentDrawImage(name=\"%s\", x=%g, y=%g, w=%g, h=%g)", name, x, y, w, h);
   if (pdfioContentDrawImage(st, name, x, y, w, h))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentTextBegin()");
   if (pdfioContentTextBegin(st))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentSetTextFont(\"F1\", 18.0)");
   if (pdfioContentSetTextFont(st, "F1", 18.0))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentTextMoveTo(%g, %g)", x, y + h + 9);
   if (pdfioContentTextMoveTo(st, x, y + h + 9))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentTextShow(\"%s\")", label);
   if (pdfioContentTextShow(st, false, label))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentTextEnd()");
   if (pdfioContentTextEnd(st))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   return (0);
 }
@@ -1325,9 +1405,14 @@ read_unit_file(const char *filename,	// I - File to read
   // Open the new PDF file to read it...
   testBegin("pdfioFileOpen(\"%s\", ...)", filename);
   if ((pdf = pdfioFileOpen(filename, password_cb, (void *)"user", (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   // Get the root object/catalog dictionary
   testBegin("pdfioFileGetCatalog");
@@ -1337,7 +1422,7 @@ read_unit_file(const char *filename,	// I - File to read
   }
   else
   {
-    puts("FAIL (got NULL, expected dictionary)");
+    testEndMessage(false, "got NULL, expected dictionary");
     return (1);
   }
 
@@ -1354,7 +1439,7 @@ read_unit_file(const char *filename,	// I - File to read
   }
   else
   {
-    puts("FAIL (got NULL, expected 'SinglePage')");
+    testEndMessage(false, "got NULL, expected 'SinglePage'");
     return (1);
   }
 
@@ -1370,7 +1455,7 @@ read_unit_file(const char *filename,	// I - File to read
   }
   else
   {
-    puts("FAIL (got NULL, expected 'SinglePage')");
+    testEndMessage(false, "got NULL, expected 'SinglePage'");
     return (1);
   }
 
@@ -1386,7 +1471,7 @@ read_unit_file(const char *filename,	// I - File to read
   }
   else
   {
-    puts("FAIL (got NULL, expected 'UseThumbs')");
+    testEndMessage(false, "got NULL, expected 'UseThumbs'");
     return (1);
   }
 
@@ -1402,7 +1487,7 @@ read_unit_file(const char *filename,	// I - File to read
   }
   else
   {
-    puts("FAIL (got NULL, expected 'en-CA')");
+    testEndMessage(false, "got NULL, expected 'en-CA'");
     return (1);
   }
 
@@ -1419,7 +1504,7 @@ read_unit_file(const char *filename,	// I - File to read
   }
   else
   {
-    puts("FAIL (got NULL, expected 'Michael R Sweet')");
+    testEndMessage(false, "got NULL, expected 'Michael R Sweet'");
     return (1);
   }
 
@@ -1435,7 +1520,7 @@ read_unit_file(const char *filename,	// I - File to read
   }
   else
   {
-    puts("FAIL (got NULL, expected 'testpdfio')");
+    testEndMessage(false, "got NULL, expected 'testpdfio'");
     return (1);
   }
 
@@ -1451,7 +1536,7 @@ read_unit_file(const char *filename,	// I - File to read
   }
   else
   {
-    puts("FAIL (got NULL, expected 'one fish,two fish,red fish,blue fish')");
+    testEndMessage(false, "got NULL, expected 'one fish,two fish,red fish,blue fish'");
     return (1);
   }
 
@@ -1467,7 +1552,7 @@ read_unit_file(const char *filename,	// I - File to read
   }
   else
   {
-    puts("FAIL (got NULL, expected 'Unit test document')");
+    testEndMessage(false, "got NULL, expected 'Unit test document'");
     return (1);
   }
 
@@ -1483,7 +1568,7 @@ read_unit_file(const char *filename,	// I - File to read
   }
   else
   {
-    puts("FAIL (got NULL, expected 'Test Document')");
+    testEndMessage(false, "got NULL, expected 'Test Document'");
     return (1);
   }
 
@@ -1514,9 +1599,14 @@ read_unit_file(const char *filename,	// I - File to read
   // Close the new PDF file...
   testBegin("pdfioFileClose(\"testpdfio-out.pdf\")");
   if (pdfioFileClose(pdf))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   return (0);
 }
@@ -1607,9 +1697,14 @@ verify_image(pdfio_file_t *pdf,		// I - PDF file
 
   testBegin("pdfioFileFindObj(%lu)", (unsigned long)number);
   if ((obj = pdfioFileFindObj(pdf, number)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioObjGetType");
   if ((type = pdfioObjGetType(obj)) != NULL && !strcmp(type, "XObject"))
@@ -1822,9 +1917,14 @@ write_alpha_test(
   // Create the page dictionary, object, and stream...
   testBegin("pdfioDictCreate");
   if ((dict = pdfioDictCreate(pdf)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   for (i = 0; i < 6; i ++)
   {
@@ -1838,16 +1938,26 @@ write_alpha_test(
 
   testBegin("pdfioPageDictAddFont(F1)");
   if (pdfioPageDictAddFont(dict, "F1", font))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileCreatePage(%d)", number);
 
   if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   if (write_header_footer(st, "Image Writing Test", number))
     goto error;
@@ -1873,9 +1983,14 @@ write_alpha_test(
   // Wrap up...
   testBegin("pdfioStreamClose");
   if (pdfioStreamClose(st))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   return (0);
 
@@ -1990,31 +2105,51 @@ write_color_patch(pdfio_stream_t *st,	// I - Content stream
 
 	testBegin("pdfioContentSetFillColorDeviceCMYK(c=%g, m=%g, y=%g, k=%g)", cyan, magenta, yellow, black);
 	if (pdfioContentSetFillColorDeviceCMYK(st, cyan, magenta, yellow, black))
+	{
 	  testEnd(true);
+	}
 	else
+	{
+	  testEnd(false);
 	  return (1);
+	}
       }
       else
       {
         // Use calibrate RGB space...
 	testBegin("pdfioContentSetFillColorRGB(r=%g, g=%g, b=%g)", red, green, blue);
 	if (pdfioContentSetFillColorRGB(st, red, green, blue))
+	{
 	  testEnd(true);
+	}
 	else
+	{
+	  testEnd(false);
 	  return (1);
+	}
       }
 
       testBegin("pdfioContentPathRect(x=%g, y=%g, w=%g, h=%g)", col * 6.0, row * 6.0, 6.0, 6.0);
       if (pdfioContentPathRect(st, col * 6.0, row * 6.0, 6.0, 6.0))
+      {
 	testEnd(true);
+      }
       else
+      {
+	testEnd(false);
 	return (1);
+      }
 
       testBegin("pdfioContentFill(even_odd=false)");
       if (pdfioContentFill(st, false))
+      {
 	testEnd(true);
+      }
       else
+      {
+	testEnd(false);
 	return (1);
+      }
     }
   }
 
@@ -2039,76 +2174,136 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
 
   testBegin("pdfioFileCreateICCObjFromFile(ProPhotoRGB)");
   if ((prophoto = pdfioFileCreateICCObjFromFile(pdf, "testfiles/iso22028-2-romm-rgb.icc", 3)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioDictCreate");
   if ((dict = pdfioDictCreate(pdf)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioArrayCreateColorFromStandard(AdobeRGB)");
   if ((cs = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_ADOBE)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddColorSpace(AdobeRGB)");
   if (pdfioPageDictAddColorSpace(dict, "AdobeRGB", cs))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioArrayCreateColorFromStandard(DisplayP3)");
   if ((cs = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_P3_D65)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddColorSpace(DisplayP3)");
   if (pdfioPageDictAddColorSpace(dict, "DisplayP3", cs))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioArrayCreateColorFromICCObj(ProPhotoRGB)");
   if ((cs = pdfioArrayCreateColorFromICCObj(pdf, prophoto)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddColorSpace(ProPhotoRGB)");
   if (pdfioPageDictAddColorSpace(dict, "ProPhotoRGB", cs))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioArrayCreateColorFromStandard(sRGB)");
   if ((cs = pdfioArrayCreateColorFromStandard(pdf, 3, PDFIO_CS_SRGB)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddColorSpace(sRGB)");
   if (pdfioPageDictAddColorSpace(dict, "sRGB", cs))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddFont(F1)");
   if (pdfioPageDictAddFont(dict, "F1", font))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileCreatePage(%d)", number);
 
   if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   if (write_header_footer(st, "Color Space Test", number))
     goto error;
@@ -2322,9 +2517,14 @@ write_color_test(pdfio_file_t *pdf,	// I - PDF file
 
   testBegin("pdfioStreamClose");
   if (pdfioStreamClose(st))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   return (0);
 
@@ -2511,34 +2711,59 @@ write_font_test(
 
   testBegin("pdfioFileCreateFontObjFromFile(%s)", textfontfile);
   if ((textfont = pdfioFileCreateFontObjFromFile(pdf, textfontfile, unicode)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioDictCreate");
   if ((dict = pdfioDictCreate(pdf)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddFont(F1)");
   if (pdfioPageDictAddFont(dict, "F1", font))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddFont(F2)");
   if (pdfioPageDictAddFont(dict, "F2", textfont))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileCreatePage(%d)", number);
 
   if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   if ((ptr = strrchr(textfontfile, '/')) != NULL)
     strncpy(textname, ptr + 1, sizeof(textname) - 1);
@@ -2559,15 +2784,25 @@ write_font_test(
 
   testBegin("pdfioContentTextBegin()");
   if (pdfioContentTextBegin(st))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentSetTextFont(\"F2\", 10.0)");
   if (pdfioContentSetTextFont(st, "F2", 10.0))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentSetTextLeading(12.0)");
   if (pdfioContentSetTextLeading(st, 12.0))
@@ -2577,9 +2812,14 @@ write_font_test(
 
   testBegin("pdfioContentTextMoveTo(198.0, 702.0)");
   if (pdfioContentTextMoveTo(st, 198.0, 702.0))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   for (i = 0; i < (int)(sizeof(welcomes) / sizeof(welcomes[0])); i ++)
   {
@@ -2587,47 +2827,82 @@ write_font_test(
     {
       testBegin("pdfioContentTextMoveTo(162.0, 600.0)");
       if (pdfioContentTextMoveTo(st, 162.0, 600.0))
+      {
 	testEnd(true);
+      }
       else
+      {
+	testEnd(false);
 	return (1);
+      }
     }
 
     testBegin("pdfioContentTextMeasure(\"%s\")", welcomes[i]);
     if ((width = pdfioContentTextMeasure(textfont, welcomes[i], 10.0)) >= 0.0)
+    {
       testEnd(true);
+    }
     else
+    {
+      testEnd(false);
       return (1);
+    }
 
     testBegin("pdfioContextTextMoveTo(%g, 0.0)", -width);
     if (pdfioContentTextMoveTo(st, -width, 0.0))
+    {
       testEnd(true);
+    }
     else
+    {
+      testEnd(false);
       return (1);
+    }
 
     testBegin("pdfioContentTextShowf(\"%s\")", welcomes[i]);
     if (pdfioContentTextShowf(st, unicode, "%s\n", welcomes[i]))
+    {
       testEnd(true);
+    }
     else
+    {
+      testEnd(false);
       return (1);
+    }
 
     testBegin("pdfioContextTextMoveTo(%g, 0.0)", width);
     if (pdfioContentTextMoveTo(st, width, 0.0))
+    {
       testEnd(true);
+    }
     else
+    {
+      testEnd(false);
       return (1);
+    }
   }
 
   testBegin("pdfioContentTextEnd()");
   if (pdfioContentTextEnd(st))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioStreamClose");
   if (pdfioStreamClose(st))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   return (0);
 
@@ -2650,57 +2925,102 @@ write_header_footer(
 {
   testBegin("pdfioContentSetFillColorDeviceGray(0.0)");
   if (pdfioContentSetFillColorDeviceGray(st, 0.0))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentTextBegin()");
   if (pdfioContentTextBegin(st))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentSetTextFont(\"F1\", 18.0)");
   if (pdfioContentSetTextFont(st, "F1", 18.0))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentTextMoveTo(36.0, 738.0)");
   if (pdfioContentTextMoveTo(st, 36.0, 738.0))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentTextShow(\"%s\")", title);
   if (pdfioContentTextShow(st, false, title))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentSetTextFont(\"F1\", 12.0)");
   if (pdfioContentSetTextFont(st, "F1", 12.0))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentTextMoveTo(514.0, -702.0)");
   if (pdfioContentTextMoveTo(st, 514.0, -702.0))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentTextShowf(\"%d\")", number);
   if (pdfioContentTextShowf(st, false, "%d", number))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioContentTextEnd()");
   if (pdfioContentTextEnd(st))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   return (0);
 }
@@ -2800,54 +3120,89 @@ write_images_test(
   // Create the images...
   testBegin("Create Image (Predictor 1)");
   if ((noimage = write_image_object(pdf, _PDFIO_PREDICTOR_NONE)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   for (p = _PDFIO_PREDICTOR_PNG_NONE; p <= _PDFIO_PREDICTOR_PNG_AUTO; p ++)
   {
     testBegin("Create Image (Predictor %d)", p);
     if ((pimages[p - _PDFIO_PREDICTOR_PNG_NONE] = write_image_object(pdf, p)) != NULL)
+    {
       testEnd(true);
+    }
     else
+    {
+      testEnd(false);
       return (1);
+    }
   }
 
   // Create the page dictionary, object, and stream...
   testBegin("pdfioDictCreate");
   if ((dict = pdfioDictCreate(pdf)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddImage(1)");
   if (pdfioPageDictAddImage(dict, "IM1", noimage))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   for (p = _PDFIO_PREDICTOR_PNG_NONE; p <= _PDFIO_PREDICTOR_PNG_AUTO; p ++)
   {
     testBegin("pdfioPageDictAddImage(%d)", p);
     snprintf(pname, sizeof(pname), "IM%d", p);
     if (pdfioPageDictAddImage(dict, pdfioStringCreate(pdf, pname), pimages[p - _PDFIO_PREDICTOR_PNG_NONE]))
+    {
       testEnd(true);
+    }
     else
+    {
+      testEnd(false);
       return (1);
+    }
   }
 
   testBegin("pdfioPageDictAddFont(F1)");
   if (pdfioPageDictAddFont(dict, "F1", font))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileCreatePage(%d)", number);
 
   if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   if (write_header_footer(st, "Image Predictor Test", number))
     goto error;
@@ -2870,9 +3225,14 @@ write_images_test(
   // Wrap up...
   testBegin("pdfioStreamClose");
   if (pdfioStreamClose(st))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   return (0);
 
@@ -2907,28 +3267,48 @@ write_jpeg_test(pdfio_file_t *pdf,	// I - PDF file
   // Create the page dictionary, object, and stream...
   testBegin("pdfioDictCreate");
   if ((dict = pdfioDictCreate(pdf)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddImage");
   if (pdfioPageDictAddImage(dict, "IM1", image))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddFont(F1)");
   if (pdfioPageDictAddFont(dict, "F1", font))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileCreatePage(%d)", number);
 
   if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   if (write_header_footer(st, title, number))
     goto error;
@@ -2976,9 +3356,14 @@ write_jpeg_test(pdfio_file_t *pdf,	// I - PDF file
   // Close the page stream/object...
   testBegin("pdfioStreamClose");
   if (pdfioStreamClose(st))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   return (0);
 
@@ -3073,60 +3458,105 @@ write_png_tests(pdfio_file_t *pdf,	// I - PDF file
   // Import the PNG test images
   testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/pdfio-color.png\")");
   if ((color = pdfioFileCreateImageObjFromFile(pdf, "testfiles/pdfio-color.png", false)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/pdfio-gray.png\")");
   if ((gray = pdfioFileCreateImageObjFromFile(pdf, "testfiles/pdfio-gray.png", false)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/pdfio-indexed.png\")");
   if ((indexed = pdfioFileCreateImageObjFromFile(pdf, "testfiles/pdfio-indexed.png", false)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   ////// PDFio PNG image test page...
   // Create the page dictionary, object, and stream...
   testBegin("pdfioDictCreate");
   if ((dict = pdfioDictCreate(pdf)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddImage(color)");
   if (pdfioPageDictAddImage(dict, "IM1", color))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddImage(gray)");
   if (pdfioPageDictAddImage(dict, "IM2", gray))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddImage(indexed)");
   if (pdfioPageDictAddImage(dict, "IM3", indexed))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddFont(F1)");
   if (pdfioPageDictAddFont(dict, "F1", font))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileCreatePage(%d)", number);
 
   if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   if (write_header_footer(st, "PNG Image Test Page", number))
     goto error;
@@ -3231,9 +3661,14 @@ write_png_tests(pdfio_file_t *pdf,	// I - PDF file
   // Close the object and stream...
   testBegin("pdfioStreamClose");
   if (pdfioStreamClose(st))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
 #ifdef HAVE_LIBPNG
   ////// PngSuite page
@@ -3255,9 +3690,14 @@ write_png_tests(pdfio_file_t *pdf,	// I - PDF file
   // Create the page dictionary, object, and stream...
   testBegin("pdfioDictCreate");
   if ((dict = pdfioDictCreate(pdf)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   for (i = 0; i < (sizeof(pngsuite_files) / sizeof(pngsuite_files[0])); i ++)
   {
@@ -3420,28 +3860,48 @@ write_text_test(pdfio_file_t *pdf,		// I - PDF file
   // Create text font...
   testBegin("pdfioFileCreateFontObjFromBase(\"Courier\")");
   if ((courier = pdfioFileCreateFontObjFromBase(pdf, "Courier")) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   // Create the page dictionary...
   testBegin("pdfioDictCreate");
   if ((dict = pdfioDictCreate(pdf)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddFont(F1)");
   if (pdfioPageDictAddFont(dict, "F1", font))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageDictAddFont(F2)");
   if (pdfioPageDictAddFont(dict, "F2", courier))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   // Open the print file...
   if ((fp = fopen(filename, "r")) == NULL)
@@ -3553,9 +4013,14 @@ write_text_test(pdfio_file_t *pdf,		// I - PDF file
 
     testBegin("pdfioStreamClose");
     if (pdfioStreamClose(st))
+    {
       testEnd(true);
+    }
     else
+    {
+      testEnd(false);
       return (1);
+    }
   }
 
   fclose(fp);
@@ -3564,6 +4029,7 @@ write_text_test(pdfio_file_t *pdf,		// I - PDF file
 
   error:
 
+  testEnd(false);
   fclose(fp);
   pdfioStreamClose(st);
   return (1);
@@ -3599,7 +4065,7 @@ write_unit_file(
   }
   else
   {
-    puts("FAIL (got NULL, expected dictionary)");
+    testEndMessage(false, "got NULL, expected dictionary");
     return (1);
   }
 
@@ -3621,7 +4087,7 @@ write_unit_file(
   }
   else
   {
-    puts("FAIL (got NULL, expected 'Michael R Sweet')");
+    testEndMessage(false, "got NULL, expected 'Michael R Sweet'");
     return (1);
   }
 
@@ -3638,7 +4104,7 @@ write_unit_file(
   }
   else
   {
-    puts("FAIL (got NULL, expected 'testpdfio')");
+    testEndMessage(false, "got NULL, expected 'testpdfio'");
     return (1);
   }
 
@@ -3655,7 +4121,7 @@ write_unit_file(
   }
   else
   {
-    puts("FAIL (got NULL, expected 'one fish,two fish,red fish,blue fish')");
+    testEndMessage(false, "got NULL, expected 'one fish,two fish,red fish,blue fish'");
     return (1);
   }
 
@@ -3672,7 +4138,7 @@ write_unit_file(
   }
   else
   {
-    puts("FAIL (got NULL, expected 'en-CA')");
+    testEndMessage(false, "got NULL, expected 'en-CA'");
     return (1);
   }
 
@@ -3689,7 +4155,7 @@ write_unit_file(
   }
   else
   {
-    puts("FAIL (got NULL, expected 'Unit test document')");
+    testEndMessage(false, "got NULL, expected 'Unit test document'");
     return (1);
   }
 
@@ -3706,42 +4172,67 @@ write_unit_file(
   }
   else
   {
-    puts("FAIL (got NULL, expected 'Test Document')");
+    testEndMessage(false, "got NULL, expected 'Test Document'");
     return (1);
   }
 
   // Create some image objects...
   testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/color.jpg\")");
   if ((color_jpg = pdfioFileCreateImageObjFromFile(outpdf, "testfiles/color.jpg", true)) != NULL)
+  {
     testEndMessage(true, "%u", (unsigned)pdfioObjGetNumber(color_jpg));
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/gray.jpg\")");
   if ((gray_jpg = pdfioFileCreateImageObjFromFile(outpdf, "testfiles/gray.jpg", true)) != NULL)
+  {
     testEndMessage(true, "%u", (unsigned)pdfioObjGetNumber(gray_jpg));
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   // Create fonts...
   testBegin("pdfioFileCreateFontObjFromBase(\"Helvetica\")");
   if ((helvetica = pdfioFileCreateFontObjFromBase(outpdf, "Helvetica")) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   // Copy the first page from the test PDF file...
   testBegin("pdfioFileGetPage(0)");
   if ((page = pdfioFileGetPage(inpdf, 0)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageCopy(first page)");
   if (pdfioPageCopy(outpdf, page))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   pagenum ++;
 
@@ -3754,15 +4245,25 @@ write_unit_file(
   // Copy the third page from the test PDF file...
   testBegin("pdfioFileGetPage(2)");
   if ((page = pdfioFileGetPage(inpdf, 2)) != NULL)
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   testBegin("pdfioPageCopy(third page)");
   if (pdfioPageCopy(outpdf, page))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   pagenum ++;
 
@@ -3834,9 +4335,14 @@ write_unit_file(
   // Close the new PDF file...
   testBegin("pdfioFileClose(\"%s\")", outname);
   if (pdfioFileClose(outpdf))
+  {
     testEnd(true);
+  }
   else
+  {
+    testEnd(false);
     return (1);
+  }
 
   return (0);
 }
