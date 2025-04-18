@@ -241,6 +241,7 @@ testttf:	ttf.o testttf.o
 # Dependencies
 $(OBJS):		pdfio.h pdfio-private.h Makefile
 pdfio-content.o:	pdfio-content.h ttf.h
+testpdfio.o:		test.h
 testttf.o:		ttf.h
 ttf.o:			ttf.h
 
