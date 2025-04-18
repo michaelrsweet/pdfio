@@ -1,7 +1,7 @@
 //
 // Unit test header for C/C++ programs.
 //
-// Copyright © 2021-2022 by Michael R Sweet.
+// Copyright © 2021-2025 by Michael R Sweet.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
