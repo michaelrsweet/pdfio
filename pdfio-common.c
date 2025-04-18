@@ -478,7 +478,7 @@ fill_buffer(pdfio_file_t *pdf)		// I - PDF file
 
   // Advance current position in file as needed...
   if (pdf->bufend)
-    pdf->bufpos += pdf->bufend - pdf->buffer;
+    pdf->bufpos += (off_t)(pdf->bufend - pdf->buffer);
 
   // Try reading from the file...
   if ((bytes = read_buffer(pdf, pdf->buffer, sizeof(pdf->buffer))) <= 0)
