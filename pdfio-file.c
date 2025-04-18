@@ -2661,12 +2661,16 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
             buffer[2] = (obj->offset >> 8) & 255;
             buffer[3] = obj->offset & 255;
             break;
+#ifdef _WIN32
+	default :
+#endif // _WIN32
         case 4 :
             buffer[1] = (obj->offset >> 24) & 255;
             buffer[2] = (obj->offset >> 16) & 255;
             buffer[3] = (obj->offset >> 8) & 255;
             buffer[4] = obj->offset & 255;
             break;
+#ifndef _WIN32 // Windows off_t is 32-bits?!?
         case 5 :
             buffer[1] = (obj->offset >> 32) & 255;
             buffer[2] = (obj->offset >> 24) & 255;
@@ -2701,6 +2705,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
             buffer[7] = (obj->offset >> 8) & 255;
             buffer[8] = obj->offset & 255;
             break;
+#endif // !_WIN32
       }
 
       if (!pdfioStreamWrite(xref_st, buffer, offsize + 2))

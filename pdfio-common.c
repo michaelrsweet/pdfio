@@ -424,7 +424,7 @@ off_t					// O - Offset from beginning of file
 _pdfioFileTell(pdfio_file_t *pdf)	// I - PDF file
 {
   if (pdf->bufptr)
-    return (pdf->bufpos + (pdf->bufptr - pdf->buffer));
+    return (pdf->bufpos + (off_t)(pdf->bufptr - pdf->buffer));
   else
     return (pdf->bufpos);
 }
@@ -452,7 +452,7 @@ _pdfioFileWrite(pdfio_file_t *pdf,	// I - PDF file
       if (!write_buffer(pdf, buffer, bytes))
         return (false);
 
-      pdf->bufpos += bytes;
+      pdf->bufpos += (off_t)bytes;
 
       return (true);
     }

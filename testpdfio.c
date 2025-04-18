@@ -393,10 +393,7 @@ do_test_file(const char *filename,	// I - PDF filename
 
   // Try opening the file...
   if (!objnum)
-  {
     testBegin("%s", filename);
-    fflush(stdout);
-  }
 
   if ((pdf = pdfioFileOpen(filename, password_cb, (void *)password, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
@@ -502,6 +499,9 @@ do_test_file(const char *filename,	// I - PDF filename
   else
   {
     // Error message will already be displayed so just indicate failure...
+    if (!objnum)
+      testEnd(false);
+
     return (1);
   }
 }
@@ -1248,16 +1248,9 @@ error_cb(pdfio_file_t *pdf,		// I  - PDF file
 {
   (void)pdf;
 
-  if (!*error)
-  {
-    // First error, so show a "FAIL" indicator
-    *error = true;
+  *error = true;
 
-    testEnd(false);
-  }
-
-  // Indent error messages...
-  printf("    %s\n", message);
+  testMessage("%s", message);
 
   // Continue to catch more errors...
   return (false);

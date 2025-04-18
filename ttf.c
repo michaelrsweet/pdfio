@@ -10,7 +10,7 @@
 //
 
 #ifdef _WIN32
-#  define _CRT_SECURE_NO_WARNINGS
+#  define _CRT_SECURE_NO_WARNINGS 1
 #endif // _WIN32
 
 #include "ttf.h"
@@ -38,16 +38,16 @@
 #  define access	_access
 #  define close		_close
 #  define fileno	_fileno
-#  define lseek		_lseek
+#  define lseek(f,o,w)	(off_t)_lseek((f),(long)(o),(w))
 #  define mkdir(d,p)	_mkdir(d)
 #  define open		_open
-#  define read		_read
+#  define read(f,b,s)	_read((f),(b),(unsigned)(s))
 #  define rmdir		_rmdir
 #  define snprintf	_snprintf
 #  define strdup	_strdup
 #  define unlink	_unlink
 #  define vsnprintf	_vsnprintf
-#  define write		_write
+#  define write(f,b,s)	_write((f),(b),(unsigned)(s))
 
 //
 // Map various parameters for POSIX...

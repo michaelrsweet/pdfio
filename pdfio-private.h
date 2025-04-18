@@ -28,7 +28,7 @@
 #    define access	_access		// Map standard POSIX/C99 names
 #    define close	_close
 #    define fileno	_fileno
-#    define lseek	_lseek
+#    define lseek(f,o,w) (off_t)_lseek((f),(long)(o),(w))
 #    define mkdir(d,p)	_mkdir(d)
 #    define open	_open
 #    define read(f,b,s)	_read((f),(b),(unsigned)(s))
