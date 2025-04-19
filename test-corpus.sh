@@ -12,11 +12,11 @@
 #   ./test-corpus.sh DIRECTORY
 #
 
-if test $# = 1; then
+if test $# = 0; then
     echo "Usage: ./test-corpus.sh DIRECTORY"
     exit 1
 fi
 
 for file in $(find "$@" -name \*.pdf -print); do
-    ./testpdfio $file 2>$file.log || echo $file
+    ./testpdfio $file 2>&1 >$file.log || echo $file
 done
