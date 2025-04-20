@@ -582,6 +582,7 @@ _pdfioCryptoUnlock(
 		file_idlen;		// Length of file ID
   _pdfio_md5_t	md5;			// MD5 context
   uint8_t	file_digest[16];	// MD5 digest of file ID and pad
+  double	p;			// Permissions value as a double
 
 
   // See if we support the type of encryption specified by the Encrypt object
@@ -689,8 +690,13 @@ _pdfioCryptoUnlock(
 
   // Grab the remaining values we need to unlock the PDF...
   pdf->file_keylen = (size_t)(length / 8);
-  pdf->permissions = (pdfio_permission_t)pdfioDictGetNumber(encrypt_dict, "P");
 
+  p = pdfioDictGetNumber(encrypt_dict, "P");
+  PDFIO_DEBUG("_pdfioCryptoUnlock: P=%.0f\n", p);
+  if (p < 0x7fffffff)			// Handle integers > 2^31-1
+    pdf->permissions = (pdfio_permission_t)p;
+  else
+    pdf->permissions = (pdfio_permission_t)(p - 4294967296.0);
   PDFIO_DEBUG("_pdfioCryptoUnlock: permissions=%d\n", pdf->permissions);
 
   owner_key = pdfioDictGetBinary(encrypt_dict, "O", &owner_keylen);
@@ -993,9 +999,11 @@ make_owner_key(
     // Encrypt 20 times...
     uint8_t encrypt_key[16];		// RC4 encryption key
 
-    for (i = 0; i < 20; i ++)
+    for (i = 20; i > 0;)
     {
       // XOR each byte in the digest with the loop counter to make a key...
+      i --;
+
       for (j = 0; j < sizeof(encrypt_key); j ++)
 	encrypt_key[j] = (uint8_t)(digest[j] ^ i);
 

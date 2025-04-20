@@ -397,18 +397,22 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 
     ret = v;
   }
-  else if ((timeval = get_date_time(token + 1)) != 0)
-  {
-    v->type       = PDFIO_VALTYPE_DATE;
-    v->value.date = timeval;
-    ret           = v;
-  }
   else if (token[0] == '(')
   {
-    // String
-    v->type         = PDFIO_VALTYPE_STRING;
-    v->value.string = pdfioStringCreate(pdf, token + 1);
-    ret           = v;
+    if ((timeval = get_date_time(token + 1)) != 0)
+    {
+      // Date
+      v->type       = PDFIO_VALTYPE_DATE;
+      v->value.date = timeval;
+      ret           = v;
+    }
+    else
+    {
+      // String
+      v->type         = PDFIO_VALTYPE_STRING;
+      v->value.string = pdfioStringCreate(pdf, token + 1);
+      ret           = v;
+    }
   }
   else if (token[0] == '/')
   {
