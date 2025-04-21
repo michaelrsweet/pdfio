@@ -18,5 +18,12 @@ if test $# = 0; then
 fi
 
 for file in $(find "$@" -name \*.pdf -print); do
-    ./testpdfio $file 2>&1 >$file.log || echo $file
+    pdfinfo $file >/dev/null 2>&1 || continue;
+
+    ./testpdfio $file >$file.log 2>&1
+    if test $? = 0; then
+        rm -f $file.log
+    else
+        echo $file
+    fi
 done
