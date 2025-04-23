@@ -562,6 +562,13 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
         if (predictor >= 10)
           st->pbsize ++;		// Add PNG predictor byte
 
+        if (st->pbsize < 2)
+        {
+          _pdfioFileError(st->pdf, "Bad Predictor buffer size %lu.", (unsigned long)st->pbsize);
+	  goto error;
+        }
+
+        PDFIO_DEBUG("_pdfioStreamOpen: st->predictor=%d, st->pbpixel=%u, st->pbsize=%lu\n", st->predictor, (unsigned)st->pbpixel, (unsigned long)st->pbsize);
         if ((st->prbuffer = calloc(1, st->pbsize - 1)) == NULL || (st->psbuffer = calloc(1, st->pbsize)) == NULL)
         {
           _pdfioFileError(st->pdf, "Unable to allocate %lu bytes for Predictor buffers.", (unsigned long)st->pbsize);
@@ -1228,7 +1235,18 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       }
 
       // Apply predictor for this line
-      PDFIO_DEBUG("stream_read: Line %02X %02X %02X %02X %02X.\n", sptr[-1], sptr[0], sptr[0], sptr[2], sptr[3]);
+#ifdef DEBUG
+      if (remaining > 4)
+	PDFIO_DEBUG("stream_read: Line %02X %02X %02X %02X %02X ...\n", sptr[-1], sptr[0], sptr[1], sptr[2], sptr[3]);
+      else if (remaining > 3)
+	PDFIO_DEBUG("stream_read: Line %02X %02X %02X %02X %02X.\n", sptr[-1], sptr[0], sptr[1], sptr[2], sptr[3]);
+      else if (remaining > 2)
+	PDFIO_DEBUG("stream_read: Line %02X %02X %02X %02X.\n", sptr[-1], sptr[0], sptr[1], sptr[2]);
+      else if (remaining > 1)
+	PDFIO_DEBUG("stream_read: Line %02X %02X %02X.\n", sptr[-1], sptr[0], sptr[1]);
+      else
+	PDFIO_DEBUG("stream_read: Line %02X %02X.\n", sptr[-1], sptr[0]);
+#endif // DEBUG
 
       switch (sptr[-1])
       {
