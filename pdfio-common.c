@@ -47,7 +47,7 @@ _pdfioFileConsume(pdfio_file_t *pdf,	// I - PDF file
 // `false` to halt.
 //
 
-bool					// O - `false` to stop
+bool					// O - `false` to stop, `true` to continue
 _pdfioFileDefaultError(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *message,		// I - Error message
@@ -57,7 +57,7 @@ _pdfioFileDefaultError(
 
   fprintf(stderr, "%s: %s\n", pdf->filename, message);
 
-  return (false);
+  return (!strncmp(message, "WARNING:", 8));
 }
 
 

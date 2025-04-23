@@ -343,8 +343,8 @@ password_cb(void *data, const char *filename)
 ```
 
 The error callback is called for both errors and warnings and accepts the
-`pdfio_file_t` pointer, a message string, and the callback pointer value, for
-example:
+`pdfio_file_t` pointer, a message string, and the callback pointer value. It
+returns `true` to continue processing the file or `false` to stop, for example:
 
 ```c
 bool
@@ -354,12 +354,16 @@ error_cb(pdfio_file_t *pdf, const char *message, void *data)
 
   fprintf(stderr, "%s: %s\n", pdfioFileGetName(pdf), message);
 
-  // Return false to treat warnings as errors
-  return (false);
+  // Return true for warning messages (continue) and false for errors (stop)
+  return (!strncmp(message, "WARNING:", 8));
 }
 ```
 
 The default error callback (`NULL`) does the equivalent of the above.
+
+> Note: Many errors are unrecoverable, so PDFio ignores the return value from
+> the error callback and always stops processing the PDF file.  Warning messages
+> start with the prefix "WARNING:" while errors have no prefix.
 
 Each PDF file contains one or more pages.  The [`pdfioFileGetNumPages`](@@)
 function returns the number of pages in the file while the

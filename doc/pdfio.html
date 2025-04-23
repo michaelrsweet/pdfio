@@ -732,7 +732,7 @@ password_cb(<span class="reserved">void</span> *data, <span class="reserved">con
   <span class="reserved">return</span> (<span class="string">&quot;Password42&quot;</span>);
 }
 </code></pre>
-<p>The error callback is called for both errors and warnings and accepts the <code>pdfio_file_t</code> pointer, a message string, and the callback pointer value, for example:</p>
+<p>The error callback is called for both errors and warnings and accepts the <code>pdfio_file_t</code> pointer, a message string, and the callback pointer value. It returns <code>true</code> to continue processing the file or <code>false</code> to stop, for example:</p>
 <pre><code class="language-c"><span class="reserved">bool</span>
 error_cb(pdfio_file_t *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *message, <span class="reserved">void</span> *data)
 {
@@ -740,11 +740,14 @@ error_cb(pdfio_file_t *pdf, <span class="reserved">const</span> <span class="res
 
   fprintf(stderr, <span class="string">&quot;%s: %s\n&quot;</span>, pdfioFileGetName(pdf), message);
 
-  <span class="comment">// Return false to treat warnings as errors</span>
-  <span class="reserved">return</span> (<span class="reserved">false</span>);
+  <span class="comment">// Return true for warning messages (continue) and false for errors (stop)</span>
+  <span class="reserved">return</span> (!strncmp(message, <span class="string">&quot;WARNING:&quot;</span>, <span class="number">8</span>));
 }
 </code></pre>
 <p>The default error callback (<code>NULL</code>) does the equivalent of the above.</p>
+<blockquote>
+<p>Note: Many errors are unrecoverable, so PDFio ignores the return value from the error callback and always stops processing the PDF file. Warning messages start with the prefix &quot;WARNING:&quot; while errors have no prefix.</p>
+</blockquote>
 <p>Each PDF file contains one or more pages. The <a href="#pdfioFileGetNumPages"><code>pdfioFileGetNumPages</code></a> function returns the number of pages in the file while the <a href="#pdfioFileGetPage"><code>pdfioFileGetPage</code></a> function gets the specified page in the PDF file:</p>
 <pre><code class="language-c">pdfio_file_t *pdf;   <span class="comment">// PDF file</span>
 size_t       i;      <span class="comment">// Looping var</span>
@@ -4129,8 +4132,9 @@ CropBox for pages in the PDF file - if <code>NULL</code> then a default &quot;Un
 of 8.27x11in (the intersection of US Letter and ISO A4) is used.<br>
 <br>
 The &quot;error_cb&quot; and &quot;error_cbdata&quot; arguments specify an error handler callback
-and its data pointer - if <code>NULL</code> the default error handler is used that
-writes error messages to <code>stderr</code>.</p>
+and its data pointer - if <code>NULL</code> then the default error handler is used that
+writes error messages to <code>stderr</code>.  The error handler callback should return
+<code>true</code> to continue writing the PDF file or <code>false</code> to stop.</p>
 <h3 class="function"><a id="pdfioFileCreateArrayObj">pdfioFileCreateArrayObj</a></h3>
 <p class="description">Create a new object in a PDF file containing an array.</p>
 <p class="code">
@@ -4434,8 +4438,9 @@ CropBox for pages in the PDF file - if <code>NULL</code> then a default &quot;Un
 of 8.27x11in (the intersection of US Letter and ISO A4) is used.<br>
 <br>
 The &quot;error_cb&quot; and &quot;error_cbdata&quot; arguments specify an error handler callback
-and its data pointer - if <code>NULL</code> the default error handler is used that
-writes error messages to <code>stderr</code>.<br>
+and its data pointer - if <code>NULL</code> then the default error handler is used that
+writes error messages to <code>stderr</code>.  The error handler callback should return
+<code>true</code> to continue writing the PDF file or <code>false</code> to stop.<br>
 <br>
 </p><blockquote>
 <em>Note</em>: Files created using this API are slightly larger than those
@@ -4772,8 +4777,15 @@ cancel the open.  If <code>NULL</code> is specified for the callback function an
 PDF file requires a password, the open will always fail.<br>
 <br>
 The &quot;error_cb&quot; and &quot;error_cbdata&quot; arguments specify an error handler callback
-and its data pointer - if <code>NULL</code> the default error handler is used that
-writes error messages to <code>stderr</code>.</p>
+and its data pointer - if <code>NULL</code> then the default error handler is used that
+writes error messages to <code>stderr</code>.  The error handler callback should return
+<code>true</code> to continue reading the PDF file or <code>false</code> to stop.<br>
+<br>
+</p><blockquote>
+Note: Error messages starting with &quot;WARNING:&quot; are actually warning
+messages - the callback should normally return <code>true</code> to allow PDFio to
+try to resolve the issue.  In addition, some errors are unrecoverable and
+ignore the return value of the error callback.</blockquote>
 <h3 class="function"><a id="pdfioFileSetAuthor">pdfioFileSetAuthor</a></h3>
 <p class="description">Set the author for a PDF file.</p>
 <p class="code">

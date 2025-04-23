@@ -643,9 +643,11 @@ _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
     {
       // Issue 118: Discard duplicate key/value pairs, in the future this will
       // be a warning message...
-      _pdfioFileError(pdf, "WARNING: Discarding value for duplicate dictionary key '%s'.", key + 1);
       _pdfioValueDelete(&value);
-      continue;
+      if (_pdfioFileError(pdf, "WARNING: Discarding value for duplicate dictionary key '%s'.", key + 1))
+        continue;
+      else
+        break;
     }
     else if (!_pdfioDictSetValue(dict, pdfioStringCreate(pdf, key + 1), &value))
       break;

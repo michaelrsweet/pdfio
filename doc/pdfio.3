@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2025-04-13" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2025-04-23" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -325,7 +325,7 @@ where the five arguments to the function are the filename ("myinputfile.pdf"), a
     }
 .fi
 .PP
-The error callback is called for both errors and warnings and accepts the pdfio_file_t pointer, a message string, and the callback pointer value, for example:
+The error callback is called for both errors and warnings and accepts the pdfio_file_t pointer, a message string, and the callback pointer value. It returns true to continue processing the file or false to stop, for example:
 .nf
 
     bool
@@ -335,12 +335,15 @@ The error callback is called for both errors and warnings and accepts the pdfio_
     
       fprintf(stderr, "%s: %s\\n", pdfioFileGetName(pdf), message);
     
-      // Return false to treat warnings as errors
-      return (false);
+      // Return true for warning messages (continue) and false for errors (stop)
+      return (!strncmp(message, "WARNING:", 8));
     }
 .fi
 .PP
 The default error callback (NULL) does the equivalent of the above.
+.PP
+Note: Many errors are unrecoverable, so PDFio ignores the return value from the error callback and always stops processing the PDF file. Warning messages start with the prefix "WARNING:" while errors have no prefix.
+
 .PP
 Each PDF file contains one or more pages. The pdfioFileGetNumPages function returns the number of pages in the file while the pdfioFileGetPage function gets the specified page in the PDF file:
 .nf
@@ -3910,8 +3913,9 @@ CropBox for pages in the PDF file - if \fBNULL\fR then a default "Universal" siz
 of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 .PP
 The "error_cb" and "error_cbdata" arguments specify an error handler callback
-and its data pointer - if \fBNULL\fR the default error handler is used that
-writes error messages to \fBstderr\fR.
+and its data pointer - if \fBNULL\fR then the default error handler is used that
+writes error messages to \fBstderr\fR.  The error handler callback should return
+\fBtrue\fR to continue writing the PDF file or \fBfalse\fR to stop.
 .SS pdfioFileCreateArrayObj
 Create a new object in a PDF file containing an array.
 .PP
@@ -4152,8 +4156,9 @@ CropBox for pages in the PDF file - if \fBNULL\fR then a default "Universal" siz
 of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 .PP
 The "error_cb" and "error_cbdata" arguments specify an error handler callback
-and its data pointer - if \fBNULL\fR the default error handler is used that
-writes error messages to \fBstderr\fR.
+and its data pointer - if \fBNULL\fR then the default error handler is used that
+writes error messages to \fBstderr\fR.  The error handler callback should return
+\fBtrue\fR to continue writing the PDF file or \fBfalse\fR to stop.
 .PP
 .IP 5
 \fINote\fR: Files created using this API are slightly larger than those
@@ -4392,8 +4397,18 @@ cancel the open.  If \fBNULL\fR is specified for the callback function and the
 PDF file requires a password, the open will always fail.
 .PP
 The "error_cb" and "error_cbdata" arguments specify an error handler callback
-and its data pointer - if \fBNULL\fR the default error handler is used that
-writes error messages to \fBstderr\fR.
+and its data pointer - if \fBNULL\fR then the default error handler is used that
+writes error messages to \fBstderr\fR.  The error handler callback should return
+\fBtrue\fR to continue reading the PDF file or \fBfalse\fR to stop.
+.PP
+.IP 5
+Note: Error messages starting with "WARNING:" are actually warning
+.IP 5
+messages - the callback should normally return \fBtrue\fR to allow PDFio to
+.IP 5
+try to resolve the issue.  In addition, some errors are unrecoverable and
+.IP 5
+ignore the return value of the error callback.
 .SS pdfioFileSetAuthor
 Set the author for a PDF file.
 .PP

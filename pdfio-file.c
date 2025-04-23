@@ -188,8 +188,9 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
 // of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 //
 // The "error_cb" and "error_cbdata" arguments specify an error handler callback
-// and its data pointer - if `NULL` the default error handler is used that
-// writes error messages to `stderr`.
+// and its data pointer - if `NULL` then the default error handler is used that
+// writes error messages to `stderr`.  The error handler callback should return
+// `true` to continue writing the PDF file or `false` to stop.
 //
 
 pdfio_file_t *				// O - PDF file or `NULL` on error
@@ -426,8 +427,9 @@ _pdfioFileCreateObj(
 // of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 //
 // The "error_cb" and "error_cbdata" arguments specify an error handler callback
-// and its data pointer - if `NULL` the default error handler is used that
-// writes error messages to `stderr`.
+// and its data pointer - if `NULL` then the default error handler is used that
+// writes error messages to `stderr`.  The error handler callback should return
+// `true` to continue writing the PDF file or `false` to stop.
 //
 // > *Note*: Files created using this API are slightly larger than those
 // > created using the @link pdfioFileCreate@ function since stream lengths are
@@ -1019,8 +1021,14 @@ pdfioFileGetVersion(
 // PDF file requires a password, the open will always fail.
 //
 // The "error_cb" and "error_cbdata" arguments specify an error handler callback
-// and its data pointer - if `NULL` the default error handler is used that
-// writes error messages to `stderr`.
+// and its data pointer - if `NULL` then the default error handler is used that
+// writes error messages to `stderr`.  The error handler callback should return
+// `true` to continue reading the PDF file or `false` to stop.
+//
+// > Note: Error messages starting with "WARNING:" are actually warning
+// > messages - the callback should normally return `true` to allow PDFio to
+// > try to resolve the issue.  In addition, some errors are unrecoverable and
+// > ignore the return value of the error callback.
 //
 
 pdfio_file_t *				// O - PDF file
@@ -1119,15 +1127,19 @@ pdfioFileOpen(
   if (ptr >= end)
   {
     _pdfioFileError(pdf, "Unable to find start of xref table.");
-    goto error;
-  }
 
-  xref_offset = (off_t)strtol(ptr + 9, NULL, 10);
-
-  if (!load_xref(pdf, xref_offset, password_cb, password_cbdata))
-  {
     if (!repair_xref(pdf, password_cb, password_cbdata))
       goto error;
+  }
+  else
+  {
+    xref_offset = (off_t)strtol(ptr + 9, NULL, 10);
+
+    if (!load_xref(pdf, xref_offset, password_cb, password_cbdata))
+    {
+      if (!repair_xref(pdf, password_cb, password_cbdata))
+	goto error;
+    }
   }
 
   return (pdf);
@@ -1755,7 +1767,10 @@ load_pages(pdfio_file_t *pdf,		// I - PDF file
   }
 
   if ((type = pdfioDictGetName(dict, "Type")) == NULL || (strcmp(type, "Pages") && strcmp(type, "Page")))
-    return (false);
+  {
+    if (!_pdfioFileError(pdf, "WARNING: No Type value for pages object."))
+      return (false);
+  }
 
   // If there is a Kids array, then this is a parent node and we have to look
   // at the child objects...
@@ -1948,7 +1963,9 @@ load_xref(
       w_2     = w[0];
       w_3     = w[0] + w[1];
 
-      if (w[1] == 0 || w[2] > 4 || w[0] > sizeof(buffer) || w[1] > sizeof(buffer) || w[2] > sizeof(buffer) || w_total > sizeof(buffer))
+      PDFIO_DEBUG("W=[%u %u %u], w_total=%u\n", (unsigned)w[0], (unsigned)w[1], (unsigned)w[2], (unsigned)w_total);
+
+      if (pdfioArrayGetSize(w_array) > 3 || w[1] == 0 || w[2] > 4 || w[0] > sizeof(buffer) || w[1] > sizeof(buffer) || w[2] > sizeof(buffer) || w_total > sizeof(buffer))
       {
 	_pdfioFileError(pdf, "Cross-reference stream has invalid W key [%u %u %u].", (unsigned)w[0], (unsigned)w[1], (unsigned)w[2]);
 	return (false);
@@ -1977,7 +1994,20 @@ load_xref(
 	{
 	  count --;
 
-	  PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+#ifdef DEBUG
+          if (w_total > 5)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X...\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+	  else if (w_total == 5)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+	  else if (w_total == 4)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3]);
+	  else if (w_total == 3)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2]);
+	  else if (w_total == 2)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X\n", (unsigned)number, buffer[0], buffer[1]);
+	  else
+	    PDFIO_DEBUG("load_xref: number=%u %02X\n", (unsigned)number, buffer[0]);
+#endif // DEBUG
 
 	  // Check whether this is an object definition...
 	  if (w[0] > 0)
@@ -2288,7 +2318,7 @@ repair_xref(
     pdfio_password_cb_t password_cb,	// I - Password callback or `NULL` for none
     void                *password_data)	// I - Password callback data, if any
 {
-  char		line[16384],		// Line from file
+  char		line[65536],		// Line from file
 		*ptr;			// Pointer into line
   off_t		line_offset;		// Offset in file
   intmax_t	number;			// Object number
@@ -2296,10 +2326,13 @@ repair_xref(
   size_t	i;			// Looping var
   size_t	num_sobjs = 0;		// Number of object streams
   pdfio_obj_t	*sobjs[16384];		// Object streams to load
+  pdfio_dict_t	*backup_trailer = NULL;	// Backup trailer dictionary
+  pdfio_obj_t	*pages_obj;		// Pages object
 
 
   // Let caller know something is wrong...
-  _pdfioFileError(pdf, "WARNING: Cross-reference table is damaged, attempting to rebuild.");
+  if (!_pdfioFileError(pdf, "WARNING: Cross-reference table is damaged, attempting to rebuild."))
+    return (false);
 
   // Read from the beginning of the file, looking for
   if ((line_offset = _pdfioFileSeek(pdf, 0, SEEK_SET)) < 0)
@@ -2311,6 +2344,8 @@ repair_xref(
     if (line[0] >= '1' && line[0] <= '9')
     {
       // Maybe, look some more...
+      PDFIO_DEBUG("repair_xref: line=\"%s\"\n", line);
+
       if ((number = strtoimax(line, &ptr, 10)) >= 1 && (generation = (int)strtol(ptr, &ptr, 10)) >= 0 && generation < 65536)
       {
         while (isspace(*ptr & 255))
@@ -2322,7 +2357,7 @@ repair_xref(
 	  pdfio_obj_t	*obj;		// Object
 	  _pdfio_token_t tb;		// Token buffer/stack
 
-          PDFIO_DEBUG("OBJECT %ld %d at offset %ld\n", (long)number, generation, (long)line_offset);
+          PDFIO_DEBUG("repair_xref: OBJECT %ld %d at offset %ld\n", (long)number, generation, (long)line_offset);
 
 	  if ((obj = add_obj(pdf, (size_t)number, (unsigned short)generation, line_offset)) == NULL)
 	  {
@@ -2338,27 +2373,46 @@ repair_xref(
 	    return (false);
 	  }
 
-	  if (_pdfioTokenGet(&tb, line, sizeof(line)) && strcmp(line, "stream"))
+	  if (_pdfioTokenGet(&tb, line, sizeof(line)))
 	  {
 	    const char *type = pdfioObjGetType(obj);
 					// Object type
 
 	    _pdfioTokenFlush(&tb);
-	    obj->stream_offset = _pdfioFileTell(pdf);
 
-	    if (type && !strcmp(type, "ObjStm") && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
-	    {
-	      sobjs[num_sobjs] = obj;
-	      num_sobjs ++;
-	    }
-
-            if (type && !strcmp(type, "XRef") && !pdf->trailer_dict)
+            if (type && !strcmp(line, "stream"))
             {
-              // Save the trailer dictionary...
-	      pdf->trailer_dict = pdfioObjGetDict(obj);
-	      pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
-	      pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
-            }
+              // Possible object or XRef stream...
+	      obj->stream_offset = _pdfioFileTell(pdf);
+
+	      if (!strcmp(type, "ObjStm") && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
+	      {
+	        PDFIO_DEBUG("repair_xref: Object stream...\n");
+		sobjs[num_sobjs] = obj;
+		num_sobjs ++;
+	      }
+
+	      if (!strcmp(type, "XRef") && !pdf->trailer_dict)
+	      {
+		// Save the trailer dictionary...
+	        PDFIO_DEBUG("repair_xref: XRef stream...\n");
+		pdf->trailer_dict = pdfioObjGetDict(obj);
+		pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
+		pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
+	      }
+	    }
+	    else if (type && !strcmp(line, "endobj"))
+	    {
+	      // Possible catalog or pages object...
+	      if (!strcmp(type, "Catalog"))
+	      {
+	        PDFIO_DEBUG("repair_xref: Catalog (root) object...\n");
+	        if (!backup_trailer)
+	          backup_trailer = pdfioDictCreate(pdf);
+
+	        pdfioDictSetObj(backup_trailer, "Root", obj);
+	      }
+	    }
 	  }
 	}
       }
@@ -2369,6 +2423,8 @@ repair_xref(
       _pdfio_token_t tb;		// Token buffer/stack
       _pdfio_value_t trailer;		// Trailer
 
+      PDFIO_DEBUG("repair_xref: line=\"%s\"\n", line);
+
       if (line[7])
       {
 	// Probably the start of the trailer dictionary, rewind the file so
@@ -2376,7 +2432,7 @@ repair_xref(
 	_pdfioFileSeek(pdf, line_offset + 7, SEEK_SET);
       }
 
-      PDFIO_DEBUG("TRAILER at offset %ld\n", (long)line_offset);
+      PDFIO_DEBUG("repair_xref: TRAILER at offset %ld\n", (long)line_offset);
 
       _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
       if (!_pdfioValueRead(pdf, NULL, &tb, &trailer, 0))
@@ -2396,6 +2452,8 @@ repair_xref(
       {
 	// Save the trailer dictionary and grab the root (catalog) and info
 	// objects...
+	PDFIO_DEBUG("repair_xref: Using this trailer dictionary.\n");
+
 	pdf->trailer_dict = trailer.value.dict;
 	pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
 	pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
@@ -2406,11 +2464,18 @@ repair_xref(
     line_offset = _pdfioFileTell(pdf);
   }
 
+  PDFIO_DEBUG("repair_xref: Stopped at line_offset=%lu\n", (unsigned long)line_offset);
+
+  if (!pdf->trailer_dict && backup_trailer)
+    pdf->trailer_dict = backup_trailer;
+
   // If the trailer contains an Encrypt key, try unlocking the file...
   if (pdf->encrypt_obj && !_pdfioCryptoUnlock(pdf, password_cb, password_data))
     return (false);
 
   // Load any stream objects...
+  PDFIO_DEBUG("repair_xref: Found %lu stream objects.\n", (unsigned long)num_sobjs);
+
   for (i = 0; i < num_sobjs; i ++)
   {
     if (!load_obj_stream(sobjs[i]))
@@ -2429,8 +2494,16 @@ repair_xref(
 
   PDFIO_DEBUG("repair_xref: Root=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
 
+  if ((pages_obj = pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages")) == NULL)
+  {
+    _pdfioFileError(pdf, "Missing Pages object.");
+    return (false);
+  }
+
+  PDFIO_DEBUG("repair_xref: Pages=%p(%lu)\n", pages_obj, (unsigned long)pages_obj->number);
+
   // Load pages...
-  return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages"), 0));
+  return (load_pages(pdf, pages_obj, 0));
 }
 
 

@@ -1333,7 +1333,7 @@ error_cb(pdfio_file_t *pdf,		// I  - PDF file
   testMessage("%s", message);
 
   // Continue to catch more errors...
-  return (false);
+  return (true);
 }
 
 
