@@ -98,7 +98,7 @@ static uint8_t pdf_passpad[32] =	// Padding for passwords
 
 static void	decrypt_user_key(pdfio_encryption_t encryption, const uint8_t *file_key, uint8_t user_key[32]);
 static void	encrypt_user_key(pdfio_encryption_t encryption, const uint8_t *file_key, uint8_t user_key[32]);
-static void	make_file_key(pdfio_encryption_t encryption, pdfio_permission_t permissions, const unsigned char *file_id, size_t file_idlen, const uint8_t *user_pad, const uint8_t *owner_key, uint8_t file_key[16]);
+static void	make_file_key(pdfio_encryption_t encryption, pdfio_permission_t permissions, const unsigned char *file_id, size_t file_idlen, const uint8_t *user_pad, const uint8_t *owner_key, bool encrypt_metadata, uint8_t file_key[16]);
 static void	make_owner_key(pdfio_encryption_t encryption, const uint8_t *owner_pad, const uint8_t *user_pad, uint8_t owner_key[32]);
 static void	make_user_key(const unsigned char *file_id, size_t file_idlen, uint8_t user_key[32]);
 static void	pad_password(const char *password, uint8_t pad[32]);
@@ -158,7 +158,7 @@ _pdfioCryptoLock(
         // Generate the encryption key
         file_id = pdfioArrayGetBinary(pdf->id_array, 0, &file_idlen);
 
-        make_file_key(encryption, permissions, file_id, file_idlen, user_pad, pdf->owner_key, pdf->file_key);
+        make_file_key(encryption, permissions, file_id, file_idlen, user_pad, pdf->owner_key, pdf->encrypt_metadata, pdf->file_key);
 	pdf->file_keylen = 16;
 
 	// Generate the user key...
@@ -583,6 +583,7 @@ _pdfioCryptoUnlock(
   _pdfio_md5_t	md5;			// MD5 context
   uint8_t	file_digest[16];	// MD5 digest of file ID and pad
   double	p;			// Permissions value as a double
+  _pdfio_value_t *value;		// Encrypt dictionary value, if any
 
 
   // See if we support the type of encryption specified by the Encrypt object
@@ -598,7 +599,12 @@ _pdfioCryptoUnlock(
   revision = (int)pdfioDictGetNumber(encrypt_dict, "R");
   length   = (int)pdfioDictGetNumber(encrypt_dict, "Length");
 
-  PDFIO_DEBUG("_pdfioCryptoUnlock: handler=%p(%s), version=%d, revision=%d, length=%d\n", (void *)handler, handler ? handler : "(null)", version, revision, length);
+  if ((value = _pdfioDictGetValue(encrypt_dict, "EncryptMetadata")) != NULL && value->type == PDFIO_VALTYPE_BOOLEAN)
+    pdf->encrypt_metadata = value->value.boolean;
+  else
+    pdf->encrypt_metadata = true;
+
+  PDFIO_DEBUG("_pdfioCryptoUnlock: handler=%p(%s), version=%d, revision=%d, length=%d, encrypt_metadata=%s\n", (void *)handler, handler ? handler : "(null)", version, revision, length, pdf->encrypt_metadata ? "true" : "false");
 
   if (!handler || strcmp(handler, "Standard"))
   {
@@ -768,7 +774,7 @@ _pdfioCryptoUnlock(
       make_owner_key(pdf->encryption, pad, pdf->owner_key, user_pad);
       PDFIO_DEBUG("_pdfioCryptoUnlock: Upad=%02X%02X%02X%02X...%02X%02X%02X%02X\n", user_pad[0], user_pad[1], user_pad[2], user_pad[3], user_pad[28], user_pad[29], user_pad[30], user_pad[31]);
 
-      make_file_key(pdf->encryption, pdf->permissions, file_id, file_idlen, user_pad, pdf->owner_key, file_key);
+      make_file_key(pdf->encryption, pdf->permissions, file_id, file_idlen, user_pad, pdf->owner_key, pdf->encrypt_metadata, file_key);
       PDFIO_DEBUG("_pdfioCryptoUnlock: Fown=%02X%02X%02X%02X...%02X%02X%02X%02X\n", file_key[0], file_key[1], file_key[2], file_key[3], file_key[12], file_key[13], file_key[14], file_key[15]);
 
       make_user_key(file_id, file_idlen, own_user_key);
@@ -786,7 +792,7 @@ _pdfioCryptoUnlock(
       }
 
       // Not the owner password, try the user password...
-      make_file_key(pdf->encryption, pdf->permissions, file_id, file_idlen, pad, pdf->owner_key, file_key);
+      make_file_key(pdf->encryption, pdf->permissions, file_id, file_idlen, pad, pdf->owner_key, pdf->encrypt_metadata, file_key);
       PDFIO_DEBUG("_pdfioCryptoUnlock: Fuse=%02X%02X%02X%02X...%02X%02X%02X%02X\n", file_key[0], file_key[1], file_key[2], file_key[3], file_key[12], file_key[13], file_key[14], file_key[15]);
 
       make_user_key(file_id, file_idlen, own_user_key);
@@ -918,6 +924,8 @@ make_file_key(
     size_t              file_idlen,	// I - Length of file ID
     const uint8_t       *user_pad,	// I - Padded user password
     const uint8_t       *owner_key,	// I - Owner key
+    bool                encrypt_metadata,
+					// I - Encrypt metadata?
     uint8_t             file_key[16])	// O - Encryption key
 {
   size_t	i;			// Looping var
@@ -931,12 +939,24 @@ make_file_key(
   perm_bytes[2] = (uint8_t)(permissions >> 16);
   perm_bytes[3] = (uint8_t)(permissions >> 24);
 
+  PDFIO_DEBUG("make_file_key: user_pad[32]=<%02X%02X%02X%02X...%02X%02X%02X%02X>\n", user_pad[0], user_pad[1], user_pad[2], user_pad[3], user_pad[28], user_pad[29], user_pad[30], user_pad[31]);
+  PDFIO_DEBUG("make_file_key: owner_key[32]=<%02X%02X%02X%02X...%02X%02X%02X%02X>\n", owner_key[0], owner_key[1], owner_key[2], owner_key[3], owner_key[28], owner_key[29], owner_key[30], owner_key[31]);
+  PDFIO_DEBUG("make_file_key: permissions(%d)=<%02X%02X%02X%02X>\n", permissions, perm_bytes[0], perm_bytes[1], perm_bytes[2], perm_bytes[3]);
+
   _pdfioCryptoMD5Init(&md5);
   _pdfioCryptoMD5Append(&md5, user_pad, 32);
   _pdfioCryptoMD5Append(&md5, owner_key, 32);
   _pdfioCryptoMD5Append(&md5, perm_bytes, 4);
   _pdfioCryptoMD5Append(&md5, file_id, file_idlen);
+  if (!encrypt_metadata)
+  {
+    uint8_t meta_bytes[4] = { 0xff, 0xff, 0xff, 0xff };
+					// Metadata bytes
+    _pdfioCryptoMD5Append(&md5, meta_bytes, 4);
+  }
   _pdfioCryptoMD5Finish(&md5, digest);
+
+  PDFIO_DEBUG("make_file_key: first md5=<%02X%02X%02X%02X...%02X%02X%02X%02X>\n", digest[0], digest[1], digest[2], digest[3], digest[12], digest[13], digest[14], digest[15]);
 
   if (encryption != PDFIO_ENCRYPTION_RC4_40)
   {
@@ -948,6 +968,8 @@ make_file_key(
       _pdfioCryptoMD5Finish(&md5, digest);
     }
   }
+
+  PDFIO_DEBUG("make_file_key: file_key[16]=<%02X%02X%02X%02X...%02X%02X%02X%02X>\n", digest[0], digest[1], digest[2], digest[3], digest[12], digest[13], digest[14], digest[15]);
 
   memcpy(file_key, digest, 16);
 }

@@ -1262,6 +1262,8 @@ pdfioFileSetPermissions(
   if (encryption == PDFIO_ENCRYPTION_NONE)
     return (true);
 
+  pdf->encrypt_metadata = true;
+
   return (_pdfioCryptoLock(pdf, permissions, encryption, owner_password, user_password));
 }
 
