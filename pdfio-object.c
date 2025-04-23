@@ -505,7 +505,7 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   }
 
   // Decrypt as needed...
-  if (obj->pdf->encryption)
+  if (obj->pdf->encryption && obj->pdf->encrypt_metadata)
   {
     PDFIO_DEBUG("_pdfioObjLoad: Decrypting value...\n");
 

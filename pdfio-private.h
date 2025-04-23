@@ -270,6 +270,7 @@ struct _pdfio_file_s			// PDF file structure
   pdfio_obj_t	*cp1252_obj,		// CP1252 font encoding object
 		*unicode_obj;		// Unicode font encoding object
   pdfio_array_t	*id_array;		// ID array
+  bool		encrypt_metadata;	// Encrypt metadata?
 
   // Allocated data elements
   size_t	num_arrays,		// Number of arrays
