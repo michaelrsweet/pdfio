@@ -134,19 +134,20 @@ _pdfioFileGetChar(pdfio_file_t *pdf)	// I - PDF file
 bool					// O - `true` on success, `false` on error
 _pdfioFileGets(pdfio_file_t *pdf,	// I - PDF file
                char         *buffer,	// I - Line buffer
-	       size_t       bufsize)	// I - Size of line buffer
+	       size_t       bufsize,	// I - Size of line buffer
+	       bool         discard)	// I - OK to discard excess line chars?
 {
   bool	eol = false;			// End of line?
   char	*bufptr = buffer,		// Pointer into buffer
 	*bufend = buffer + bufsize - 1;	// Pointer to end of buffer
 
 
-  PDFIO_DEBUG("_pdfioFileGets(pdf=%p, buffer=%p, bufsize=%lu) bufpos=%ld, buffer=%p, bufptr=%p, bufend=%p, offset=%lu\n", pdf, buffer, (unsigned long)bufsize, (long)pdf->bufpos, pdf->buffer, pdf->bufptr, pdf->bufend, (unsigned long)(pdf->bufpos + (pdf->bufptr - pdf->buffer)));
+  PDFIO_DEBUG("_pdfioFileGets(pdf=%p, buffer=%p, bufsize=%lu, discard=%s) bufpos=%ld, buffer=%p, bufptr=%p, bufend=%p, offset=%lu\n", pdf, buffer, (unsigned long)bufsize, discard ? "true" : "false", (long)pdf->bufpos, pdf->buffer, pdf->bufptr, pdf->bufend, (unsigned long)(pdf->bufpos + (pdf->bufptr - pdf->buffer)));
 
   while (!eol)
   {
     // If there are characters ready in the buffer, use them...
-    while (!eol && pdf->bufptr < pdf->bufend && bufptr < bufend)
+    while (!eol && pdf->bufptr < pdf->bufend)
     {
       char ch = *(pdf->bufptr++);	// Next character in buffer
 
@@ -168,8 +169,10 @@ _pdfioFileGets(pdfio_file_t *pdf,	// I - PDF file
 	    pdf->bufptr ++;
 	}
       }
-      else
+      else if (bufptr < bufend)
         *bufptr++ = ch;
+      else if (!discard)
+        break;
     }
 
     // Fill the read buffer as needed...
