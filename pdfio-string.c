@@ -170,7 +170,7 @@ _pdfio_utf16cpy(
     size_t              dstsize)	// I - Destination buffer size
 {
   char	*dstptr = dst,			// Pointer into buffer
-  	*dstend = dst + dstsize - 5;	// End of buffer
+	*dstend = dst + dstsize - 5;	// End of buffer
   int	ch;				// Unicode character
   bool	is_be = !memcmp(src, "\376\377", 2);
 					// Big-endian strings?
