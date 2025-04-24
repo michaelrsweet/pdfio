@@ -1089,7 +1089,7 @@ pdfioFileOpen(
   }
 
   // Read the header from the first line...
-  if (!_pdfioFileGets(pdf, line, sizeof(line)))
+  if (!_pdfioFileGets(pdf, line, sizeof(line), true))
     goto error;
 
   if ((strncmp(line, "%PDF-1.", 7) && strncmp(line, "%PDF-2.", 7)) || !isdigit(line[7] & 255))
@@ -1103,7 +1103,7 @@ pdfioFileOpen(
   pdf->version = strdup(line + 5);
 
   // Grab the last 1k of the file to find the start of the xref table...
-  if (_pdfioFileSeek(pdf, -1024, SEEK_END) < 0)
+  if (_pdfioFileSeek(pdf, 1 - sizeof(line), SEEK_END) < 0)
   {
     _pdfioFileError(pdf, "Unable to read startxref data.");
     goto error;
@@ -1115,31 +1115,35 @@ pdfioFileOpen(
     goto error;
   }
 
+  PDFIO_DEBUG("pdfioOpen: Read %d bytes at end of file.\n", (int)bytes);
+
   line[bytes] = '\0';
   end = line + bytes - 9;
 
   for (ptr = line; ptr < end; ptr ++)
   {
-    if (!memcmp(ptr, "startxref", 9))
+    if (!strncmp(ptr, "startxref", 9) && !strstr(ptr + 9, "startxref") && strtol(ptr + 9, NULL, 10) > 0)
       break;
   }
 
   if (ptr >= end)
   {
-    _pdfioFileError(pdf, "Unable to find start of xref table.");
+    if (!_pdfioFileError(pdf, "WARNING: Unable to find start of cross-reference table, will attempt to rebuild."))
+      goto error;
 
     if (!repair_xref(pdf, password_cb, password_cbdata))
       goto error;
   }
   else
   {
+    PDFIO_DEBUG("pdfioFileOpen: line=%p,ptr=%p(\"%s\")\n", line, ptr, ptr);
+
     xref_offset = (off_t)strtol(ptr + 9, NULL, 10);
 
+    PDFIO_DEBUG("pdfioFileOpen: xref_offset=%lu\n", (unsigned long)xref_offset);
+
     if (!load_xref(pdf, xref_offset, password_cb, password_cbdata))
-    {
-      if (!repair_xref(pdf, password_cb, password_cbdata))
-	goto error;
-    }
+      goto error;
   }
 
   return (pdf);
@@ -1837,31 +1841,32 @@ load_xref(
   int		generation;		// Generation number
   _pdfio_token_t tb;			// Token buffer/stack
   off_t		line_offset;		// Offset to start of line
+  pdfio_obj_t	*pages_obj;		// Pages object
 
 
   while (!done)
   {
     if (_pdfioFileSeek(pdf, xref_offset, SEEK_SET) != xref_offset)
     {
-      _pdfioFileError(pdf, "Unable to seek to start of xref table.");
-      return (false);
+      PDFIO_DEBUG("load_xref: Unable to seek to %lu.\n", (unsigned long)xref_offset);
+      goto repair;
     }
 
     do
     {
       line_offset = _pdfioFileTell(pdf);
 
-      if (!_pdfioFileGets(pdf, line, sizeof(line)))
+      if (!_pdfioFileGets(pdf, line, sizeof(line), true))
       {
-	_pdfioFileError(pdf, "Unable to read start of xref table.");
-	return (false);
+	PDFIO_DEBUG("load_xref: Unable to read line at offset %lu.\n", (unsigned long)line_offset);
+        goto repair;
       }
     }
     while (!line[0]);
 
     PDFIO_DEBUG("load_xref: line_offset=%lu, line='%s'\n", (unsigned long)line_offset, line);
 
-    if (isdigit(line[0] & 255) && strlen(line) > 4 && (!strcmp(line + strlen(line) - 4, " obj") || ((ptr = strstr(line, " obj")) != NULL && ptr[4] == '<')))
+    if (isdigit(line[0] & 255) && strlen(line) > 4 && (!strcmp(line + strlen(line) - 4, " obj") || ((ptr = strstr(line, " obj")) != NULL && (ptr[4] == '<' || isspace(ptr[4])))))
     {
       // Cross-reference stream
       pdfio_obj_t	*obj;		// Object
@@ -1883,14 +1888,14 @@ load_xref(
 
       if ((number = strtoimax(line, &ptr, 10)) < 1)
       {
-	_pdfioFileError(pdf, "Bad xref table header '%s'.", line);
-	return (false);
+        PDFIO_DEBUG("load_xref: Unable to scan object number.\n");
+        goto repair;
       }
 
       if ((generation = (int)strtol(ptr, &ptr, 10)) < 0 || (generation > 65535 && number != 0))
       {
-	_pdfioFileError(pdf, "Bad xref table header '%s'.", line);
-	return (false);
+        PDFIO_DEBUG("load_xref: Unable to scan generation number (%u).\n", (unsigned)generation);
+        goto repair;
       }
 
       while (isspace(*ptr & 255))
@@ -1898,14 +1903,14 @@ load_xref(
 
       if (strncmp(ptr, "obj", 3))
       {
-	_pdfioFileError(pdf, "Bad xref table header '%s'.", line);
-	return (false);
+        PDFIO_DEBUG("load_xref: No 'obj' after object number and generation (saw '%s').\n", ptr);
+        goto repair;
       }
 
       if (_pdfioFileSeek(pdf, line_offset + (off_t)(ptr + 3 - line), SEEK_SET) < 0)
       {
-        _pdfioFileError(pdf, "Unable to seek to xref object %lu %u.", (unsigned long)number, (unsigned)generation);
-        return (false);
+        PDFIO_DEBUG("load_xref: Unable to seek to start of cross-reference object dictionary.\n");
+        goto repair;
       }
 
       PDFIO_DEBUG("load_xref: Loading object %lu %u.\n", (unsigned long)number, (unsigned)generation);
@@ -1920,21 +1925,21 @@ load_xref(
 
       if (!_pdfioValueRead(pdf, obj, &tb, &trailer, 0))
       {
-        _pdfioFileError(pdf, "Unable to read cross-reference stream dictionary.");
-        return (false);
+        PDFIO_DEBUG("load_xref: Unable to read cross-reference object dictionary.\n");
+        goto repair;
       }
       else if (trailer.type != PDFIO_VALTYPE_DICT)
       {
-	_pdfioFileError(pdf, "Cross-reference stream does not have a dictionary.");
-	return (false);
+        PDFIO_DEBUG("load_xref: Expected dictionary for cross-reference object (type=%d).", trailer.type);
+        goto repair;
       }
 
       obj->value = trailer;
 
       if (!_pdfioTokenGet(&tb, line, sizeof(line)) || strcmp(line, "stream"))
       {
-        _pdfioFileError(pdf, "Unable to get stream after xref dictionary.");
-        return (false);
+        PDFIO_DEBUG("load_xref: No stream token after dictionary (got '%s').\n", line);
+        goto repair;
       }
 
       PDFIO_DEBUG("load_xref: tb.bufptr=%p, tb.bufend=%p, tb.bufptr[0]=0x%02x, tb.bufptr[0]=0x%02x\n", tb.bufptr, tb.bufend, tb.bufptr[0], tb.bufptr[1]);
@@ -1952,8 +1957,8 @@ load_xref(
 
       if ((w_array = pdfioDictGetArray(trailer.value.dict, "W")) == NULL)
       {
-	_pdfioFileError(pdf, "Cross-reference stream does not have required W key.");
-	return (false);
+        PDFIO_DEBUG("load_xref: Missing W array in cross-reference objection dictionary.\n");
+        goto repair;
       }
 
       w[0]    = (size_t)pdfioArrayGetNumber(w_array, 0);
@@ -1967,14 +1972,14 @@ load_xref(
 
       if (pdfioArrayGetSize(w_array) > 3 || w[1] == 0 || w[2] > 4 || w[0] > sizeof(buffer) || w[1] > sizeof(buffer) || w[2] > sizeof(buffer) || w_total > sizeof(buffer))
       {
-	_pdfioFileError(pdf, "Cross-reference stream has invalid W key [%u %u %u].", (unsigned)w[0], (unsigned)w[1], (unsigned)w[2]);
-	return (false);
+        PDFIO_DEBUG("load_xref: Bad W array in cross-reference objection dictionary.\n");
+        goto repair;
       }
 
       if ((st = pdfioObjOpenStream(obj, true)) == NULL)
       {
-	_pdfioFileError(pdf, "Unable to open cross-reference stream.");
-	return (false);
+        PDFIO_DEBUG("load_xref: Unable to open cross-reference stream.\n");
+        goto repair;
       }
 
       for (index_n = 0; index_n < index_count; index_n += 2)
@@ -2089,6 +2094,7 @@ load_xref(
 	      else
 	      {
 		_pdfioFileError(pdf, "Too many object streams.");
+		pdfioStreamClose(st);
 	        return (false);
 	      }
 	    }
@@ -2097,7 +2103,10 @@ load_xref(
 	  {
 	    // Add this object...
 	    if (!add_obj(pdf, (size_t)number, (unsigned short)generation, (off_t)offset))
+	    {
+	      pdfioStreamClose(st);
 	      return (false);
+	    }
 	  }
 
 	  number ++;
@@ -2145,7 +2154,7 @@ load_xref(
 					// Offset of current line
 
       PDFIO_DEBUG("load_xref: Reading xref table starting at offset %lu\n", (unsigned long)trailer_offset);
-      while (_pdfioFileGets(pdf, line, sizeof(line)))
+      while (_pdfioFileGets(pdf, line, sizeof(line), false))
       {
         PDFIO_DEBUG("load_xref: '%s' at offset %lu\n", line, (unsigned long)trailer_offset);
 
@@ -2170,8 +2179,8 @@ load_xref(
 
 	if (sscanf(line, "%jd%jd", &number, &num_objects) != 2)
 	{
-	  _pdfioFileError(pdf, "Malformed xref table section '%s'.", line);
-	  return (false);
+	  PDFIO_DEBUG("load_xref: Unable to scan START COUNT from line.\n");
+	  goto repair;
 	}
 
 	// Read this group of objects...
@@ -2179,41 +2188,45 @@ load_xref(
 	{
 	  // Read a line from the file and validate it...
 	  if (_pdfioFileRead(pdf, line, 20) != 20)
-	    return (false);
+	  {
+	    PDFIO_DEBUG("load_xref: Unable to read 20 byte xref record.\n");
+	    goto repair;
+	  }
 
 	  line[20] = '\0';
 
-	  if (strcmp(line + 18, "\r\n") && strcmp(line + 18, " \n") && strcmp(line + 18, " \r"))
+	  if (strcmp(line + 18, "\r\n") && strcmp(line + 18, "\r\r") && strcmp(line + 18, " \n") && strcmp(line + 18, " \r"))
 	  {
-	    _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-	    return (false);
+	    PDFIO_DEBUG("load_xref: Bad end-of-line <%02X%02X>\n", line[18], line[19]);
+	    goto repair;
 	  }
+
 	  line[18] = '\0';
 
 	  // Parse the line
 	  if ((offset = strtoimax(line, &ptr, 10)) < 0)
 	  {
-	    _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-	    return (false);
+	    PDFIO_DEBUG("load_xref: Unable to scan offset.\n");
+	    goto repair;
 	  }
 
 	  if ((generation = (int)strtol(ptr, &ptr, 10)) < 0 || (generation > 65535 && offset != 0))
 	  {
-	    _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-	    return (false);
+	    PDFIO_DEBUG("load_xref: Unable to scan generation (%u).\n", (unsigned)generation);
+	    goto repair;
 	  }
 
 	  if (*ptr != ' ')
 	  {
-	    _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-	    return (false);
+	    PDFIO_DEBUG("load_xref: Missing space before type.\n");
+	    goto repair;
 	  }
 
 	  ptr ++;
 	  if (*ptr != 'f' && *ptr != 'n')
 	  {
-	    _pdfioFileError(pdf, "Malformed xref table entry '%s'.", line);
-	    return (false);
+	    PDFIO_DEBUG("load_xref: Bad type '%c'.\n", *ptr);
+	    goto repair;
 	  }
 
 	  if (*ptr == 'f')
@@ -2232,21 +2245,21 @@ load_xref(
 
       if (strncmp(line, "trailer", 7))
       {
-	_pdfioFileError(pdf, "Missing trailer.");
-	return (false);
+        PDFIO_DEBUG("load_xref: No trailer after xref table.\n");
+	goto repair;
       }
 
       _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
 
       if (!_pdfioValueRead(pdf, NULL, &tb, &trailer, 0))
       {
-	_pdfioFileError(pdf, "Unable to read trailer dictionary.");
-	return (false);
+        PDFIO_DEBUG("load_xref: Unable to read trailer dictionary.\n");
+	goto repair;
       }
       else if (trailer.type != PDFIO_VALTYPE_DICT)
       {
-	_pdfioFileError(pdf, "Trailer is not a dictionary.");
-	return (false);
+        PDFIO_DEBUG("load_xref: Trailer not a dictionary (type=%d).\n", trailer.type);
+	goto repair;
       }
 
       PDFIO_DEBUG("load_xref: Got trailer dict.\n");
@@ -2268,8 +2281,7 @@ load_xref(
     }
     else
     {
-      _pdfioFileError(pdf, "Bad xref table header '%s'.", line);
-      return (false);
+      goto repair;
     }
 
     PDFIO_DEBUG("load_xref: Contents of trailer dictionary:\n");
@@ -2298,13 +2310,31 @@ load_xref(
 
   if ((pdf->root_obj = pdfioDictGetObj(pdf->trailer_dict, "Root")) == NULL)
   {
-    _pdfioFileError(pdf, "Missing Root object.");
-    return (false);
+    PDFIO_DEBUG("load_xref: Missing Root object.\n");
+    goto repair;
   }
 
   PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
 
-  return (load_pages(pdf, pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages"), 0));
+  if ((pages_obj = pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages")) == NULL)
+  {
+    PDFIO_DEBUG("load_xref: Missing Pages object.\n");
+    goto repair;
+  }
+
+  PDFIO_DEBUG("load_xref: Pages=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
+
+  return (load_pages(pdf, pages_obj, 0));
+
+  // If we get here the cross-reference table is busted - try repairing if the
+  // error callback says to proceed...
+
+  repair:
+
+  if (_pdfioFileError(pdf, "WARNING: Cross-reference is damaged, will attempt to rebuild."))
+    return (repair_xref(pdf, password_cb, password_data));
+  else
+    return (false);
 }
 
 
@@ -2318,7 +2348,7 @@ repair_xref(
     pdfio_password_cb_t password_cb,	// I - Password callback or `NULL` for none
     void                *password_data)	// I - Password callback data, if any
 {
-  char		line[65536],		// Line from file
+  char		line[1024],		// Line from file
 		*ptr;			// Pointer into line
   off_t		line_offset;		// Offset in file
   intmax_t	number;			// Object number
@@ -2330,22 +2360,23 @@ repair_xref(
   pdfio_obj_t	*pages_obj;		// Pages object
 
 
-  // Let caller know something is wrong...
-  if (!_pdfioFileError(pdf, "WARNING: Cross-reference table is damaged, attempting to rebuild."))
-    return (false);
+  // Clear trailer data...
+  pdf->trailer_dict = NULL;
+  pdf->root_obj     = NULL;
+  pdf->info_obj     = NULL;
+  pdf->pages_obj    = NULL;
+  pdf->encrypt_obj  = NULL;
 
-  // Read from the beginning of the file, looking for
+  // Read from the beginning of the file, looking for objects...
   if ((line_offset = _pdfioFileSeek(pdf, 0, SEEK_SET)) < 0)
     return (false);
 
-  while (_pdfioFileGets(pdf, line, sizeof(line)))
+  while (_pdfioFileGets(pdf, line, sizeof(line), true))
   {
     // See if this is the start of an object...
     if (line[0] >= '1' && line[0] <= '9')
     {
       // Maybe, look some more...
-      PDFIO_DEBUG("repair_xref: line=\"%s\"\n", line);
-
       if ((number = strtoimax(line, &ptr, 10)) >= 1 && (generation = (int)strtol(ptr, &ptr, 10)) >= 0 && generation < 65536)
       {
         while (isspace(*ptr & 255))
@@ -2359,18 +2390,31 @@ repair_xref(
 
           PDFIO_DEBUG("repair_xref: OBJECT %ld %d at offset %ld\n", (long)number, generation, (long)line_offset);
 
-	  if ((obj = add_obj(pdf, (size_t)number, (unsigned short)generation, line_offset)) == NULL)
+          if ((obj = pdfioFileFindObj(pdf, (size_t)number)) != NULL)
+          {
+            obj->offset = line_offset;
+          }
+          else if ((obj = add_obj(pdf, (size_t)number, (unsigned short)generation, line_offset)) == NULL)
 	  {
 	    _pdfioFileError(pdf, "Unable to allocate memory for object.");
 	    return (false);
+	  }
+
+          if (ptr[3])
+          {
+	    // Probably the start of the object dictionary, rewind the file so
+	    // we can read it...
+	    _pdfioFileSeek(pdf, line_offset + (ptr - line + 3), SEEK_SET);
 	  }
 
 	  _pdfioTokenInit(&tb, pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, pdf);
 
 	  if (!_pdfioValueRead(pdf, obj, &tb, &obj->value, 0))
 	  {
-	    _pdfioFileError(pdf, "Unable to read cross-reference stream dictionary.");
-	    return (false);
+	    if (!_pdfioFileError(pdf, "WARNING: Unable to read object dictionary/value."))
+	      return (false);
+	    else
+	      continue;
 	  }
 
 	  if (_pdfioTokenGet(&tb, line, sizeof(line)))
@@ -2448,7 +2492,7 @@ repair_xref(
 
       _pdfioTokenFlush(&tb);
 
-      if (!pdf->trailer_dict)
+      if (_pdfioDictGetValue(trailer.value.dict, "Root"))
       {
 	// Save the trailer dictionary and grab the root (catalog) and info
 	// objects...

@@ -385,7 +385,7 @@ extern bool		_pdfioFileError(pdfio_file_t *pdf, const char *format, ...) _PDFIO_
 extern pdfio_obj_t	*_pdfioFileFindMappedObj(pdfio_file_t *pdf, pdfio_file_t *src_pdf, size_t src_number) _PDFIO_INTERNAL;
 extern bool		_pdfioFileFlush(pdfio_file_t *pdf) _PDFIO_INTERNAL;
 extern int		_pdfioFileGetChar(pdfio_file_t *pdf) _PDFIO_INTERNAL;
-extern bool		_pdfioFileGets(pdfio_file_t *pdf, char *buffer, size_t bufsize) _PDFIO_INTERNAL;
+extern bool		_pdfioFileGets(pdfio_file_t *pdf, char *buffer, size_t bufsize, bool discard) _PDFIO_INTERNAL;
 extern ssize_t		_pdfioFilePeek(pdfio_file_t *pdf, void *buffer, size_t bytes) _PDFIO_INTERNAL;
 extern bool		_pdfioFilePrintf(pdfio_file_t *pdf, const char *format, ...) _PDFIO_INTERNAL;
 extern bool		_pdfioFilePuts(pdfio_file_t *pdf, const char *s) _PDFIO_INTERNAL;

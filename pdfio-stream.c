@@ -259,7 +259,7 @@ _pdfioStreamCreate(
     {
       colors = 1;
     }
-    else if (colors < 0 || colors > 4)
+    else if (colors < 0 || colors > 32)
     {
       _pdfioFileError(st->pdf, "Unsupported Colors value %d.", colors);
       free(st);
@@ -532,7 +532,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       {
         colors = 1;
       }
-      else if (colors < 0 || colors > 4)
+      else if (colors < 0 || colors > 32)
       {
         _pdfioFileError(st->pdf, "Unsupported Colors value %d.", colors);
 	goto error;

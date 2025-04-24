@@ -141,6 +141,7 @@ pdfioObjCreateStream(
     pdfio_obj_t    *obj,		// I - Object
     pdfio_filter_t filter)		// I - Type of compression to apply
 {
+  pdfio_stream_t *st;			// Stream
   pdfio_obj_t	*length_obj = NULL;	// Length object, if any
 
 
@@ -194,11 +195,13 @@ pdfioObjCreateStream(
   if (!_pdfioFilePuts(obj->pdf, "stream\n"))
     return (NULL);
 
-  obj->stream_offset    = _pdfioFileTell(obj->pdf);
-  obj->pdf->current_obj = obj;
+  obj->stream_offset = _pdfioFileTell(obj->pdf);
 
   // Return the new stream...
-  return (_pdfioStreamCreate(obj, length_obj, 0, filter));
+  if ((st = _pdfioStreamCreate(obj, length_obj, 0, filter)) != NULL)
+    obj->pdf->current_obj = obj;
+
+  return (st);
 }
 
 
@@ -534,6 +537,9 @@ pdfio_stream_t *			// O - Stream or `NULL` on error
 pdfioObjOpenStream(pdfio_obj_t *obj,	// I - Object
                    bool        decode)	// I - Decode/decompress data?
 {
+  pdfio_stream_t	*st;		// Stream
+
+
   // Range check input...
   if (!obj)
     return (NULL);
@@ -556,9 +562,10 @@ pdfioObjOpenStream(pdfio_obj_t *obj,	// I - Object
     return (NULL);
 
   // Open the stream...
-  obj->pdf->current_obj = obj;
+  if ((st = _pdfioStreamOpen(obj, decode)) != NULL)
+    obj->pdf->current_obj = obj;
 
-  return (_pdfioStreamOpen(obj, decode));
+  return (st);
 }
 
 
