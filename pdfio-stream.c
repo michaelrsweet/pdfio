@@ -270,7 +270,7 @@ _pdfioStreamCreate(
     {
       columns = 1;
     }
-    else if (columns < 0)
+    else if (columns < 0 || columns > 65536)
     {
       _pdfioFileError(st->pdf, "Unsupported Columns value %d.", columns);
       free(st);
@@ -542,7 +542,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       {
         columns = 1;
       }
-      else if (columns < 0)
+      else if (columns < 0 || columns > 65536)
       {
         _pdfioFileError(st->pdf, "Unsupported Columns value %d.", columns);
 	goto error;
