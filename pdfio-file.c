@@ -61,8 +61,9 @@ _pdfioFileAddMappedObj(
   pdf->num_objmaps ++;
 
   map->obj        = dst_obj;
-  map->src_pdf    = src_obj->pdf;
   map->src_number = src_obj->number;
+
+  memcpy(map->src_id, src_obj->pdf->file_id, sizeof(map->src_id));
 
   // Sort as needed...
   if (pdf->num_objmaps > 1 && compare_objmaps(map, pdf->objmaps + pdf->num_objmaps - 2) < 0)
@@ -677,7 +678,7 @@ _pdfioFileFindMappedObj(
     return (NULL);
 
   // Otherwise search for a match...
-  key.src_pdf    = src_pdf;
+  memcpy(key.src_id, src_pdf->file_id, sizeof(key.src_id));
   key.src_number = src_number;
 
   if ((match = (_pdfio_objmap_t *)bsearch(&key, pdf->objmaps, pdf->num_objmaps, sizeof(_pdfio_objmap_t), (int (*)(const void *, const void *))compare_objmaps)) != NULL)
@@ -1020,6 +1021,10 @@ pdfioFileOpen(
 		*end;			// End of line
   ssize_t	bytes;			// Bytes read
   off_t		xref_offset;		// Offset to xref table
+  time_t	curtime;		// Creation date/time
+  unsigned char	*id_value;		// ID value
+  size_t	id_valuelen;		// Length of ID value
+  _pdfio_sha256_t ctx;			// Hashing context
 
 
   PDFIO_DEBUG("pdfioFileOpen(filename=\"%s\", password_cb=%p, password_cbdata=%p, error_cb=%p, error_cbdata=%p)\n", filename, (void *)password_cb, (void *)password_cbdata, (void *)error_cb, (void *)error_cbdata);
@@ -1119,6 +1124,18 @@ pdfioFileOpen(
     if (!load_xref(pdf, xref_offset, password_cb, password_cbdata))
       goto error;
   }
+
+  // Create the unique file identifier string for the object map...
+  curtime = pdfioFileGetCreationDate(pdf);
+
+  _pdfioCryptoSHA256Init(&ctx);
+  _pdfioCryptoSHA256Append(&ctx, (uint8_t *)pdf->filename, strlen(pdf->filename));
+  _pdfioCryptoSHA256Append(&ctx, (uint8_t *)&curtime, sizeof(curtime));
+  if ((id_value = pdfioArrayGetBinary(pdf->id_array, 0, &id_valuelen)) != NULL)
+    _pdfioCryptoSHA256Append(&ctx, id_value, id_valuelen);
+  if ((id_value = pdfioArrayGetBinary(pdf->id_array, 1, &id_valuelen)) != NULL)
+    _pdfioCryptoSHA256Append(&ctx, id_value, id_valuelen);
+  _pdfioCryptoSHA256Finish(&ctx, pdf->file_id);
 
   return (pdf);
 
@@ -1374,10 +1391,11 @@ static int				// O - Result of comparison
 compare_objmaps(_pdfio_objmap_t *a,	// I - First object map
                 _pdfio_objmap_t *b)	// I - Second object map
 {
-  if (a->src_pdf < b->src_pdf)
-    return (-1);
-  else if (a->src_pdf > b->src_pdf)
-    return (1);
+  int	ret = memcmp(a->src_id, b->src_id, sizeof(a->src_id));
+					// Result of comparison
+
+  if (ret)
+    return (ret);
   else if (a->src_number < b->src_number)
     return (-1);
   else if (a->src_number > b->src_number)
@@ -1406,6 +1424,8 @@ create_common(
   pdfio_file_t	*pdf;			// New PDF file
   pdfio_dict_t	*dict;			// Dictionary
   unsigned char	id_value[16];		// File ID value
+  time_t	curtime;		// Creation date/time
+  _pdfio_sha256_t ctx;			// Hashing context
 
 
   PDFIO_DEBUG("create_common(filename=\"%s\", fd=%d, output_cb=%p, output_cbdata=%p, version=\"%s\", media_box=%p, crop_box=%p, error_cb=%p, error_cbdata=%p)\n", filename, fd, (void *)output_cb, (void *)output_cbdata, version, (void *)media_box, (void *)crop_box, (void *)error_cb, (void *)error_cbdata);
@@ -1496,7 +1516,9 @@ create_common(
   if ((dict = pdfioDictCreate(pdf)) == NULL)
     goto error;
 
-  pdfioDictSetDate(dict, "CreationDate", time(NULL));
+  curtime = time(NULL);
+
+  pdfioDictSetDate(dict, "CreationDate", curtime);
   pdfioDictSetString(dict, "Producer", "pdfio/" PDFIO_VERSION);
 
   if ((pdf->info_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
@@ -1520,6 +1542,14 @@ create_common(
     pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
     pdfioArrayAppendBinary(pdf->id_array, id_value, sizeof(id_value));
   }
+
+  // Create the unique file identifier string for the object map...
+  _pdfioCryptoSHA256Init(&ctx);
+  _pdfioCryptoSHA256Append(&ctx, (uint8_t *)pdf->filename, strlen(pdf->filename));
+  _pdfioCryptoSHA256Append(&ctx, (uint8_t *)&curtime, sizeof(curtime));
+  _pdfioCryptoSHA256Append(&ctx, id_value, sizeof(id_value));
+  _pdfioCryptoSHA256Append(&ctx, id_value, sizeof(id_value));
+  _pdfioCryptoSHA256Finish(&ctx, pdf->file_id);
 
   return (pdf);
 

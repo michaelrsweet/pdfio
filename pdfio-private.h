@@ -221,7 +221,7 @@ struct _pdfio_dict_s			// Dictionary
 typedef struct _pdfio_objmap_s		// PDF object map
 {
   pdfio_obj_t	*obj;			// Object for this file
-  pdfio_file_t	*src_pdf;		// Source PDF file
+  unsigned char	src_id[32];		// Source PDF file file identifier
   size_t	src_number;		// Source object number
 } _pdfio_objmap_t;
 
@@ -236,6 +236,7 @@ typedef struct _pdfio_strbuf_s		// PDF string buffer
 struct _pdfio_file_s			// PDF file structure
 {
   char		*filename;		// Filename
+  unsigned char	file_id[32];		// File identifier bytes
   struct lconv	*loc;			// Locale data
   char		*version;		// Version number
   pdfio_rect_t	media_box,		// Default MediaBox value

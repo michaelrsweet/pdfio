@@ -8,8 +8,8 @@
 //
 // Usage:
 //
-//   ./pdfmerge [-o OUTPUT.pdf] INPUT.pdf [... INPUT.pdf]
-//   ./pdfmerge INPUT.pdf [... INPUT.pdf] >OUTPUT.pdf
+//   ./pdfiomerge [-o OUTPUT.pdf] INPUT.pdf [... INPUT.pdf]
+//   ./pdfiomerge INPUT.pdf [... INPUT.pdf] >OUTPUT.pdf
 //
 
 #include <pdfio.h>
@@ -47,7 +47,7 @@ main(int  argc,				// I - Number of command-line arguments
     }
     else if (!strncmp(argv[i], "--", 2))
     {
-      fprintf(stderr, "pdfmerge: Unknown option '%s'.\n", argv[i]);
+      fprintf(stderr, "pdfiomerge: Unknown option '%s'.\n", argv[i]);
       return (usage(stderr));
     }
     else if (argv[i][0] == '-')
@@ -59,14 +59,14 @@ main(int  argc,				// I - Number of command-line arguments
           case 'o' : // -o OUTPUT.pdf
               if (outpdf)
               {
-                fputs("pdfmerge: Only one output file can be specified.\n", stderr);
+                fputs("pdfiomerge: Only one output file can be specified.\n", stderr);
                 return (usage(stderr));
               }
 
               i ++;
               if (i >= argc)
               {
-                fputs("pdfmerge: Missing output filename after '-o'.\n", stderr);
+                fputs("pdfiomerge: Missing output filename after '-o'.\n", stderr);
                 return (usage(stderr));
               }
 
@@ -75,7 +75,7 @@ main(int  argc,				// I - Number of command-line arguments
               break;
 
           default :
-              fprintf(stderr, "pdfmerge: Unknown option '-%c'.\n", *opt);
+              fprintf(stderr, "pdfiomerge: Unknown option '-%c'.\n", *opt);
               return (usage(stderr));
         }
       }
