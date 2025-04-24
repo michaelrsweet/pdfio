@@ -47,7 +47,7 @@ _pdfioFileConsume(pdfio_file_t *pdf,	// I - PDF file
 // `false` to halt.
 //
 
-bool					// O - `false` to stop
+bool					// O - `false` to stop, `true` to continue
 _pdfioFileDefaultError(
     pdfio_file_t *pdf,			// I - PDF file
     const char   *message,		// I - Error message
@@ -57,7 +57,7 @@ _pdfioFileDefaultError(
 
   fprintf(stderr, "%s: %s\n", pdf->filename, message);
 
-  return (false);
+  return (!strncmp(message, "WARNING:", 8));
 }
 
 
@@ -427,7 +427,7 @@ off_t					// O - Offset from beginning of file
 _pdfioFileTell(pdfio_file_t *pdf)	// I - PDF file
 {
   if (pdf->bufptr)
-    return (pdf->bufpos + (pdf->bufptr - pdf->buffer));
+    return (pdf->bufpos + (off_t)(pdf->bufptr - pdf->buffer));
   else
     return (pdf->bufpos);
 }
@@ -455,7 +455,7 @@ _pdfioFileWrite(pdfio_file_t *pdf,	// I - PDF file
       if (!write_buffer(pdf, buffer, bytes))
         return (false);
 
-      pdf->bufpos += bytes;
+      pdf->bufpos += (off_t)bytes;
 
       return (true);
     }
@@ -481,7 +481,7 @@ fill_buffer(pdfio_file_t *pdf)		// I - PDF file
 
   // Advance current position in file as needed...
   if (pdf->bufend)
-    pdf->bufpos += pdf->bufend - pdf->buffer;
+    pdf->bufpos += (off_t)(pdf->bufend - pdf->buffer);
 
   // Try reading from the file...
   if ((bytes = read_buffer(pdf, pdf->buffer, sizeof(pdf->buffer))) <= 0)

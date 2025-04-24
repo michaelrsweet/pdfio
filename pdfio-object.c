@@ -333,6 +333,8 @@ pdfioObjGetLength(pdfio_obj_t *obj)	// I - Object
 //
 // 'pdfioObjGetName()' - Get the name value associated with an object.
 //
+// @since PDFio v1.4@
+//
 
 const char *				// O - Dictionary or `NULL` on error
 pdfioObjGetName(pdfio_obj_t *obj)	// I - Object

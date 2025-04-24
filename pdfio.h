@@ -46,7 +46,7 @@ extern "C" {
 //
 
 #  if _WIN32
-typedef __int64 ssize_t;		// POSIX type not present on Windows... @private@
+typedef __int64 ssize_t;		// POSIX type not present on Windows @private@
 #  endif // _WIN32
 
 typedef struct _pdfio_array_s pdfio_array_t;
@@ -62,7 +62,7 @@ typedef bool (*pdfio_error_cb_t)(pdfio_file_t *pdf, const char *message, void *d
 typedef enum pdfio_encryption_e		// PDF encryption modes
 {
   PDFIO_ENCRYPTION_NONE = 0,		// No encryption
-  PDFIO_ENCRYPTION_RC4_40,		// 40-bit RC4 encryption (PDF 1.3)
+  PDFIO_ENCRYPTION_RC4_40,		// 40-bit RC4 encryption (PDF 1.3, reading only)
   PDFIO_ENCRYPTION_RC4_128,		// 128-bit RC4 encryption (PDF 1.4)
   PDFIO_ENCRYPTION_AES_128,		// 128-bit AES encryption (PDF 1.6)
   PDFIO_ENCRYPTION_AES_256		// 256-bit AES encryption (PDF 2.0) @exclude all@

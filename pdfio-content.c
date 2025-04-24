@@ -632,6 +632,8 @@ pdfioContentPathCurve23(
 //
 // 'pdfioContentPathEnd()' - Clear the current path.
 //
+// @since PDFio v1.1@
+//
 
 bool					// O - `true` on success, `false` on failure
 pdfioContentPathEnd(pdfio_stream_t *st)	// I - Stream
@@ -1111,6 +1113,8 @@ pdfioContentTextEnd(pdfio_stream_t *st)	// I - Stream
 // on "size". The text string must always use the UTF-8 (Unicode) encoding but
 // any control characters (such as newlines) are ignored.
 //
+// @since PDFio v1.2@
+//
 
 double					// O - Width
 pdfioContentTextMeasure(
@@ -1267,6 +1271,8 @@ pdfioContentTextMoveTo(
 //
 // 'pdfioContentTextNewLine()' - Move to the next line.
 //
+// @since PDFio v1.2@
+//
 
 bool					// O - `true` on success, `false` on failure
 pdfioContentTextNewLine(
@@ -1297,6 +1303,8 @@ pdfioContentTextNextLine(
 // word and character spacing in a PDF content stream. The "unicode" argument
 // specifies that the current font maps to full Unicode.  The "s" argument
 // specifies a UTF-8 encoded string.
+//
+// @since PDFio v1.2@
 //
 
 bool					// O - `true` on success, `false` on failure
@@ -1345,6 +1353,8 @@ pdfioContentTextNewLineShow(
 // optional word and character spacing in a PDF content stream. The "unicode"
 // argument specifies that the current font maps to full Unicode.  The "format"
 // argument specifies a UTF-8 encoded `printf`-style format string.
+//
+// @since PDFio v1.2@
 //
 
 bool					// O - `true` on success, `false` on failure

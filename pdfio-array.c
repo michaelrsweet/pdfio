@@ -640,6 +640,8 @@ _pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
 //
 // 'pdfioArrayRemove()' - Remove an array entry.
 //
+// @since PDFio v1.4@
+//
 
 bool					// O - `true` on success, `false` otherwise
 pdfioArrayRemove(pdfio_array_t *a,	// I - Array

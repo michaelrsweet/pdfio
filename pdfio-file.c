@@ -181,8 +181,9 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
 // of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 //
 // The "error_cb" and "error_cbdata" arguments specify an error handler callback
-// and its data pointer - if `NULL` the default error handler is used that
-// writes error messages to `stderr`.
+// and its data pointer - if `NULL` then the default error handler is used that
+// writes error messages to `stderr`.  The error handler callback should return
+// `true` to continue writing the PDF file or `false` to stop.
 //
 
 pdfio_file_t *				// O - PDF file or `NULL` on error
@@ -260,6 +261,8 @@ pdfioFileCreateArrayObj(
 // This function creates a new object with a name value in a PDF file.
 // You must call @link pdfioObjClose@ to write the object to the file.
 //
+// @since PDFio v1.4@
+//
 
 pdfio_obj_t *				// O - New object
 pdfioFileCreateNameObj(
@@ -288,6 +291,8 @@ pdfioFileCreateNameObj(
 //
 // This function creates a new object with a number value in a PDF file.
 // You must call @link pdfioObjClose@ to write the object to the file.
+//
+// @since PDFio v1.2@
 //
 
 pdfio_obj_t *				// O - New object
@@ -415,8 +420,9 @@ _pdfioFileCreateObj(
 // of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 //
 // The "error_cb" and "error_cbdata" arguments specify an error handler callback
-// and its data pointer - if `NULL` the default error handler is used that
-// writes error messages to `stderr`.
+// and its data pointer - if `NULL` then the default error handler is used that
+// writes error messages to `stderr`.  The error handler callback should return
+// `true` to continue writing the PDF file or `false` to stop.
 //
 // > *Note*: Files created using this API are slightly larger than those
 // > created using the @link pdfioFileCreate@ function since stream lengths are
@@ -517,6 +523,8 @@ pdfioFileCreatePage(pdfio_file_t *pdf,	// I - PDF file
 //
 // This function creates a new object with a string value in a PDF file.
 // You must call @link pdfioObjClose@ to write the object to the file.
+//
+// @since PDFio v1.2@
 //
 
 pdfio_obj_t *				// O - New object
@@ -987,8 +995,14 @@ pdfioFileGetVersion(
 // PDF file requires a password, the open will always fail.
 //
 // The "error_cb" and "error_cbdata" arguments specify an error handler callback
-// and its data pointer - if `NULL` the default error handler is used that
-// writes error messages to `stderr`.
+// and its data pointer - if `NULL` then the default error handler is used that
+// writes error messages to `stderr`.  The error handler callback should return
+// `true` to continue reading the PDF file or `false` to stop.
+//
+// > Note: Error messages starting with "WARNING:" are actually warning
+// > messages - the callback should normally return `true` to allow PDFio to
+// > try to resolve the issue.  In addition, some errors are unrecoverable and
+// > ignore the return value of the error callback.
 //
 
 pdfio_file_t *				// O - PDF file
@@ -1685,7 +1699,10 @@ load_pages(pdfio_file_t *pdf,		// I - PDF file
   }
 
   if ((type = pdfioDictGetName(dict, "Type")) == NULL || (strcmp(type, "Pages") && strcmp(type, "Page")))
-    return (false);
+  {
+    if (!_pdfioFileError(pdf, "WARNING: No Type value for pages object."))
+      return (false);
+  }
 
   // If there is a Kids array, then this is a parent node and we have to look
   // at the child objects...
@@ -1879,6 +1896,8 @@ load_xref(
       w_2     = w[0];
       w_3     = w[0] + w[1];
 
+      PDFIO_DEBUG("W=[%u %u %u], w_total=%u\n", (unsigned)w[0], (unsigned)w[1], (unsigned)w[2], (unsigned)w_total);
+
       if (pdfioArrayGetSize(w_array) > 3 || w[1] == 0 || w[2] > 4 || w[0] > sizeof(buffer) || w[1] > sizeof(buffer) || w[2] > sizeof(buffer) || w_total > sizeof(buffer))
       {
         PDFIO_DEBUG("load_xref: Bad W array in cross-reference objection dictionary.\n");
@@ -1908,7 +1927,20 @@ load_xref(
 	{
 	  count --;
 
-	  PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+#ifdef DEBUG
+          if (w_total > 5)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X...\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+	  else if (w_total == 5)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+	  else if (w_total == 4)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3]);
+	  else if (w_total == 3)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2]);
+	  else if (w_total == 2)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X\n", (unsigned)number, buffer[0], buffer[1]);
+	  else
+	    PDFIO_DEBUG("load_xref: number=%u %02X\n", (unsigned)number, buffer[0]);
+#endif // DEBUG
 
 	  // Check whether this is an object definition...
 	  if (w[0] > 0)
@@ -2252,6 +2284,7 @@ repair_xref(
   size_t	i;			// Looping var
   size_t	num_sobjs = 0;		// Number of object streams
   pdfio_obj_t	*sobjs[16384];		// Object streams to load
+  pdfio_dict_t	*backup_trailer = NULL;	// Backup trailer dictionary
   pdfio_obj_t	*pages_obj;		// Pages object
 
 
@@ -2319,13 +2352,14 @@ repair_xref(
 
 	    _pdfioTokenFlush(&tb);
 
-	    if (type && !strcmp(line, "stream"))
-	    {
-	      // Possible object or XRef stream...
+            if (type && !strcmp(line, "stream"))
+            {
+              // Possible object or XRef stream...
 	      obj->stream_offset = _pdfioFileTell(pdf);
 
 	      if (!strcmp(type, "ObjStm") && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
 	      {
+	        PDFIO_DEBUG("repair_xref: Object stream...\n");
 		sobjs[num_sobjs] = obj;
 		num_sobjs ++;
 	      }
@@ -2333,9 +2367,22 @@ repair_xref(
 	      if (!strcmp(type, "XRef") && !pdf->trailer_dict)
 	      {
 		// Save the trailer dictionary...
+	        PDFIO_DEBUG("repair_xref: XRef stream...\n");
 		pdf->trailer_dict = pdfioObjGetDict(obj);
 		pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
 		pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
+	      }
+	    }
+	    else if (type && !strcmp(line, "endobj"))
+	    {
+	      // Possible catalog or pages object...
+	      if (!strcmp(type, "Catalog"))
+	      {
+	        PDFIO_DEBUG("repair_xref: Catalog (root) object...\n");
+	        if (!backup_trailer)
+	          backup_trailer = pdfioDictCreate(pdf);
+
+	        pdfioDictSetObj(backup_trailer, "Root", obj);
 	      }
 	    }
 	  }
@@ -2347,6 +2394,8 @@ repair_xref(
       // Trailer dictionary
       _pdfio_token_t tb;		// Token buffer/stack
       _pdfio_value_t trailer;		// Trailer
+
+      PDFIO_DEBUG("repair_xref: line=\"%s\"\n", line);
 
       if (line[7])
       {
@@ -2375,6 +2424,8 @@ repair_xref(
       {
 	// Save the trailer dictionary and grab the root (catalog) and info
 	// objects...
+	PDFIO_DEBUG("repair_xref: Using this trailer dictionary.\n");
+
 	pdf->trailer_dict = trailer.value.dict;
 	pdf->encrypt_obj  = pdfioDictGetObj(pdf->trailer_dict, "Encrypt");
 	pdf->id_array     = pdfioDictGetArray(pdf->trailer_dict, "ID");
@@ -2385,11 +2436,18 @@ repair_xref(
     line_offset = _pdfioFileTell(pdf);
   }
 
+  PDFIO_DEBUG("repair_xref: Stopped at line_offset=%lu\n", (unsigned long)line_offset);
+
+  if (!pdf->trailer_dict && backup_trailer)
+    pdf->trailer_dict = backup_trailer;
+
   // If the trailer contains an Encrypt key, try unlocking the file...
   if (pdf->encrypt_obj && !_pdfioCryptoUnlock(pdf, password_cb, password_data))
     return (false);
 
   // Load any stream objects...
+  PDFIO_DEBUG("repair_xref: Found %lu stream objects.\n", (unsigned long)num_sobjs);
+
   for (i = 0; i < num_sobjs; i ++)
   {
     if (!load_obj_stream(sobjs[i]))
@@ -2567,12 +2625,16 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
             buffer[2] = (obj->offset >> 8) & 255;
             buffer[3] = obj->offset & 255;
             break;
+#ifdef _WIN32
+	default :
+#endif // _WIN32
         case 4 :
             buffer[1] = (obj->offset >> 24) & 255;
             buffer[2] = (obj->offset >> 16) & 255;
             buffer[3] = (obj->offset >> 8) & 255;
             buffer[4] = obj->offset & 255;
             break;
+#ifndef _WIN32 // Windows off_t is 32-bits?!?
         case 5 :
             buffer[1] = (obj->offset >> 32) & 255;
             buffer[2] = (obj->offset >> 24) & 255;
@@ -2607,6 +2669,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
             buffer[7] = (obj->offset >> 8) & 255;
             buffer[8] = obj->offset & 255;
             break;
+#endif // !_WIN32
       }
 
       if (!pdfioStreamWrite(xref_st, buffer, offsize + 2))

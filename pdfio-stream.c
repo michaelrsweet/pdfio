@@ -697,8 +697,9 @@ pdfioStreamPeek(pdfio_stream_t *st,	// I - Stream
 // 'pdfioStreamPrintf()' - Write a formatted string to a stream.
 //
 // This function writes a formatted string to a stream.  In addition to the
-// standard `printf` format characters, you can use "%N" to format a PDF name
-// value ("/Name") and "%S" to format a PDF string ("(String)") value.
+// standard `printf` format characters, you can use "%H" to format a HTML/XML
+// string value, "%N" to format a PDF name value ("/Name"), and "%S" to format
+// a PDF string ("(String)") value.
 //
 
 bool					// O - `true` on success, `false` on failure

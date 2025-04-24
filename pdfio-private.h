@@ -10,7 +10,7 @@
 #ifndef PDFIO_PRIVATE_H
 #  define PDFIO_PRIVATE_H
 #  ifdef _WIN32
-#    define _CRT_SECURE_NO_WARNINGS	// Disable bogus VS warnings/errors...
+#    define _CRT_SECURE_NO_WARNINGS 1	// Disable bogus VS warnings/errors...
 #  endif // _WIN32
 #  include "pdfio.h"
 #  include <stdarg.h>
@@ -28,16 +28,16 @@
 #    define access	_access		// Map standard POSIX/C99 names
 #    define close	_close
 #    define fileno	_fileno
-#    define lseek	_lseek
+#    define lseek(f,o,w) (off_t)_lseek((f),(long)(o),(w))
 #    define mkdir(d,p)	_mkdir(d)
 #    define open	_open
-#    define read	_read
+#    define read(f,b,s)	_read((f),(b),(unsigned)(s))
 #    define rmdir	_rmdir
 #    define snprintf	_snprintf
 #    define strdup	_strdup
 #    define unlink	_unlink
 #    define vsnprintf	_vsnprintf
-#    define write	_write
+#    define write(f,b,s) _write((f),(b),(unsigned)(s))
 #    ifndef F_OK
 #      define F_OK	00		// POSIX parameters/flags
 #      define W_OK	02
