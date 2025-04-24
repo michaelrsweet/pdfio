@@ -79,6 +79,10 @@ pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
   if (srcobj->value.type == PDFIO_VALTYPE_NONE)
     _pdfioObjLoad(srcobj);
 
+  // See if we have already mapped this object...
+  if ((dstobj = _pdfioFileFindMappedObj(pdf, srcobj->pdf, srcobj->number)) != NULL)
+    return (dstobj);			// Yes, return that one...
+
   // Create the new object...
   if ((dstobj = _pdfioFileCreateObj(pdf, srcobj->pdf, NULL)) == NULL)
     return (NULL);

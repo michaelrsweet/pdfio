@@ -27,6 +27,8 @@ v1.5.3 - YYYY-MM-DD
 - Fixed decryption of UTF-16 strings (Issue #42)
 - Fixed decryption of PDF files with large permission values.
 - Fixed support for EncryptMetadata key in the encryption dictionary.
+- Fixed `pdfioObjCopy` and `pdfioPageCopy` to properly identify the source PDF
+  file being used (Issue #125)
 
 
 v1.5.2 - 2025-04-12
