@@ -3532,7 +3532,8 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
 
   done:
 
-  _pdfioObjSetExtension(obj, font, (_pdfio_extfree_t)ttfDelete);
+  if (obj)
+    _pdfioObjSetExtension(obj, font, (_pdfio_extfree_t)ttfDelete);
 
   return (obj);
 }
