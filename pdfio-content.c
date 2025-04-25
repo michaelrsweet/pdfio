@@ -1945,7 +1945,8 @@ pdfioFileCreateFontObjFromFile(
   if (fd >= 0)
     close(fd);
 
-  _pdfioObjSetExtension(obj, font, (_pdfio_extfree_t)ttfDelete);
+  if (obj)
+    _pdfioObjSetExtension(obj, font, (_pdfio_extfree_t)ttfDelete);
 
   return (obj);
 }
