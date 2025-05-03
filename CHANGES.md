@@ -20,7 +20,7 @@ v1.6.0 - YYYY-MM-DD
   (Issue #104)
 
 
-v1.5.3 - YYYY-MM-DD
+v1.5.3 - 2025-05-03
 -------------------
 
 - Fixed decryption of PDF files "protected" by 40-bit RC4 (Issue #42)
