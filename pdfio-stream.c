@@ -623,7 +623,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
     else
     {
       // Something else we don't support
-      _pdfioFileError(st->pdf, "Unsupported stream filter '%N'.", filter);
+      _pdfioFileError(st->pdf, "Unsupported stream filter '%s'.", filter);
       goto error;
     }
   }
