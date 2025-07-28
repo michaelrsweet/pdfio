@@ -515,7 +515,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
         // Integer...
         long generation = 0;		// Generation number
 
-        while (tempptr < tb->bufend && isdigit(*tempptr & 255))
+        while (tempptr < tb->bufend && generation < 65536 && isdigit(*tempptr & 255))
         {
           generation = generation * 10 + *tempptr - '0';
           tempptr ++;

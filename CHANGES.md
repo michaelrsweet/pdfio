@@ -20,6 +20,13 @@ v1.6.0 - YYYY-MM-DD
   (Issue #104)
 
 
+v1.5.4 - YYYY-MM-DD
+-------------------
+
+- Updated indirect reference reading code to limit the range of generation
+  numbers.
+
+
 v1.5.3 - 2025-05-03
 -------------------
 
