@@ -25,6 +25,7 @@ v1.5.4 - YYYY-MM-DD
 
 - Updated indirect reference reading code to limit the range of generation
   numbers.
+- Updated error messages for too large tokens (Issue #131)
 - Fixed a JPEG copy bug (Issue #132)
 
 
