@@ -380,7 +380,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  else
 	  {
 	    // Out of space
-	    _pdfioFileError(tb->pdf, "Token too large.");
+	    _pdfioFileError(tb->pdf, "String token too large.");
 	    *bufptr = '\0';
 	    return (false);
 	  }
@@ -408,7 +408,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
           if ((2 * (bytes + 1)) > bufsize)
           {
 	    // Out of space...
-	    _pdfioFileError(tb->pdf, "Token too large.");
+	    _pdfioFileError(tb->pdf, "Binary string token too large.");
 	    *bufptr = '\0';
 	    return (false);
           }
@@ -442,7 +442,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  else
 	  {
 	    // Out of space...
-	    _pdfioFileError(tb->pdf, "Token too large.");
+	    _pdfioFileError(tb->pdf, "Keyword token too large.");
 	    *bufptr = '\0';
 	    return (false);
 	  }
@@ -474,7 +474,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  else
 	  {
 	    // Out of space...
-	    _pdfioFileError(tb->pdf, "Token too large.");
+	    _pdfioFileError(tb->pdf, "Number token too large.");
 	    *bufptr = '\0';
 	    return (false);
 	  }
@@ -523,7 +523,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  else
 	  {
 	    // Out of space
-	    _pdfioFileError(tb->pdf, "Token too large.");
+	    _pdfioFileError(tb->pdf, "Name token too large.");
 	    *bufptr = '\0';
 	    return (false);
 	  }
@@ -566,7 +566,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	    else
 	    {
 	      // Too large
-	      _pdfioFileError(tb->pdf, "Token too large.");
+	      _pdfioFileError(tb->pdf, "Hex string token too large.");
 	      *bufptr = '\0';
 	      return (false);
 	    }
