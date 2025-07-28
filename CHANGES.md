@@ -2,6 +2,13 @@ Changes in PDFio
 ================
 
 
+v1.5.4 - YYYY-MM-DD
+-------------------
+
+- Updated indirect reference reading code to limit the range of generation
+  numbers.
+
+
 v1.5.3 - 2025-05-03
 -------------------
 
