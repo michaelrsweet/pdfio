@@ -2399,110 +2399,69 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
       bufend += bytes;
     }
 
-    if (*bufptr == _PDFIO_JPEG_MARKER)
+    if (*bufptr != _PDFIO_JPEG_MARKER)
     {
-      // Start of a marker in the file...
-      bufptr ++;
+      _pdfioFileError(dict->pdf, "Invalid JPEG data: <%02X>", *bufptr);
+      goto finish;
+    }
 
-      marker = *bufptr;
-      length = (size_t)((bufptr[1] << 8) | bufptr[2]);
-      bufptr += 3;
+    // Start of a marker in the file...
+    bufptr ++;
 
-      if (marker == _PDFIO_JPEG_MARKER)
-	continue;
-      else if (marker == _PDFIO_JPEG_EOI || marker == _PDFIO_JPEG_SOS || length < 2)
-        break;
+    marker = *bufptr;
+    length = (size_t)((bufptr[1] << 8) | bufptr[2]);
+    bufptr += 3;
 
-      PDFIO_DEBUG("copy_jpeg: JPEG X'FF%02X' (length %u)\n", marker, (unsigned)length);
+    PDFIO_DEBUG("copy_jpeg: JPEG X'FF%02X' (length %u)\n", marker, (unsigned)length);
 
-      length -= 2;
+    if (marker == _PDFIO_JPEG_EOI || marker == _PDFIO_JPEG_SOS || length < 2)
+      break;
 
-      if ((marker >= _PDFIO_JPEG_SOF0 && marker <= _PDFIO_JPEG_SOF3) || (marker >= _PDFIO_JPEG_SOF5 && marker <= _PDFIO_JPEG_SOF7) || (marker >= _PDFIO_JPEG_SOF9 && marker <= _PDFIO_JPEG_SOF11) || (marker >= _PDFIO_JPEG_SOF13 && marker <= _PDFIO_JPEG_SOF15))
+    length -= 2;
+
+    if ((marker >= _PDFIO_JPEG_SOF0 && marker <= _PDFIO_JPEG_SOF3) || (marker >= _PDFIO_JPEG_SOF5 && marker <= _PDFIO_JPEG_SOF7) || (marker >= _PDFIO_JPEG_SOF9 && marker <= _PDFIO_JPEG_SOF11) || (marker >= _PDFIO_JPEG_SOF13 && marker <= _PDFIO_JPEG_SOF15))
+    {
+      // SOFn marker, look for dimensions...
+      //
+      // Byte(s)  Description
+      // -------  -------------------
+      // 0        Bits per component
+      // 1-2      Height
+      // 3-4      Width
+      // 5        Number of colors
+      if (bufptr[0] != 8)
       {
-        // SOFn marker, look for dimensions...
-        //
-        // Byte(s)  Description
-        // -------  -------------------
-        // 0        Bits per component
-        // 1-2      Height
-        // 3-4      Width
-        // 5        Number of colors
-        if (bufptr[0] != 8)
-        {
-          _pdfioFileError(dict->pdf, "Unable to load %d-bit JPEG image.", bufptr[0]);
-	  goto finish;
-        }
-
-	width      = (unsigned)((bufptr[3] << 8) | bufptr[4]);
-	height     = (unsigned)((bufptr[1] << 8) | bufptr[2]);
-	num_colors = bufptr[5];
-      }
-      else if (marker == _PDFIO_JPEG_APP2 && length > 14 && memcmp(bufptr, "ICC_PROFILE", 12))
-      {
-        // Portion of ICC profile
-        int	n = bufptr[12],		// Chunk number in profile (1-based)
-		count = bufptr[13];	// Number of chunks
-        unsigned char *icc_temp;	// New ICC buffer
-
-        // Discard "ICC_PROFILE\0" and chunk number/count...
-        bufptr += 14;
-        length -= 14;
-
-        // Expand our ICC buffer...
-        if ((icc_temp = realloc(icc_data, icc_datalen + length)) == NULL)
-          return (NULL);
-        else
-          icc_data = icc_temp;
-
-        // Read the chunk into the ICC buffer...
-        do
-        {
-	  if (bufptr >= bufend)
-	  {
-	    // Read more of the marker...
-	    if ((bytes = read(fd, buffer, sizeof(buffer))) <= 0)
-	    {
-	      _pdfioFileError(dict->pdf, "Unable to read JPEG data - %s", strerror(errno));
-	      goto finish;
-	    }
-
-            bufptr = buffer;
-	    bufend = buffer + bytes;
-	  }
-
-          // Copy from the file buffer to the ICC buffer
-          if ((bytes = bufend - bufptr) > (ssize_t)length)
-	    bytes = (ssize_t)length;
-
-	  memcpy(icc_data + icc_datalen, bufptr, bytes);
-	  icc_datalen += (size_t)bytes;
-	  bufptr      += bytes;
-	  length      -= (size_t)bytes;
-	}
-	while (length > 0);
-
-        if (n == count && width > 0 && height > 0 && num_colors > 0)
-        {
-          // Have everything we need...
-          break;
-        }
-        else
-        {
-          // Continue reading...
-          continue;
-        }
+	_pdfioFileError(dict->pdf, "Unable to load %d-bit JPEG image.", bufptr[0]);
+	goto finish;
       }
 
-      // Skip past this marker...
-      while (length > 0)
+      width      = (unsigned)((bufptr[3] << 8) | bufptr[4]);
+      height     = (unsigned)((bufptr[1] << 8) | bufptr[2]);
+      num_colors = bufptr[5];
+    }
+    else if (marker == _PDFIO_JPEG_APP2 && length > 14 && memcmp(bufptr, "ICC_PROFILE", 12))
+    {
+      // Portion of ICC profile
+      int	n = bufptr[12],		// Chunk number in profile (1-based)
+	      count = bufptr[13];	// Number of chunks
+      unsigned char *icc_temp;	// New ICC buffer
+
+      // Discard "ICC_PROFILE\0" and chunk number/count...
+      bufptr += 14;
+      length -= 14;
+
+      // Expand our ICC buffer...
+      if ((icc_temp = realloc(icc_data, icc_datalen + length)) == NULL)
+	return (NULL);
+      else
+	icc_data = icc_temp;
+
+      // Read the chunk into the ICC buffer...
+      do
       {
-        bytes = bufend - bufptr;
-
-        if (length > (size_t)bytes)
-        {
-          // Consume everything we have and grab more...
-          length -= (size_t)bytes;
-
+	if (bufptr >= bufend)
+	{
+	  // Read more of the marker...
 	  if ((bytes = read(fd, buffer, sizeof(buffer))) <= 0)
 	  {
 	    _pdfioFileError(dict->pdf, "Unable to read JPEG data - %s", strerror(errno));
@@ -2512,12 +2471,54 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
 	  bufptr = buffer;
 	  bufend = buffer + bytes;
 	}
-	else
+
+	// Copy from the file buffer to the ICC buffer
+	if ((bytes = bufend - bufptr) > (ssize_t)length)
+	  bytes = (ssize_t)length;
+
+	memcpy(icc_data + icc_datalen, bufptr, bytes);
+	icc_datalen += (size_t)bytes;
+	bufptr      += bytes;
+	length      -= (size_t)bytes;
+      }
+      while (length > 0);
+
+      if (n == count && width > 0 && height > 0 && num_colors > 0)
+      {
+	// Have everything we need...
+	break;
+      }
+      else
+      {
+	// Continue reading...
+	continue;
+      }
+    }
+
+    // Skip past this marker...
+    while (length > 0)
+    {
+      bytes = bufend - bufptr;
+
+      if (length > (size_t)bytes)
+      {
+	// Consume everything we have and grab more...
+	length -= (size_t)bytes;
+
+	if ((bytes = read(fd, buffer, sizeof(buffer))) <= 0)
 	{
-	  // Enough at the end of the buffer...
-	  bufptr += length;
-	  length = 0;
+	  _pdfioFileError(dict->pdf, "Unable to read JPEG data - %s", strerror(errno));
+	  goto finish;
 	}
+
+	bufptr = buffer;
+	bufend = buffer + bytes;
+      }
+      else
+      {
+	// Enough at the end of the buffer...
+	bufptr += length;
+	length = 0;
       }
     }
   }

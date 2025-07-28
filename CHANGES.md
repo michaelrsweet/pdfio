@@ -25,6 +25,7 @@ v1.5.4 - YYYY-MM-DD
 
 - Updated indirect reference reading code to limit the range of generation
   numbers.
+- Fixed a JPEG copy bug (Issue #132)
 
 
 v1.5.3 - 2025-05-03
