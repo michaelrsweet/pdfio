@@ -1,7 +1,7 @@
 //
 // Simple markdown to PDF converter example for PDFio.
 //
-// Copyright © 2024 by Michael R Sweet.
+// Copyright © 2024-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -289,8 +289,8 @@ main(int  argc,				// I - Number of command-line arguments
   // Get the markdown file from the command-line...
   if (argc < 2 || argc > 3)
   {
-    fputs("Usage: md2pdf FILENANE.md [FILENAME.pdf]\n", stderr);
-    fputs("       md2pdf FILENANE.md >FILENAME.pdf\n", stderr);
+    fputs("Usage: md2pdf FILENAME.md [FILENAME.pdf]\n", stderr);
+    fputs("       md2pdf FILENAME.md >FILENAME.pdf\n", stderr);
     return (1);
   }
 
