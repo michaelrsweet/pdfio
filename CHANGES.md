@@ -2,7 +2,7 @@ Changes in PDFio
 ================
 
 
-v1.5.4 - YYYY-MM-DD
+v1.5.4 - 2025-08-26
 -------------------
 
 - Updated indirect reference reading code to limit the range of generation
