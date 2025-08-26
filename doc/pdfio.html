@@ -4133,8 +4133,23 @@ of 8.27x11in (the intersection of US Letter and ISO A4) is used.<br>
 <br>
 The &quot;error_cb&quot; and &quot;error_cbdata&quot; arguments specify an error handler callback
 and its data pointer - if <code>NULL</code> then the default error handler is used that
-writes error messages to <code>stderr</code>.  The error handler callback should return
-<code>true</code> to continue writing the PDF file or <code>false</code> to stop.</p>
+writes error and warning messages to <code>stderr</code>.  The error handler callback
+should return <code>true</code> to continue writing the PDF file or <code>false</code> to stop.
+For example:
+
+<pre>
+bool
+my_error_cb(pdfio_file_t *pdf, const char *message, void *data)
+{
+  (void)data; /* Not using data pointer in this callback */
+
+  fprintf(stderr, &quot;%s: %sn&quot;, pdfioFileGetName(pdf), message);
+
+  /* Return true to continue on warning messages, false otherwise... */
+  return (!strncmp(message, &quot;WARNING:&quot;, 8));
+}
+</pre>
+</p>
 <h3 class="function"><a id="pdfioFileCreateArrayObj">pdfioFileCreateArrayObj</a></h3>
 <p class="description">Create a new object in a PDF file containing an array.</p>
 <p class="code">
@@ -4439,9 +4454,23 @@ of 8.27x11in (the intersection of US Letter and ISO A4) is used.<br>
 <br>
 The &quot;error_cb&quot; and &quot;error_cbdata&quot; arguments specify an error handler callback
 and its data pointer - if <code>NULL</code> then the default error handler is used that
-writes error messages to <code>stderr</code>.  The error handler callback should return
-<code>true</code> to continue writing the PDF file or <code>false</code> to stop.<br>
-<br>
+writes error and warning messages to <code>stderr</code>.  The error handler callback
+should return <code>true</code> to continue writing the PDF file or <code>false</code> to stop.
+For example:
+
+<pre>
+bool
+my_error_cb(pdfio_file_t *pdf, const char *message, void *data)
+{
+  (void)data; /* Not using data pointer in this callback */
+
+  fprintf(stderr, &quot;%s: %sn&quot;, pdfioFileGetName(pdf), message);
+
+  /* Return true to continue on warning messages, false otherwise... */
+  return (!strncmp(message, &quot;WARNING:&quot;, 8));
+}
+</pre>
+
 </p><blockquote>
 <em>Note</em>: Files created using this API are slightly larger than those
 created using the <a href="#pdfioFileCreate"><code>pdfioFileCreate</code></a> function since stream lengths are
@@ -4778,9 +4807,23 @@ PDF file requires a password, the open will always fail.<br>
 <br>
 The &quot;error_cb&quot; and &quot;error_cbdata&quot; arguments specify an error handler callback
 and its data pointer - if <code>NULL</code> then the default error handler is used that
-writes error messages to <code>stderr</code>.  The error handler callback should return
-<code>true</code> to continue reading the PDF file or <code>false</code> to stop.<br>
-<br>
+writes error and warning messages to <code>stderr</code>.  The error handler callback
+should return <code>true</code> to continue reading the PDF file or <code>false</code> to stop.
+For example:
+
+<pre>
+bool
+my_error_cb(pdfio_file_t *pdf, const char *message, void *data)
+{
+  (void)data; /* Not using data pointer in this callback */
+
+  fprintf(stderr, &quot;%s: %sn&quot;, pdfioFileGetName(pdf), message);
+
+  /* Return true to continue on warning messages, false otherwise... */
+  return (!strncmp(message, &quot;WARNING:&quot;, 8));
+}
+</pre>
+
 </p><blockquote>
 Note: Error messages starting with &quot;WARNING:&quot; are actually warning
 messages - the callback should normally return <code>true</code> to allow PDFio to

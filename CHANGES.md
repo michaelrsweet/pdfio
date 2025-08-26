@@ -12,6 +12,7 @@ v1.6.0 - YYYY-MM-DD
   profile (Issue #104)
 - Added `pdfioFileAddOutputIntent` function to adding output intent information
   to a PDF file (Issue #104)
+- Added explicit support for warning messages (Issue #118)
 - Added `pdfioFileCreateFontObjFromData` function for embedding fonts in
   memory (Issue #120)
 - Added `pdfioFileGetLanguage` and `pdfioFileSetLanguage` functions for getting

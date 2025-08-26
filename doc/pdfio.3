@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2025-04-23" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2025-08-26" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -3914,8 +3914,24 @@ of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 .PP
 The "error_cb" and "error_cbdata" arguments specify an error handler callback
 and its data pointer - if \fBNULL\fR then the default error handler is used that
-writes error messages to \fBstderr\fR.  The error handler callback should return
-\fBtrue\fR to continue writing the PDF file or \fBfalse\fR to stop.
+writes error and warning messages to \fBstderr\fR.  The error handler callback
+should return \fBtrue\fR to continue writing the PDF file or \fBfalse\fR to stop.
+For example:
+.PP
+.nf
+    bool
+    my_error_cb(pdfio_file_t *pdf, const char *message, void *data)
+    {
+      (void)data; /* Not using data pointer in this callback */
+    
+      fprintf(stderr, "%s: %sn", pdfioFileGetName(pdf), message);
+    
+      /* Return true to continue on warning messages, false otherwise... */
+      return (!strncmp(message, "WARNING:", 8));
+    }
+
+.fi
+
 .SS pdfioFileCreateArrayObj
 Create a new object in a PDF file containing an array.
 .PP
@@ -4157,9 +4173,24 @@ of 8.27x11in (the intersection of US Letter and ISO A4) is used.
 .PP
 The "error_cb" and "error_cbdata" arguments specify an error handler callback
 and its data pointer - if \fBNULL\fR then the default error handler is used that
-writes error messages to \fBstderr\fR.  The error handler callback should return
-\fBtrue\fR to continue writing the PDF file or \fBfalse\fR to stop.
+writes error and warning messages to \fBstderr\fR.  The error handler callback
+should return \fBtrue\fR to continue writing the PDF file or \fBfalse\fR to stop.
+For example:
 .PP
+.nf
+    bool
+    my_error_cb(pdfio_file_t *pdf, const char *message, void *data)
+    {
+      (void)data; /* Not using data pointer in this callback */
+    
+      fprintf(stderr, "%s: %sn", pdfioFileGetName(pdf), message);
+    
+      /* Return true to continue on warning messages, false otherwise... */
+      return (!strncmp(message, "WARNING:", 8));
+    }
+
+.fi
+
 .IP 5
 \fINote\fR: Files created using this API are slightly larger than those
 .IP 5
@@ -4398,9 +4429,24 @@ PDF file requires a password, the open will always fail.
 .PP
 The "error_cb" and "error_cbdata" arguments specify an error handler callback
 and its data pointer - if \fBNULL\fR then the default error handler is used that
-writes error messages to \fBstderr\fR.  The error handler callback should return
-\fBtrue\fR to continue reading the PDF file or \fBfalse\fR to stop.
+writes error and warning messages to \fBstderr\fR.  The error handler callback
+should return \fBtrue\fR to continue reading the PDF file or \fBfalse\fR to stop.
+For example:
 .PP
+.nf
+    bool
+    my_error_cb(pdfio_file_t *pdf, const char *message, void *data)
+    {
+      (void)data; /* Not using data pointer in this callback */
+    
+      fprintf(stderr, "%s: %sn", pdfioFileGetName(pdf), message);
+    
+      /* Return true to continue on warning messages, false otherwise... */
+      return (!strncmp(message, "WARNING:", 8));
+    }
+
+.fi
+
 .IP 5
 Note: Error messages starting with "WARNING:" are actually warning
 .IP 5
