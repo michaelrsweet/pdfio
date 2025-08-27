@@ -1379,7 +1379,7 @@ read_cmap(ttf_t *font)			// I - Font
 
           /* language = */ read_ushort(font);
 
-          if (length > (256 + 6))
+          if (length > (256 + 6) || length < 7)
           {
 	    errorf(font, "Bad cmap table length at offset %u.", coffset);
 	    return (false);
