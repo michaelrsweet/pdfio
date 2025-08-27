@@ -2,6 +2,12 @@ Changes in PDFio
 ================
 
 
+v1.5.5 - YYYY-MM-DD
+-------------------
+
+- Fixed TTF cmap underflow error.
+
+
 v1.5.4 - 2025-08-26
 -------------------
 
