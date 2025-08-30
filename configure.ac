@@ -88,6 +88,10 @@ AC_SUBST([INSTALL])
 AC_MSG_RESULT([using $INSTALL])
 
 
+dnl Standard C stuff...
+AC_CHECK_HEADER([math.h])
+
+
 dnl Check for date/time functionality...
 AC_CHECK_FUNC([timegm], [
     AC_DEFINE([HAVE_TIMEGM], [1], [Do we have the timegm function?])
@@ -140,7 +144,6 @@ AS_IF([$PKGCONFIG --exists zlib], [
     PKGCONFIG_REQUIRES=""
     PKGCONFIG_LIBS_PRIVATE="-lz $PKGCONFIG_LIBS_PRIVATE"
 ])
-
 
 dnl libpng...
 AC_ARG_ENABLE([libpng], AS_HELP_STRING([--enable-libpng], [use libpng for pdfioFileCreateImageObjFromFile, default=auto]))
