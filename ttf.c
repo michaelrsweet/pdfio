@@ -1195,7 +1195,7 @@ static bool				// O - `true` on success, `false` on failure
 fd_seek_cb(ttf_t  *font,		// I - Font
            size_t offset)		// I - Offset in data
 {
-  return (lseek(font->file_fd, offset, SEEK_SET) == offset);
+  return (lseek(font->file_fd, (off_t)offset, SEEK_SET) == (off_t)offset);
 }
 
 
