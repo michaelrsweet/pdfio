@@ -1082,7 +1082,7 @@ pdfioFileOpen(
   pdf->version = strdup(line + 5);
 
   // Grab the last 1k of the file to find the start of the xref table...
-  if (_pdfioFileSeek(pdf, 1 - sizeof(line), SEEK_END) < 0)
+  if (_pdfioFileSeek(pdf, 1 - (int)sizeof(line), SEEK_END) < 0)
   {
     _pdfioFileError(pdf, "Unable to read startxref data.");
     goto error;
@@ -2632,7 +2632,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
 
     // Write the "free" 0 object...
     memset(buffer, 0, sizeof(buffer));
-    pdfioStreamWrite(xref_st, buffer, offsize + 2);
+    pdfioStreamWrite(xref_st, buffer, (size_t)offsize + 2);
 
     // Then write the "allocated" objects...
     buffer[0] = 1;
@@ -2702,7 +2702,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
 #endif // !_WIN32
       }
 
-      if (!pdfioStreamWrite(xref_st, buffer, offsize + 2))
+      if (!pdfioStreamWrite(xref_st, buffer, (size_t)offsize + 2))
       {
 	_pdfioFileError(pdf, "Unable to write cross-reference table.");
 	ret = false;

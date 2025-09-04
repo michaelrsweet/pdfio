@@ -2580,9 +2580,14 @@ copy_jpeg(pdfio_dict_t *dict,		// I - Dictionary
 
       // Expand our ICC buffer...
       if ((icc_temp = realloc(icc_data, icc_datalen + length)) == NULL)
+      {
+        free(icc_data);
 	return (NULL);
+      }
       else
+      {
 	icc_data = icc_temp;
+      }
 
       // Read the chunk into the ICC buffer...
       do
