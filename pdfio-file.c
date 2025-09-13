@@ -2964,7 +2964,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     }
   }
 
-  if (!_pdfioFilePrintf(pdf, "\nstartxref\n%lu\n%%EOF\n", (unsigned long)xref_offset))
+  if (!_pdfioFilePrintf(pdf, "\nstartxref\n%lu\n%%%%EOF\n", (unsigned long)xref_offset))
   {
     _pdfioFileError(pdf, "Unable to write xref offset.");
     ret = false;
