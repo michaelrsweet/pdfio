@@ -5,6 +5,7 @@ Changes in PDFio
 v1.5.5 - YYYY-MM-DD
 -------------------
 
+- Fixed EOF comment written to the PDF (Issue #136)
 - Fixed TTF cmap underflow error.
 - Fixed some Clang warnings.
 
