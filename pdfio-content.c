@@ -95,7 +95,10 @@ static void		ttf_error_cb(pdfio_file_t *pdf, const char *message);
 #ifndef HAVE_LIBPNG
 static unsigned		update_png_crc(unsigned crc, const unsigned char *buffer, size_t length);
 #endif // !HAVE_LIBPNG
+static bool		write_array(pdfio_stream_t *st, pdfio_array_t *a);
+static bool		write_dict(pdfio_stream_t *st, pdfio_dict_t *dict);
 static bool		write_string(pdfio_stream_t *st, bool unicode, const char *s, bool *newline);
+static bool		write_value(pdfio_stream_t *st, _pdfio_value_t *v);
 
 
 //
@@ -459,6 +462,43 @@ pdfioArrayCreateColorFromStandard(
 
 
 //
+// 'pdfioContentBeginMarked()' - Start marked content with an optional dictionary.
+//
+// This function starts an area of marked content with an optional dictionary.
+// It must be paired with a call to the @link pdfioContentEndMarked@ function.
+//
+// @since PDFio 1.6@
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioContentBeginMarked(
+    pdfio_stream_t *st,			// I - Stream
+    const char     *name,		// I - Name of marked content
+    pdfio_dict_t   *dict)		// I - Dictionary of parameters or `NULL` if none
+{
+  if (!st || !name)
+    return (false);
+
+  if (!pdfioStreamPrintf(st, "%N", name))
+    return (false);
+
+  if (dict)
+  {
+    // Write dictionary before BDC operator...
+    if (!write_dict(st, dict))
+      return (false);
+
+    return (pdfioStreamPuts(st, "BDC\n"));
+  }
+  else
+  {
+    // No dictionary so use the BMC operator...
+    return (pdfioStreamPuts(st, " BMC\n"));
+  }
+}
+
+
+//
 // 'pdfioContentClip()' - Clip output to the current path.
 //
 
@@ -488,6 +528,23 @@ pdfioContentDrawImage(
     double         height)		// I - Height of image
 {
   return (pdfioStreamPrintf(st, "q %.6f 0 0 %.6f %.6f %.6f cm%N Do Q\n", width, height, x, y, name));
+}
+
+
+//
+// 'pdfioContentEndMarked()' - End marked content.
+//
+// This function ends an area of marked content that was started using the
+// @link pdfioContentBeginMarked@ function.
+//
+// @since PDFio 1.6@
+//
+
+bool					// O - `true` on success, `false` on failure
+pdfioContentEndMarked(
+    pdfio_stream_t *st)			// I - Stream
+{
+  return (pdfioStreamPuts(st, "EMC\n"));
 }
 
 
@@ -3785,6 +3842,65 @@ update_png_crc(
 
 
 //
+// 'write_array()' - Write an array value.
+//
+
+static bool				// O - `true` on success, `false` on error
+write_array(pdfio_stream_t *st,		// I - Stream
+            pdfio_array_t  *a)		// I - Array
+{
+  size_t	i;			// Looping var
+  _pdfio_value_t *v;			// Current value
+
+
+  // Arrays are surrounded by square brackets ([ ... ])
+  if (!pdfioStreamPuts(st, "["))
+    return (false);
+
+  // Write each value...
+  for (i = a->num_values, v = a->values; i > 0; i --, v ++)
+  {
+    if (!write_value(st, v))
+      return (false);
+  }
+
+  // Closing bracket...
+  return (pdfioStreamPuts(st, "]"));
+}
+
+
+//
+// 'write_dict()' - Write a dictionary value.
+//
+
+static bool				// O - `true` on success, `false` on error
+write_dict(pdfio_stream_t *st,		// I - Stream
+           pdfio_dict_t   *dict)	// I - Dictionary
+{
+  size_t	i;			// Looping var
+  _pdfio_pair_t	*pair;			// Current key/value pair
+
+
+  // Dictionaries are bounded by "<<" and ">>"...
+  if (!pdfioStreamPuts(st, "<<"))
+    return (false);
+
+  // Write all of the key/value pairs...
+  for (i = dict->num_pairs, pair = dict->pairs; i > 0; i --, pair ++)
+  {
+    if (!pdfioStreamPrintf(st, "%N", pair->key))
+      return (false);
+
+    if (!write_value(st, &pair->value))
+      return (false);
+  }
+
+  // Close it up...
+  return (pdfioStreamPuts(st, ">>"));
+}
+
+
+//
 // 'write_string()' - Write a PDF string.
 //
 
@@ -3889,4 +4005,83 @@ write_string(pdfio_stream_t *st,	// I - Stream
   }
 
   return (pdfioStreamPuts(st, unicode ? ">" : ")"));
+}
+
+
+//
+// 'write_value()' - Write a PDF value.
+//
+
+static bool				// O - `true` on success, `false` on error
+write_value(pdfio_stream_t *st,		// I - Stream
+            _pdfio_value_t *v)		// I - Value
+{
+  switch (v->type)
+  {
+    default :
+        return (false);
+
+    case PDFIO_VALTYPE_ARRAY :
+        return (write_array(st, v->value.array));
+
+    case PDFIO_VALTYPE_BINARY :
+        {
+          size_t	databytes;	// Bytes to write
+          uint8_t	*dataptr;	// Pointer into data
+
+          if (!pdfioStreamPuts(st, "<"))
+	    return (false);
+
+          for (dataptr = v->value.binary.data, databytes = v->value.binary.datalen; databytes > 1; databytes -= 2, dataptr += 2)
+          {
+            if (!pdfioStreamPrintf(st, "%02X%02X", dataptr[0], dataptr[1]))
+              return (false);
+          }
+
+          if (databytes > 0 && !pdfioStreamPrintf(st, "%02X", dataptr[0]))
+            return (false);
+
+	  return (pdfioStreamPuts(st, ">"));
+        }
+
+    case PDFIO_VALTYPE_BOOLEAN :
+        if (v->value.boolean)
+          return (pdfioStreamPuts(st, " true"));
+        else
+          return (pdfioStreamPuts(st, " false"));
+
+    case PDFIO_VALTYPE_DATE :
+        {
+          struct tm	date;		// Date values
+          char		datestr[32];	// Formatted date value
+
+#ifdef _WIN32
+          gmtime_s(&date, &v->value.date);
+#else
+	  gmtime_r(&v->value.date, &date);
+#endif // _WIN32
+
+	  snprintf(datestr, sizeof(datestr), "D:%04d%02d%02d%02d%02d%02dZ", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
+
+	  return (pdfioStreamPrintf(st, "%S", datestr));
+        }
+
+    case PDFIO_VALTYPE_DICT :
+        return (write_dict(st, v->value.dict));
+
+    case PDFIO_VALTYPE_INDIRECT :
+        return (pdfioStreamPrintf(st, " %lu %u R", (unsigned long)v->value.indirect.number, v->value.indirect.generation));
+
+    case PDFIO_VALTYPE_NAME :
+        return (pdfioStreamPrintf(st, "%N", v->value.name));
+
+    case PDFIO_VALTYPE_NULL :
+        return (pdfioStreamPuts(st, " null"));
+
+    case PDFIO_VALTYPE_NUMBER :
+        return (pdfioStreamPrintf(st, " %.6f", v->value.number));
+
+    case PDFIO_VALTYPE_STRING :
+	return (pdfioStreamPrintf(st, "%S", v->value.string));
+  }
 }

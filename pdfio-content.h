@@ -69,8 +69,10 @@ extern pdfio_array_t	*pdfioArrayCreateColorFromPrimaries(pdfio_file_t *pdf, size
 extern pdfio_array_t	*pdfioArrayCreateColorFromStandard(pdfio_file_t *pdf, size_t num_colors, pdfio_cs_t cs);
 
 // PDF content drawing functions...
+extern bool		pdfioContentBeginMarked(pdfio_stream_t *st, const char *name, pdfio_dict_t *dict) _PDFIO_PUBLIC;
 extern bool		pdfioContentClip(pdfio_stream_t *st, bool even_odd) _PDFIO_PUBLIC;
 extern bool		pdfioContentDrawImage(pdfio_stream_t *st, const char *name, double x, double y, double w, double h) _PDFIO_PUBLIC;
+extern bool		pdfioContentEndMarked(pdfio_stream_t *st) _PDFIO_PUBLIC;
 extern bool		pdfioContentFill(pdfio_stream_t *st, bool even_odd) _PDFIO_PUBLIC;
 extern bool		pdfioContentFillAndStroke(pdfio_stream_t *st, bool even_odd) _PDFIO_PUBLIC;
 extern bool		pdfioContentMatrixConcat(pdfio_stream_t *st, pdfio_matrix_t m) _PDFIO_PUBLIC;
