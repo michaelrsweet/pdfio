@@ -122,6 +122,9 @@ typedef struct docdata_s		// Document formatting data
   // State for the current page
   pdfio_stream_t *st;			// Current page stream
   double	y;			// Current position on page
+  const char	*tag;			// Current block tag
+  bool		in_table,		// Are we in a table?
+		in_row;			// Are we in a table row?
   docfont_t	font;			// Current font
   double	fsize;			// Current font size
   doccolor_t	color;			// Current color
@@ -472,6 +475,7 @@ add_links(docdata_t *dd)		// I - Document data
     // Create the annotation object pointing to the action...
     dict = pdfioDictCreate(dd->pdf);
     pdfioDictSetName(dict, "Subtype", "Link");
+    pdfioDictSetNumber(dict, "F", 4); // Print flag
     pdfioDictSetRect(dict, "Rect", &l->box);
     border = pdfioArrayCreate(dd->pdf);
     pdfioArrayAppendNumber(border, 0.0);
@@ -617,6 +621,50 @@ format_block(docdata_t  *dd,		// I - Document data
   }
 
   frag = frags + num_frags;
+
+  switch (mmdGetType(block))
+  {
+    case MMD_TYPE_HEADING_1 :
+        dd->tag = "H1";
+        break;
+
+    case MMD_TYPE_HEADING_2 :
+        dd->tag = "H2";
+        break;
+
+    case MMD_TYPE_HEADING_3 :
+        dd->tag = "H3";
+        break;
+
+    case MMD_TYPE_HEADING_4 :
+        dd->tag = "H4";
+        break;
+
+    case MMD_TYPE_HEADING_5 :
+        dd->tag = "H5";
+        break;
+
+    case MMD_TYPE_HEADING_6 :
+        dd->tag = "H6";
+        break;
+
+    case MMD_TYPE_TABLE_HEADER_CELL :
+        dd->tag = "TH";
+        break;
+
+    case MMD_TYPE_TABLE_BODY_CELL_LEFT :
+    case MMD_TYPE_TABLE_BODY_CELL_CENTER :
+    case MMD_TYPE_TABLE_BODY_CELL_RIGHT :
+        dd->tag = "TD";
+        break;
+
+    default :
+        dd->tag = "P";
+        break;
+  }
+
+  if (dd->st)
+    pdfioContentBeginMarked(dd->st, dd->tag, /*dict*/NULL);
 
   // Loop through the block and render lines...
   for (current = mmdGetFirstChild(block), x = left; current; current = next)
@@ -796,6 +844,9 @@ format_block(docdata_t  *dd,		// I - Document data
       pdfioContentRestore(dd->st);
     }
   }
+
+  pdfioContentEndMarked(dd->st);
+  dd->tag = NULL;
 }
 
 
@@ -835,6 +886,9 @@ format_code(docdata_t *dd,		// I - Document data
   pdfioContentFillAndStroke(dd->st, false);
 
   // Start a code text block...
+  dd->tag = "P";
+  pdfioContentBeginMarked(dd->st, dd->tag, /*dict*/NULL);
+
   set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
   pdfioContentTextBegin(dd->st);
   pdfioContentTextMoveTo(dd->st, left, dd->y);
@@ -868,6 +922,9 @@ format_code(docdata_t *dd,		// I - Document data
   // End the current text block...
   pdfioContentTextEnd(dd->st);
   dd->y += lineheight;
+
+  pdfioContentEndMarked(dd->st);
+  dd->tag = NULL;
 
   // Draw the bottom padding...
   set_color(dd, DOCCOLOR_LTGRAY);
@@ -1144,8 +1201,17 @@ format_table(docdata_t *dd,		// I - Document data
   }
 
   // Render each table row...
+  dd->in_table = true;
+
+  if (dd->st)
+    pdfioContentBeginMarked(dd->st, "Table", /*dict*/NULL);
+
   for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
     render_row(dd, num_cols, cols, rowptr);
+
+  pdfioContentEndMarked(dd->st);
+
+  dd->in_table = false;
 }
 
 
@@ -1359,6 +1425,16 @@ new_page(docdata_t *dd)			// I - Document data
   // Close the current page...
   if (dd->st)
   {
+    if (dd->tag)
+    {
+      // Close current tag and any row or table...
+      pdfioContentEndMarked(dd->st);
+      if (dd->in_row)
+        pdfioContentEndMarked(dd->st);
+      if (dd->in_table)
+        pdfioContentEndMarked(dd->st);
+    }
+
     pdfioStreamClose(dd->st);
     add_links(dd);
   }
@@ -1387,6 +1463,7 @@ new_page(docdata_t *dd)			// I - Document data
   dd->y     = dd->art_box.y2;
 
   // Add header/footer text
+  pdfioContentBeginMarked(dd->st, "Artifact", /*dict*/NULL);
   set_color(dd, DOCCOLOR_GRAY);
   set_font(dd, DOCFONT_REGULAR, SIZE_HEADFOOT);
 
@@ -1445,6 +1522,17 @@ new_page(docdata_t *dd)			// I - Document data
     pdfioContentTextShow(dd->st, UNICODE_VALUE, dd->heading);
     pdfioContentTextEnd(dd->st);
   }
+
+  pdfioContentEndMarked(dd->st);
+
+  if (dd->in_table)
+    pdfioContentBeginMarked(dd->st, "Table", /*dict*/NULL);
+
+  if (dd->in_row)
+    pdfioContentBeginMarked(dd->st, "TR", /*dict*/NULL);
+
+  if (dd->tag)
+    pdfioContentBeginMarked(dd->st, dd->tag, /*dict*/NULL);
 }
 
 
@@ -1617,9 +1705,11 @@ render_row(docdata_t  *dd,		// I - Document data
   // Start a new page as needed...
   if (!dd->st)
     new_page(dd);
-
-  if ((dd->y - row->height) < dd->art_box.y1)
+  else if ((dd->y - row->height) < dd->art_box.y1)
     new_page(dd);
+
+  dd->in_row = true;
+  pdfioContentBeginMarked(dd->st, "TR", /*dict*/NULL);
 
   if (mmdGetType(row->cells[0]) == MMD_TYPE_TABLE_HEADER_CELL)
   {
@@ -1651,6 +1741,9 @@ render_row(docdata_t  *dd,		// I - Document data
   }
 
   dd->y = row_y - row->height;
+
+  pdfioContentEndMarked(dd->st);
+  dd->in_row = false;
 }
 
 

@@ -273,6 +273,7 @@ struct _pdfio_file_s			// PDF file structure
 		*unicode_obj;		// Unicode font encoding object
   pdfio_array_t	*id_array;		// ID array
   bool		encrypt_metadata;	// Encrypt metadata?
+  pdfio_dict_t	*markinfo;		// MarkInfo dictionary, if any
 
   // Allocated data elements
   size_t	num_arrays,		// Number of arrays

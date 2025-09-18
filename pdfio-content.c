@@ -479,6 +479,7 @@ pdfioContentBeginMarked(
   if (!st || !name)
     return (false);
 
+  // Send the BDC/BMC command...
   if (!pdfioStreamPrintf(st, "%N", name))
     return (false);
 
@@ -488,13 +489,25 @@ pdfioContentBeginMarked(
     if (!write_dict(st, dict))
       return (false);
 
-    return (pdfioStreamPuts(st, "BDC\n"));
+    if (!pdfioStreamPuts(st, "BDC\n"))
+      return (false);
   }
   else
   {
     // No dictionary so use the BMC operator...
-    return (pdfioStreamPuts(st, " BMC\n"));
+    if (!pdfioStreamPuts(st, " BMC\n"))
+      return (false);
   }
+
+  // Make sure we have the MarkInfo dictionary in the catalog...
+  if (!st->pdf->markinfo)
+  {
+    st->pdf->markinfo = pdfioDictCreate(st->pdf);
+    pdfioDictSetBoolean(st->pdf->markinfo, "Marked", true);
+    pdfioDictSetDict(pdfioObjGetDict(st->pdf->root_obj), "MarkInfo", st->pdf->markinfo);
+  }
+
+  return (true);
 }
 
 
