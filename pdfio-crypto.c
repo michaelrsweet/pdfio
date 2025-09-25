@@ -454,7 +454,9 @@ _pdfioCryptoMakeReader(
           return (NULL);
         }
 
+#ifdef __APPLE__
         __attribute__((fallthrough));
+#endif // __APPLE__
 
     case PDFIO_ENCRYPTION_RC4_128 :
 	// Copy the key data for the MD5 hash.
