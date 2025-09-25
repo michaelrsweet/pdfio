@@ -411,7 +411,7 @@ _pdfioCryptoMakeReader(
   uint8_t	digest[16];		// MD5 digest value
 
 
-  PDFIO_DEBUG("_pdfioCryptoMakeReader(pdf=%p, obj=%p(%d), ctx=%p, iv=%p, ivlen=%p(%d))\n", pdf, obj, (int)obj->number, ctx, iv, ivlen, (int)*ivlen);
+  PDFIO_DEBUG("_pdfioCryptoMakeReader(pdf=%p, obj=%p(%d), ctx=%p, iv=%p, ivlen=%p(%d))\n", (void *)pdf, (void *)obj, (int)obj->number, (void *)ctx, (void *)iv, (void *)ivlen, (int)*ivlen);
 
   // Range check input...
   if (!pdf)
@@ -453,6 +453,8 @@ _pdfioCryptoMakeReader(
           _pdfioFileError(pdf, "Value too short for AES encryption.");
           return (NULL);
         }
+
+        __attribute__((fallthrough));
 
     case PDFIO_ENCRYPTION_RC4_128 :
 	// Copy the key data for the MD5 hash.
@@ -504,7 +506,7 @@ _pdfioCryptoMakeWriter(
   uint8_t	digest[16];		/* MD5 digest value */
 
 
-  PDFIO_DEBUG("_pdfioCryptoMakeWriter(pdf=%p, obj=%p(%d), ctx=%p, iv=%p, ivlen=%p(%d))\n", pdf, obj, (int)obj->number, ctx, iv, ivlen, (int)*ivlen);
+  PDFIO_DEBUG("_pdfioCryptoMakeWriter(pdf=%p, obj=%p(%d), ctx=%p, iv=%p, ivlen=%p(%d))\n", (void *)pdf, (void *)obj, (int)obj->number, (void *)ctx, (void *)iv, (void *)ivlen, (int)*ivlen);
 
   // Range check input...
   if (!pdf)

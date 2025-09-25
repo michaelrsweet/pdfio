@@ -485,7 +485,7 @@ do_test_file(const char *filename,	// I - PDF filename
 	  {
 	    dict = pdfioObjGetDict(obj);
 
-	    printf("    %u %u obj dict=%p(%lu pairs)\n", (unsigned)pdfioObjGetNumber(obj), (unsigned)pdfioObjGetGeneration(obj), dict, dict ? (unsigned long)dict->num_pairs : 0UL);
+	    printf("    %u %u obj dict=%p(%lu pairs)\n", (unsigned)pdfioObjGetNumber(obj), (unsigned)pdfioObjGetGeneration(obj), (void *)dict, dict ? (unsigned long)dict->num_pairs : 0UL);
 	    fputs("        ", stdout);
 	    _pdfioValueDebug(&obj->value, stdout);
 	    putchar('\n');
@@ -3502,9 +3502,14 @@ write_text_test(pdfio_file_t *pdf,		// I - PDF file
 
     fputs("pdfioStreamClose: ", stdout);
     if (pdfioStreamClose(st))
+    {
       puts("PASS");
+    }
     else
+    {
+      fclose(fp);
       return (1);
+    }
   }
 
   fclose(fp);

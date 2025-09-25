@@ -262,7 +262,7 @@ pdfioArrayCopy(pdfio_file_t  *pdf,	// I - PDF file
 			vdst;		// Current destination value
 
 
-  PDFIO_DEBUG("pdfioArrayCopy(pdf=%p, a=%p(%p))\n", pdf, a, a ? a->pdf : NULL);
+  PDFIO_DEBUG("pdfioArrayCopy(pdf=%p, a=%p(%p))\n", (void *)pdf, (void *)a, a ? (void *)a->pdf : NULL);
 
   // Create the new array...
   if ((na = pdfioArrayCreate(pdf)) == NULL)
@@ -606,7 +606,7 @@ _pdfioArrayRead(pdfio_file_t   *pdf,	// I - PDF file
   _pdfio_value_t	value;		// Value
 
 
-  PDFIO_DEBUG("_pdfioArrayRead(pdf=%p, tb=%p)\n", pdf, tb);
+  PDFIO_DEBUG("_pdfioArrayRead(pdf=%p, tb=%p)\n", (void *)pdf, (void *)tb);
 
   // Create an array...
   if ((array = pdfioArrayCreate(pdf)) == NULL)

@@ -27,7 +27,7 @@ bool					// O - `true` on sucess, `false` on EOF
 _pdfioFileConsume(pdfio_file_t *pdf,	// I - PDF file
                   size_t       bytes)	// I - Bytes to consume
 {
-  PDFIO_DEBUG("_pdfioFileConsume(pdf=%p, bytes=%u)\n", pdf, (unsigned)bytes);
+  PDFIO_DEBUG("_pdfioFileConsume(pdf=%p, bytes=%u)\n", (void *)pdf, (unsigned)bytes);
 
   if ((size_t)(pdf->bufend - pdf->bufptr) > bytes)
     pdf->bufptr += bytes;
@@ -91,7 +91,7 @@ _pdfioFileError(pdfio_file_t *pdf,	// I - PDF file
 bool					// O - `true` on success, `false` on failure
 _pdfioFileFlush(pdfio_file_t *pdf)	// I - PDF file
 {
-  PDFIO_DEBUG("_pdfioFileFlush(pdf=%p)\n", pdf);
+  PDFIO_DEBUG("_pdfioFileFlush(pdf=%p)\n", (void *)pdf);
 
   if (pdf->bufptr > pdf->buffer)
   {
@@ -142,7 +142,7 @@ _pdfioFileGets(pdfio_file_t *pdf,	// I - PDF file
 	*bufend = buffer + bufsize - 1;	// Pointer to end of buffer
 
 
-  PDFIO_DEBUG("_pdfioFileGets(pdf=%p, buffer=%p, bufsize=%lu, discard=%s) bufpos=%ld, buffer=%p, bufptr=%p, bufend=%p, offset=%lu\n", pdf, buffer, (unsigned long)bufsize, discard ? "true" : "false", (long)pdf->bufpos, pdf->buffer, pdf->bufptr, pdf->bufend, (unsigned long)(pdf->bufpos + (pdf->bufptr - pdf->buffer)));
+  PDFIO_DEBUG("_pdfioFileGets(pdf=%p, buffer=%p, bufsize=%lu, discard=%s) bufpos=%ld, buffer=%p, bufptr=%p, bufend=%p, offset=%lu\n", (void *)pdf, (void *)buffer, (unsigned long)bufsize, discard ? "true" : "false", (long)pdf->bufpos, (void *)pdf->buffer, (void *)pdf->bufptr, (void *)pdf->bufend, (unsigned long)(pdf->bufpos + (pdf->bufptr - pdf->buffer)));
 
   while (!eol)
   {
@@ -359,7 +359,7 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
                off_t        offset,	// I - Offset
                int          whence)	// I - Offset base
 {
-  PDFIO_DEBUG("_pdfioFileSeek(pdf=%p, offset=%ld, whence=%d) pdf->bufpos=%lu\n", pdf, (long)offset, whence, (unsigned long)(pdf ? pdf->bufpos : 0));
+  PDFIO_DEBUG("_pdfioFileSeek(pdf=%p, offset=%ld, whence=%d) pdf->bufpos=%lu\n", (void *)pdf, (long)offset, whence, (unsigned long)(pdf ? pdf->bufpos : 0));
 
   // Adjust offset for relative seeks...
   if (whence == SEEK_CUR)
@@ -376,7 +376,7 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
       // Yes, seek within existing buffer...
       pdf->bufptr = pdf->buffer + (offset - pdf->bufpos);
       PDFIO_DEBUG("_pdfioFileSeek: Seek within buffer, bufpos=%ld.\n", (long)pdf->bufpos);
-      PDFIO_DEBUG("_pdfioFileSeek: buffer=%p, bufptr=%p(<%02X%02X...>), bufend=%p\n", pdf->buffer, pdf->bufptr, pdf->bufptr[0] & 255, pdf->bufptr[1] & 255, pdf->bufend);
+      PDFIO_DEBUG("_pdfioFileSeek: buffer=%p, bufptr=%p(<%02X%02X...>), bufend=%p\n", (void *)pdf->buffer, (void *)pdf->bufptr, pdf->bufptr[0] & 255, pdf->bufptr[1] & 255, (void *)pdf->bufend);
       return (offset);
     }
 
@@ -411,7 +411,7 @@ _pdfioFileSeek(pdfio_file_t *pdf,	// I - PDF file
   }
 
   PDFIO_DEBUG("_pdfioFileSeek: Reset bufpos=%ld, offset=%lu.\n", (long)pdf->bufpos, (unsigned long)offset);
-  PDFIO_DEBUG("_pdfioFileSeek: buffer=%p, bufptr=%p, bufend=%p\n", pdf->buffer, pdf->bufptr, pdf->bufend);
+  PDFIO_DEBUG("_pdfioFileSeek: buffer=%p, bufptr=%p, bufend=%p\n", (void *)pdf->buffer, (void *)pdf->bufptr, (void *)pdf->bufend);
 
   pdf->bufpos = offset;
 

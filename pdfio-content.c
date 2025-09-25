@@ -355,7 +355,7 @@ pdfioArrayCreateColorFromPrimaries(
   double	matrix[3][3];		// CIE XYZ transform matrix
 
 
-  PDFIO_DEBUG("pdfioFileCreateCalibratedColorFromPrimaries(pdf=%p, num_colors=%lu, gamma=%.6f, wx=%.6f, wy=%.6f, rx=%.6f, ry=%.6f, gx=%.6f, gy=%.6f, bx=%.6f, by=%.6f)\n", pdf, (unsigned long)num_colors, gamma, wx, wy, rx, ry, gx, gy, bx, by);
+  PDFIO_DEBUG("pdfioFileCreateCalibratedColorFromPrimaries(pdf=%p, num_colors=%lu, gamma=%.6f, wx=%.6f, wy=%.6f, rx=%.6f, ry=%.6f, gx=%.6f, gy=%.6f, bx=%.6f, by=%.6f)\n", (void *)pdf, (unsigned long)num_colors, gamma, wx, wy, rx, ry, gx, gy, bx, by);
 
   // Range check input...
   if (!pdf || (num_colors != 1 && num_colors != 3) || gamma <= 0.0 || ry == 0.0 || gy == 0.0 || by == 0.0)

@@ -723,7 +723,7 @@ pdfioStringCreate(
   int		diff;			// Different
 
 
-  PDFIO_DEBUG("pdfioStringCreate(pdf=%p, s=\"%s\")\n", pdf, s);
+  PDFIO_DEBUG("pdfioStringCreate(pdf=%p, s=\"%s\")\n", (void *)pdf, s);
 
   // Range check input...
   if (!pdf || !s)

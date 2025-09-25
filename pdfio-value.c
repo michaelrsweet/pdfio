@@ -46,7 +46,7 @@ _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
 #endif // DEBUG
 
 
-  PDFIO_DEBUG("_pdfioValueCopy(pdfdst=%p, vdst=%p, pdfsrc=%p, vsrc=%p(%s))\n", pdfdst, vdst, pdfsrc, vsrc, types[vsrc->type]);
+  PDFIO_DEBUG("_pdfioValueCopy(pdfdst=%p, vdst=%p, pdfsrc=%p, vsrc=%p(%s))\n", (void *)pdfdst, (void *)vdst, (void *)pdfsrc, (void *)vsrc, types[vsrc->type]);
 
   if (pdfdst == pdfsrc && vsrc->type != PDFIO_VALTYPE_BINARY)
   {
@@ -359,7 +359,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 #endif // DEBUG
 
 
-  PDFIO_DEBUG("_pdfioValueRead(pdf=%p, obj=%p, v=%p)\n", pdf, obj, v);
+  PDFIO_DEBUG("_pdfioValueRead(pdf=%p, obj=%p, v=%p)\n", (void *)pdf, (void *)obj, (void *)v);
 
   if (!token)
     goto done;

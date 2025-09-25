@@ -28,7 +28,7 @@ pdfioPageCopy(pdfio_file_t *pdf,	// I - PDF file
   pdfio_obj_t	*dstpage;		// Destination page object
 
 
-  PDFIO_DEBUG("pdfioPageCopy(pdf=%p, srcpage=%p(%p))\n", pdf, srcpage, srcpage ? srcpage->pdf : NULL);
+  PDFIO_DEBUG("pdfioPageCopy(pdf=%p, srcpage=%p(%p))\n", (void *)pdf, (void *)srcpage, srcpage ? (void *)srcpage->pdf : NULL);
 
   // Range check input
   if (!pdf || !srcpage || srcpage->value.type != PDFIO_VALTYPE_DICT)
