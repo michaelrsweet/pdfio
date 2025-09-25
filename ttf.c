@@ -338,7 +338,7 @@ ttfCreate(const char   *filename,	// I - Filename
   _ttf_off_post_t	post;		// PostScript table
 
 
-  TTF_DEBUG("ttfCreate(filename=\"%s\", idx=%u, err_cb=%p, err_data=%p)\n", filename, (unsigned)idx, err_cb, err_data);
+  TTF_DEBUG("ttfCreate(filename=\"%s\", idx=%u, err_cb=%p, err_data=%p)\n", filename, (unsigned)idx, (void *)err_cb, err_data);
 
   // Range check input..
   if (!filename)

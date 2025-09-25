@@ -32,7 +32,7 @@ pdfioDictClear(pdfio_dict_t *dict,	// I - Dictionary
 		pkey;			// Search key
 
 
-  PDFIO_DEBUG("pdfioDictClear(dict=%p, key=\"%s\")\n", dict, key);
+  PDFIO_DEBUG("pdfioDictClear(dict=%p, key=\"%s\")\n", (void *)dict, key);
 
   if (!dict || !key)
     return (false);
@@ -77,7 +77,7 @@ pdfioDictCopy(pdfio_file_t *pdf,	// I - PDF file
   _pdfio_value_t	v;		// Current destination value
 
 
-  PDFIO_DEBUG("pdfioDictCopy(pdf=%p, dict=%p(%p))\n", pdf, dict, dict ? dict->pdf : NULL);
+  PDFIO_DEBUG("pdfioDictCopy(pdf=%p, dict=%p(%p))\n", (void *)pdf, (void *)dict, dict ? (void *)dict->pdf : NULL);
 
   // Create the new dictionary...
   if ((ndict = pdfioDictCreate(pdf)) == NULL)
@@ -525,7 +525,7 @@ _pdfioDictGetValue(pdfio_dict_t *dict,	// I - Dictionary
 		*match;			// Matching key pair
 
 
-  PDFIO_DEBUG("_pdfioDictGetValue(dict=%p, key=\"%s\")\n", dict, key);
+  PDFIO_DEBUG("_pdfioDictGetValue(dict=%p, key=\"%s\")\n", (void *)dict, key);
 
   if (!dict || !dict->num_pairs || !key)
   {
@@ -610,7 +610,7 @@ _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
   _pdfio_value_t	value;		// Dictionary value
 
 
-  PDFIO_DEBUG("_pdfioDictRead(pdf=%p, obj=%p, tb=%p, depth=%lu)\n", pdf, obj, tb, (unsigned long)depth);
+  PDFIO_DEBUG("_pdfioDictRead(pdf=%p, obj=%p, tb=%p, depth=%lu)\n", (void *)pdf, (void *)obj, (void *)tb, (unsigned long)depth);
 
   // Create a dictionary and start reading...
   if ((dict = pdfioDictCreate(pdf)) == NULL)
@@ -984,7 +984,7 @@ _pdfioDictSetValue(
   _pdfio_pair_t	*pair;			// Current pair
 
 
-  PDFIO_DEBUG("_pdfioDictSetValue(dict=%p, key=\"%s\", value=%p)\n", dict, key, (void *)value);
+  PDFIO_DEBUG("_pdfioDictSetValue(dict=%p, key=\"%s\", value=%p)\n", (void *)dict, key, (void *)value);
 
   // See if the key is already set...
   if (dict->num_pairs > 0)
