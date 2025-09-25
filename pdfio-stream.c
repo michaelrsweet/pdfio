@@ -427,7 +427,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
   const char		*type;		// Object type
 
 
-  PDFIO_DEBUG("_pdfioStreamOpen(obj=%p(%u), decode=%s)\n", obj, (unsigned)obj->number, decode ? "true" : "false");
+  PDFIO_DEBUG("_pdfioStreamOpen(obj=%p(%u), decode=%s)\n", (void *)obj, (unsigned)obj->number, decode ? "true" : "false");
 
   // Allocate a new stream object...
   if ((st = (pdfio_stream_t *)calloc(1, sizeof(pdfio_stream_t))) == NULL)
@@ -848,7 +848,7 @@ pdfioStreamWrite(
 			*pptr;		// Previous raw buffer
 
 
-  PDFIO_DEBUG("pdfioStreamWrite(st=%p, buffer=%p, bytes=%lu)\n", st, buffer, (unsigned long)bytes);
+  PDFIO_DEBUG("pdfioStreamWrite(st=%p, buffer=%p, bytes=%lu)\n", (void *)st, buffer, (unsigned long)bytes);
 
   // Range check input...
   if (!st || st->pdf->mode != _PDFIO_MODE_WRITE || !buffer || !bytes)

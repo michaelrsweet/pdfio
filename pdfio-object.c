@@ -69,7 +69,7 @@ pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
   ssize_t	bytes;			// Bytes read
 
 
-  PDFIO_DEBUG("pdfioObjCopy(pdf=%p, srcobj=%p(%p))\n", pdf, srcobj, srcobj ? srcobj->pdf : NULL);
+  PDFIO_DEBUG("pdfioObjCopy(pdf=%p, srcobj=%p(%p))\n", (void *)pdf, (void *)srcobj, srcobj ? (void *)srcobj->pdf : NULL);
 
   // Range check input
   if (!pdf || !srcobj)
@@ -308,7 +308,7 @@ pdfioObjGetLength(pdfio_obj_t *obj)	// I - Object
   // Try getting the length, directly or indirectly
   if ((length = (size_t)pdfioDictGetNumber(obj->value.value.dict, "Length")) > 0)
   {
-    PDFIO_DEBUG("pdfioObjGetLength(obj=%p) returning %lu.\n", obj, (unsigned long)length);
+    PDFIO_DEBUG("pdfioObjGetLength(obj=%p) returning %lu.\n", (void *)obj, (unsigned long)length);
     return (length);
   }
 
@@ -328,7 +328,7 @@ pdfioObjGetLength(pdfio_obj_t *obj)	// I - Object
     return (0);
   }
 
-  PDFIO_DEBUG("pdfioObjGetLength(obj=%p) returning %lu.\n", obj, (unsigned long)lenobj->value.value.number);
+  PDFIO_DEBUG("pdfioObjGetLength(obj=%p) returning %lu.\n", (void *)obj, (unsigned long)lenobj->value.value.number);
 
   return ((size_t)lenobj->value.value.number);
 }
@@ -440,7 +440,7 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
   _pdfio_token_t	tb;		// Token buffer/stack
 
 
-  PDFIO_DEBUG("_pdfioObjLoad(obj=%p(%lu)), offset=%lu\n", obj, (unsigned long)obj->number, (unsigned long)obj->offset);
+  PDFIO_DEBUG("_pdfioObjLoad(obj=%p(%lu)), offset=%lu\n", (void *)obj, (unsigned long)obj->number, (unsigned long)obj->offset);
 
   // Seek to the start of the object and read its header...
   if (_pdfioFileSeek(obj->pdf, obj->offset, SEEK_SET) != obj->offset)
@@ -502,7 +502,7 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
     return (false);
   }
 
-  PDFIO_DEBUG("_pdfioObjLoad: tb.bufptr=%p, tb.bufend=%p, tb.bufptr[0]=0x%02x, tb.bufptr[1]=0x%02x\n", tb.bufptr, tb.bufend, tb.bufptr[0], tb.bufptr[1]);
+  PDFIO_DEBUG("_pdfioObjLoad: tb.bufptr=%p, tb.bufend=%p, tb.bufptr[0]=0x%02x, tb.bufptr[1]=0x%02x\n", (void *)tb.bufptr, (void *)tb.bufend, tb.bufptr[0], tb.bufptr[1]);
 
   _pdfioTokenFlush(&tb);
 

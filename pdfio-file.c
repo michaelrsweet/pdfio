@@ -756,7 +756,7 @@ pdfioFileFindObj(
   if (number == pdf->objs[current]->number)
   {
     // Fast match...
-    PDFIO_DEBUG("pdfioFileFindObj: Returning %lu (%p)\n", (unsigned long)current, pdf->objs[current]);
+    PDFIO_DEBUG("pdfioFileFindObj: Returning %lu (%p)\n", (unsigned long)current, (void *)pdf->objs[current]);
     return (pdf->objs[current]);
   }
   else if (number < pdf->objs[current]->number)
@@ -784,12 +784,12 @@ pdfioFileFindObj(
 
   if (number == pdf->objs[left]->number)
   {
-    PDFIO_DEBUG("pdfioFileFindObj: Returning %lu (%p)\n", (unsigned long)left, pdf->objs[left]);
+    PDFIO_DEBUG("pdfioFileFindObj: Returning %lu (%p)\n", (unsigned long)left, (void *)pdf->objs[left]);
     return (pdf->objs[left]);
   }
   else if (number == pdf->objs[right]->number)
   {
-    PDFIO_DEBUG("pdfioFileFindObj: Returning %lu (%p)\n", (unsigned long)right, pdf->objs[right]);
+    PDFIO_DEBUG("pdfioFileFindObj: Returning %lu (%p)\n", (unsigned long)right, (void *)pdf->objs[right]);
     return (pdf->objs[right]);
   }
   else
@@ -1183,7 +1183,7 @@ pdfioFileOpen(
   }
   else
   {
-    PDFIO_DEBUG("pdfioFileOpen: line=%p,ptr=%p(\"%s\")\n", line, ptr, ptr);
+    PDFIO_DEBUG("pdfioFileOpen: line=%p,ptr=%p(\"%s\")\n", (void *)line, (void *)ptr, ptr);
 
     xref_offset = (off_t)strtol(ptr + 9, NULL, 10);
 
@@ -1414,7 +1414,7 @@ add_obj(pdfio_file_t   *pdf,		// I - PDF file
   obj->generation = generation;
   obj->offset     = offset;
 
-  PDFIO_DEBUG("add_obj: obj=%p, ->pdf=%p, ->number=%lu, ->offset=%lu\n", obj, pdf, (unsigned long)obj->number, (unsigned long)offset);
+  PDFIO_DEBUG("add_obj: obj=%p, ->pdf=%p, ->number=%lu, ->offset=%lu\n", (void *)obj, (void *)pdf, (unsigned long)obj->number, (unsigned long)offset);
 
   // Insert object into array as needed...
   if (pdf->num_objs == 0 || obj->number > pdf->objs[pdf->num_objs - 1]->number)
@@ -1710,7 +1710,7 @@ get_lconv(void)
 
   if ((loc = localeconv()) != NULL)
   {
-    PDFIO_DEBUG("get_lconv: loc=%p, loc->decimal_point=\"%s\"\n", loc, loc->decimal_point);
+    PDFIO_DEBUG("get_lconv: loc=%p, loc->decimal_point=\"%s\"\n", (void *)loc, loc->decimal_point);
 
     if (!loc->decimal_point || !strcmp(loc->decimal_point, "."))
       loc = NULL;
@@ -1747,7 +1747,7 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
   int			count;		// Count of objects
 
 
-  PDFIO_DEBUG("load_obj_stream(obj=%p(%d))\n", obj, (int)obj->number);
+  PDFIO_DEBUG("load_obj_stream(obj=%p(%d))\n", (void *)obj, (int)obj->number);
 
   // Open the object stream...
   if ((st = pdfioObjOpenStream(obj, true)) == NULL)
@@ -2014,7 +2014,7 @@ load_xref(
         goto repair;
       }
 
-      PDFIO_DEBUG("load_xref: tb.bufptr=%p, tb.bufend=%p, tb.bufptr[0]=0x%02x, tb.bufptr[0]=0x%02x\n", tb.bufptr, tb.bufend, tb.bufptr[0], tb.bufptr[1]);
+      PDFIO_DEBUG("load_xref: tb.bufptr=%p, tb.bufend=%p, tb.bufptr[0]=0x%02x, tb.bufptr[0]=0x%02x\n", (void *)tb.bufptr, (void *)tb.bufend, tb.bufptr[0], tb.bufptr[1]);
       if (tb.bufptr && tb.bufptr < tb.bufend && (tb.bufptr[0] == 0x0d || tb.bufptr[0] == 0x0a))
 	tb.bufptr ++;			// Skip trailing CR or LF after token
 
@@ -2207,7 +2207,7 @@ load_xref(
       {
         if ((obj = pdfioFileFindObj(pdf, sobjs[i])) != NULL)
         {
-	  PDFIO_DEBUG("load_xref: Loading compressed object stream %lu (pdf=%p, obj->pdf=%p).\n", (unsigned long)sobjs[i], pdf, obj->pdf);
+	  PDFIO_DEBUG("load_xref: Loading compressed object stream %lu (pdf=%p, obj->pdf=%p).\n", (unsigned long)sobjs[i], (void *)pdf, (void *)obj->pdf);
 
           if (!load_obj_stream(obj))
             return (false);
@@ -2386,7 +2386,7 @@ load_xref(
     goto repair;
   }
 
-  PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
+  PDFIO_DEBUG("load_xref: Root=%p(%lu)\n", (void *)pdf->root_obj, (unsigned long)pdf->root_obj->number);
 
   if ((pages_obj = pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages")) == NULL)
   {
@@ -2394,7 +2394,7 @@ load_xref(
     goto repair;
   }
 
-  PDFIO_DEBUG("load_xref: Pages=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
+  PDFIO_DEBUG("load_xref: Pages=%p(%lu)\n", (void *)pages_obj, (unsigned long)pages_obj->number);
 
   return (load_pages(pdf, pages_obj, 0));
 
@@ -2608,7 +2608,7 @@ repair_xref(
     return (false);
   }
 
-  PDFIO_DEBUG("repair_xref: Root=%p(%lu)\n", pdf->root_obj, (unsigned long)pdf->root_obj->number);
+  PDFIO_DEBUG("repair_xref: Root=%p(%lu)\n", (void *)pdf->root_obj, (unsigned long)pdf->root_obj->number);
 
   if ((pages_obj = pdfioDictGetObj(pdfioObjGetDict(pdf->root_obj), "Pages")) == NULL)
   {
@@ -2616,7 +2616,7 @@ repair_xref(
     return (false);
   }
 
-  PDFIO_DEBUG("repair_xref: Pages=%p(%lu)\n", pages_obj, (unsigned long)pages_obj->number);
+  PDFIO_DEBUG("repair_xref: Pages=%p(%lu)\n", (void *)pages_obj, (unsigned long)pages_obj->number);
 
   // Load pages...
   return (load_pages(pdf, pages_obj, 0));

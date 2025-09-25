@@ -344,7 +344,7 @@ ttfCreate(const char   *filename,	// I - Filename
           ttf_err_cb_t err_cb,		// I - Error callback or `NULL` to log to stderr
           void         *err_data)	// I - Error callback data
 {
-  TTF_DEBUG("ttfCreate(filename=\"%s\", idx=%u, err_cb=%p, err_data=%p)\n", filename, (unsigned)idx, err_cb, err_data);
+  TTF_DEBUG("ttfCreate(filename=\"%s\", idx=%u, err_cb=%p, err_data=%p)\n", filename, (unsigned)idx, (void *)err_cb, err_data);
 
   // Range check input..
   if (!filename)
@@ -393,7 +393,7 @@ ttfCreateData(const void   *data,	// I - Buffer
 	      ttf_err_cb_t err_cb,	// I - Error callback or `NULL` to log to stderr
 	      void         *err_data)	// I - Error callback data
 {
-  TTF_DEBUG("ttfCreateData(data=%p, datasize=%lu, idx=%u, err_cb=%p, err_data=%p)\n", data, (unsigned long)datasize, (unsigned)idx, err_cb, err_data);
+  TTF_DEBUG("ttfCreateData(data=%p, datasize=%lu, idx=%u, err_cb=%p, err_data=%p)\n", data, (unsigned long)datasize, (unsigned)idx, (void *)err_cb, err_data);
 
   // Range check input..
   if (!data || datasize == 0)
@@ -949,7 +949,7 @@ create_font(const char   *filename,	// I - Filename of `NULL`
   _ttf_off_post_t	post;		// PostScript table
 
 
-  TTF_DEBUG("create_font(filename=\"%s\", data=%p, datasize=%lu, idx=%u, err_cb=%p, err_data=%p)\n", filename, data, (unsigned long)datasize, (unsigned)idx, err_cb, err_data);
+  TTF_DEBUG("create_font(filename=\"%s\", data=%p, datasize=%lu, idx=%u, err_cb=%p, err_data=%p)\n", filename, data, (unsigned long)datasize, (unsigned)idx, (void *)err_cb, err_data);
 
   // Allocate memory...
   if ((font = (ttf_t *)calloc(1, sizeof(ttf_t))) == NULL)
