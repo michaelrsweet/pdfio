@@ -485,11 +485,11 @@ pdfioContentBeginMarked(
     const char     *tag,		// I - Tag name of marked content
     pdfio_dict_t   *dict)		// I - Dictionary of parameters or `NULL` if none
 {
-  if (!st || !name)
+  if (!st || !tag)
     return (false);
 
   // Send the BDC/BMC command...
-  if (!pdfioStreamPrintf(st, "%N", name))
+  if (!pdfioStreamPrintf(st, "%N", tag))
     return (false);
 
   if (dict)
