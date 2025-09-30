@@ -1,6 +1,10 @@
 LIBRARY pdfio1
 VERSION 1.6
 EXPORTS
+_pdfio_strlcpy
+_pdfio_strtod
+_pdfio_utf16cpy
+_pdfio_vsnprintf
 _pdfioArrayDebug
 _pdfioArrayDecrypt
 _pdfioArrayDelete
@@ -11,12 +15,12 @@ _pdfioCryptoAESDecrypt
 _pdfioCryptoAESEncrypt
 _pdfioCryptoAESInit
 _pdfioCryptoLock
-_pdfioCryptoMD5Append
-_pdfioCryptoMD5Finish
-_pdfioCryptoMD5Init
 _pdfioCryptoMakeRandom
 _pdfioCryptoMakeReader
 _pdfioCryptoMakeWriter
+_pdfioCryptoMD5Append
+_pdfioCryptoMD5Finish
+_pdfioCryptoMD5Init
 _pdfioCryptoRC4Crypt
 _pdfioCryptoRC4Init
 _pdfioCryptoSHA256Append
@@ -69,10 +73,6 @@ _pdfioValueDecrypt
 _pdfioValueDelete
 _pdfioValueRead
 _pdfioValueWrite
-_pdfio_strlcpy
-_pdfio_strtod
-_pdfio_utf16cpy
-_pdfio_vsnprintf
 pdfioArrayAppendArray
 pdfioArrayAppendBinary
 pdfioArrayAppendBoolean
@@ -101,8 +101,10 @@ pdfioArrayGetSize
 pdfioArrayGetString
 pdfioArrayGetType
 pdfioArrayRemove
+pdfioContentBeginMarked
 pdfioContentClip
 pdfioContentDrawImage
+pdfioContentEndMarked
 pdfioContentFill
 pdfioContentFillAndStroke
 pdfioContentMatrixConcat
@@ -156,8 +158,8 @@ pdfioContentTextNewLineShow
 pdfioContentTextNewLineShowf
 pdfioContentTextNextLine
 pdfioContentTextShow
-pdfioContentTextShowJustified
 pdfioContentTextShowf
+pdfioContentTextShowJustified
 pdfioDictClear
 pdfioDictCopy
 pdfioDictCreate
@@ -168,8 +170,8 @@ pdfioDictGetDate
 pdfioDictGetDict
 pdfioDictGetKey
 pdfioDictGetName
-pdfioDictGetNumPairs
 pdfioDictGetNumber
+pdfioDictGetNumPairs
 pdfioDictGetObj
 pdfioDictGetRect
 pdfioDictGetString
