@@ -1328,6 +1328,13 @@ pdfioFileSetPermissions(
   if (!pdf)
     return (false);
 
+  if (pdf->pdfa != _PDFIO_PDFA_NONE && encryption != PDFIO_ENCRYPTION_NONE)
+  {
+    _pdfioFileError(pdf, "Encryption is not allowed for PDF/A files.");
+    return (false);
+  }
+
+
   if (pdf->num_objs > 3)		// First three objects are pages, info, and root
   {
     _pdfioFileError(pdf, "You must call pdfioFileSetPermissions before adding any objects.");
@@ -2739,6 +2746,59 @@ write_metadata(pdfio_file_t *pdf)	// I - PDF file
   status &= pdfioStreamPuts(st, "            <pdfaid:part>1</pdfaid:part>\n");
   status &= pdfioStreamPuts(st, "        </rdf:Description>\n");
 #endif // 0
+
+  if (pdf->pdfa != _PDFIO_PDFA_NONE)
+  {
+    const char *part = "1";               // Conformance part number
+    const char *conformance = "B";        // Conformance level
+    
+    switch (pdf->pdfa)
+    {
+      case _PDFIO_PDFA_1A:
+        conformance = "A";
+        break;
+      case _PDFIO_PDFA_1B:
+        // Default is B
+        break;
+      case _PDFIO_PDFA_2A:
+        part = "2";
+        conformance = "A";
+        break;
+      case _PDFIO_PDFA_2B:
+        part="2";
+        break;
+      case _PDFIO_PDFA_2U:
+        part = "2";
+        conformance = "U";
+        break;
+      case _PDFIO_PDFA_3A:
+        part = "3";
+        conformance = "A";
+        break;
+      case _PDFIO_PDFA_3B:
+        part = "3";
+        break;
+      case _PDFIO_PDFA_3U:
+        part = "3";
+        conformance = "U";
+        break;
+      case _PDFIO_PDFA_4:
+        part = "4";
+        conformance = "";     // Conformance level is part of GTS_PDFA4 key
+        break;
+      case _PDFIO_PDFA_NONE: 
+        break;
+    }
+
+    status &= pdfioStreamPuts(st, "     <rdf:Description rdf:about=\"\" xmlns:pdfaid=\"http://www.aiim.org/pdfa/ns/id/\">\n");
+    status &= pdfioStreamPrintf(st, "       <pdfaid:part>%s</pdfaid:part>\n",part);
+    if (*conformance)
+      status &= pdfioStreamPrintf(st, "       <pdfaid:conformance>%s</pdfaid:conformance>\n", conformance);
+    status &= pdfioStreamPuts(st, " </rdf:Description>\n");
+  }
+
+
+
 
   status &= pdfioStreamPuts(st, "    </rdf:RDF>\n");
   status &= pdfioStreamPuts(st, "</x:xmpmeta>\n");
