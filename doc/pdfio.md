@@ -868,6 +868,55 @@ escaping, as needed:
   offsets between them
 
 
+Tagged and Marked PDF Content
+-----------------------------
+
+Content in a page stream can be tagged to help a PDF reader application know the
+kind and organization of that content.  Content inserted using the PDFio
+[Page Stream Functions](@) can be tagged by surrounding it with the
+[`pdfioContentBeginMarked`](@@) and [`pdfioContentEndMarked`](@@) functions.
+
+The `pdfioContentBeginMarked` function accepts a named tag and optional
+dictionary of attributes such as the marked content identifier ("MCID").  For
+example, the following code tags a paragraph of text:
+
+```c
+pdfio_file_t   *pdf;  // PDF file
+pdfio_stream_t *st;   // Page stream
+
+pdfioContentBeginMarked(st, "P", /*dict*/NULL);
+
+pdfioContentTextShow(st, /*unicode*/false, "Mary had a little lamb\n");
+pdfioContentTextShow(st, /*unicode*/false, "whose fleece was white as snow.\n");
+pdfioContentTextShow(st, /*unicode*/false, "And everywhere that Mary went\n");
+pdfioContentTextShow(st, /*unicode*/false, "the lamb was sure to go,\n");
+
+pdfioContentEndMarked(st);
+```
+
+To mark the same paragraph with a content identifier you would first create a
+dictionary containing the "MCID" key/value pair and then mark the paragraph with
+that dictionary:
+
+```c
+pdfio_file_t   *pdf;  // PDF file
+pdfio_stream_t *st;   // Page stream
+pdfio_dict_t   *dict; // Content dictionary
+
+dict = pdfioDictCreate(pdf);
+pdfioDictSetNumber(dict, "MCID", 42);
+
+pdfioContentBeginMarked(st, "P", dict);
+
+pdfioContentTextShow(st, /*unicode*/false, "Mary had a little lamb\n");
+pdfioContentTextShow(st, /*unicode*/false, "whose fleece was white as snow.\n");
+pdfioContentTextShow(st, /*unicode*/false, "And everywhere that Mary went\n");
+pdfioContentTextShow(st, /*unicode*/false, "the lamb was sure to go,\n");
+
+pdfioContentEndMarked(st);
+```
+
+
 Examples
 ========
 
@@ -1597,6 +1646,9 @@ typedef struct docdata_s                // Document formatting data
   // State for the current page
   pdfio_stream_t *st;                   // Current page stream
   double        y;                      // Current position on page
+  const char    *tag;                   // Current block tag
+  bool          in_table,               // Are we in a table?
+                in_row;                 // Are we in a table row?
   docfont_t     font;                   // Current font
   double        fsize;                  // Current font size
   doccolor_t    color;                  // Current color
@@ -2100,6 +2152,9 @@ pdfioContentPathRect(dd->st, left - CODE_PADDING, dd->y + SIZE_CODEBLOCK,
 pdfioContentFillAndStroke(dd->st, false);
 
 // Start a code text block...
+dd->tag = "P";
+pdfioContentBeginMarked(dd->st, dd->tag, /*dict*/NULL);
+
 set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
 pdfioContentTextBegin(dd->st);
 pdfioContentTextMoveTo(dd->st, left, dd->y);
@@ -2135,6 +2190,9 @@ for (code = mmdGetFirstChild(block); code; code = mmdGetNextSibling(code))
 // End the current text block...
 pdfioContentTextEnd(dd->st);
 dd->y += lineheight;
+
+pdfioContentEndMarked(dd->st);
+dd->tag = NULL;
 
 // Draw the bottom padding...
 set_color(dd, DOCCOLOR_LTGRAY);
@@ -2276,8 +2334,17 @@ Finally, we render each row in the table:
 
 ```c
 // Render each table row...
+dd->in_table = true;
+
+if (dd->st)
+  pdfioContentBeginMarked(dd->st, "Table", /*dict*/NULL);
+
 for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
   render_row(dd, num_cols, cols, rowptr);
+
+pdfioContentEndMarked(dd->st);
+
+dd->in_table = false;
 ```
 
 

@@ -467,13 +467,22 @@ pdfioArrayCreateColorFromStandard(
 // This function starts an area of marked content with an optional dictionary.
 // It must be paired with a call to the @link pdfioContentEndMarked@ function.
 //
+// The "tag" argument specifies the tag name string for the content such as "P"
+// for a paragraph, "H1" for a top-level heading, and so forth.  The "dict"
+// argument specifies an optional dictionary of properties for the content such
+// as the marked content identifier ("MCID") number.
+//
+// Calling this function sets the "Marked" key in the "MarkInfo" dictionary of
+// the document catalog.  The caller is responsible for setting the
+// "StructTreeRoot" dictionary when creating marked content.
+//
 // @since PDFio 1.6@
 //
 
 bool					// O - `true` on success, `false` on failure
 pdfioContentBeginMarked(
     pdfio_stream_t *st,			// I - Stream
-    const char     *name,		// I - Name of marked content
+    const char     *tag,		// I - Tag name of marked content
     pdfio_dict_t   *dict)		// I - Dictionary of parameters or `NULL` if none
 {
   if (!st || !name)
