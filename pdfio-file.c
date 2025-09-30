@@ -1114,8 +1114,9 @@ pdfioFileOpen(
     char	message[8192];		// Message string
 
     temp.filename = (char *)filename;
-    snprintf(message, sizeof(message), "Unable to allocate memory for PDF file - %s", strerror(errno));
+    snprintf(message, sizeof(message), "Unable to allocate memory for PDF file: %s", strerror(errno));
     (error_cb)(&temp, message, error_cbdata);
+
     return (NULL);
   }
 
@@ -1328,27 +1329,29 @@ pdfioFileSetPermissions(
   if (!pdf)
     return (false);
 
+  // 1. First, check if this is a PDF/A file trying to use encryption. This check must be first.
   if (pdf->pdfa != _PDFIO_PDFA_NONE && encryption != PDFIO_ENCRYPTION_NONE)
   {
     _pdfioFileError(pdf, "Encryption is not allowed for PDF/A files.");
     return (false);
   }
 
+  // 2. If no encryption is being applied anyway, we are done.
+  if (encryption == PDFIO_ENCRYPTION_NONE)
+    return (true);
 
+  // 3. Check if it's too late in the file creation process to set permissions.
   if (pdf->num_objs > 3)		// First three objects are pages, info, and root
   {
     _pdfioFileError(pdf, "You must call pdfioFileSetPermissions before adding any objects.");
     return (false);
   }
 
-  if (encryption == PDFIO_ENCRYPTION_NONE)
-    return (true);
-
+  // 4. If all checks pass, proceed with locking the document.
   pdf->encrypt_metadata = true;
 
   return (_pdfioCryptoLock(pdf, permissions, encryption, owner_password, user_password));
 }
-
 
 //
 // 'pdfioFileSetSubject()' - Set the subject for a PDF file.
@@ -1535,10 +1538,9 @@ create_common(
   if (!error_cb)
   {
     error_cb     = _pdfioFileDefaultError;
-    error_cbdata = NULL;i
-    (error_cb)(&temp,message,error_cbdata)
+    error_cbdata = NULL;
 
-    return (NULL)
+    return (NULL);
   }
 
   // Allocate a PDF file structure...
@@ -1602,7 +1604,7 @@ create_common(
   else
   {
     actual_version = version;
-    pdf->pdfa = _PDFIO_PDFA_NONe;
+    pdf->pdfa = _PDFIO_PDFA_NONE;
   }
 
   pdf->version     = strdup(actual_version);
@@ -1638,14 +1640,19 @@ create_common(
   // Write a standard PDF header...
   if (!strncmp(version, "PCLm-", 5))
   {
+    // PCLm has a special header format
     if (!_pdfioFilePrintf(pdf, "%%PDF-1.4\n%%%s\n", version))
       goto error;
   }
-  else if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
+  else
   {
-    goto error;
+    // For all other PDFs, including all PDF/A versions, write the header
+    // with the binary comment.
+    if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", pdf->version))
+      goto error;
   }
 
+  
   // Create the pages object...
   if ((dict = pdfioDictCreate(pdf)) == NULL)
     goto error;
