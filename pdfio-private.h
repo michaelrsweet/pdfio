@@ -105,6 +105,20 @@ typedef enum _pdfio_mode_e		// Read/write mode
   _PDFIO_MODE_WRITE			// Write a PDF file
 } _pdfio_mode_t;
 
+typedef enum _pdfio_pdfa_e
+{
+  _PDFIO_PDFA_NONE = 0,   // Not a PDF/A file
+  _PDFIO_PDFA_1A,         // PDF/A-1a:2005
+  _PDFIO_PDFA_1B,         // PDF/A-1b:2005
+  _PDFIO_PDFA_2A,         // PDF/A-2a:2011
+  _PDFIO_PDFA_2B,         // PDF/A-2b:20011
+  _PDFIO_PDFA_2U,         // PDF/A-2u:2011
+  _PDFIO_PDFA_3A,         // PDF/A-3a:2012
+  _PDFIO_PDFA_3B,         // PDF/A-3b:2012
+  _PDFIO_PDFA_3U,         // PDF/A-3u:2012
+  _PDFIO_PDFA_4,          // PDF/A-4:2020
+} _pdfio_pdfa_t;
+
 typedef enum _pdfio_predictor_e		// PNG predictor constants
 {
   _PDFIO_PREDICTOR_NONE = 1,		// No predictor (default)
@@ -239,6 +253,7 @@ struct _pdfio_file_s			// PDF file structure
   unsigned char	file_id[32];		// File identifier bytes
   struct lconv	*loc;			// Locale data
   char		*version;		// Version number
+  _pdfio_pdfa_t pdfa;       // PDF/A conformance
   pdfio_rect_t	media_box,		// Default MediaBox value
 		crop_box;		// Default CropBox value
   _pdfio_mode_t	mode;			// Read/write mode

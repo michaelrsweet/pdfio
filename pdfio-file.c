@@ -1514,7 +1514,7 @@ create_common(
   unsigned char	id_value[16];		// File ID value
   time_t	curtime;		// Creation date/time
   _pdfio_sha256_t ctx;			// Hashing context
-
+  const char *actual_version;   // Actual PDF version string
 
   PDFIO_DEBUG("create_common(filename=\"%s\", fd=%d, output_cb=%p, output_cbdata=%p, version=\"%s\", media_box=%p, crop_box=%p, error_cb=%p, error_cbdata=%p)\n", filename, fd, (void *)output_cb, (void *)output_cbdata, version, (void *)media_box, (void *)crop_box, (void *)error_cb, (void *)error_cbdata);
 
@@ -1522,13 +1522,16 @@ create_common(
   if (!filename || (fd < 0 && !output_cb))
     return (NULL);
 
-  if (!version)
-    version = "2.0";
+  //if (!version)
+    //version = "2.0";
 
   if (!error_cb)
   {
     error_cb     = _pdfioFileDefaultError;
-    error_cbdata = NULL;
+    error_cbdata = NULL;i
+    (error_cb)(&temp,message,error_cbdata)
+
+    return (NULL)
   }
 
   // Allocate a PDF file structure...
@@ -1550,7 +1553,52 @@ create_common(
   pdf->output_cb   = output_cb;
   pdf->output_ctx  = output_cbdata;
   pdf->filename    = strdup(filename);
-  pdf->version     = strdup(!strncmp(version, "PCLm-", 5) ? "1.4" : version);
+
+  if (!version)
+  {
+    version = "2.0";
+  }
+
+  if (!strncmp(version, "PDF/A-1", 7))
+  {
+    actual_version = "1.4";
+    if (version[7] == 'a')
+      pdf->pdfa = _PDFIO_PDFA_1A;
+    else
+      pdf->pdfa = _PDFIO_PDFA_1B; // Default to 'b'
+  }
+  else if (!strncmp(version, "PDF/A-2", 7))
+  {
+    actual_version = "1.7";
+    if (version[7] == 'a')
+      pdf->pdfa = _PDFIO_PDFA_2A;
+    else if (version[7] == 'u')
+      pdf->pdfa = _PDFIO_PDFA_2U;
+    else
+      pdf->pdfa = _PDFIO_PDFA_2B; // Default to 'b'
+  }
+  else if (!strncmp(version, "PDF/A-3", 7))
+  {
+    actual_version = "1.7";
+    if (version[7] == 'a')
+      pdf->pdfa = _PDFIO_PDFA_3A;
+    else if (version[7] == 'u')
+      pdf->pdfa = _PDFIO_PDFA_3U;
+    else 
+      pdf->pdfa = _PDFIO_PDFA_3B; // Default to 'b'
+  }
+  else if (!strncmp(version, "PDF/A-4", 7))
+  {
+    actual_version = "2.0";
+    pdf->pdfa = _PDFIO_PDFA_4;
+  }
+  else
+  {
+    actual_version = version;
+    pdf->pdfa = _PDFIO_PDFA_NONe;
+  }
+
+  pdf->version     = strdup(actual_version);
   pdf->mode        = _PDFIO_MODE_WRITE;
   pdf->error_cb    = error_cb;
   pdf->error_data  = error_cbdata;
