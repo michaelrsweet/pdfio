@@ -2749,46 +2749,18 @@ write_metadata(pdfio_file_t *pdf)	// I - PDF file
 
   if (pdf->pdfa != _PDFIO_PDFA_NONE)
   {
-    const char *part = "1";               // Conformance part number
-    const char *conformance = "B";        // Conformance level
-    
-    switch (pdf->pdfa)
+    static const char * const parts[] =   // Part numbers
     {
-      case _PDFIO_PDFA_1A:
-        conformance = "A";
-        break;
-      case _PDFIO_PDFA_1B:
-        // Default is B
-        break;
-      case _PDFIO_PDFA_2A:
-        part = "2";
-        conformance = "A";
-        break;
-      case _PDFIO_PDFA_2B:
-        part="2";
-        break;
-      case _PDFIO_PDFA_2U:
-        part = "2";
-        conformance = "U";
-        break;
-      case _PDFIO_PDFA_3A:
-        part = "3";
-        conformance = "A";
-        break;
-      case _PDFIO_PDFA_3B:
-        part = "3";
-        break;
-      case _PDFIO_PDFA_3U:
-        part = "3";
-        conformance = "U";
-        break;
-      case _PDFIO_PDFA_4:
-        part = "4";
-        conformance = "";     // Conformance level is part of GTS_PDFA4 key
-        break;
-      case _PDFIO_PDFA_NONE: 
-        break;
-    }
+      "1", "1", "2", "2", "2", "3", "3", "3", "4"
+    };
+    static const char * const conformances[] =  // Conformance levels
+    {
+      "A", "B", "A", "B", "U", "A", "B", "U", ""
+    };
+
+    const char *part = parts[pdf->pdfa - 1]; 
+    const char *conformance = conformances[pdf->pdfa - 1];
+    
 
     status &= pdfioStreamPuts(st, "     <rdf:Description rdf:about=\"\" xmlns:pdfaid=\"http://www.aiim.org/pdfa/ns/id/\">\n");
     status &= pdfioStreamPrintf(st, "       <pdfaid:part>%s</pdfaid:part>\n",part);
