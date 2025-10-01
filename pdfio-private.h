@@ -105,7 +105,7 @@ typedef enum _pdfio_mode_e		// Read/write mode
   _PDFIO_MODE_WRITE			// Write a PDF file
 } _pdfio_mode_t;
 
-typedef enum _pdfio_pdfa_e
+typedef enum _pdfio_pdfa_e    // PDF/A version constants
 {
   _PDFIO_PDFA_NONE = 0,   // Not a PDF/A file
   _PDFIO_PDFA_1A,         // PDF/A-1a:2005
