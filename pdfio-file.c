@@ -1633,17 +1633,14 @@ create_common(
     pdf->crop_box.y2 = 11.0f * 72.0f;
   }
 
-  // Write a standard PDF header...
+  // Write the PDF header (special case for PCLm, otherwise standard/PDF-A header)
   if (!strncmp(version, "PCLm-", 5))
   {
-    // PCLm has a special header format
     if (!_pdfioFilePrintf(pdf, "%%PDF-1.4\n%%%s\n", version))
       goto error;
   }
   else
   {
-    // For all other PDFs, including all PDF/A versions, write the header
-    // with the binary comment.
     if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", pdf->version))
       goto error;
   }
