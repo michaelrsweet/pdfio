@@ -1520,7 +1520,7 @@ create_common(
   unsigned char	id_value[16];		// File ID value
   time_t	curtime;		// Creation date/time
   _pdfio_sha256_t ctx;			// Hashing context
-  const char *actual_version;   // Actual PDF version string
+  const char *file_version;   // Actual PDF version string
 
   PDFIO_DEBUG("create_common(filename=\"%s\", fd=%d, output_cb=%p, output_cbdata=%p, version=\"%s\", media_box=%p, crop_box=%p, error_cb=%p, error_cbdata=%p)\n", filename, fd, (void *)output_cb, (void *)output_cbdata, version, (void *)media_box, (void *)crop_box, (void *)error_cb, (void *)error_cbdata);
 
@@ -1566,7 +1566,7 @@ create_common(
 
   if (!strncmp(version, "PDF/A-1", 7))
   {
-    actual_version = "1.4";
+    file_version = "1.4";
     if (version[7] == 'a')
       pdf->pdfa = _PDFIO_PDFA_1A;
     else
@@ -1574,7 +1574,7 @@ create_common(
   }
   else if (!strncmp(version, "PDF/A-2", 7))
   {
-    actual_version = "1.7";
+    file_version = "1.7";
     if (version[7] == 'a')
       pdf->pdfa = _PDFIO_PDFA_2A;
     else if (version[7] == 'u')
@@ -1584,7 +1584,7 @@ create_common(
   }
   else if (!strncmp(version, "PDF/A-3", 7))
   {
-    actual_version = "1.7";
+    file_version = "1.7";
     if (version[7] == 'a')
       pdf->pdfa = _PDFIO_PDFA_3A;
     else if (version[7] == 'u')
@@ -1594,16 +1594,16 @@ create_common(
   }
   else if (!strncmp(version, "PDF/A-4", 7))
   {
-    actual_version = "2.0";
+    file_version = "2.0";
     pdf->pdfa = _PDFIO_PDFA_4;
   }
   else
   {
-    actual_version = version;
+    file_version = version;
     pdf->pdfa = _PDFIO_PDFA_NONE;
   }
 
-  pdf->version     = strdup(actual_version);
+  pdf->version     = strdup(file_version);
   pdf->mode        = _PDFIO_MODE_WRITE;
   pdf->error_cb    = error_cb;
   pdf->error_data  = error_cbdata;
