@@ -1528,8 +1528,6 @@ create_common(
   if (!filename || (fd < 0 && !output_cb))
     return (NULL);
 
-  //if (!version)
-    //version = "2.0";
 
   if (!error_cb)
   {
