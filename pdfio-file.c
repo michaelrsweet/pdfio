@@ -1329,25 +1329,21 @@ pdfioFileSetPermissions(
   if (!pdf)
     return (false);
 
-  // 1. First, check if this is a PDF/A file trying to use encryption. This check must be first.
   if (pdf->pdfa != _PDFIO_PDFA_NONE && encryption != PDFIO_ENCRYPTION_NONE)
   {
     _pdfioFileError(pdf, "Encryption is not allowed for PDF/A files.");
     return (false);
   }
 
-  // 2. If no encryption is being applied anyway, we are done.
   if (encryption == PDFIO_ENCRYPTION_NONE)
     return (true);
 
-  // 3. Check if it's too late in the file creation process to set permissions.
   if (pdf->num_objs > 3)		// First three objects are pages, info, and root
   {
     _pdfioFileError(pdf, "You must call pdfioFileSetPermissions before adding any objects.");
     return (false);
   }
 
-  // 4. If all checks pass, proceed with locking the document.
   pdf->encrypt_metadata = true;
 
   return (_pdfioCryptoLock(pdf, permissions, encryption, owner_password, user_password));
