@@ -200,12 +200,12 @@ do_pdfa_tests(void)
   bool		error = false;		// Error flag
 
   // Test creation of various PDF/A standards
-  if (create_pdfa_test_file("testpdfio-pdfa-1b.pdf", "PDF/A-1b")) status = 1;
-  if (create_pdfa_test_file("testpdfio-pdfa-2b.pdf", "PDF/A-2b")) status = 1;
-  if (create_pdfa_test_file("testpdfio-pdfa-2u.pdf", "PDF/A-2u")) status = 1;
-  if (create_pdfa_test_file("testpdfio-pdfa-3b.pdf", "PDF/A-3b")) status = 1;
-  if (create_pdfa_test_file("testpdfio-pdfa-3u.pdf", "PDF/A-3u")) status = 1;
-  if (create_pdfa_test_file("testpdfio-pdfa-4.pdf", "PDF/A-4")) status = 1;
+  status |= create_pdfa_test_file("testpdfio-pdfa-1b.pdf", "PDF/A-1b");
+  status |= create_pdfa_test_file("testpdfio-pdfa-2b.pdf", "PDF/A-2b");
+  status |= create_pdfa_test_file("testpdfio-pdfa-2u.pdf", "PDF/A-2u");
+  status |= create_pdfa_test_file("testpdfio-pdfa-3b.pdf", "PDF/A-3b");
+  status |= create_pdfa_test_file("testpdfio-pdfa-3u.pdf", "PDF/A-3u");
+  status |= create_pdfa_test_file("testpdfio-pdfa-4.pdf", "PDF/A-4");
 
   // Test that encryption is not allowed for PDF/A files
   testBegin("pdfioFileCreate(testpdfio-pdfa-rc4.pdf)");
