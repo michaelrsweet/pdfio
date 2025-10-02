@@ -146,7 +146,7 @@ create_pdfa_test_file(
   bool		error = false;		// Error flag
 
 
-  testBegin("Create %s file '%s'", pdfa_version, filename);
+  testBegin("pdfioFileCreate(%s)", pdfa_version);
 
   if ((pdf = pdfioFileCreate(filename, pdfa_version, &media_box, NULL, (pdfio_error_cb_t)error_cb, &error)) == NULL)
   {
