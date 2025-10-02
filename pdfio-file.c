@@ -2747,18 +2747,27 @@ write_metadata(pdfio_file_t *pdf)	// I - PDF file
 
   if (pdf->pdfa != _PDFIO_PDFA_NONE)
   {
-    static const char * const parts[] =   // Part numbers
-    {
-      "1", "1", "2", "2", "2", "3", "3", "3", "4"
+   static const char * const pdfa_versions[] = 
+   {
+     "1A", // _PDFIO_PDFA_1A
+     "1B", // _PDFIO_PDFA_1B
+     "2A", // _PDFIO_PDFA_2A
+     "2B", // _PDFIO_PDFA_2B
+     "2U", // _PDFIO_PDFA_2U
+     "3A", // _PDFIO_PDFA_3A
+     "3B", // _PDFIO_PDFA_3B
+     "3U", // _PDFIO_PDFA_3U
+     "4",  // _PDFIO_PDFA_4
     };
-    static const char * const conformances[] =  // Conformance levels
-    {
-      "A", "B", "A", "B", "U", "A", "B", "U", ""
-    };
-
-    const char *part = parts[pdf->pdfa - 1]; 
-    const char *conformance = conformances[pdf->pdfa - 1];
-    
+   const char *version_info = pdfa_versions[pdf->pdfa - _PDFIO_PDFA_1A];
+   char part[2];
+   const char *conformance;
+   part[0] = version_info[0];
+   part[1] = '\0';
+   if (version_info[1])
+     conformance = version_info + 1;
+   else
+     conformance = "";
 
     status &= pdfioStreamPuts(st, "     <rdf:Description rdf:about=\"\" xmlns:pdfaid=\"http://www.aiim.org/pdfa/ns/id/\">\n");
     status &= pdfioStreamPrintf(st, "       <pdfaid:part>%s</pdfaid:part>\n",part);
