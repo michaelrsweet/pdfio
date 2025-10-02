@@ -273,6 +273,7 @@ span.string {
 <li><a href="#pdf-objects">PDF Objects</a></li>
 <li><a href="#pdf-streams">PDF Streams</a></li>
 <li><a href="#pdf-content-helper-functions">PDF Content Helper Functions</a></li>
+<li><a href="#tagged-and-marked-pdf-content">Tagged and Marked PDF Content</a></li>
 </ul></li>
 <li><a href="#examples">Examples</a><ul class="subcontents">
 <li><a href="#read-pdf-metadata">Read PDF Metadata</a></li>
@@ -310,8 +311,10 @@ span.string {
 <li><a href="#pdfioArrayGetString">pdfioArrayGetString</a></li>
 <li><a href="#pdfioArrayGetType">pdfioArrayGetType</a></li>
 <li><a href="#pdfioArrayRemove">pdfioArrayRemove</a></li>
+<li><a href="#pdfioContentBeginMarked">pdfioContentBeginMarked</a></li>
 <li><a href="#pdfioContentClip">pdfioContentClip</a></li>
 <li><a href="#pdfioContentDrawImage">pdfioContentDrawImage</a></li>
+<li><a href="#pdfioContentEndMarked">pdfioContentEndMarked</a></li>
 <li><a href="#pdfioContentFill">pdfioContentFill</a></li>
 <li><a href="#pdfioContentFillAndStroke">pdfioContentFillAndStroke</a></li>
 <li><a href="#pdfioContentMatrixConcat">pdfioContentMatrixConcat</a></li>
@@ -1158,6 +1161,38 @@ pdfio_obj_t *img =
 <li><p><a href="#pdfioContentTextShowJustified"><code>pdfioContentTextShowJustified</code></a> draws an array of literal strings with offsets between them</p>
 </li>
 </ul>
+<h3 class="title" id="tagged-and-marked-pdf-content">Tagged and Marked PDF Content</h3>
+<p>Content in a page stream can be tagged to help a PDF reader application know the kind and organization of that content. Content inserted using the PDFio <a href="#page-stream-functions">Page Stream Functions</a> can be tagged by surrounding it with the <a href="#pdfioContentBeginMarked"><code>pdfioContentBeginMarked</code></a> and <a href="#pdfioContentEndMarked"><code>pdfioContentEndMarked</code></a> functions.</p>
+<p>The <code>pdfioContentBeginMarked</code> function accepts a named tag and optional dictionary of attributes such as the marked content identifier (&quot;MCID&quot;). For example, the following code tags a paragraph of text:</p>
+<pre><code class="language-c">pdfio_file_t   *pdf;  <span class="comment">// PDF file</span>
+pdfio_stream_t *st;   <span class="comment">// Page stream</span>
+
+pdfioContentBeginMarked(st, <span class="string">&quot;P&quot;</span>, <span class="comment">/*dict*/</span>NULL);
+
+pdfioContentTextShow(st, <span class="comment">/*unicode*/</span><span class="reserved">false</span>, <span class="string">&quot;Mary had a little lamb\n&quot;</span>);
+pdfioContentTextShow(st, <span class="comment">/*unicode*/</span><span class="reserved">false</span>, <span class="string">&quot;whose fleece was white as snow.\n&quot;</span>);
+pdfioContentTextShow(st, <span class="comment">/*unicode*/</span><span class="reserved">false</span>, <span class="string">&quot;And everywhere that Mary went\n&quot;</span>);
+pdfioContentTextShow(st, <span class="comment">/*unicode*/</span><span class="reserved">false</span>, <span class="string">&quot;the lamb was sure to go,\n&quot;</span>);
+
+pdfioContentEndMarked(st);
+</code></pre>
+<p>To mark the same paragraph with a content identifier you would first create a dictionary containing the &quot;MCID&quot; key/value pair and then mark the paragraph with that dictionary:</p>
+<pre><code class="language-c">pdfio_file_t   *pdf;  <span class="comment">// PDF file</span>
+pdfio_stream_t *st;   <span class="comment">// Page stream</span>
+pdfio_dict_t   *dict; <span class="comment">// Content dictionary</span>
+
+dict = pdfioDictCreate(pdf);
+pdfioDictSetNumber(dict, <span class="string">&quot;MCID&quot;</span>, <span class="number">42</span>);
+
+pdfioContentBeginMarked(st, <span class="string">&quot;P&quot;</span>, dict);
+
+pdfioContentTextShow(st, <span class="comment">/*unicode*/</span><span class="reserved">false</span>, <span class="string">&quot;Mary had a little lamb\n&quot;</span>);
+pdfioContentTextShow(st, <span class="comment">/*unicode*/</span><span class="reserved">false</span>, <span class="string">&quot;whose fleece was white as snow.\n&quot;</span>);
+pdfioContentTextShow(st, <span class="comment">/*unicode*/</span><span class="reserved">false</span>, <span class="string">&quot;And everywhere that Mary went\n&quot;</span>);
+pdfioContentTextShow(st, <span class="comment">/*unicode*/</span><span class="reserved">false</span>, <span class="string">&quot;the lamb was sure to go,\n&quot;</span>);
+
+pdfioContentEndMarked(st);
+</code></pre>
 <h2 class="title" id="examples">Examples</h2>
 <p>PDFio includes several example programs that are typically installed to the <code>/usr/share/doc/pdfio/examples</code> or <code>/usr/local/share/doc/pdfio/examples</code> directories. A makefile is included to build them.</p>
 <h3 class="title" id="read-pdf-metadata">Read PDF Metadata</h3>
@@ -1753,6 +1788,9 @@ pdfioStreamClose(page_st);
   <span class="comment">// State for the current page</span>
   pdfio_stream_t *st;                   <span class="comment">// Current page stream</span>
   <span class="reserved">double</span>        y;                      <span class="comment">// Current position on page</span>
+  <span class="reserved">const</span> <span class="reserved">char</span>    *tag;                   <span class="comment">// Current block tag</span>
+  <span class="reserved">bool</span>          in_table,               <span class="comment">// Are we in a table?</span>
+                in_row;                 <span class="comment">// Are we in a table row?</span>
   docfont_t     font;                   <span class="comment">// Current font</span>
   <span class="reserved">double</span>        fsize;                  <span class="comment">// Current font size</span>
   doccolor_t    color;                  <span class="comment">// Current color</span>
@@ -2130,6 +2168,9 @@ pdfioContentPathRect(dd-&gt;st, left - CODE_PADDING, dd-&gt;y + SIZE_CODEBLOCK,
 pdfioContentFillAndStroke(dd-&gt;st, <span class="reserved">false</span>);
 
 <span class="comment">// Start a code text block...</span>
+dd-&gt;tag = <span class="string">&quot;P&quot;</span>;
+pdfioContentBeginMarked(dd-&gt;st, dd-&gt;tag, <span class="comment">/*dict*/</span>NULL);
+
 set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
 pdfioContentTextBegin(dd-&gt;st);
 pdfioContentTextMoveTo(dd-&gt;st, left, dd-&gt;y);
@@ -2165,6 +2206,9 @@ pdfioContentTextMoveTo(dd-&gt;st, left, dd-&gt;y);
 <span class="comment">// End the current text block...</span>
 pdfioContentTextEnd(dd-&gt;st);
 dd-&gt;y += lineheight;
+
+pdfioContentEndMarked(dd-&gt;st);
+dd-&gt;tag = NULL;
 
 <span class="comment">// Draw the bottom padding...</span>
 set_color(dd, DOCCOLOR_LTGRAY);
@@ -2276,8 +2320,17 @@ pdfioContentFillAndStroke(dd-&gt;st, <span class="reserved">false</span>);
 </code></pre>
 <p>Finally, we render each row in the table:</p>
 <pre><code class="language-c"><span class="comment">// Render each table row...</span>
+dd-&gt;in_table = <span class="reserved">true</span>;
+
+<span class="reserved">if</span> (dd-&gt;st)
+  pdfioContentBeginMarked(dd-&gt;st, <span class="string">&quot;Table&quot;</span>, <span class="comment">/*dict*/</span>NULL);
+
 <span class="reserved">for</span> (row = <span class="number">0</span>, rowptr = rows; row &lt; num_rows; row ++, rowptr ++)
   render_row(dd, num_cols, cols, rowptr);
+
+pdfioContentEndMarked(dd-&gt;st);
+
+dd-&gt;in_table = <span class="reserved">false</span>;
 </code></pre>
 <h4 id="rendering-the-markdown-document">Rendering the Markdown Document</h4>
 <p>The formatted content in arrays of <code>linefrag_t</code> and <code>tablerow_t</code> structures are passed to the <code>render_line</code> and <code>render_row</code> functions respectively to produce content in the PDF document.</p>
@@ -2767,6 +2820,35 @@ size_t pdfioArrayGetSize(<a href="#pdfio_array_t">pdfio_array_t</a> *a);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> otherwise</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.6&#160;</span><a id="pdfioContentBeginMarked">pdfioContentBeginMarked</a></h3>
+<p class="description">Start marked content with an optional dictionary.</p>
+<p class="code">
+<span class="reserved">bool</span> pdfioContentBeginMarked(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, <span class="reserved">const</span> <span class="reserved">char</span> *tag, <a href="#pdfio_dict_t">pdfio_dict_t</a> *dict);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>st</th>
+<td class="description">Stream</td></tr>
+<tr><th>tag</th>
+<td class="description">Tag name of marked content</td></tr>
+<tr><th>dict</th>
+<td class="description">Dictionary of parameters or <code>NULL</code> if none</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function starts an area of marked content with an optional dictionary.
+It must be paired with a call to the <a href="#pdfioContentEndMarked"><code>pdfioContentEndMarked</code></a> function.<br>
+<br>
+The &quot;tag&quot; argument specifies the tag name string for the content such as &quot;P&quot;
+for a paragraph, &quot;H1&quot; for a top-level heading, and so forth.  The &quot;dict&quot;
+argument specifies an optional dictionary of properties for the content such
+as the marked content identifier (&quot;MCID&quot;) number.<br>
+<br>
+Calling this function sets the &quot;Marked&quot; key in the &quot;MarkInfo&quot; dictionary of
+the document catalog.  The caller is responsible for setting the
+&quot;StructTreeRoot&quot; dictionary when creating marked content.
+
+</p>
 <h3 class="function"><a id="pdfioContentClip">pdfioContentClip</a></h3>
 <p class="description">Clip output to the current path.</p>
 <p class="code">
@@ -2804,6 +2886,22 @@ size_t pdfioArrayGetSize(<a href="#pdfio_array_t">pdfio_array_t</a> *a);</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">The object name must be part of the page dictionary resources, typically
 using the <a href="#pdfioPageDictAddImage"><code>pdfioPageDictAddImage</code></a> function.</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.6&#160;</span><a id="pdfioContentEndMarked">pdfioContentEndMarked</a></h3>
+<p class="description">End marked content.</p>
+<p class="code">
+<span class="reserved">bool</span> pdfioContentEndMarked(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>st</th>
+<td class="description">Stream</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function ends an area of marked content that was started using the
+<a href="#pdfioContentBeginMarked"><code>pdfioContentBeginMarked</code></a> function.
+
+</p>
 <h3 class="function"><a id="pdfioContentFill">pdfioContentFill</a></h3>
 <p class="description">Fill the current path.</p>
 <p class="code">

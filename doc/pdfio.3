@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2025-08-26" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2025-09-30" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -1032,6 +1032,45 @@ pdfioContentTextShowf draws a formatted string in a text block
 pdfioContentTextShowJustified draws an array of literal strings with offsets between them
 
 
+.SS Tagged and Marked PDF Content
+.PP
+Content in a page stream can be tagged to help a PDF reader application know the kind and organization of that content. Content inserted using the PDFio Page Stream Functions can be tagged by surrounding it with the pdfioContentBeginMarked and pdfioContentEndMarked functions.
+.PP
+The pdfioContentBeginMarked function accepts a named tag and optional dictionary of attributes such as the marked content identifier ("MCID"). For example, the following code tags a paragraph of text:
+.nf
+
+    pdfio_file_t   *pdf;  // PDF file
+    pdfio_stream_t *st;   // Page stream
+    
+    pdfioContentBeginMarked(st, "P", /*dict*/NULL);
+    
+    pdfioContentTextShow(st, /*unicode*/false, "Mary had a little lamb\\n");
+    pdfioContentTextShow(st, /*unicode*/false, "whose fleece was white as snow.\\n");
+    pdfioContentTextShow(st, /*unicode*/false, "And everywhere that Mary went\\n");
+    pdfioContentTextShow(st, /*unicode*/false, "the lamb was sure to go,\\n");
+    
+    pdfioContentEndMarked(st);
+.fi
+.PP
+To mark the same paragraph with a content identifier you would first create a dictionary containing the "MCID" key/value pair and then mark the paragraph with that dictionary:
+.nf
+
+    pdfio_file_t   *pdf;  // PDF file
+    pdfio_stream_t *st;   // Page stream
+    pdfio_dict_t   *dict; // Content dictionary
+    
+    dict = pdfioDictCreate(pdf);
+    pdfioDictSetNumber(dict, "MCID", 42);
+    
+    pdfioContentBeginMarked(st, "P", dict);
+    
+    pdfioContentTextShow(st, /*unicode*/false, "Mary had a little lamb\\n");
+    pdfioContentTextShow(st, /*unicode*/false, "whose fleece was white as snow.\\n");
+    pdfioContentTextShow(st, /*unicode*/false, "And everywhere that Mary went\\n");
+    pdfioContentTextShow(st, /*unicode*/false, "the lamb was sure to go,\\n");
+    
+    pdfioContentEndMarked(st);
+.fi
 .SH Examples
 .PP
 PDFio includes several example programs that are typically installed to the /usr/share/doc/pdfio/examples or /usr/local/share/doc/pdfio/examples directories. A makefile is included to build them.
@@ -1691,6 +1730,9 @@ The md2pdf program needs to maintain three sets of state \- one for the markdown
       // State for the current page
       pdfio_stream_t *st;                   // Current page stream
       double        y;                      // Current position on page
+      const char    *tag;                   // Current block tag
+      bool          in_table,               // Are we in a table?
+                    in_row;                 // Are we in a table row?
       docfont_t     font;                   // Current font
       double        fsize;                  // Current font size
       doccolor_t    color;                  // Current color
@@ -2167,6 +2209,9 @@ Code blocks consist of one or more lines of plain monospaced text. We draw a lig
     pdfioContentFillAndStroke(dd\->st, false);
     
     // Start a code text block...
+    dd\->tag = "P";
+    pdfioContentBeginMarked(dd\->st, dd\->tag, /*dict*/NULL);
+    
     set_font(dd, DOCFONT_MONOSPACE, SIZE_CODEBLOCK);
     pdfioContentTextBegin(dd\->st);
     pdfioContentTextMoveTo(dd\->st, left, dd\->y);
@@ -2202,6 +2247,9 @@ Code blocks consist of one or more lines of plain monospaced text. We draw a lig
     // End the current text block...
     pdfioContentTextEnd(dd\->st);
     dd\->y += lineheight;
+    
+    pdfioContentEndMarked(dd\->st);
+    dd\->tag = NULL;
     
     // Draw the bottom padding...
     set_color(dd, DOCCOLOR_LTGRAY);
@@ -2332,8 +2380,17 @@ Finally, we render each row in the table:
 .nf
 
     // Render each table row...
+    dd\->in_table = true;
+    
+    if (dd\->st)
+      pdfioContentBeginMarked(dd\->st, "Table", /*dict*/NULL);
+    
     for (row = 0, rowptr = rows; row < num_rows; row ++, rowptr ++)
       render_row(dd, num_cols, cols, rowptr);
+    
+    pdfioContentEndMarked(dd\->st);
+    
+    dd\->in_table = false;
 .fi
 .PP
 Rendering the Markdown Document
@@ -2957,6 +3014,30 @@ bool  pdfioArrayRemove (
 .fi
 .PP
 
+.SS pdfioContentBeginMarked
+Start marked content with an optional dictionary.
+.PP
+.nf
+bool  pdfioContentBeginMarked (
+    pdfio_stream_t *st,
+    const char *tag,
+    pdfio_dict_t *dict
+);
+.fi
+.PP
+This function starts an area of marked content with an optional dictionary.
+It must be paired with a call to the \fIpdfioContentEndMarked\fR function.
+.PP
+The "tag" argument specifies the tag name string for the content such as "P"
+for a paragraph, "H1" for a top-level heading, and so forth.  The "dict"
+argument specifies an optional dictionary of properties for the content such
+as the marked content identifier ("MCID") number.
+.PP
+Calling this function sets the "Marked" key in the "MarkInfo" dictionary of
+the document catalog.  The caller is responsible for setting the
+"StructTreeRoot" dictionary when creating marked content.
+
+
 .SS pdfioContentClip
 Clip output to the current path.
 .PP
@@ -2982,6 +3063,19 @@ bool  pdfioContentDrawImage (
 .PP
 The object name must be part of the page dictionary resources, typically
 using the \fIpdfioPageDictAddImage\fR function.
+.SS pdfioContentEndMarked
+End marked content.
+.PP
+.nf
+bool  pdfioContentEndMarked (
+    pdfio_stream_t *st
+);
+.fi
+.PP
+This function ends an area of marked content that was started using the
+\fIpdfioContentBeginMarked\fR function.
+
+
 .SS pdfioContentFill
 Fill the current path.
 .PP
