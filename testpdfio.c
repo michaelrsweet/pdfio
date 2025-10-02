@@ -146,7 +146,6 @@ create_pdfa_test_file(
   char		text[256];		// Text to write to page
   bool		error = false;		// Error flag
 
-  snprintf(text, sizeof(text), "This is a compliance test for %s.", pdfa_version);
 
   testBegin("Create %s file '%s'", pdfa_version, filename);
 
@@ -171,7 +170,7 @@ create_pdfa_test_file(
   pdfioContentSetTextFont(st, "F1", 12.0);
   pdfioContentTextBegin(st);
   pdfioContentTextMoveTo(st, 72.0, 720.0);
-  pdfioContentTextShow(st, false, text);
+  pdfioContentTextShowf(st, false, "This is a compliance test for %s.", pdfa_version);
   pdfioContentTextEnd(st);
 
   pdfioStreamClose(st);
