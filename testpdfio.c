@@ -200,16 +200,16 @@ do_pdfa_tests(void)
   bool		error = false;		// Error flag
 
   // Test creation of various PDF/A standards
-  if (create_pdfa_test_file("test-pdfa-1b.pdf", "PDF/A-1b")) status = 1;
-  if (create_pdfa_test_file("test-pdfa-2b.pdf", "PDF/A-2b")) status = 1;
-  if (create_pdfa_test_file("test-pdfa-2u.pdf", "PDF/A-2u")) status = 1;
-  if (create_pdfa_test_file("test-pdfa-3b.pdf", "PDF/A-3b")) status = 1;
-  if (create_pdfa_test_file("test-pdfa-3u.pdf", "PDF/A-3u")) status = 1;
-  if (create_pdfa_test_file("test-pdfa-4.pdf", "PDF/A-4")) status = 1;
+  if (create_pdfa_test_file("testpdfio-pdfa-1b.pdf", "PDF/A-1b")) status = 1;
+  if (create_pdfa_test_file("testpdfio-pdfa-2b.pdf", "PDF/A-2b")) status = 1;
+  if (create_pdfa_test_file("testpdfio-pdfa-2u.pdf", "PDF/A-2u")) status = 1;
+  if (create_pdfa_test_file("testpdfio-pdfa-3b.pdf", "PDF/A-3b")) status = 1;
+  if (create_pdfa_test_file("testpdfio-pdfa-3u.pdf", "PDF/A-3u")) status = 1;
+  if (create_pdfa_test_file("testpdfio-pdfa-4.pdf", "PDF/A-4")) status = 1;
 
   // Test that encryption is not allowed for PDF/A files
   testBegin("Block encryption for PDF/A file");
-  if ((fail_pdf = pdfioFileCreate("test-pdfa-fail.pdf", "PDF/A-1b", &media_box, NULL, (pdfio_error_cb_t)error_cb, &error)) == NULL)
+  if ((fail_pdf = pdfioFileCreate("testpdfio-pdfa-fail.pdf", "PDF/A-1b", &media_box, NULL, (pdfio_error_cb_t)error_cb, &error)) == NULL)
   {
     testEndMessage(false, "pdfioFileCreate failed for encryption test.");
     return (1);
