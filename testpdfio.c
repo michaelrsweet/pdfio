@@ -1326,11 +1326,12 @@ do_unit_tests(void)
   if (read_unit_file(temppdf, num_pages, first_image, false))
     return (1);
 
-  // Do PDF/A tests...
-  if (do_pdfa_tests())
-    goto fail;
 
   pdfioFileClose(inpdf);
+  
+  // Do PDF/A tests...
+  if (do_pdfa_tests())
+    return (1);
 
   return (0);
 
