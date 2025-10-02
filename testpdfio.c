@@ -143,7 +143,6 @@ create_pdfa_test_file(
   pdfio_obj_t	*font;			// Font object
   pdfio_dict_t	*page_dict;		// Page dictionary
   pdfio_stream_t *st;			// Page content stream
-  char		text[256];		// Text to write to page
   bool		error = false;		// Error flag
 
 
