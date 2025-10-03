@@ -51,7 +51,8 @@ static int	write_jpeg_test(pdfio_file_t *pdf, const char *title, int number, pdf
 static int	write_png_tests(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_text_test(pdfio_file_t *pdf, int first_page, pdfio_obj_t *font, const char *filename);
 static int	write_unit_file(pdfio_file_t *inpdf, const char *outname, pdfio_file_t *outpdf, size_t *num_pages, size_t *first_image);
-
+static int	do_pdfa_tests(void);
+static int	create_pdfa_test_file(const char *filename, const char *pdfa_version);
 
 //
 // 'main()' - Main entry for test program.
@@ -126,6 +127,107 @@ main(int  argc,				// I - Number of command-line arguments
   }
 
   return (ret);
+}
+
+//
+// 'create_pdfa_test_file()' - A helper function to generate a simple PDF/A file.
+//
+static int				// O - 0 on success, 1 on error
+create_pdfa_test_file(
+    const char *filename,		// I - Name of the PDF file to create
+    const char *pdfa_version)		// I - PDF/A version string (e.g., "PDF/A-1b")
+{
+  pdfio_file_t	*pdf;			// Output PDF file
+  pdfio_rect_t	media_box = { 0.0, 0.0, 612.0, 792.0 };
+					// Media box for US Letter
+  pdfio_obj_t	*font;			// Font object
+  pdfio_dict_t	*page_dict;		// Page dictionary
+  pdfio_stream_t *st;			// Page content stream
+  bool		error = false;		// Error flag
+
+
+  testBegin("pdfioFileCreate(%s)", pdfa_version);
+
+  if ((pdf = pdfioFileCreate(filename, pdfa_version, &media_box, NULL, (pdfio_error_cb_t)error_cb, &error)) == NULL)
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  // Embed a font, which is required for PDF/A
+  if ((font = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", false)) == NULL)
+  {
+    pdfioFileClose(pdf);
+    testEnd(false);
+    return (1);
+  }
+
+  page_dict = pdfioDictCreate(pdf);
+  pdfioPageDictAddFont(page_dict, "F1", font);
+  st = pdfioFileCreatePage(pdf, page_dict);
+
+  pdfioContentSetTextFont(st, "F1", 12.0);
+  pdfioContentTextBegin(st);
+  pdfioContentTextMoveTo(st, 72.0, 720.0);
+  pdfioContentTextShowf(st, false, "This is a compliance test for %s.", pdfa_version);
+  pdfioContentTextEnd(st);
+
+  pdfioStreamClose(st);
+
+  if (pdfioFileClose(pdf))
+  {
+    testEnd(true);
+    return (0);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+}
+
+
+//
+// 'do_pdfa_tests()' - Run PDF/A generation and compliance tests.
+//
+static int				// O - 0 on success, 1 on error
+do_pdfa_tests(void)
+{
+  int		status = 0;		// Overall status
+  pdfio_file_t	*fail_pdf;		// PDF file for failure test
+  pdfio_rect_t	media_box = { 0.0, 0.0, 612.0, 792.0 };
+					// US Letter media box
+  bool		error = false;		// Error flag
+
+  // Test creation of various PDF/A standards
+  status |= create_pdfa_test_file("testpdfio-pdfa-1b.pdf", "PDF/A-1b");
+  status |= create_pdfa_test_file("testpdfio-pdfa-2b.pdf", "PDF/A-2b");
+  status |= create_pdfa_test_file("testpdfio-pdfa-2u.pdf", "PDF/A-2u");
+  status |= create_pdfa_test_file("testpdfio-pdfa-3b.pdf", "PDF/A-3b");
+  status |= create_pdfa_test_file("testpdfio-pdfa-3u.pdf", "PDF/A-3u");
+  status |= create_pdfa_test_file("testpdfio-pdfa-4.pdf", "PDF/A-4");
+
+  // Test that encryption is not allowed for PDF/A files
+  testBegin("pdfioFileCreate(testpdfio-pdfa-rc4.pdf)");
+  if ((fail_pdf = pdfioFileCreate("testpdfio-pdfa-rc4.pdf", "PDF/A-1b", &media_box, NULL, (pdfio_error_cb_t)error_cb, &error)) == NULL)
+  {
+    testEndMessage(false, "pdfioFileCreate failed for encryption test.");
+    return (1);
+  }
+
+  if (pdfioFileSetPermissions(fail_pdf, PDFIO_PERMISSION_ALL, PDFIO_ENCRYPTION_RC4_128, "owner", "user"))
+  {
+    testEndMessage(false, "encryption allowed on PDF/A file");
+    status = 1;
+  }
+  else
+  {
+    // This is the expected outcome
+    testEnd(true);
+  }
+  pdfioFileClose(fail_pdf);
+
+  return (status);
 }
 
 
@@ -1057,6 +1159,8 @@ do_unit_tests(void)
   if (do_crypto_tests())
     return (1);
 
+  
+
   // Create a new PDF file...
   testBegin("pdfioFileCreate(\"testpdfio-out.pdf\", ...)");
   if ((outpdf = pdfioFileCreate("testpdfio-out.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
@@ -1222,7 +1326,12 @@ do_unit_tests(void)
   if (read_unit_file(temppdf, num_pages, first_image, false))
     return (1);
 
+
   pdfioFileClose(inpdf);
+  
+  // Do PDF/A tests...
+  if (do_pdfa_tests())
+    return (1);
 
   return (0);
 
