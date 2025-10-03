@@ -1534,7 +1534,6 @@ create_common(
     error_cb     = _pdfioFileDefaultError;
     error_cbdata = NULL;
 
-    return (NULL);
   }
 
   // Allocate a PDF file structure...
@@ -2760,17 +2759,11 @@ write_metadata(pdfio_file_t *pdf)	// I - PDF file
      "4",  // _PDFIO_PDFA_4
     };
    const char *version_info = pdfa_versions[pdf->pdfa - _PDFIO_PDFA_1A];
-   char part[2];
    const char *conformance;
-   part[0] = version_info[0];
-   part[1] = '\0';
-   if (version_info[1])
-     conformance = version_info + 1;
-   else
-     conformance = "";
+   conformance = version_info + 1;
 
     status &= pdfioStreamPuts(st, "     <rdf:Description rdf:about=\"\" xmlns:pdfaid=\"http://www.aiim.org/pdfa/ns/id/\">\n");
-    status &= pdfioStreamPrintf(st, "       <pdfaid:part>%s</pdfaid:part>\n",part);
+    status &= pdfioStreamPrintf(st, "       <pdfaid:part>%c</pdfaid:part>\n",version_info[0]);
     if (*conformance)
       status &= pdfioStreamPrintf(st, "       <pdfaid:conformance>%s</pdfaid:conformance>\n", conformance);
     status &= pdfioStreamPuts(st, " </rdf:Description>\n");
