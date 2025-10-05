@@ -15,6 +15,7 @@ v1.6.0 - YYYY-MM-DD
 - Added explicit support for warning messages (Issue #118)
 - Added `pdfioFileCreateFontObjFromData` function for embedding fonts in
   memory (Issue #120)
+- Added support for specifying PDF/A versions for created PDF files (Issue #122)
 - Added `pdfioContentBeginMarked` and `pdfioContentEndMarked` functions for
   creating tagged PDF content (Issue #123)
 - Added `pdfioFileGetLanguage` and `pdfioFileSetLanguage` functions for getting

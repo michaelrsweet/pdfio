@@ -28,6 +28,7 @@
 //
 
 static int	do_crypto_tests(void);
+static int	do_pdfa_tests(void);
 static int	do_test_file(const char *filename, int objnum, const char *password, bool verbose);
 static int	do_unit_tests(void);
 static int	draw_image(pdfio_stream_t *st, const char *name, double x, double y, double w, double h, const char *label);
@@ -48,11 +49,11 @@ static int	write_header_footer(pdfio_stream_t *st, const char *title, int number
 static pdfio_obj_t *write_image_object(pdfio_file_t *pdf, _pdfio_predictor_t predictor);
 static int	write_images_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_jpeg_test(pdfio_file_t *pdf, const char *title, int number, pdfio_obj_t *font, pdfio_obj_t *image);
+static int	write_pdfa_file(const char *filename, const char *pdfa_version);
 static int	write_png_tests(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_text_test(pdfio_file_t *pdf, int first_page, pdfio_obj_t *font, const char *filename);
 static int	write_unit_file(pdfio_file_t *inpdf, const char *outname, pdfio_file_t *outpdf, size_t *num_pages, size_t *first_image);
-static int	do_pdfa_tests(void);
-static int	create_pdfa_test_file(const char *filename, const char *pdfa_version);
+
 
 //
 // 'main()' - Main entry for test program.
@@ -128,108 +129,6 @@ main(int  argc,				// I - Number of command-line arguments
 
   return (ret);
 }
-
-//
-// 'create_pdfa_test_file()' - A helper function to generate a simple PDF/A file.
-//
-static int				// O - 0 on success, 1 on error
-create_pdfa_test_file(
-    const char *filename,		// I - Name of the PDF file to create
-    const char *pdfa_version)		// I - PDF/A version string (e.g., "PDF/A-1b")
-{
-  pdfio_file_t	*pdf;			// Output PDF file
-  pdfio_rect_t	media_box = { 0.0, 0.0, 612.0, 792.0 };
-					// Media box for US Letter
-  pdfio_obj_t	*font;			// Font object
-  pdfio_dict_t	*page_dict;		// Page dictionary
-  pdfio_stream_t *st;			// Page content stream
-  bool		error = false;		// Error flag
-
-
-  testBegin("pdfioFileCreate(%s)", pdfa_version);
-
-  if ((pdf = pdfioFileCreate(filename, pdfa_version, &media_box, NULL, (pdfio_error_cb_t)error_cb, &error)) == NULL)
-  {
-    testEnd(false);
-    return (1);
-  }
-
-  // Embed a font, which is required for PDF/A
-  if ((font = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", false)) == NULL)
-  {
-    pdfioFileClose(pdf);
-    testEnd(false);
-    return (1);
-  }
-
-  page_dict = pdfioDictCreate(pdf);
-  pdfioPageDictAddFont(page_dict, "F1", font);
-  st = pdfioFileCreatePage(pdf, page_dict);
-
-  pdfioContentSetTextFont(st, "F1", 12.0);
-  pdfioContentTextBegin(st);
-  pdfioContentTextMoveTo(st, 72.0, 720.0);
-  pdfioContentTextShowf(st, false, "This is a compliance test for %s.", pdfa_version);
-  pdfioContentTextEnd(st);
-
-  pdfioStreamClose(st);
-
-  if (pdfioFileClose(pdf))
-  {
-    testEnd(true);
-    return (0);
-  }
-  else
-  {
-    testEnd(false);
-    return (1);
-  }
-}
-
-
-//
-// 'do_pdfa_tests()' - Run PDF/A generation and compliance tests.
-//
-static int				// O - 0 on success, 1 on error
-do_pdfa_tests(void)
-{
-  int		status = 0;		// Overall status
-  pdfio_file_t	*fail_pdf;		// PDF file for failure test
-  pdfio_rect_t	media_box = { 0.0, 0.0, 612.0, 792.0 };
-					// US Letter media box
-  bool		error = false;		// Error flag
-
-  // Test creation of various PDF/A standards
-  status |= create_pdfa_test_file("testpdfio-pdfa-1b.pdf", "PDF/A-1b");
-  status |= create_pdfa_test_file("testpdfio-pdfa-2b.pdf", "PDF/A-2b");
-  status |= create_pdfa_test_file("testpdfio-pdfa-2u.pdf", "PDF/A-2u");
-  status |= create_pdfa_test_file("testpdfio-pdfa-3b.pdf", "PDF/A-3b");
-  status |= create_pdfa_test_file("testpdfio-pdfa-3u.pdf", "PDF/A-3u");
-  status |= create_pdfa_test_file("testpdfio-pdfa-4.pdf", "PDF/A-4");
-
-  // Test that encryption is not allowed for PDF/A files
-  testBegin("pdfioFileCreate(testpdfio-pdfa-rc4.pdf)");
-  if ((fail_pdf = pdfioFileCreate("testpdfio-pdfa-rc4.pdf", "PDF/A-1b", &media_box, NULL, (pdfio_error_cb_t)error_cb, &error)) == NULL)
-  {
-    testEndMessage(false, "pdfioFileCreate failed for encryption test.");
-    return (1);
-  }
-
-  if (pdfioFileSetPermissions(fail_pdf, PDFIO_PERMISSION_ALL, PDFIO_ENCRYPTION_RC4_128, "owner", "user"))
-  {
-    testEndMessage(false, "encryption allowed on PDF/A file");
-    status = 1;
-  }
-  else
-  {
-    // This is the expected outcome
-    testEnd(true);
-  }
-  pdfioFileClose(fail_pdf);
-
-  return (status);
-}
-
 
 //
 // 'do_crypto_tests()' - Test the various cryptographic functions in PDFio.
@@ -471,6 +370,56 @@ do_crypto_tests(void)
   }
 
   return (ret);
+}
+
+
+//
+// 'do_pdfa_tests()' - Run PDF/A generation and compliance tests.
+//
+
+static int				// O - 0 on success, 1 on error
+do_pdfa_tests(void)
+{
+  int		status = 0;		// Overall status
+  pdfio_file_t	*pdf;			// PDF file for encryption test
+  bool		error = false;		// Error flag
+
+
+  // Test creation of files using various PDF/A standards
+  status |= write_pdfa_file("testpdfio-pdfa-1a.pdf", "PDF/A-1a");
+  status |= write_pdfa_file("testpdfio-pdfa-1b.pdf", "PDF/A-1b");
+  status |= write_pdfa_file("testpdfio-pdfa-2a.pdf", "PDF/A-2a");
+  status |= write_pdfa_file("testpdfio-pdfa-2b.pdf", "PDF/A-2b");
+  status |= write_pdfa_file("testpdfio-pdfa-2u.pdf", "PDF/A-2u");
+  status |= write_pdfa_file("testpdfio-pdfa-3a.pdf", "PDF/A-3a");
+  status |= write_pdfa_file("testpdfio-pdfa-3b.pdf", "PDF/A-3b");
+  status |= write_pdfa_file("testpdfio-pdfa-3u.pdf", "PDF/A-3u");
+  status |= write_pdfa_file("testpdfio-pdfa-4.pdf", "PDF/A-4");
+
+  // Test that encryption is not allowed for PDF/A files
+  testBegin("pdfioFileCreate(testpdfio-pdfa-rc4.pdf)");
+  if ((pdf = pdfioFileCreate("testpdfio-pdfa-rc4.pdf", "PDF/A-1b", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) == NULL)
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  testEnd(true);
+
+  testBegin("pdfioFileSetPermissions(PDFIO_ENCRYPTION_RC4_128)");
+  if (pdfioFileSetPermissions(pdf, PDFIO_PERMISSION_ALL, PDFIO_ENCRYPTION_RC4_128, "owner", "user"))
+  {
+    testEndMessage(false, "incorrectly allowed encryption");
+    status = 1;
+  }
+  else
+  {
+    testEndMessage(true, "correctly prevented encryption");
+  }
+
+  pdfioFileClose(pdf);
+
+  return (status);
 }
 
 
@@ -1159,7 +1108,7 @@ do_unit_tests(void)
   if (do_crypto_tests())
     return (1);
 
-  
+
 
   // Create a new PDF file...
   testBegin("pdfioFileCreate(\"testpdfio-out.pdf\", ...)");
@@ -1326,9 +1275,8 @@ do_unit_tests(void)
   if (read_unit_file(temppdf, num_pages, first_image, false))
     return (1);
 
-
   pdfioFileClose(inpdf);
-  
+
   // Do PDF/A tests...
   if (do_pdfa_tests())
     return (1);
@@ -3480,6 +3428,152 @@ write_jpeg_test(pdfio_file_t *pdf,	// I - PDF file
 
   pdfioStreamClose(st);
   return (1);
+}
+
+
+//
+// 'write_pdfa_file()' - Generate a simple PDF/A file.
+//
+
+static int				// O - Exit status
+write_pdfa_file(
+    const char *filename,		// I - Name of the PDF file to create
+    const char *pdfa_version)		// I - PDF/A version string (e.g., "PDF/A-1b")
+{
+  int		status = 1;		// Exit status
+  pdfio_file_t	*pdf;			// Output PDF file
+  pdfio_obj_t	*font;			// Font object
+  pdfio_obj_t	*color_jpg,		// JPEG file
+		*pdfio_png;		// PNG file with transparency
+  pdfio_dict_t	*page_dict;		// Page dictionary
+  pdfio_stream_t *st;			// Page content stream
+  bool		error = false;		// Error flag
+  double	width,			// Width of image
+		height;			// Height of image
+  double	swidth,			// Scaled width
+		sheight,		// Scaled height
+		tx,			// X offset
+		ty;			// Y offset
+
+
+  testBegin("pdfioFileCreate(%s)", filename);
+
+  if ((pdf = pdfioFileCreate(filename, pdfa_version, /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) == NULL)
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  testEnd(true);
+
+  // Embed a base font, which are not allowed for PDF/A
+  testBegin("pdfioFileCreateFontObjFromBase(Helvetica)");
+  if ((font = pdfioFileCreateFontObjFromBase(pdf, "Helvetica")) != NULL)
+  {
+    testEnd(false);
+    goto done;
+  }
+
+  testEnd(true);
+
+  // Embed a font, which is required for PDF/A
+  testBegin("pdfioFileCreateFontObjFromFile(testfiles/OpenSans-Regular.ttf)");
+  if ((font = pdfioFileCreateFontObjFromFile(pdf, "testfiles/OpenSans-Regular.ttf", false)) == NULL)
+  {
+    testEnd(false);
+    goto done;
+  }
+
+  testEnd(true);
+
+  // Try embedding two images, one with alpha and one without...
+  testBegin("pdfioFileCreateImageObjFromFile(testfiles/color.jpg)");
+  if ((color_jpg = pdfioFileCreateImageObjFromFile(pdf, "testfiles/color.jpg", true)) == NULL)
+  {
+    testEnd(false);
+    goto done;
+  }
+
+  testEnd(true);
+
+  testBegin("pdfioFileCreateImageObjFromFile(testfiles/pdfio-rgba.png)");
+  pdfio_png = pdfioFileCreateImageObjFromFile(pdf, "testfiles/pdfio-rgba.png", false);
+
+  if ((pdfio_png != NULL && !strncmp(pdfa_version, "PDF/A-1", 7)) || (pdfio_png == NULL && strncmp(pdfa_version, "PDF/A-1", 7)))
+  {
+    testEnd(false);
+    goto done;
+  }
+
+  testEnd(true);
+
+  if (!pdfio_png)
+  {
+    testBegin("pdfioFileCreateImageObjFromFile(testfiles/pdfio-color.png)");
+    if ((pdfio_png = pdfioFileCreateImageObjFromFile(pdf, "testfiles/pdfio-color.png", false)) == NULL)
+    {
+      testEnd(false);
+      goto done;
+    }
+
+    testEnd(true);
+  }
+
+  // Create a page...
+  page_dict = pdfioDictCreate(pdf);
+  pdfioPageDictAddFont(page_dict, "F1", font);
+  pdfioPageDictAddImage(page_dict, "I1", pdfio_png);
+  pdfioPageDictAddImage(page_dict, "I2", color_jpg);
+
+  testBegin("pdfioFileCreatePage()");
+  if ((st = pdfioFileCreatePage(pdf, page_dict)) == NULL)
+  {
+    testEnd(false);
+    goto done;
+  }
+
+  testEnd(true);
+
+  pdfioContentSetTextFont(st, "F1", 18.0);
+  pdfioContentTextBegin(st);
+  pdfioContentTextMoveTo(st, 72.0, 720.0);
+  pdfioContentTextShowf(st, false, "This is a %s compliance test page.", pdfa_version);
+  pdfioContentDrawImage(st, "IM1", 36.0, 720.0, 18.0, 18.0);
+
+  width  = pdfioImageGetWidth(color_jpg);
+  height = pdfioImageGetHeight(color_jpg);
+
+  swidth  = 400.0;
+  sheight = swidth * height / width;
+  if (sheight > 500.0)
+  {
+    sheight = 500.0;
+    swidth  = sheight * width / height;
+  }
+
+  tx = 0.5 * (595.28 - swidth);
+  ty = 0.5 * (720.0 - sheight);
+
+  pdfioContentDrawImage(st, "IM2", tx, ty, swidth, sheight);
+  pdfioContentTextEnd(st);
+
+  pdfioStreamClose(st);
+
+  status = 0;
+
+  done:
+
+  testBegin("pdfioFileClose()");
+  if (pdfioFileClose(pdf))
+  {
+    testEnd(true);
+    return (status);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
 }
 
 

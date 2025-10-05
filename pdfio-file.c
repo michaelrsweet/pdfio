@@ -181,8 +181,20 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
 // name of the PDF file to create.
 //
 // The "version" argument specifies the PDF version number for the file or
-// `NULL` for the default ("2.0").  The value "PCLm-1.0" can be specified to
-// produce the PCLm subset of PDF.
+// `NULL` for the default ("2.0").  The following values are recognized:
+//
+// - "1.3", "1.4", "1.5", "1.6", "1.7", "2.0": Generic PDF files of the
+//   specified versions.
+// - "PCLm-1.0": The PCLm (raster) subset of PDF supported by some printers.
+// - "PDF/A-1a": PDF/A-1a:2005
+// - "PDF/A-1b": PDF/A-1b:2005
+// - "PDF/A-2a": PDF/A-2a:2011
+// - "PDF/A-2b": PDF/A-2b:2011
+// - "PDF/A-2u": PDF/A-2u:2011
+// - "PDF/A-3a": PDF/A-3a:2012
+// - "PDF/A-3b": PDF/A-3b:2012
+// - "PDF/A-3u": PDF/A-3u:2012
+// - "PDF/A-4": PDF/A-4:2020
 //
 // The "media_box" and "crop_box" arguments specify the default MediaBox and
 // CropBox for pages in the PDF file - if `NULL` then a default "Universal" size
@@ -433,9 +445,22 @@ _pdfioFileCreateObj(
 // ```
 //
 // The "version" argument specifies the PDF version number for the file or
-// `NULL` for the default ("2.0").  Unlike @link pdfioFileCreate@ and
-// @link pdfioFileCreateTemporary@, it is generally not safe to pass the
-// "PCLm-1.0" version string.
+// `NULL` for the default ("2.0").  The following values are recognized:
+//
+// - "1.3", "1.4", "1.5", "1.6", "1.7", "2.0": Generic PDF files of the
+//   specified versions.
+// - "PDF/A-1a": PDF/A-1a:2005
+// - "PDF/A-1b": PDF/A-1b:2005
+// - "PDF/A-2a": PDF/A-2a:2011
+// - "PDF/A-2b": PDF/A-2b:2011
+// - "PDF/A-2u": PDF/A-2u:2011
+// - "PDF/A-3a": PDF/A-3a:2012
+// - "PDF/A-3b": PDF/A-3b:2012
+// - "PDF/A-3u": PDF/A-3u:2012
+// - "PDF/A-4": PDF/A-4:2020
+//
+// Unlike @link pdfioFileCreate@ and @link pdfioFileCreateTemporary@, it is
+// generally not safe to pass the "PCLm-1.0" version string.
 //
 // The "media_box" and "crop_box" arguments specify the default MediaBox and
 // CropBox for pages in the PDF file - if `NULL` then a default "Universal" size
@@ -591,8 +616,20 @@ pdfioFileCreateStringObj(
 // will have a ".pdf" extension.
 //
 // The "version" argument specifies the PDF version number for the file or
-// `NULL` for the default ("2.0").  The value "PCLm-1.0" can be specified to
-// produce the PCLm subset of PDF.
+// `NULL` for the default ("2.0").  The following values are recognized:
+//
+// - "1.3", "1.4", "1.5", "1.6", "1.7", "2.0": Generic PDF files of the
+//   specified versions.
+// - "PCLm-1.0": The PCLm (raster) subset of PDF supported by some printers.
+// - "PDF/A-1a": PDF/A-1a:2005
+// - "PDF/A-1b": PDF/A-1b:2005
+// - "PDF/A-2a": PDF/A-2a:2011
+// - "PDF/A-2b": PDF/A-2b:2011
+// - "PDF/A-2u": PDF/A-2u:2011
+// - "PDF/A-3a": PDF/A-3a:2012
+// - "PDF/A-3b": PDF/A-3b:2012
+// - "PDF/A-3u": PDF/A-3u:2012
+// - "PDF/A-4": PDF/A-4:2020
 //
 // The "media_box" and "crop_box" arguments specify the default MediaBox and
 // CropBox for pages in the PDF file - if `NULL` then a default "Universal" size
@@ -1329,7 +1366,7 @@ pdfioFileSetPermissions(
   if (!pdf)
     return (false);
 
-  if (pdf->pdfa != _PDFIO_PDFA_NONE && encryption != PDFIO_ENCRYPTION_NONE)
+  if (pdf->profile >= _PDFIO_PROFILE_PDFA_1A && pdf->profile <= _PDFIO_PROFILE_PDFA_4 && encryption != PDFIO_ENCRYPTION_NONE)
   {
     _pdfioFileError(pdf, "Encryption is not allowed for PDF/A files.");
     return (false);
@@ -1520,7 +1557,8 @@ create_common(
   unsigned char	id_value[16];		// File ID value
   time_t	curtime;		// Creation date/time
   _pdfio_sha256_t ctx;			// Hashing context
-  const char *file_version;   // Actual PDF version string
+  const char	*file_version;		// PDF file version string
+
 
   PDFIO_DEBUG("create_common(filename=\"%s\", fd=%d, output_cb=%p, output_cbdata=%p, version=\"%s\", media_box=%p, crop_box=%p, error_cb=%p, error_cbdata=%p)\n", filename, fd, (void *)output_cb, (void *)output_cbdata, version, (void *)media_box, (void *)crop_box, (void *)error_cb, (void *)error_cbdata);
 
@@ -1528,12 +1566,10 @@ create_common(
   if (!filename || (fd < 0 && !output_cb))
     return (NULL);
 
-
   if (!error_cb)
   {
     error_cb     = _pdfioFileDefaultError;
     error_cbdata = NULL;
-
   }
 
   // Allocate a PDF file structure...
@@ -1557,47 +1593,53 @@ create_common(
   pdf->filename    = strdup(filename);
 
   if (!version)
-  {
     version = "2.0";
-  }
 
   if (!strncmp(version, "PDF/A-1", 7))
   {
     file_version = "1.4";
+
     if (version[7] == 'a')
-      pdf->pdfa = _PDFIO_PDFA_1A;
+      pdf->profile = _PDFIO_PROFILE_PDFA_1A;
     else
-      pdf->pdfa = _PDFIO_PDFA_1B; // Default to 'b'
+      pdf->profile = _PDFIO_PROFILE_PDFA_1B; // Default to 'b'
   }
   else if (!strncmp(version, "PDF/A-2", 7))
   {
     file_version = "1.7";
+
     if (version[7] == 'a')
-      pdf->pdfa = _PDFIO_PDFA_2A;
+      pdf->profile = _PDFIO_PROFILE_PDFA_2A;
     else if (version[7] == 'u')
-      pdf->pdfa = _PDFIO_PDFA_2U;
+      pdf->profile = _PDFIO_PROFILE_PDFA_2U;
     else
-      pdf->pdfa = _PDFIO_PDFA_2B; // Default to 'b'
+      pdf->profile = _PDFIO_PROFILE_PDFA_2B; // Default to 'b'
   }
   else if (!strncmp(version, "PDF/A-3", 7))
   {
     file_version = "1.7";
+
     if (version[7] == 'a')
-      pdf->pdfa = _PDFIO_PDFA_3A;
+      pdf->profile = _PDFIO_PROFILE_PDFA_3A;
     else if (version[7] == 'u')
-      pdf->pdfa = _PDFIO_PDFA_3U;
-    else 
-      pdf->pdfa = _PDFIO_PDFA_3B; // Default to 'b'
+      pdf->profile = _PDFIO_PROFILE_PDFA_3U;
+    else
+      pdf->profile = _PDFIO_PROFILE_PDFA_3B; // Default to 'b'
   }
   else if (!strncmp(version, "PDF/A-4", 7))
   {
     file_version = "2.0";
-    pdf->pdfa = _PDFIO_PDFA_4;
+    pdf->profile = _PDFIO_PROFILE_PDFA_4;
+  }
+  else if (!strncmp(version, "PCLm-", 5))
+  {
+    file_version = "1.4";
+    pdf->profile = _PDFIO_PROFILE_PCLM;
   }
   else
   {
     file_version = version;
-    pdf->pdfa = _PDFIO_PDFA_NONE;
+    pdf->profile = _PDFIO_PROFILE_NONE;
   }
 
   pdf->version     = strdup(file_version);
@@ -1630,19 +1672,17 @@ create_common(
     pdf->crop_box.y2 = 11.0f * 72.0f;
   }
 
-  // Write the PDF header (special case for PCLm, otherwise standard/PDF-A header)
-  if (!strncmp(version, "PCLm-", 5))
+  // Write the PDF header (special case for PCLm, otherwise standard header)
+  if (pdf->profile == _PDFIO_PROFILE_PCLM)
   {
     if (!_pdfioFilePrintf(pdf, "%%PDF-1.4\n%%%s\n", version))
       goto error;
   }
-  else
+  else if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", pdf->version))
   {
-    if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", pdf->version))
-      goto error;
+    goto error;
   }
 
-  
   // Create the pages object...
   if ((dict = pdfioDictCreate(pdf)) == NULL)
     goto error;
@@ -2735,42 +2775,29 @@ write_metadata(pdfio_file_t *pdf)	// I - PDF file
     status &= pdfioStreamPrintf(st, "            <dc:description><rdf:Alt><rdf:li xml:lang=\"x-default\">%H</rdf:li></rdf:Alt></dc:description>\n", value);
   status &= pdfioStreamPuts(st, "        </rdf:Description>\n");
 
-  // TODO: Need a better way to choose the output profile - something that lets
-  // us choose the base PDF version and PDF/A, PDF/E, PDF/X, etc.
-#if 0
-  status &= pdfioStreamPuts(st, "        <rdf:Description rdf:about=\"\" xmlns:pdfaid=\"http://www.aiim.org/pdfa/ns/id/\">\n");
-  status &= pdfioStreamPuts(st, "            <pdfaid:conformance>A</pdfaid:conformance>\n");
-  status &= pdfioStreamPuts(st, "            <pdfaid:part>1</pdfaid:part>\n");
-  status &= pdfioStreamPuts(st, "        </rdf:Description>\n");
-#endif // 0
-
-  if (pdf->pdfa != _PDFIO_PDFA_NONE)
+  if (pdf->profile >= _PDFIO_PROFILE_PDFA_1A && pdf->profile <= _PDFIO_PROFILE_PDFA_4)
   {
-   static const char * const pdfa_versions[] = 
-   {
-     "1A", // _PDFIO_PDFA_1A
-     "1B", // _PDFIO_PDFA_1B
-     "2A", // _PDFIO_PDFA_2A
-     "2B", // _PDFIO_PDFA_2B
-     "2U", // _PDFIO_PDFA_2U
-     "3A", // _PDFIO_PDFA_3A
-     "3B", // _PDFIO_PDFA_3B
-     "3U", // _PDFIO_PDFA_3U
-     "4",  // _PDFIO_PDFA_4
+    static const char * const pdfa_versions[] =
+    {
+      "1A", // _PDFIO_PROFILE_PDFA_1A
+      "1B", // _PDFIO_PROFILE_PDFA_1B
+      "2A", // _PDFIO_PROFILE_PDFA_2A
+      "2B", // _PDFIO_PROFILE_PDFA_2B
+      "2U", // _PDFIO_PROFILE_PDFA_2U
+      "3A", // _PDFIO_PROFILE_PDFA_3A
+      "3B", // _PDFIO_PROFILE_PDFA_3B
+      "3U", // _PDFIO_PROFILE_PDFA_3U
+      "4",  // _PDFIO_PROFILE_PDFA_4
     };
-   const char *version_info = pdfa_versions[pdf->pdfa - _PDFIO_PDFA_1A];
-   const char *conformance;
-   conformance = version_info + 1;
+
+    const char *info = pdfa_versions[pdf->profile - _PDFIO_PROFILE_PDFA_1A];
 
     status &= pdfioStreamPuts(st, "     <rdf:Description rdf:about=\"\" xmlns:pdfaid=\"http://www.aiim.org/pdfa/ns/id/\">\n");
-    status &= pdfioStreamPrintf(st, "       <pdfaid:part>%c</pdfaid:part>\n",version_info[0]);
-    if (*conformance)
-      status &= pdfioStreamPrintf(st, "       <pdfaid:conformance>%s</pdfaid:conformance>\n", conformance);
+    status &= pdfioStreamPrintf(st, "       <pdfaid:part>%c</pdfaid:part>\n", *info);
+    if (info[1])
+       status &= pdfioStreamPrintf(st, "       <pdfaid:conformance>%s</pdfaid:conformance>\n", info + 1);
     status &= pdfioStreamPuts(st, " </rdf:Description>\n");
   }
-
-
-
 
   status &= pdfioStreamPuts(st, "    </rdf:RDF>\n");
   status &= pdfioStreamPuts(st, "</x:xmpmeta>\n");

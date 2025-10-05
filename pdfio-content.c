@@ -1700,6 +1700,8 @@ pdfioFileAddOutputIntent(
 // (ISO-8859-1 with additional characters such as the Euro symbol) subset of
 // Unicode.
 //
+// > Note: This function cannot be used when producing PDF/A files.
+//
 
 pdfio_obj_t *				// O - Font object
 pdfioFileCreateFontObjFromBase(
@@ -1709,7 +1711,8 @@ pdfioFileCreateFontObjFromBase(
   pdfio_dict_t	*dict;			// Font dictionary
   pdfio_obj_t	*obj;			// Font object
 
-  if (pdf && pdf->pdfa != _PDFIO_PDFA_NONE)
+
+  if (pdf && pdf->profile >= _PDFIO_PROFILE_PDFA_1A && pdf->profile <= _PDFIO_PROFILE_PDFA_4)
   {
     _pdfioFileError(pdf, "Base fonts are not allowed in PDF/A files; use pdfioFileCreateFontObjFromFile to embed a font.");
     return (NULL);
@@ -2052,8 +2055,9 @@ pdfioFileCreateICCObjFromFile(
 // "interpolate" parameter specifies whether to interpolate when scaling the
 // image on the page.
 //
-// Note: When creating an image object with alpha, a second image object is
-// created to hold the "soft mask" data for the primary image.
+// > Note: When creating an image object with alpha, a second image object is
+// > created to hold the "soft mask" data for the primary image.  PDF/A-1
+// > files do not support alpha-based transparency.
 //
 
 pdfio_obj_t *				// O - Object
@@ -2078,7 +2082,7 @@ pdfioFileCreateImageObjFromData(
   };
 
 
-  if (pdf && (pdf->pdfa == _PDFIO_PDFA_1A || pdf->pdfa == _PDFIO_PDFA_1B) && alpha)
+  if (pdf && pdf->profile >= _PDFIO_PROFILE_PDFA_1A && pdf->profile <= _PDFIO_PROFILE_PDFA_1B && alpha)
   {
     _pdfioFileError(pdf, "Images with transparency (alpha channels) are not allowed in PDF/A-1 files.");
     return (NULL);
@@ -2117,9 +2121,8 @@ pdfioFileCreateImageObjFromData(
 // the "interpolate" parameter specifies whether to interpolate when scaling the
 // image on the page.
 //
-// > Note: Currently PNG support is limited to grayscale, RGB, or indexed files
-// > without interlacing or alpha.  Transparency (masking) based on color/index
-// > is supported.
+// > Note: PNG files containing transparency cannot be used when producing
+// > PDF/A files.
 //
 
 pdfio_obj_t *				// O - Object
@@ -2750,7 +2753,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   depth      = png_get_bit_depth(pp, info);
   color_type = png_get_color_type(pp, info);
 
-  if ((dict->pdf->pdfa == _PDFIO_PDFA_1A || dict->pdf->pdfa == _PDFIO_PDFA_1B) && (color_type & PNG_COLOR_MASK_ALPHA))
+  if (dict->pdf->profile >= _PDFIO_PROFILE_PDFA_1A && dict->pdf->profile <= _PDFIO_PROFILE_PDFA_1B && (color_type & PNG_COLOR_MASK_ALPHA))
   {
     _pdfioFileError(dict->pdf, "PNG images with transparency (alpha channels) are not allowed in PDF/A-1 files.");
     goto finish_png;
@@ -2874,7 +2877,6 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 
   if (pp && info)
   {
-    png_read_end(pp, info);
     png_destroy_read_struct(&pp, &info, NULL);
 
     pp   = NULL;
