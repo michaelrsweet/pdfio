@@ -2722,7 +2722,7 @@ repair_xref(
 static bool				// O - `true` on success, `false` on failure
 write_metadata(pdfio_file_t *pdf)	// I - PDF file
 {
-  pdfio_dict_t	*dict;			// XMP object dictionary
+  pdfio_dict_t	*dict;			// Info/XMP object dictionary
   pdfio_obj_t	*obj;			// XMP object
   pdfio_stream_t *st;			// XMP stream
   bool		status = true;		// Write status
@@ -2809,7 +2809,22 @@ write_metadata(pdfio_file_t *pdf)	// I - PDF file
     return (false);
 
   // If we get this far, add the Metadata key/value to the catalog/root object.
-  return (pdfioDictSetObj(pdfioFileGetCatalog(pdf), "Metadata", obj));
+  if (!pdfioDictSetObj(pdfioFileGetCatalog(pdf), "Metadata", obj))
+    return (false);
+
+  // Finally, remove deprecated info key/value pairs for PDF/2.0...
+  if (!strcmp(pdf->version, "2.0") && (dict = pdfioObjGetDict(pdf->info_obj)) != NULL)
+  {
+    pdfioDictClear(dict, "Author");
+    pdfioDictClear(dict, "Creator");
+    pdfioDictClear(dict, "Keywords");
+    pdfioDictClear(dict, "Producer");
+    pdfioDictClear(dict, "Subject");
+    pdfioDictClear(dict, "Title");
+    pdfioDictClear(dict, "Trapped");
+  }
+
+  return (true);
 }
 
 
