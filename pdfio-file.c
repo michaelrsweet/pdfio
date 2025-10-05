@@ -1114,8 +1114,9 @@ pdfioFileOpen(
     char	message[8192];		// Message string
 
     temp.filename = (char *)filename;
-    snprintf(message, sizeof(message), "Unable to allocate memory for PDF file - %s", strerror(errno));
+    snprintf(message, sizeof(message), "Unable to allocate memory for PDF file: %s", strerror(errno));
     (error_cb)(&temp, message, error_cbdata);
+
     return (NULL);
   }
 
@@ -1328,20 +1329,25 @@ pdfioFileSetPermissions(
   if (!pdf)
     return (false);
 
-  if (pdf->num_objs > 3)		// First three objects are pages, info, and root
+  if (pdf->pdfa != _PDFIO_PDFA_NONE && encryption != PDFIO_ENCRYPTION_NONE)
   {
-    _pdfioFileError(pdf, "You must call pdfioFileSetPermissions before adding any objects.");
+    _pdfioFileError(pdf, "Encryption is not allowed for PDF/A files.");
     return (false);
   }
 
   if (encryption == PDFIO_ENCRYPTION_NONE)
     return (true);
 
+  if (pdf->num_objs > 3)		// First three objects are pages, info, and root
+  {
+    _pdfioFileError(pdf, "You must call pdfioFileSetPermissions before adding any objects.");
+    return (false);
+  }
+
   pdf->encrypt_metadata = true;
 
   return (_pdfioCryptoLock(pdf, permissions, encryption, owner_password, user_password));
 }
-
 
 //
 // 'pdfioFileSetSubject()' - Set the subject for a PDF file.
@@ -1514,7 +1520,7 @@ create_common(
   unsigned char	id_value[16];		// File ID value
   time_t	curtime;		// Creation date/time
   _pdfio_sha256_t ctx;			// Hashing context
-
+  const char *file_version;   // Actual PDF version string
 
   PDFIO_DEBUG("create_common(filename=\"%s\", fd=%d, output_cb=%p, output_cbdata=%p, version=\"%s\", media_box=%p, crop_box=%p, error_cb=%p, error_cbdata=%p)\n", filename, fd, (void *)output_cb, (void *)output_cbdata, version, (void *)media_box, (void *)crop_box, (void *)error_cb, (void *)error_cbdata);
 
@@ -1522,13 +1528,12 @@ create_common(
   if (!filename || (fd < 0 && !output_cb))
     return (NULL);
 
-  if (!version)
-    version = "2.0";
 
   if (!error_cb)
   {
     error_cb     = _pdfioFileDefaultError;
     error_cbdata = NULL;
+
   }
 
   // Allocate a PDF file structure...
@@ -1550,7 +1555,52 @@ create_common(
   pdf->output_cb   = output_cb;
   pdf->output_ctx  = output_cbdata;
   pdf->filename    = strdup(filename);
-  pdf->version     = strdup(!strncmp(version, "PCLm-", 5) ? "1.4" : version);
+
+  if (!version)
+  {
+    version = "2.0";
+  }
+
+  if (!strncmp(version, "PDF/A-1", 7))
+  {
+    file_version = "1.4";
+    if (version[7] == 'a')
+      pdf->pdfa = _PDFIO_PDFA_1A;
+    else
+      pdf->pdfa = _PDFIO_PDFA_1B; // Default to 'b'
+  }
+  else if (!strncmp(version, "PDF/A-2", 7))
+  {
+    file_version = "1.7";
+    if (version[7] == 'a')
+      pdf->pdfa = _PDFIO_PDFA_2A;
+    else if (version[7] == 'u')
+      pdf->pdfa = _PDFIO_PDFA_2U;
+    else
+      pdf->pdfa = _PDFIO_PDFA_2B; // Default to 'b'
+  }
+  else if (!strncmp(version, "PDF/A-3", 7))
+  {
+    file_version = "1.7";
+    if (version[7] == 'a')
+      pdf->pdfa = _PDFIO_PDFA_3A;
+    else if (version[7] == 'u')
+      pdf->pdfa = _PDFIO_PDFA_3U;
+    else 
+      pdf->pdfa = _PDFIO_PDFA_3B; // Default to 'b'
+  }
+  else if (!strncmp(version, "PDF/A-4", 7))
+  {
+    file_version = "2.0";
+    pdf->pdfa = _PDFIO_PDFA_4;
+  }
+  else
+  {
+    file_version = version;
+    pdf->pdfa = _PDFIO_PDFA_NONE;
+  }
+
+  pdf->version     = strdup(file_version);
   pdf->mode        = _PDFIO_MODE_WRITE;
   pdf->error_cb    = error_cb;
   pdf->error_data  = error_cbdata;
@@ -1580,17 +1630,19 @@ create_common(
     pdf->crop_box.y2 = 11.0f * 72.0f;
   }
 
-  // Write a standard PDF header...
+  // Write the PDF header (special case for PCLm, otherwise standard/PDF-A header)
   if (!strncmp(version, "PCLm-", 5))
   {
     if (!_pdfioFilePrintf(pdf, "%%PDF-1.4\n%%%s\n", version))
       goto error;
   }
-  else if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", version))
+  else
   {
-    goto error;
+    if (!_pdfioFilePrintf(pdf, "%%PDF-%s\n%%\342\343\317\323\n", pdf->version))
+      goto error;
   }
 
+  
   // Create the pages object...
   if ((dict = pdfioDictCreate(pdf)) == NULL)
     goto error;
@@ -2691,6 +2743,34 @@ write_metadata(pdfio_file_t *pdf)	// I - PDF file
   status &= pdfioStreamPuts(st, "            <pdfaid:part>1</pdfaid:part>\n");
   status &= pdfioStreamPuts(st, "        </rdf:Description>\n");
 #endif // 0
+
+  if (pdf->pdfa != _PDFIO_PDFA_NONE)
+  {
+   static const char * const pdfa_versions[] = 
+   {
+     "1A", // _PDFIO_PDFA_1A
+     "1B", // _PDFIO_PDFA_1B
+     "2A", // _PDFIO_PDFA_2A
+     "2B", // _PDFIO_PDFA_2B
+     "2U", // _PDFIO_PDFA_2U
+     "3A", // _PDFIO_PDFA_3A
+     "3B", // _PDFIO_PDFA_3B
+     "3U", // _PDFIO_PDFA_3U
+     "4",  // _PDFIO_PDFA_4
+    };
+   const char *version_info = pdfa_versions[pdf->pdfa - _PDFIO_PDFA_1A];
+   const char *conformance;
+   conformance = version_info + 1;
+
+    status &= pdfioStreamPuts(st, "     <rdf:Description rdf:about=\"\" xmlns:pdfaid=\"http://www.aiim.org/pdfa/ns/id/\">\n");
+    status &= pdfioStreamPrintf(st, "       <pdfaid:part>%c</pdfaid:part>\n",version_info[0]);
+    if (*conformance)
+      status &= pdfioStreamPrintf(st, "       <pdfaid:conformance>%s</pdfaid:conformance>\n", conformance);
+    status &= pdfioStreamPuts(st, " </rdf:Description>\n");
+  }
+
+
+
 
   status &= pdfioStreamPuts(st, "    </rdf:RDF>\n");
   status &= pdfioStreamPuts(st, "</x:xmpmeta>\n");

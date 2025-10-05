@@ -1709,6 +1709,11 @@ pdfioFileCreateFontObjFromBase(
   pdfio_dict_t	*dict;			// Font dictionary
   pdfio_obj_t	*obj;			// Font object
 
+  if (pdf && pdf->pdfa != _PDFIO_PDFA_NONE)
+  {
+    _pdfioFileError(pdf, "Base fonts are not allowed in PDF/A files; use pdfioFileCreateFontObjFromFile to embed a font.");
+    return (NULL);
+  }
 
   if ((dict = pdfioDictCreate(pdf)) == NULL)
     return (NULL);
@@ -2072,6 +2077,12 @@ pdfioFileCreateImageObjFromData(
     "DeviceCMYK"
   };
 
+
+  if (pdf && (pdf->pdfa == _PDFIO_PDFA_1A || pdf->pdfa == _PDFIO_PDFA_1B) && alpha)
+  {
+    _pdfioFileError(pdf, "Images with transparency (alpha channels) are not allowed in PDF/A-1 files.");
+    return (NULL);
+  }
 
   // Range check input...
   if (!pdf || !data || !width || !height || num_colors < 1 || num_colors == 2 || num_colors > 4)
@@ -2738,6 +2749,12 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   height     = png_get_image_height(pp, info);
   depth      = png_get_bit_depth(pp, info);
   color_type = png_get_color_type(pp, info);
+
+  if ((dict->pdf->pdfa == _PDFIO_PDFA_1A || dict->pdf->pdfa == _PDFIO_PDFA_1B) && (color_type & PNG_COLOR_MASK_ALPHA))
+  {
+    _pdfioFileError(dict->pdf, "PNG images with transparency (alpha channels) are not allowed in PDF/A-1 files.");
+    goto finish_png;
+  }
 
   if (color_type & PNG_COLOR_MASK_PALETTE)
     num_colors = 1;
