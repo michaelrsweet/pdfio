@@ -4222,10 +4222,33 @@ profile using the &quot;cond_id&quot; value.
 name of the PDF file to create.<br>
 <br>
 The &quot;version&quot; argument specifies the PDF version number for the file or
-<code>NULL</code> for the default (&quot;2.0&quot;).  The value &quot;PCLm-1.0&quot; can be specified to
-produce the PCLm subset of PDF.<br>
-<br>
-The &quot;media_box&quot; and &quot;crop_box&quot; arguments specify the default MediaBox and
+<code>NULL</code> for the default (&quot;2.0&quot;).  The following values are recognized:
+
+</p><ul>
+<li>&quot;1.3&quot;, &quot;1.4&quot;, &quot;1.5&quot;, &quot;1.6&quot;, &quot;1.7&quot;, &quot;2.0&quot;: Generic PDF files of the
+  specified versions.
+</li>
+<li>&quot;PCLm-1.0&quot;: The PCLm (raster) subset of PDF supported by some printers.
+</li>
+<li>&quot;PDF/A-1a&quot;: PDF/A-1a:2005
+</li>
+<li>&quot;PDF/A-1b&quot;: PDF/A-1b:2005
+</li>
+<li>&quot;PDF/A-2a&quot;: PDF/A-2a:2011
+</li>
+<li>&quot;PDF/A-2b&quot;: PDF/A-2b:2011
+</li>
+<li>&quot;PDF/A-2u&quot;: PDF/A-2u:2011
+</li>
+<li>&quot;PDF/A-3a&quot;: PDF/A-3a:2012
+</li>
+<li>&quot;PDF/A-3b&quot;: PDF/A-3b:2012
+</li>
+<li>&quot;PDF/A-3u&quot;: PDF/A-3u:2012
+</li>
+<li>&quot;PDF/A-4&quot;: PDF/A-4:2020</li>
+</ul>
+<p class="discussion">The &quot;media_box&quot; and &quot;crop_box&quot; arguments specify the default MediaBox and
 CropBox for pages in the PDF file - if <code>NULL</code> then a default &quot;Universal&quot; size
 of 8.27x11in (the intersection of US Letter and ISO A4) is used.<br>
 <br>
@@ -4312,7 +4335,10 @@ specifies the font nane:
 </ul>
 <p class="discussion">Aside from &quot;Symbol&quot; and &quot;Zapf-Dingbats&quot;, Base fonts use the Windows CP1252
 (ISO-8859-1 with additional characters such as the Euro symbol) subset of
-Unicode.</p>
+Unicode.<br>
+<br>
+</p><blockquote>
+Note: This function cannot be used when producing PDF/A files.</blockquote>
 <h3 class="function"><span class="info">&#160;PDFio v1.6&#160;</span><a id="pdfioFileCreateFontObjFromData">pdfioFileCreateFontObjFromData</a></h3>
 <p class="description">Add a font in memory to a PDF file.</p>
 <p class="code">
@@ -4428,8 +4454,10 @@ the image is encoded in the corresponding device color space.  The
 &quot;interpolate&quot; parameter specifies whether to interpolate when scaling the
 image on the page.<br>
 <br>
+</p><blockquote>
 Note: When creating an image object with alpha, a second image object is
-created to hold the &quot;soft mask&quot; data for the primary image.</p>
+created to hold the &quot;soft mask&quot; data for the primary image.  PDF/A-1
+files do not support alpha-based transparency.</blockquote>
 <h3 class="function"><a id="pdfioFileCreateImageObjFromFile">pdfioFileCreateImageObjFromFile</a></h3>
 <p class="description">Add an image object to a PDF file from a file.</p>
 <p class="code">
@@ -4452,9 +4480,8 @@ the &quot;interpolate&quot; parameter specifies whether to interpolate when scal
 image on the page.<br>
 <br>
 </p><blockquote>
-Note: Currently PNG support is limited to grayscale, RGB, or indexed files
-without interlacing or alpha.  Transparency (masking) based on color/index
-is supported.</blockquote>
+Note: PNG files containing transparency cannot be used when producing
+PDF/A files.</blockquote>
 <h3 class="function"><span class="info">&#160;PDFio v1.4&#160;</span><a id="pdfioFileCreateNameObj">pdfioFileCreateNameObj</a></h3>
 <p class="description">Create a new object in a PDF file containing a name.</p>
 <p class="code">
@@ -4542,9 +4569,32 @@ output_cb(void *output_cbdata, const void *buffer, size_t bytes)
 </pre>
 
 The &quot;version&quot; argument specifies the PDF version number for the file or
-<code>NULL</code> for the default (&quot;2.0&quot;).  Unlike <a href="#pdfioFileCreate"><code>pdfioFileCreate</code></a> and
-<a href="#pdfioFileCreateTemporary"><code>pdfioFileCreateTemporary</code></a>, it is generally not safe to pass the
-&quot;PCLm-1.0&quot; version string.<br>
+<code>NULL</code> for the default (&quot;2.0&quot;).  The following values are recognized:
+
+</p><ul>
+<li>&quot;1.3&quot;, &quot;1.4&quot;, &quot;1.5&quot;, &quot;1.6&quot;, &quot;1.7&quot;, &quot;2.0&quot;: Generic PDF files of the
+  specified versions.
+</li>
+<li>&quot;PDF/A-1a&quot;: PDF/A-1a:2005
+</li>
+<li>&quot;PDF/A-1b&quot;: PDF/A-1b:2005
+</li>
+<li>&quot;PDF/A-2a&quot;: PDF/A-2a:2011
+</li>
+<li>&quot;PDF/A-2b&quot;: PDF/A-2b:2011
+</li>
+<li>&quot;PDF/A-2u&quot;: PDF/A-2u:2011
+</li>
+<li>&quot;PDF/A-3a&quot;: PDF/A-3a:2012
+</li>
+<li>&quot;PDF/A-3b&quot;: PDF/A-3b:2012
+</li>
+<li>&quot;PDF/A-3u&quot;: PDF/A-3u:2012
+</li>
+<li>&quot;PDF/A-4&quot;: PDF/A-4:2020</li>
+</ul>
+<p class="discussion">Unlike <a href="#pdfioFileCreate"><code>pdfioFileCreate</code></a> and <a href="#pdfioFileCreateTemporary"><code>pdfioFileCreateTemporary</code></a>, it is
+generally not safe to pass the &quot;PCLm-1.0&quot; version string.<br>
 <br>
 The &quot;media_box&quot; and &quot;crop_box&quot; arguments specify the default MediaBox and
 CropBox for pages in the PDF file - if <code>NULL</code> then a default &quot;Universal&quot; size
@@ -4632,10 +4682,33 @@ temporary directory.  The temporary file is stored in the string &quot;buffer&qu
 will have a &quot;.pdf&quot; extension.<br>
 <br>
 The &quot;version&quot; argument specifies the PDF version number for the file or
-<code>NULL</code> for the default (&quot;2.0&quot;).  The value &quot;PCLm-1.0&quot; can be specified to
-produce the PCLm subset of PDF.<br>
-<br>
-The &quot;media_box&quot; and &quot;crop_box&quot; arguments specify the default MediaBox and
+<code>NULL</code> for the default (&quot;2.0&quot;).  The following values are recognized:
+
+</p><ul>
+<li>&quot;1.3&quot;, &quot;1.4&quot;, &quot;1.5&quot;, &quot;1.6&quot;, &quot;1.7&quot;, &quot;2.0&quot;: Generic PDF files of the
+  specified versions.
+</li>
+<li>&quot;PCLm-1.0&quot;: The PCLm (raster) subset of PDF supported by some printers.
+</li>
+<li>&quot;PDF/A-1a&quot;: PDF/A-1a:2005
+</li>
+<li>&quot;PDF/A-1b&quot;: PDF/A-1b:2005
+</li>
+<li>&quot;PDF/A-2a&quot;: PDF/A-2a:2011
+</li>
+<li>&quot;PDF/A-2b&quot;: PDF/A-2b:2011
+</li>
+<li>&quot;PDF/A-2u&quot;: PDF/A-2u:2011
+</li>
+<li>&quot;PDF/A-3a&quot;: PDF/A-3a:2012
+</li>
+<li>&quot;PDF/A-3b&quot;: PDF/A-3b:2012
+</li>
+<li>&quot;PDF/A-3u&quot;: PDF/A-3u:2012
+</li>
+<li>&quot;PDF/A-4&quot;: PDF/A-4:2020</li>
+</ul>
+<p class="discussion">The &quot;media_box&quot; and &quot;crop_box&quot; arguments specify the default MediaBox and
 CropBox for pages in the PDF file - if <code>NULL</code> then a default &quot;Universal&quot; size
 of 8.27x11in (the intersection of US Letter and ISO A4) is used.<br>
 <br>
