@@ -1108,11 +1108,9 @@ do_unit_tests(void)
   if (do_crypto_tests())
     return (1);
 
-
-
   // Create a new PDF file...
   testBegin("pdfioFileCreate(\"testpdfio-out.pdf\", ...)");
-  if ((outpdf = pdfioFileCreate("testpdfio-out.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((outpdf = pdfioFileCreate("testpdfio-out.pdf", /*version*/"1.7", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
     testEnd(true);
   else
     goto fail;
@@ -1131,7 +1129,7 @@ do_unit_tests(void)
   }
 
   testBegin("pdfioFileCreateOutput(...)");
-  if ((outpdf = pdfioFileCreateOutput((pdfio_output_cb_t)output_cb, &outfd, NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((outpdf = pdfioFileCreateOutput((pdfio_output_cb_t)output_cb, &outfd, /*version*/"1.7", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
     testEnd(true);
   else
     goto fail;
@@ -1146,7 +1144,7 @@ do_unit_tests(void)
 
   // Create new encrypted PDF files...
   testBegin("pdfioFileCreate(\"testpdfio-rc4.pdf\", ...)");
-  if ((outpdf = pdfioFileCreate("testpdfio-rc4.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((outpdf = pdfioFileCreate("testpdfio-rc4.pdf", /*version*/"2.0", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
     testEnd(true);
   }
@@ -1175,7 +1173,7 @@ do_unit_tests(void)
 
   // Create new encrypted PDF files...
   testBegin("pdfioFileCreate(\"testpdfio-rc4p.pdf\", ...)");
-  if ((outpdf = pdfioFileCreate("testpdfio-rc4p.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((outpdf = pdfioFileCreate("testpdfio-rc4p.pdf", /*version*/"1.7", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
     testEnd(true);
   }
@@ -1203,7 +1201,7 @@ do_unit_tests(void)
     return (1);
 
   testBegin("pdfioFileCreate(\"testpdfio-aes.pdf\", ...)");
-  if ((outpdf = pdfioFileCreate("testpdfio-aes.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((outpdf = pdfioFileCreate("testpdfio-aes.pdf", /*version*/"2.0", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
     testEnd(true);
   }
@@ -1231,7 +1229,7 @@ do_unit_tests(void)
     return (1);
 
   testBegin("pdfioFileCreate(\"testpdfio-aesp.pdf\", ...)");
-  if ((outpdf = pdfioFileCreate("testpdfio-aesp.pdf", NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((outpdf = pdfioFileCreate("testpdfio-aesp.pdf", /*version*/"2.0", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
     testEnd(true);
   }
@@ -1259,7 +1257,7 @@ do_unit_tests(void)
     return (1);
 
   testBegin("pdfioFileCreateTemporary");
-  if ((outpdf = pdfioFileCreateTemporary(temppdf, sizeof(temppdf), NULL, NULL, NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  if ((outpdf = pdfioFileCreateTemporary(temppdf, sizeof(temppdf), /*version*/"2.0", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
     testEndMessage(true, "%s", temppdf);
   }
@@ -1559,10 +1557,14 @@ read_unit_file(const char *filename,	// I - File to read
     testEndMessage(false, "got '%s', expected 'Michael R Sweet'", s);
     return (1);
   }
-  else
+  else if (strcmp(pdfioFileGetVersion(pdf), "2.0"))
   {
     testEndMessage(false, "got NULL, expected 'Michael R Sweet'");
     return (1);
+  }
+  else
+  {
+    testEnd(true);
   }
 
   testBegin("pdfioFileGetCreator");
@@ -1575,10 +1577,14 @@ read_unit_file(const char *filename,	// I - File to read
     testEndMessage(false, "got '%s', expected 'testpdfio'", s);
     return (1);
   }
-  else
+  else if (strcmp(pdfioFileGetVersion(pdf), "2.0"))
   {
     testEndMessage(false, "got NULL, expected 'testpdfio'");
     return (1);
+  }
+  else
+  {
+    testEnd(true);
   }
 
   testBegin("pdfioFileGetKeywords");
@@ -1591,10 +1597,14 @@ read_unit_file(const char *filename,	// I - File to read
     testEndMessage(false, "got '%s', expected 'one fish,two fish,red fish,blue fish'", s);
     return (1);
   }
-  else
+  else if (strcmp(pdfioFileGetVersion(pdf), "2.0"))
   {
     testEndMessage(false, "got NULL, expected 'one fish,two fish,red fish,blue fish'");
     return (1);
+  }
+  else
+  {
+    testEnd(true);
   }
 
   testBegin("pdfioFileGetSubject");
@@ -1607,10 +1617,14 @@ read_unit_file(const char *filename,	// I - File to read
     testEndMessage(false, "got '%s', expected 'Unit test document'", s);
     return (1);
   }
-  else
+  else if (strcmp(pdfioFileGetVersion(pdf), "2.0"))
   {
     testEndMessage(false, "got NULL, expected 'Unit test document'");
     return (1);
+  }
+  else
+  {
+    testEnd(true);
   }
 
   testBegin("pdfioFileGetTitle");
@@ -1623,10 +1637,14 @@ read_unit_file(const char *filename,	// I - File to read
     testEndMessage(false, "got '%s', expected 'Test Document'", s);
     return (1);
   }
-  else
+  else if (strcmp(pdfioFileGetVersion(pdf), "2.0"))
   {
     testEndMessage(false, "got NULL, expected 'Test Document'");
     return (1);
+  }
+  else
+  {
+    testEnd(true);
   }
 
   // Verify the number of pages is the same...
