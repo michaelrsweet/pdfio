@@ -3552,11 +3552,20 @@ write_pdfa_file(
 
   testEnd(true);
 
+  pdfioContentSetFillColorDeviceRGB(st, 0.0, 0.0, 1.0);
+  pdfioContentPathRect(st, 18.0, 702.0, 559.28, 72.0);
+  pdfioContentFill(st, true);
+
+  pdfioContentSetFillColorDeviceRGB(st, 1.0, 1.0, 1.0);
+  pdfioContentSetStrokeColorDeviceRGB(st, 1.0, 1.0, 1.0);
+
   pdfioContentSetTextFont(st, "F1", 18.0);
   pdfioContentTextBegin(st);
-  pdfioContentTextMoveTo(st, 72.0, 720.0);
+  pdfioContentTextMoveTo(st, 81.0, 729.0);
   pdfioContentTextShowf(st, false, "This is a %s compliance test page.", pdfa_version);
-  pdfioContentDrawImage(st, "IM1", 36.0, 720.0, 18.0, 18.0);
+  pdfioContentTextEnd(st);
+
+  pdfioContentDrawImage(st, "I1", 36.0, 720.0, 36.0, 36.0);
 
   width  = pdfioImageGetWidth(color_jpg);
   height = pdfioImageGetHeight(color_jpg);
@@ -3572,7 +3581,7 @@ write_pdfa_file(
   tx = 0.5 * (595.28 - swidth);
   ty = 0.5 * (720.0 - sheight);
 
-  pdfioContentDrawImage(st, "IM2", tx, ty, swidth, sheight);
+  pdfioContentDrawImage(st, "I2", tx, ty, swidth, sheight);
   pdfioContentTextEnd(st);
 
   pdfioStreamClose(st);
