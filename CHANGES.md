@@ -2,7 +2,7 @@ Changes in PDFio
 ================
 
 
-v1.6.0 - YYYY-MM-DD
+v1.6.0 - 2025-10-06
 -------------------
 
 - Added generation of XMP metadata when writing PDFs (Issue #103)
@@ -22,11 +22,6 @@ v1.6.0 - YYYY-MM-DD
   and setting the default/primary language of a PDF file (Issue #124)
 - Now add default grayscale, RGB, and CMYK profile resources to pages as needed
   (Issue #104)
-
-
-v1.5.5 - YYYY-MM-DD
--------------------
-
 - Fixed unsupported filter error (Issue #130)
 - Fixed EOF comment written to the PDF (Issue #136)
 - Fixed TTF cmap underflow error.
