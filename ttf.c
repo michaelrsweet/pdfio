@@ -1792,6 +1792,9 @@ static bool				// O - `true` on success, `false` on error
 read_hhea(ttf_t           *font,	// I - Font
           _ttf_off_hhea_t *hhea)	// O - hhea table data
 {
+  int	temp;				// Temporary read value
+
+
   memset(hhea, 0, sizeof(_ttf_off_hhea_t));
 
   if (seek_table(font, TTF_OFF_hhea, 0, true) == 0)
@@ -1814,7 +1817,10 @@ read_hhea(ttf_t           *font,	// I - Font
   /* (reserved) */          read_short(font);
   /* (reserved) */          read_short(font);
   /* metricDataFormat */    read_short(font);
-  hhea->numberOfHMetrics  = (unsigned short)read_ushort(font);
+  if ((temp = read_ushort(font)) < 0)
+    return (false);
+  else
+    hhea->numberOfHMetrics = (unsigned short)temp;
 
   return (true);
 }
