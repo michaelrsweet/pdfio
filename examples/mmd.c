@@ -3,7 +3,7 @@
 //
 //     https://www.msweet.org/mmd
 //
-// Copyright © 2017-2024 by Michael R Sweet.
+// Copyright © 2017-2025 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.	See the file "LICENSE" for more
 // information.
@@ -166,7 +166,7 @@ mmdCopyAllText(mmd_t *node)		// I - Parent node
   char		*all = NULL,		// String buffer
 		*allptr = NULL,		// Pointer into string buffer
 		*temp;			// Temporary pointer
-  size_t	allsize = 1,		// Size of "all" buffer
+  size_t	allsize = 0,		// Size of "all" buffer
 		textlen;		// Length of "text" string
   mmd_t		*current,		// Current node
 		*next;			// Next node
@@ -179,6 +179,8 @@ mmdCopyAllText(mmd_t *node)		// I - Parent node
     if (current->text)
     {
       // Append this node's text to the string...
+      long alloff = allptr - all;	// Offset within current buffer
+
       textlen = strlen(current->text);
       allsize += textlen + (size_t)current->whitespace;
       temp    = realloc(all, allsize);
@@ -189,8 +191,8 @@ mmdCopyAllText(mmd_t *node)		// I - Parent node
 	return (NULL);
       }
 
-      allptr = temp + (allptr - all);
       all    = temp;
+      allptr = all + alloff;
 
       if (current->whitespace)
 	*allptr++ = ' ';
@@ -1059,6 +1061,8 @@ mmdLoadIO(mmd_t      *root,		// I - Root node for document or `NULL` for a new d
 	break;
       else if (line[0] == '>' && *ptr == '>')
 	memmove(ptr, ptr + 1, strlen(ptr));
+
+      DEBUG2_printf("        line=\"%s\"\n", line);
     }
 
     mmd_parse_inline(&doc, block, lineptr);
@@ -1493,7 +1497,7 @@ mmd_parse_inline(_mmd_doc_t *doc,	// I - Document
 
   for (text = NULL, type = MMD_TYPE_NORMAL_TEXT; *lineptr; lineptr ++)
   {
-    DEBUG2_printf("mmd_parse_inline: lineptr=%p(\"%32.32s...\"), type=%d, text=%p, whitespace=%d\n", lineptr, lineptr, type, text, whitespace);
+    DEBUG2_printf("mmd_parse_inline: lineptr=%p(\"%s\"), type=%d, text=%p, whitespace=%d\n", lineptr, lineptr, type, text, whitespace);
 
     if (isspace(*lineptr & 255) && type != MMD_TYPE_CODE_TEXT)
     {
@@ -2090,6 +2094,8 @@ mmd_read_buffer(_mmd_filebuf_t *file)	// I - File buffer
   if (file->bufptr && file->bufptr > file->buffer)
   {
     // Discard previous characters in the buffer.
+    DEBUG2_printf("mmd_read_buffer: before buffer=\"%s\"\n", file->bufptr);
+
     memmove(file->buffer, file->bufptr, file->bufend - file->bufptr);
     file->bufend -= (file->bufptr - file->buffer);
   }
@@ -2099,11 +2105,13 @@ mmd_read_buffer(_mmd_filebuf_t *file)	// I - File buffer
     file->bufend = file->buffer;
   }
 
-  if ((bytes = (file->cb)(file->cbdata, file->bufend, sizeof(file->buffer) - (size_t)(file->bufend - file->buffer - 1))) > 0)
+  if ((bytes = (file->cb)(file->cbdata, file->bufend, sizeof(file->buffer) - (size_t)(file->bufend - file->buffer) - 1)) > 0)
     file->bufend += bytes;
 
   *(file->bufend) = '\0';
   file->bufptr    = file->buffer;
+
+  DEBUG2_printf("mmd_read_buffer: after buffer=\"%s\"\n", file->buffer);
 }
 
 
@@ -2160,6 +2168,8 @@ mmd_read_line(_mmd_filebuf_t *file,	// I - File buffer
     return (NULL);
   else if (!strchr(file->bufptr, '\n'))
     mmd_read_buffer(file);
+
+  DEBUG2_printf("mmd_read_line: Returning \"%s\"\n", line);
 
   return (line);
 }
