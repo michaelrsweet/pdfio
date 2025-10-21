@@ -1712,12 +1712,23 @@ pdfioFileCreateFontObjFromBase(
   pdfio_obj_t	*obj;			// Font object
 
 
-  if (pdf && pdf->profile >= _PDFIO_PROFILE_PDFA_1A && pdf->profile <= _PDFIO_PROFILE_PDFA_4)
+  // Range check input...
+  if (!pdf)
+    return (NULL);
+
+  if (!name)
+  {
+    _pdfioFileError(pdf, "No base font name specified.");
+    return (NULL);
+  }
+
+  if (pdf->profile >= _PDFIO_PROFILE_PDFA_1A && pdf->profile <= _PDFIO_PROFILE_PDFA_4)
   {
     _pdfioFileError(pdf, "Base fonts are not allowed in PDF/A files; use pdfioFileCreateFontObjFromFile to embed a font.");
     return (NULL);
   }
 
+  // Create a base font object...
   if ((dict = pdfioDictCreate(pdf)) == NULL)
     return (NULL);
 

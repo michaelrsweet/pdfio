@@ -2,6 +2,12 @@ Changes in PDFio
 ================
 
 
+v1.6.1 - YYYY-MM-DD
+-------------------
+
+- Added missing input checking to `pdfioFileCreateFontObjFromBase` function.
+
+
 v1.6.0 - 2025-10-06
 -------------------
 
