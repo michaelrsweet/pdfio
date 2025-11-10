@@ -3486,7 +3486,7 @@ write_pdfa_file(
 
   // Embed a base font, which are not allowed for PDF/A
   testBegin("pdfioFileCreateFontObjFromBase(Helvetica)");
-  if ((font = pdfioFileCreateFontObjFromBase(pdf, "Helvetica")) != NULL)
+  if (pdfioFileCreateFontObjFromBase(pdf, "Helvetica") != NULL)
   {
     testEnd(false);
     goto done;

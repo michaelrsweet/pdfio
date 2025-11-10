@@ -2702,7 +2702,8 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   png_infop	info = NULL;		// PNG info pointers
   png_bytep	*rows = NULL;		// PNG row pointers
   unsigned char	*pixels = NULL;		// PNG image data
-  unsigned	i,			// Looping var
+  int		i;			// Looping var
+  unsigned	y,			// Row
 		color_type,		// PNG color mode
 		width,			// Width in columns
 		height,			// Height in lines
@@ -2800,8 +2801,8 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
     goto finish_png;
   }
 
-  for (i = 0; i < height; i ++)
-    rows[i] = pixels + i * linesize;
+  for (y = 0; y < height; y ++)
+    rows[y] = pixels + y * linesize;
 
   // Read the image...
   for (i = png_set_interlace_handling(pp); i > 0; i --)
@@ -2815,7 +2816,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   // Grab any color space/palette information...
   if (png_get_PLTE(pp, info, &palette, &num_palette))
   {
-    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPalette(dict->pdf, num_palette, (unsigned char *)palette));
+    pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPalette(dict->pdf, (size_t)num_palette, (unsigned char *)palette));
   }
   else if (png_get_iCCP(pp, info, &icc_name, /*compression_type*/NULL, &icc_data, &icc_datalen))
   {
@@ -3845,14 +3846,12 @@ png_read_func(png_structp pp,		// I - PNG pointer
               png_bytep   data,		// I - Read buffer
               size_t      length)	// I - Number of bytes to read
 {
-  int		*fd = (int *)png_get_io_ptr(pp);
-					// Pointer to file descriptor
-  ssize_t	bytes;			// Bytes read
+  int	*fd = (int *)png_get_io_ptr(pp);// Pointer to file descriptor
 
 
   PDFIO_DEBUG("png_read_func(pp=%p, data=%p, length=%lu)\n", (void *)pp, (void *)data, (unsigned long)length);
 
-  if ((bytes = read(*fd, data, length)) < (ssize_t)length)
+  if (read(*fd, data, length) < (ssize_t)length)
     png_error(pp, "Unable to read from PNG file.");
 }
 #endif // HAVE_LIBPNG

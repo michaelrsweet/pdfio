@@ -6,6 +6,9 @@ v1.6.1 - YYYY-MM-DD
 -------------------
 
 - Added missing input checking to `pdfioFileCreateFontObjFromBase` function.
+- Updated Xcode project to use installed PNG library.
+- Fixed some clang warnings.
+
 
 
 v1.6.0 - 2025-10-06
