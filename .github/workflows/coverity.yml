@@ -8,7 +8,7 @@ jobs:
     environment: Coverity
     steps:
       - name: Checkout PDFio sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Update Build Environment
         run: sudo apt-get update --fix-missing -y
       - name: Install Prerequisites
