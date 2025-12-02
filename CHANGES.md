@@ -8,6 +8,7 @@ v1.6.1 - YYYY-MM-DD
 - Added missing input checking to `pdfioFileCreateFontObjFromBase` function.
 - Updated support for UTF-16 strings (Issue #141)
 - Updated Xcode project to use installed PNG library.
+- Fixed character range checking in a TTF support function.
 - Fixed some clang warnings.
 
 
