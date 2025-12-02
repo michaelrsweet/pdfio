@@ -393,9 +393,18 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  return (false);
 	}
 
-	if (saw_nul)
+        if ((bufptr - buffer) > 3 && ((bufptr - buffer) & 1) != 0 && (!memcmp(buffer, "(\377\376", 3) || !memcmp(buffer, "(\376\377", 3)))
+        {
+          // UTF-16 string, convert to UTF-8...
+          PDFIO_DEBUG("_pdfioTokenRead: Converting string to UTF-8.\n", stderr);
+          _pdfio_utf16cpy(buffer + 1, (unsigned char *)buffer + 1, bufptr - buffer  - 1, bufsize - 1);
+
+          PDFIO_DEBUG("_pdfioTokenRead: Read '%s'.\n", buffer);
+          return (true);
+        }
+	else if (saw_nul)
 	{
-	  // Convert to a hex (binary) string...
+	  // Contains nul characters, convert to a hex (binary) string...
 	  char	*litptr,		// Pointer to literal character
 		*hexptr;		// Pointer to hex character
 	  size_t bytes = (size_t)(bufptr - buffer - 1);

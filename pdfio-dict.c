@@ -464,8 +464,12 @@ pdfioDictGetString(pdfio_dict_t *dict,	// I - Dictionary
   _pdfio_value_t *value = _pdfioDictGetValue(dict, key);
 
 
+  PDFIO_DEBUG("pdfioDictGetString(dict=%p, key=\"%s\")\n", (void *)dict, key);
+  PDFIO_DEBUG("pdfioDictGetString: value=%p(type=%d)\n", (void *)value, value ? value->type : 0);
+
   if (value && value->type == PDFIO_VALTYPE_STRING)
   {
+    PDFIO_DEBUG("pdfioDictGetString: Returning \"%s\".\n", value->value.string);
     return (value->value.string);
   }
   else if (value && value->type == PDFIO_VALTYPE_BINARY && value->value.binary.datalen < 4096)
@@ -476,6 +480,8 @@ pdfioDictGetString(pdfio_dict_t *dict,	// I - Dictionary
     if (!(value->value.binary.datalen & 1) && (!memcmp(value->value.binary.data, "\376\377", 2) || !memcmp(value->value.binary.data, "\377\376", 2)))
     {
       // Copy UTF-16...
+      PDFIO_DEBUG("pdfioDictGetString: Converting UTF-16 to UTF-8 string.\n");
+
       _pdfio_utf16cpy(temp, value->value.binary.data, value->value.binary.datalen, sizeof(temp));
     }
     else
@@ -489,10 +495,13 @@ pdfioDictGetString(pdfio_dict_t *dict,	// I - Dictionary
     value->type         = PDFIO_VALTYPE_STRING;
     value->value.string = pdfioStringCreate(dict->pdf, temp);
 
+    PDFIO_DEBUG("pdfioDictGetString: Returning \"%s\".\n", value->value.string);
+
     return (value->value.string);
   }
   else
   {
+    PDFIO_DEBUG("pdfioDictGetString: Returning NULL.\n");
     return (NULL);
   }
 }
