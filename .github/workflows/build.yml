@@ -13,7 +13,9 @@ jobs:
 
     steps:
     - name: Checkout PDFio sources
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
+      with:
+        submodules: recursive
     - name: Update Build Environment
       run: sudo apt-get update --fix-missing -y
     - name: Install Prerequisites
@@ -37,7 +39,9 @@ jobs:
 
     steps:
     - name: Checkout PDFio sources
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
+      with:
+        submodules: recursive
     - name: Configure PDFio
       run: ./configure --enable-debug --enable-sanitizer --enable-maintainer
     - name: Build PDFio
@@ -53,7 +57,9 @@ jobs:
 
     steps:
     - name: Checkout PDFio sources
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
+      with:
+        submodules: recursive
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
     - name: Nuget Restore
