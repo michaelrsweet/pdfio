@@ -1,5 +1,5 @@
 LIBRARY pdfio1
-VERSION 1.6
+VERSION 1.7
 EXPORTS
 _pdfio_strlcpy
 _pdfio_strtod
