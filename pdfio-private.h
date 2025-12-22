@@ -283,7 +283,8 @@ struct _pdfio_file_s			// PDF file structure
   pdfio_obj_t	*root_obj;		// Root object/dictionary
   pdfio_obj_t	*info_obj;		// Information object
   pdfio_obj_t	*pages_obj;		// Root pages object
-  pdfio_obj_t	*encrypt_obj;		// De/Encryption object/dictionary
+  pdfio_obj_t	*encrypt_obj;		// Encryption object (not used for reading)
+  pdfio_dict_t	*encrypt_dict;		// De/Encryption dictionary
   pdfio_obj_t	*cgats001_obj,		// CGATS001 ICC profile object
 		*cp1252_obj,		// CP1252 font encoding object
 		*unicode_obj;		// Unicode font encoding object
