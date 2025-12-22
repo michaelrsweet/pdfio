@@ -214,8 +214,9 @@ _pdfioCryptoLock(
 
   pdfioObjClose(pdf->encrypt_obj);
 
-  pdf->encryption  = encryption;
-  pdf->permissions = permissions;
+  pdf->encrypt_dict = dict;
+  pdf->encryption   = encryption;
+  pdf->permissions  = permissions;
 
   return (true);
 }
@@ -570,7 +571,6 @@ _pdfioCryptoUnlock(
 {
   int		tries;			// Number of tries
   const char	*password = NULL;	// Password to try
-  pdfio_dict_t	*encrypt_dict;		// Encrypt objection dictionary
   int		version,		// Version value
 		revision,		// Revision value
 		length;			// Key length value
@@ -590,20 +590,14 @@ _pdfioCryptoUnlock(
   _pdfio_value_t *value;		// Encrypt dictionary value, if any
 
 
-  // See if we support the type of encryption specified by the Encrypt object
+  // See if we support the type of encryption specified by the Encrypt
   // dictionary...
-  if ((encrypt_dict = pdfioObjGetDict(pdf->encrypt_obj)) == NULL)
-  {
-    _pdfioFileError(pdf, "Unable to get encryption dictionary.");
-    return (false);
-  }
+  handler  = pdfioDictGetName(pdf->encrypt_dict, "Filter");
+  version  = (int)pdfioDictGetNumber(pdf->encrypt_dict, "V");
+  revision = (int)pdfioDictGetNumber(pdf->encrypt_dict, "R");
+  length   = (int)pdfioDictGetNumber(pdf->encrypt_dict, "Length");
 
-  handler  = pdfioDictGetName(encrypt_dict, "Filter");
-  version  = (int)pdfioDictGetNumber(encrypt_dict, "V");
-  revision = (int)pdfioDictGetNumber(encrypt_dict, "R");
-  length   = (int)pdfioDictGetNumber(encrypt_dict, "Length");
-
-  if ((value = _pdfioDictGetValue(encrypt_dict, "EncryptMetadata")) != NULL && value->type == PDFIO_VALTYPE_BOOLEAN)
+  if ((value = _pdfioDictGetValue(pdf->encrypt_dict, "EncryptMetadata")) != NULL && value->type == PDFIO_VALTYPE_BOOLEAN)
     pdf->encrypt_metadata = value->value.boolean;
   else
     pdf->encrypt_metadata = true;
@@ -622,9 +616,9 @@ _pdfioCryptoUnlock(
     pdfio_dict_t *filter;		// Crypt Filter
     const char	*cfm;			// Crypt filter method
 
-    stream_filter = pdfioDictGetName(encrypt_dict, "StmF");
-    string_filter = pdfioDictGetName(encrypt_dict, "StrF");
-    cf_dict       = pdfioDictGetDict(encrypt_dict, "CF");
+    stream_filter = pdfioDictGetName(pdf->encrypt_dict, "StmF");
+    string_filter = pdfioDictGetName(pdf->encrypt_dict, "StrF");
+    cf_dict       = pdfioDictGetDict(pdf->encrypt_dict, "CF");
 
     if (!cf_dict)
     {
@@ -701,7 +695,7 @@ _pdfioCryptoUnlock(
   // Grab the remaining values we need to unlock the PDF...
   pdf->file_keylen = (size_t)(length / 8);
 
-  p = pdfioDictGetNumber(encrypt_dict, "P");
+  p = pdfioDictGetNumber(pdf->encrypt_dict, "P");
   PDFIO_DEBUG("_pdfioCryptoUnlock: P=%.0f\n", p);
   if (p < 0x7fffffff)			// Handle integers > 2^31-1
     pdf->permissions = (pdfio_permission_t)p;
@@ -709,8 +703,8 @@ _pdfioCryptoUnlock(
     pdf->permissions = (pdfio_permission_t)(p - 4294967296.0);
   PDFIO_DEBUG("_pdfioCryptoUnlock: permissions=%d\n", pdf->permissions);
 
-  owner_key = pdfioDictGetBinary(encrypt_dict, "O", &owner_keylen);
-  user_key  = pdfioDictGetBinary(encrypt_dict, "U", &user_keylen);
+  owner_key = pdfioDictGetBinary(pdf->encrypt_dict, "O", &owner_keylen);
+  user_key  = pdfioDictGetBinary(pdf->encrypt_dict, "U", &user_keylen);
 
   if (!owner_key)
   {
