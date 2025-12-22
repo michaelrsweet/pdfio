@@ -12,7 +12,7 @@ v1.6.1 - YYYY-MM-DD
   indirect reference (Issue #139)
 - Fixed character range checking in a TTF support function.
 - Fixed some clang warnings.
-
+- Fixed the generated pkg-config file.
 
 
 v1.6.0 - 2025-10-06

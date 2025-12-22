@@ -653,7 +653,7 @@ WARNINGS
 CSFLAGS
 LIBPDFIO_STATIC
 LIBPDFIO
-PKGCONFIG_LIBPNG
+PKGCONFIG_REQUIRES_PRIVATE
 PKGCONFIG_REQUIRES
 PKGCONFIG_LIBS_PRIVATE
 PKGCONFIG_LIBS
@@ -4138,7 +4138,9 @@ fi
 PKGCONFIG_CFLAGS="-I\${includedir}"
 PKGCONFIG_LIBS="-L\${libdir} -lpdfio"
 PKGCONFIG_LIBS_PRIVATE="-lm"
-PKGCONFIG_REQUIRES="zlib"
+PKBCONFIG_REQUIRES=""
+PKGCONFIG_REQUIRES_PRIVATE=""
+
 
 
 
@@ -4154,6 +4156,7 @@ then :
 printf "%s\n" "yes" >&6; }
     CPPFLAGS="$($PKGCONFIG --cflags zlib) $CPPFLAGS"
     LIBS="$($PKGCONFIG --libs zlib) $LIBS"
+    PKGCONFIG_REQUIRES_PRIVATE="zlib"
 
 else $as_nop
 
@@ -4216,7 +4219,6 @@ then :
 
 fi
 
-    PKGCONFIG_REQUIRES=""
     PKGCONFIG_LIBS_PRIVATE="-lz $PKGCONFIG_LIBS_PRIVATE"
 
 fi
@@ -4226,9 +4228,6 @@ if test ${enable_libpng+y}
 then :
   enableval=$enable_libpng;
 fi
-
-
-PKGCONFIG_LIBPNG=""
 
 
 if test "x$PKGCONFIG" != x -a x$enable_libpng != xno
@@ -4246,8 +4245,16 @@ printf "%s\n" "#define HAVE_LIBPNG 1" >>confdefs.h
 
 	CPPFLAGS="$($PKGCONFIG --cflags libpng16) -DHAVE_LIBPNG=1 $CPPFLAGS"
 	LIBS="$($PKGCONFIG --libs libpng16) -lz $LIBS"
-	PKGCONFIG_LIBS_PRIVATE="$($PKGCONFIG --libs libpng16) $PKGCONFIG_LIBS_PRIVATE"
-	PKGCONFIG_REQUIRES="libpng >= 1.6,$PKGCONFIG_REQUIRES"
+	if test "x$PKGCONFIG_REQUIRES_PRIVATE" = x
+then :
+
+	    PKGCONFIG_REQUIRES_PRIVATE="libpng >= 1.6"
+
+else $as_nop
+
+	    PKGCONFIG_REQUIRES_PRIVATE="libpng >= 1.6, $PKGCONFIG_REQUIRES_PRIVATE"
+
+fi
 
 else $as_nop
 
@@ -4314,6 +4321,8 @@ else $as_nop
     LIBPDFIO_STATIC=""
     PKGCONFIG_LIBS="$PKGCONFIG_LIBS $PKGCONFIG_LIBS_PRIVATE"
     PKGCONFIG_LIBS_PRIVATE=""
+    PKGCONFIG_REQUIRES="$PKGCONFIG_REQUIRES_PRIVATE"
+    PKGCONFIG_REQUIRES_PRIVATE=""
 
 fi
 
