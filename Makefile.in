@@ -69,6 +69,8 @@ top_srcdir	=	@top_srcdir@
 
 BUILDROOT	=	$(DSTROOT)$(RPM_BUILD_ROOT)$(DESTDIR)
 
+TTFDIR		=	@TTFDIR@
+
 
 # Build commands...
 .SUFFIXES:	.c .h .o
@@ -99,17 +101,14 @@ PUBOBJS		=	\
 			pdfio-token.o \
 			pdfio-value.o
 LIBOBJS		=	\
-			$(PUBOBJS) \
-			ttf.o
+			$(PUBOBJS)
 OBJS		=	\
 			$(LIBOBJS) \
-			testpdfio.o \
-			testttf.o
+			testpdfio.o
 TARGETS		=	\
 			$(LIBPDFIO) \
 			$(LIBPDFIO_STATIC) \
-			testpdfio \
-			testttf
+			testpdfio
 DOCFILES	=	\
 			doc/pdfio.html \
 			doc/pdfio-512.png \
@@ -135,16 +134,30 @@ EXAMPLES	=	\
 
 
 # Make everything
-all:		$(TARGETS)
+all:
+	if test "x$(TTFDIR)" != x; then \
+		echo Making all in $(TTFDIR)...; \
+		(cd $(TTFDIR); $(MAKE) $(MFLAGS) all) || exit 1; \
+	fi
+	$(MAKE) $(MFLAGS) $(TARGETS)
 
 
 # Clean everything
 clean:
+	if test "x$(TTFDIR)" != x; then \
+		echo Cleaning in $(TTFDIR)...; \
+		(cd $(TTFDIR); $(MAKE) $(MFLAGS) clean) || exit 1; \
+	fi
+	echo Cleaning build files...
 	rm -f $(TARGETS) $(OBJS)
 
 
 # Install everything
 install:	$(TARGETS)
+	if test "x$(TTFDIR)" != x; then \
+		echo Installing in $(TTFDIR)...; \
+		(cd $(TTFDIR); $(MAKE) $(MFLAGS) install) || exit 1; \
+	fi
 	echo Installing header files to $(BUILDROOT)$(includedir)...
 	$(INSTALL) -d -m 755 $(BUILDROOT)$(includedir)
 	for file in $(PUBHEADERS); do \
@@ -232,18 +245,10 @@ testpdfio:		testpdfio.o libpdfio.a
 	$(CC) $(LDFLAGS) -o $@ testpdfio.o libpdfio.a $(LIBS)
 
 
-# TTF test program
-testttf:	ttf.o testttf.o
-	echo Linking $@...
-	$(CC) $(LDFLAGS) -o testttf ttf.o testttf.o $(LIBS)
-
-
 # Dependencies
 $(OBJS):		pdfio.h pdfio-private.h Makefile
-pdfio-content.o:	pdfio-content.h ttf.h
+pdfio-content.o:	pdfio-content.h
 testpdfio.o:		test.h
-testttf.o:		ttf.h
-ttf.o:			ttf.h
 
 
 # Make documentation using Codedoc <https://www.msweet.org/codedoc>

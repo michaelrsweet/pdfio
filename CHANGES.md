@@ -5,6 +5,7 @@ Changes in PDFio
 v1.7.0 - YYYY-MM-DD
 -------------------
 
+- Now use TTF 1.1 or later for font support.
 
 
 v1.6.1 - YYYY-MM-DD
@@ -17,6 +18,7 @@ v1.6.1 - YYYY-MM-DD
   indirect reference (Issue #139)
 - Fixed character range checking in a TTF support function.
 - Fixed some clang warnings.
+- Fixed the generated pkg-config file.
 
 
 
