@@ -8,7 +8,7 @@ v1.7.0 - YYYY-MM-DD
 - Now use TTF 1.1 or later for font support.
 
 
-v1.6.1 - YYYY-MM-DD
+v1.6.1 - 2025-12-26
 -------------------
 
 - Added missing input checking to `pdfioFileCreateFontObjFromBase` function.
