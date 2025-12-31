@@ -22,8 +22,10 @@
 		273440CD263D727800FBFD63 /* pdfio-page.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440C2263D727800FBFD63 /* pdfio-page.c */; };
 		273440D8263D72E100FBFD63 /* testpdfio.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440D7263D72E100FBFD63 /* testpdfio.c */; };
 		273440E4263DD7EA00FBFD63 /* pdfio-token.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440E3263DD7EA00FBFD63 /* pdfio-token.c */; };
-		279E1035267D043B00D3A349 /* ttf.h in Headers */ = {isa = PBXBuildFile; fileRef = 279E1033267D043B00D3A349 /* ttf.h */; };
-		279E1036267D043B00D3A349 /* ttf.c in Sources */ = {isa = PBXBuildFile; fileRef = 279E1034267D043B00D3A349 /* ttf.c */; };
+		2741C9A22F05872C002D93F2 /* ttf-cache.c in Sources */ = {isa = PBXBuildFile; fileRef = 2741C99F2F05872C002D93F2 /* ttf-cache.c */; };
+		2741C9A32F05872C002D93F2 /* ttf-file.c in Sources */ = {isa = PBXBuildFile; fileRef = 2741C9A02F05872C002D93F2 /* ttf-file.c */; };
+		2741C9A42F05872C002D93F2 /* ttf-private.h in Headers */ = {isa = PBXBuildFile; fileRef = 2741C9A12F05872C002D93F2 /* ttf-private.h */; };
+		2741C9A52F05872C002D93F2 /* ttf.h in Headers */ = {isa = PBXBuildFile; fileRef = 2741C99E2F05872C002D93F2 /* ttf.h */; };
 		279E103B267D04E600D3A349 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 279E103A267D04E600D3A349 /* libz.tbd */; };
 		27CF90442711DFFE00E50FE4 /* pdfio-aes.c in Sources */ = {isa = PBXBuildFile; fileRef = 27CF90432711DFFE00E50FE4 /* pdfio-aes.c */; };
 		27ECBD8926419DAB0025312A /* libpdfio.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 273440B0263D6FE200FBFD63 /* libpdfio.a */; };
@@ -82,8 +84,10 @@
 		273440E1263D73A300FBFD63 /* pdfio.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = pdfio.html; path = doc/pdfio.html; sourceTree = "<group>"; };
 		273440E2263D73A300FBFD63 /* pdfio.3 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pdfio.3; path = doc/pdfio.3; sourceTree = "<group>"; };
 		273440E3263DD7EA00FBFD63 /* pdfio-token.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-token.c"; sourceTree = "<group>"; };
-		279E1033267D043B00D3A349 /* ttf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ttf.h; sourceTree = "<group>"; };
-		279E1034267D043B00D3A349 /* ttf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ttf.c; sourceTree = "<group>"; };
+		2741C99E2F05872C002D93F2 /* ttf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ttf.h; path = ttf/ttf.h; sourceTree = "<group>"; };
+		2741C99F2F05872C002D93F2 /* ttf-cache.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = "ttf-cache.c"; path = "ttf/ttf-cache.c"; sourceTree = "<group>"; };
+		2741C9A02F05872C002D93F2 /* ttf-file.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = "ttf-file.c"; path = "ttf/ttf-file.c"; sourceTree = "<group>"; };
+		2741C9A12F05872C002D93F2 /* ttf-private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "ttf-private.h"; path = "ttf/ttf-private.h"; sourceTree = "<group>"; };
 		279E103A267D04E600D3A349 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		27CF90432711DFFE00E50FE4 /* pdfio-aes.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-aes.c"; sourceTree = "<group>"; };
 		27F2F05D2710BE92008ECD36 /* pdfio-md5.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-md5.c"; sourceTree = "<group>"; };
@@ -179,8 +183,10 @@
 				273440B9263D727800FBFD63 /* pdfio-string.c */,
 				273440E3263DD7EA00FBFD63 /* pdfio-token.c */,
 				273440C0263D727800FBFD63 /* pdfio-value.c */,
-				279E1034267D043B00D3A349 /* ttf.c */,
-				279E1033267D043B00D3A349 /* ttf.h */,
+				2741C99E2F05872C002D93F2 /* ttf.h */,
+				2741C99F2F05872C002D93F2 /* ttf-cache.c */,
+				2741C9A02F05872C002D93F2 /* ttf-file.c */,
+				2741C9A12F05872C002D93F2 /* ttf-private.h */,
 			);
 			name = Library;
 			sourceTree = "<group>";
@@ -209,10 +215,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				27FCBDE42D19F9B300485EEE /* pdfio-base-font-widths.h in Headers */,
+				2741C9A42F05872C002D93F2 /* ttf-private.h in Headers */,
+				2741C9A52F05872C002D93F2 /* ttf.h in Headers */,
 				273440CC263D727800FBFD63 /* pdfio.h in Headers */,
 				271EA706265B2B1000ACDD39 /* pdfio-content.h in Headers */,
 				273440C3263D727800FBFD63 /* pdfio-private.h in Headers */,
-				279E1035267D043B00D3A349 /* ttf.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -295,7 +302,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				279E1036267D043B00D3A349 /* ttf.c in Sources */,
 				273440C9263D727800FBFD63 /* pdfio-dict.c in Sources */,
 				273440C8263D727800FBFD63 /* pdfio-file.c in Sources */,
 				273440CB263D727800FBFD63 /* pdfio-value.c in Sources */,
@@ -303,6 +309,8 @@
 				273440CD263D727800FBFD63 /* pdfio-page.c in Sources */,
 				27F2F0622710BE92008ECD36 /* pdfio-crypto.c in Sources */,
 				27F2F0642711243D008ECD36 /* pdfio-sha256.c in Sources */,
+				2741C9A22F05872C002D93F2 /* ttf-cache.c in Sources */,
+				2741C9A32F05872C002D93F2 /* ttf-file.c in Sources */,
 				273440C5263D727800FBFD63 /* pdfio-array.c in Sources */,
 				273440E4263DD7EA00FBFD63 /* pdfio-token.c in Sources */,
 				273440C7263D727800FBFD63 /* pdfio-object.c in Sources */,

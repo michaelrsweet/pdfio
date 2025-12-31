@@ -145,7 +145,8 @@
     <ClInclude Include="pdfio-content.h" />
     <ClInclude Include="pdfio-private.h" />
     <ClInclude Include="pdfio.h" />
-    <ClInclude Include="ttf.h" />
+    <ClInclude Include="ttf\ttf.h" />
+    <ClInclude Include="ttf\ttf-private.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pdfio-aes.c" />
@@ -164,7 +165,8 @@
     <ClCompile Include="pdfio-string.c" />
     <ClCompile Include="pdfio-token.c" />
     <ClCompile Include="pdfio-value.c" />
-    <ClCompile Include="ttf.c" />
+    <ClCompile Include="ttf\ttf-cache.c" />
+    <ClCompile Include="ttf\ttf-file.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
