@@ -1,7 +1,7 @@
 //
 // PDF object functions for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -69,7 +69,7 @@ pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
   ssize_t	bytes;			// Bytes read
 
 
-  PDFIO_DEBUG("pdfioObjCopy(pdf=%p, srcobj=%p(%p))\n", (void *)pdf, (void *)srcobj, srcobj ? (void *)srcobj->pdf : NULL);
+  PDFIO_DEBUG("pdfioObjCopy(pdf=%p, srcobj=%p(%u,%p))\n", (void *)pdf, (void *)srcobj, srcobj ? (unsigned)srcobj->number : 0, srcobj ? (void *)srcobj->pdf : NULL);
 
   // Range check input
   if (!pdf || !srcobj)
@@ -77,7 +77,10 @@ pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
 
   // Load the object value if needed...
   if (srcobj->value.type == PDFIO_VALTYPE_NONE)
-    _pdfioObjLoad(srcobj);
+  {
+    if (!_pdfioObjLoad(srcobj))
+      return (NULL);
+  }
 
   // See if we have already mapped this object...
   if ((dstobj = _pdfioFileFindMappedObj(pdf, srcobj->pdf, srcobj->number)) != NULL)

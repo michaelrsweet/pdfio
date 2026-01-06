@@ -1,7 +1,7 @@
 //
 // PDF value functions for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -76,7 +76,8 @@ _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
         return (NULL);
 
     case PDFIO_VALTYPE_ARRAY :
-        vdst->value.array = pdfioArrayCopy(pdfdst, vsrc->value.array);
+        if ((vdst->value.array = pdfioArrayCopy(pdfdst, vsrc->value.array)) == NULL)
+          return (NULL);
         break;
 
     case PDFIO_VALTYPE_BINARY :
@@ -97,12 +98,14 @@ _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
         return (vdst);
 
     case PDFIO_VALTYPE_DICT :
-        vdst->value.dict = pdfioDictCopy(pdfdst, vsrc->value.dict);
+        if ((vdst->value.dict = pdfioDictCopy(pdfdst, vsrc->value.dict)) == NULL)
+          return (NULL);
         break;
 
     case PDFIO_VALTYPE_NAME :
     case PDFIO_VALTYPE_STRING :
-        vdst->value.name = pdfioStringCreate(pdfdst, vsrc->value.name);
+        if ((vdst->value.name = pdfioStringCreate(pdfdst, vsrc->value.name)) == NULL)
+          return (NULL);
         break;
   }
 

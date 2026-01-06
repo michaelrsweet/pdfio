@@ -2,6 +2,12 @@ Changes in PDFio
 ================
 
 
+v1.6.2 - YYYY-MM-DD
+-------------------
+
+- Fixed an error propagation bug when reading too-long values (Issue #146)
+
+
 v1.6.1 - 2025-12-26
 -------------------
 
