@@ -11,6 +11,7 @@ v1.7.0 - YYYY-MM-DD
 v1.6.2 - YYYY-MM-DD
 -------------------
 
+- Increased the maximum length of a single string to 128k (Issue #146)
 - Fixed an error propagation bug when reading too-long values (Issue #146)
 
 
