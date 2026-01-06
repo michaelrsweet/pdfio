@@ -94,7 +94,7 @@
 //
 
 #  define PDFIO_MAX_DEPTH	32	// Maximum nesting depth for values
-#  define PDFIO_MAX_STRING	65536	// Maximum length of string
+#  define PDFIO_MAX_STRING	131072	// Maximum length of string
 
 typedef void (*_pdfio_extfree_t)(void *);
 					// Extension data free function
