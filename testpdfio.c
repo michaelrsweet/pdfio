@@ -1,16 +1,20 @@
 //
 // Test program for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
 //
 // Usage:
 //
-//   ./testpdfio
+//   ./testpdfio OPTIONS [FILENAME {OBJECT-NUMBER,OUT-FILENAME}] ...
 //
-//   ./testpdfio [--verbose] FILENAME [OBJECT-NUMBER] [FILENAME [OBJECT-NUMBER]] ...
+// Options:
+//
+//   --help                   Show help
+//   --password PASSWORD      Set access password
+//   --verbose                Be verbose
 //
 
 #include "pdfio-private.h"
@@ -29,7 +33,7 @@
 
 static int	do_crypto_tests(void);
 static int	do_pdfa_tests(void);
-static int	do_test_file(const char *filename, int objnum, const char *password, bool verbose);
+static int	do_test_file(const char *filename, const char *outfile, int objnum, const char *password, bool verbose);
 static int	do_unit_tests(void);
 static int	draw_image(pdfio_stream_t *st, const char *name, double x, double y, double w, double h, const char *label);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
@@ -103,14 +107,18 @@ main(int  argc,				// I - Number of command-line arguments
       else if ((i + 1) < argc && isdigit(argv[i + 1][0] & 255))
       {
         // filename.pdf object-number
-        if (do_test_file(argv[i], atoi(argv[i + 1]), password, verbose))
+        if (do_test_file(argv[i], /*outfile*/NULL, atoi(argv[i + 1]), password, verbose))
 	  ret = 1;
 
 	i ++;
       }
-      else if (do_test_file(argv[i], 0, password, verbose))
+      else
       {
-        ret = 1;
+        if (do_test_file(argv[i], argv[i + 1], /*objnum*/0, password, verbose))
+          ret = 1;
+
+        if (argv[i + 1])
+          i ++;
       }
     }
   }
@@ -129,6 +137,7 @@ main(int  argc,				// I - Number of command-line arguments
 
   return (ret);
 }
+
 
 //
 // 'do_crypto_tests()' - Test the various cryptographic functions in PDFio.
@@ -429,12 +438,15 @@ do_pdfa_tests(void)
 
 static int				// O - Exit status
 do_test_file(const char *filename,	// I - PDF filename
+             const char *outfile,	// I - Output filename, if any
              int        objnum,		// I - Object number to dump, if any
              const char *password,	// I - Password for file
              bool       verbose)	// I - Be verbose?
 {
+  int		status = 0;		// Exit status
   bool		error = false;		// Have we shown an error yet?
-  pdfio_file_t	*pdf;			// PDF file
+  pdfio_file_t	*pdf,			// PDF file
+		*outpdf;		// Output PDF file, if any
   size_t	n,			// Object/page index
 		num_objs,		// Number of objects
 		num_pages;		// Number of pages
@@ -444,7 +456,12 @@ do_test_file(const char *filename,	// I - PDF filename
 
   // Try opening the file...
   if (!objnum)
-    testBegin("%s", filename);
+  {
+    if (outfile)
+      testBegin("%s -> %s", filename, outfile);
+    else
+      testBegin("%s", filename);
+  }
 
   if ((pdf = pdfioFileOpen(filename, password_cb, (void *)password, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
@@ -458,6 +475,7 @@ do_test_file(const char *filename,	// I - PDF filename
       if ((obj = pdfioFileFindObj(pdf, (size_t)objnum)) == NULL)
       {
         puts("Not found.");
+        pdfioFileClose(pdf);
         return (1);
       }
 
@@ -465,6 +483,7 @@ do_test_file(const char *filename,	// I - PDF filename
       {
         _pdfioValueDebug(&obj->value, stdout);
 	putchar('\n');
+        pdfioFileClose(pdf);
         return (0);
       }
 
@@ -474,6 +493,7 @@ do_test_file(const char *filename,	// I - PDF filename
       {
         _pdfioValueDebug(&obj->value, stdout);
 	putchar('\n');
+        pdfioFileClose(pdf);
         return (0);
       }
 
@@ -481,6 +501,7 @@ do_test_file(const char *filename,	// I - PDF filename
         fwrite(buffer, 1, (size_t)bytes, stdout);
 
       pdfioStreamClose(st);
+      pdfioFileClose(pdf);
 
       return (0);
     }
@@ -488,56 +509,77 @@ do_test_file(const char *filename,	// I - PDF filename
     {
       testEnd(true);
 
-      // Show basic stats...
-      num_objs  = pdfioFileGetNumObjs(pdf);
-      num_pages = pdfioFileGetNumPages(pdf);
-
-      printf("    PDF %s, %d pages, %d objects.\n", pdfioFileGetVersion(pdf), (int)num_pages, (int)num_objs);
-
-      if (verbose)
+      if (outfile)
       {
-	// Show a summary of each page...
-	for (n = 0; n < num_pages; n ++)
-	{
-	  if ((obj = pdfioFileGetPage(pdf, n)) == NULL)
-	  {
-	    printf("%s: Unable to get page #%d.\n", filename, (int)n + 1);
-	  }
-	  else
-	  {
-	    pdfio_rect_t media_box;	// MediaBox value
-
-	    memset(&media_box, 0, sizeof(media_box));
-	    dict = pdfioObjGetDict(obj);
-
-	    if (!pdfioDictGetRect(dict, "MediaBox", &media_box))
+        // Copy pages to the output file...
+        if ((outpdf = pdfioFileCreate(outfile, pdfioFileGetVersion(pdf), /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+        {
+          for (n = 0, num_pages = pdfioFileGetNumPages(pdf); n < num_pages; n ++)
+          {
+	    if (!pdfioPageCopy(outpdf, pdfioFileGetPage(pdf, n)))
 	    {
-	      if ((obj = pdfioDictGetObj(dict, "Parent")) != NULL)
-	      {
-		dict = pdfioObjGetDict(obj);
-		pdfioDictGetRect(dict, "MediaBox", &media_box);
-	      }
+	      status = 1;
+	      break;
 	    }
+          }
 
-	    printf("    Page #%d (obj %d) is %gx%g.\n", (int)n + 1, (int)pdfioObjGetNumber(obj), media_box.x2, media_box.y2);
-	  }
-	}
+          pdfioFileClose(outpdf);
+        }
+      }
+      else
+      {
+	// Show basic stats...
+	num_objs  = pdfioFileGetNumObjs(pdf);
+	num_pages = pdfioFileGetNumPages(pdf);
 
-	// Show the associated value with each object...
-	for (n = 0; n < num_objs; n ++)
+	printf("    PDF %s, %d pages, %d objects.\n", pdfioFileGetVersion(pdf), (int)num_pages, (int)num_objs);
+
+	if (verbose)
 	{
-	  if ((obj = pdfioFileGetObj(pdf, n)) == NULL)
+	  // Show a summary of each page...
+	  for (n = 0; n < num_pages; n ++)
 	  {
-	    printf("    Unable to get object #%d.\n", (int)n);
-	  }
-	  else
-	  {
-	    dict = pdfioObjGetDict(obj);
+	    if ((obj = pdfioFileGetPage(pdf, n)) == NULL)
+	    {
+	      printf("%s: Unable to get page #%d.\n", filename, (int)n + 1);
+	    }
+	    else
+	    {
+	      pdfio_rect_t media_box;	// MediaBox value
 
-	    printf("    %u %u obj dict=%p(%lu pairs)\n", (unsigned)pdfioObjGetNumber(obj), (unsigned)pdfioObjGetGeneration(obj), (void *)dict, dict ? (unsigned long)dict->num_pairs : 0UL);
-	    fputs("        ", stdout);
-	    _pdfioValueDebug(&obj->value, stdout);
-	    putchar('\n');
+	      memset(&media_box, 0, sizeof(media_box));
+	      dict = pdfioObjGetDict(obj);
+
+	      if (!pdfioDictGetRect(dict, "MediaBox", &media_box))
+	      {
+		if ((obj = pdfioDictGetObj(dict, "Parent")) != NULL)
+		{
+		  dict = pdfioObjGetDict(obj);
+		  pdfioDictGetRect(dict, "MediaBox", &media_box);
+		}
+	      }
+
+	      printf("    Page #%d (obj %d) is %gx%g.\n", (int)n + 1, (int)pdfioObjGetNumber(obj), media_box.x2, media_box.y2);
+	    }
+	  }
+
+	  // Show the associated value with each object...
+	  for (n = 0; n < num_objs; n ++)
+	  {
+	    if ((obj = pdfioFileGetObj(pdf, n)) == NULL)
+	    {
+	      printf("    Unable to get object #%d.\n", (int)n);
+	      status = 1;
+	    }
+	    else
+	    {
+	      dict = pdfioObjGetDict(obj);
+
+	      printf("    %u %u obj dict=%p(%lu pairs)\n", (unsigned)pdfioObjGetNumber(obj), (unsigned)pdfioObjGetGeneration(obj), (void *)dict, dict ? (unsigned long)dict->num_pairs : 0UL);
+	      fputs("        ", stdout);
+	      _pdfioValueDebug(&obj->value, stdout);
+	      putchar('\n');
+	    }
 	  }
 	}
       }
@@ -545,7 +587,7 @@ do_test_file(const char *filename,	// I - PDF filename
 
     // Close the file and return success...
     pdfioFileClose(pdf);
-    return (0);
+    return (status);
   }
   else
   {
@@ -1739,7 +1781,7 @@ token_peek_cb(const char **s,		// IO - Test string
 static int				// O - Exit status
 usage(FILE *fp)				// I - Output file
 {
-  fputs("Usage: ./testpdfio [OPTIONS] [FILENAME [OBJNUM]] ...\n", fp);
+  fputs("Usage: ./testpdfio [OPTIONS] [FILENAME {OBJECT-NUM,OUT-FILENAME}] ...\n", fp);
   fputs("Options:\n", fp);
   fputs("  --help               Show program help.\n", fp);
   fputs("  --password PASSWORD  Set PDF password.\n", fp);

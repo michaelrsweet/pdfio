@@ -1,7 +1,7 @@
 //
 // PDF dictionary functions for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -92,6 +92,8 @@ pdfioDictCopy(pdfio_file_t *pdf,	// I - PDF file
   // Copy and add each of the source dictionary's key/value pairs...
   for (i = dict->num_pairs, p = dict->pairs; i > 0; i --, p ++)
   {
+    PDFIO_DEBUG("pdfioDictCopy: key=\"%s\", value.type=%d\n", p->key, p->value.type);
+
     if (!strcmp(p->key, "Length") && p->value.type == PDFIO_VALTYPE_INDIRECT && dict->pdf != pdf)
     {
       // Don't use indirect stream lengths for copied objects...
@@ -102,15 +104,28 @@ pdfioDictCopy(pdfio_file_t *pdf,	// I - PDF file
       if (lenobj)
       {
         if (lenobj->value.type == PDFIO_VALTYPE_NONE)
-          _pdfioObjLoad(lenobj);
+        {
+          if (!_pdfioObjLoad(lenobj))
+          {
+            PDFIO_DEBUG("pdfioDictCopy: Unable to copy value of \"%s\", returning NULL.\n", p->key);
+            return (NULL);
+          }
+        }
 
 	v.value.number = lenobj->value.value.number;
       }
       else
+      {
         v.value.number = 0.0;
+      }
+
+      PDFIO_DEBUG("pdfioDictCopy: Length is %.0f.\n", v.value.number);
     }
     else if (!_pdfioValueCopy(pdf, &v, dict->pdf, &p->value))
+    {
+      PDFIO_DEBUG("pdfioDictCopy: Unable to copy value of \"%s\", returning NULL.\n", p->key);
       return (NULL);			// Let pdfioFileClose do the cleanup...
+    }
 
     if (_pdfioStringIsAllocated(dict->pdf, p->key))
       key = pdfioStringCreate(pdf, p->key);
@@ -650,8 +665,7 @@ _pdfioDictRead(pdfio_file_t   *pdf,	// I - PDF file
     }
     else if (_pdfioDictGetValue(dict, key + 1))
     {
-      // Issue 118: Discard duplicate key/value pairs, in the future this will
-      // be a warning message...
+      // Issue 118: Discard duplicate key/value pairs...
       _pdfioValueDelete(&value);
       if (_pdfioFileError(pdf, "WARNING: Discarding value for duplicate dictionary key '%s'.", key + 1))
         continue;
