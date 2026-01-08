@@ -25,6 +25,7 @@
 #include <math.h>
 #ifdef _WIN32
 #  include <io.h>
+#  include <fcntl.h>
 #else
 #  include <unistd.h>
 #endif // _WIN32
