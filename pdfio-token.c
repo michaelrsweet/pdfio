@@ -397,7 +397,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
         {
           // UTF-16 string, convert to UTF-8...
           PDFIO_DEBUG("_pdfioTokenRead: Converting string to UTF-8.\n", stderr);
-          _pdfio_utf16cpy(buffer + 1, (unsigned char *)buffer + 1, bufptr - buffer  - 1, bufsize - 1);
+          _pdfio_utf16cpy(buffer + 1, (unsigned char *)buffer + 1, (size_t)(bufptr - buffer  - 1), bufsize - 1);
 
           PDFIO_DEBUG("_pdfioTokenRead: Read '%s'.\n", buffer);
           return (true);
