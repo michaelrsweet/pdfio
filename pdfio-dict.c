@@ -79,6 +79,10 @@ pdfioDictCopy(pdfio_file_t *pdf,	// I - PDF file
 
   PDFIO_DEBUG("pdfioDictCopy(pdf=%p, dict=%p(%p))\n", (void *)pdf, (void *)dict, dict ? (void *)dict->pdf : NULL);
 
+  // Range check input...
+  if (!pdf || !dict)
+    return (NULL);
+
   // Create the new dictionary...
   if ((ndict = pdfioDictCreate(pdf)) == NULL)
     return (NULL);
