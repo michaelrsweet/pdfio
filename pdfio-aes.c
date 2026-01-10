@@ -1,7 +1,7 @@
 //
 // AES functions for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -117,7 +117,7 @@ _pdfioCryptoAESInit(
   memcpy(ctx->round_key, key, keylen);
 
   // All other round keys are found from the previous round keys.
-  for (rkptr0 = ctx->round_key, rkptr = rkptr0 + keylen, rkend = rkptr + 16 * ctx->round_size, i = nwords; rkptr < rkend; i ++)
+  for (rkptr0 = ctx->round_key, rkptr = rkptr0 + keylen, rkend = rkptr0 + 16 * ctx->round_size + 16, i = nwords; rkptr < rkend; i ++)
   {
     if ((i % nwords) == 0)
     {

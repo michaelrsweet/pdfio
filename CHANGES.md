@@ -6,6 +6,7 @@ v1.7.0 - YYYY-MM-DD
 -------------------
 
 - Now use TTF 1.1 or later for font support.
+- Fixed a buffer overflow in the (still not enabled) AES-256 code.
 
 
 v1.6.2 - YYYY-MM-DD

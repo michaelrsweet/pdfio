@@ -1,7 +1,7 @@
 //
 // Private header file for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -176,7 +176,7 @@ typedef struct _pdfio_value_s		// Value structure
 typedef struct _pdfio_aes_s		// AES encryption state
 {
   size_t	round_size;		// Size of round key
-  uint8_t	round_key[240],		// Round key
+  uint8_t	round_key[256],		// Round key
 		iv[16];			// Initialization vector
 } _pdfio_aes_t;
 
