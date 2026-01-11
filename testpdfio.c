@@ -507,10 +507,15 @@ do_test_file(const char *filename,	// I - PDF filename
     }
     else
     {
-      testEnd(true);
-
       if (outfile)
       {
+        if (!access(outfile, 0))
+        {
+          testEndMessage(false, "output file already exists");
+          pdfioFileClose(pdf);
+	  return (1);
+        }
+
         // Copy pages to the output file...
         if ((outpdf = pdfioFileCreate(outfile, pdfioFileGetVersion(pdf), /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
         {
@@ -524,6 +529,7 @@ do_test_file(const char *filename,	// I - PDF filename
           }
 
           pdfioFileClose(outpdf);
+          testEnd(true);
         }
       }
       else
@@ -532,7 +538,7 @@ do_test_file(const char *filename,	// I - PDF filename
 	num_objs  = pdfioFileGetNumObjs(pdf);
 	num_pages = pdfioFileGetNumPages(pdf);
 
-	printf("    PDF %s, %d pages, %d objects.\n", pdfioFileGetVersion(pdf), (int)num_pages, (int)num_objs);
+	testEndMessage(true, "PDF %s, %d pages, %d objects", pdfioFileGetVersion(pdf), (int)num_pages, (int)num_objs);
 
 	if (verbose)
 	{
