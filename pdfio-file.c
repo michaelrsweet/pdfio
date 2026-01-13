@@ -1,7 +1,7 @@
 //
 // PDF file functions for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -2006,6 +2006,9 @@ load_xref(
   _pdfio_token_t tb;			// Token buffer/stack
   off_t		line_offset;		// Offset to start of line
   pdfio_obj_t	*pages_obj;		// Pages object
+  size_t	num_xrefs = 1;		// Number of xref offsets
+  off_t		xrefs[100] = { xref_offset };
+					// xref offsets
 
 
   while (!done)
@@ -2471,13 +2474,31 @@ load_xref(
     {
       done = true;
     }
-    else if (new_offset == xref_offset)
+    else
     {
-      _pdfioFileError(pdf, "Recursive xref table.");
-      return (false);
-    }
+      // See if we've seen this xref table before...
+      size_t	i;			// Looping var
 
-    xref_offset = new_offset;
+      for (i = 0; i < num_xrefs; i ++)
+      {
+        if (new_offset == xrefs[i])
+	{
+	  // Yes, error out...
+	  _pdfioFileError(pdf, "Recursive xref table.");
+	  return (false);
+	}
+      }
+
+      // No, save it...
+      if (i >= (sizeof(xrefs) / sizeof(xrefs[0])))
+      {
+        // Too many xref tables...
+	_pdfioFileError(pdf, "Too many xref tables.");
+	return (false);
+      }
+
+      xrefs[num_xrefs ++] = xref_offset = new_offset;
+    }
   }
 
   // Once we have all of the xref tables loaded, get the important objects and

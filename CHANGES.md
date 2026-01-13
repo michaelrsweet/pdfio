@@ -8,6 +8,7 @@ v1.6.2 - YYYY-MM-DD
 - Increased the maximum length of a single string to 128k (Issue #146)
 - Added missing range checks to `pdfioArrayCopy` and `pdfioDictCopy`.
 - Refactored PDF encryption code to fix unlocking with certain files.
+- Improved xref table loop detection (Issue #148)
 - Fixed an error propagation bug when reading too-long values (Issue #146)
 - Fixed a Clang warning.
 
