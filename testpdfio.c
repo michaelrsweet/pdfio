@@ -460,7 +460,7 @@ do_test_file(const char *filename,	// I - PDF filename
     if (outfile)
       testBegin("%s -> %s", filename, outfile);
     else
-      testBegin("%s", filename);
+      testBegin("pdfioFileOpen(%s)", filename);
   }
 
   if ((pdf = pdfioFileOpen(filename, password_cb, (void *)password, (pdfio_error_cb_t)error_cb, &error)) != NULL)
@@ -545,13 +545,13 @@ do_test_file(const char *filename,	// I - PDF filename
 	  // Show a summary of each page...
 	  for (n = 0; n < num_pages; n ++)
 	  {
-	    if ((obj = pdfioFileGetPage(pdf, n)) == NULL)
+	    testBegin("pdfioFileGetPage(%u)", (unsigned)n);
+
+	    if ((obj = pdfioFileGetPage(pdf, n)) != NULL)
 	    {
-	      printf("%s: Unable to get page #%d.\n", filename, (int)n + 1);
-	    }
-	    else
-	    {
-	      pdfio_rect_t media_box;	// MediaBox value
+	      pdfio_rect_t	media_box;
+					// MediaBox value
+	      pdfio_stream_t	*st;	// Page content stream
 
 	      memset(&media_box, 0, sizeof(media_box));
 	      dict = pdfioObjGetDict(obj);
@@ -565,26 +565,50 @@ do_test_file(const char *filename,	// I - PDF filename
 		}
 	      }
 
-	      printf("    Page #%d (obj %d) is %gx%g.\n", (int)n + 1, (int)pdfioObjGetNumber(obj), media_box.x2, media_box.y2);
+	      if ((st = pdfioPageOpenStream(obj, /*number*/0, /*decode*/true)) != NULL)
+	      {
+	        char	buffer[8192];	// Content buffer
+	        ssize_t	bytes;		// Number of bytes read
+	        size_t	length = 0;	// Content length
+
+	        while ((bytes = pdfioStreamRead(st, buffer, sizeof(buffer))) > 0)
+	          length += (size_t)bytes;
+
+	        pdfioStreamClose(st);
+
+		testEndMessage(true, "page #%d/obj %d is %gx%g, content is %lu bytes", (int)n + 1, (int)pdfioObjGetNumber(obj), media_box.x2, media_box.y2, (unsigned long)length);
+	      }
+	      else
+	      {
+	        testEndMessage(false, "unable to open content stream");
+	        status = 1;
+	      }
+	    }
+	    else
+	    {
+	      testEnd(false);
+	      status = 1;
 	    }
 	  }
 
 	  // Show the associated value with each object...
 	  for (n = 0; n < num_objs; n ++)
 	  {
-	    if ((obj = pdfioFileGetObj(pdf, n)) == NULL)
-	    {
-	      printf("    Unable to get object #%d.\n", (int)n);
-	      status = 1;
-	    }
-	    else
+	    testBegin("pdfioFileGetObj(%u)", (unsigned)n);
+
+	    if ((obj = pdfioFileGetObj(pdf, n)) != NULL)
 	    {
 	      dict = pdfioObjGetDict(obj);
 
-	      printf("    %u %u obj dict=%p(%lu pairs)\n", (unsigned)pdfioObjGetNumber(obj), (unsigned)pdfioObjGetGeneration(obj), (void *)dict, dict ? (unsigned long)dict->num_pairs : 0UL);
-	      fputs("        ", stdout);
-	      _pdfioValueDebug(&obj->value, stdout);
-	      putchar('\n');
+	      testEndMessage(true, "%u %u obj dict=%p/%lu pairs", (unsigned)pdfioObjGetNumber(obj), (unsigned)pdfioObjGetGeneration(obj), (void *)dict, dict ? (unsigned long)dict->num_pairs : 0UL);
+	      fputs("        ", stderr);
+	      _pdfioValueDebug(&obj->value, stderr);
+	      fputs("\n", stderr);
+	    }
+	    else
+	    {
+	      testEnd(false);
+	      status = 1;
 	    }
 	  }
 	}

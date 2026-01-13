@@ -27,14 +27,18 @@ fi
 
 for file in $(find "$@" -name \*.pdf -print); do
     # Run testpdfio to test loading the file...
-    echo $ac_n "\r$file$ac_c"
-    ./testpdfio $file >$file.log 2>&1
+    echo $ac_n "\r$file: $ac_c"
+
+    ./testpdfio --verbose $file >/dev/null 2>$file.log
+
     if test $? = 0; then
     	# Passed
-        echo $ac_n "\r                                                              $ac_c"
+        echo PASS
         rm -f $file.log
     else
-    	# Failed, preserve log and write filename to stdout...
+    	# Failed, preserve log and write to stdout...
+    	echo FAIL
+    	cat $file.log
     	echo ""
     fi
 done
