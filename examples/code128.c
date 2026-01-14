@@ -13,6 +13,10 @@
 
 #include <pdfio.h>
 #include <pdfio-content.h>
+#ifdef _WIN32
+#  include <io.h>
+#  include <fcntl.h>
+#endif // _WIN32
 
 
 //
