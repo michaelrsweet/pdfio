@@ -341,6 +341,13 @@ struct _pdfio_stream_s			// Stream
   char		buffer[8192],		// Read/write buffer
 		*bufptr,		// Current position in buffer
 	        *bufend;		// End of buffer
+  size_t	a85size;		// Size of ASCII85Decode buffer
+  char	        *a85buffer,		// ASCII85Decode buffer, if any
+	        *a85bufptr,		// Pointer into ASCII85Decode buffer
+	        *a85bufend,		// End of data in ASCII85Decode buffer
+	        a85decode[4],		// Current block of decoded characters
+	        *a85decptr,		// Pointer into decoded characters
+	        *a85decend;		// Last decoded character
   z_stream	flate;			// Flate filter state
   _pdfio_predictor_t predictor;		// Predictor function, if any
   size_t	pbpixel,		// Size of a pixel in bytes

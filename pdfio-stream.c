@@ -1,7 +1,7 @@
 //
 // PDF stream functions for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -14,6 +14,7 @@
 // Local functions...
 //
 
+static ssize_t		stream_get_bytes(pdfio_stream_t *st, void *buffer, size_t bytes);
 static unsigned char	stream_paeth(unsigned char a, unsigned char b, unsigned char c);
 static ssize_t		stream_read(pdfio_stream_t *st, char *buffer, size_t bytes);
 static bool		stream_write(pdfio_stream_t *st, const void *buffer, size_t bytes);
@@ -172,6 +173,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 
   st->pdf->current_obj = NULL;
 
+  free(st->a85buffer);
   free(st->cbuffer);
   free(st->prbuffer);
   free(st->psbuffer);
@@ -479,10 +481,34 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
     pdfio_array_t *fa = pdfioDictGetArray(dict, "Filter");
 					// Filter array
 
-    if (!filter && fa && pdfioArrayGetSize(fa) == 1)
+    if (!filter && fa)
     {
-      // Support single-valued arrays...
-      filter = pdfioArrayGetName(fa, 0);
+      const char *filter0 = pdfioArrayGetName(fa, 0);
+					// First filter
+
+      if (pdfioArrayGetSize(fa) == 1)
+      {
+	// Support single-valued arrays...
+	filter = filter0;
+      }
+      else if (pdfioArrayGetSize(fa) == 2 && filter0 && !strcmp(filter0, "ASCII85Decode"))
+      {
+        // Support ASCII85Decode + something else
+        st->a85size = 5200;		// Enough for 4k of decoded data
+
+	// Allocate the ASCII85Decode buffer...
+        if ((st->a85buffer = malloc(st->a85size)) == NULL)
+        {
+          _pdfioFileError(st->pdf, "Unable to allocate ASCII85Decode buffer.");
+          goto error;
+        }
+
+        st->a85bufptr = st->a85buffer;
+        st->a85bufend = st->a85buffer;
+
+	// Get the second filter...
+        filter = pdfioArrayGetName(fa, 1);
+      }
     }
 
     if (!filter)
@@ -490,7 +516,6 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       // No single filter name, do we have a compound filter?
       if (fa)
       {
-	// TODO: Implement compound filters...
 	_pdfioFileError(st->pdf, "Unsupported compound stream filter.");
 	goto error;
       }
@@ -615,11 +640,13 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
 
       st->remaining -= st->flate.avail_in;
     }
+#if 0 // TODO: Implement LZWDecode filter
     else if (!strcmp(filter, "LZWDecode"))
     {
       // LZW compression
       st->filter = PDFIO_FILTER_LZW;
     }
+#endif // 0
     else
     {
       // Something else we don't support
@@ -638,12 +665,13 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
   // If we get here something went wrong...
   error:
 
+  free(st->a85buffer);
   free(st->cbuffer);
   free(st->prbuffer);
   free(st->psbuffer);
   free(st);
-  return (NULL);
 
+  return (NULL);
 }
 
 
@@ -1012,6 +1040,168 @@ pdfioStreamWrite(
 
 
 //
+// 'stream_get_bytes()' - Read and decrypt raw or ASCII85Decode-encoded data.
+//
+
+static ssize_t				// O - Bytes read or `-1` on error
+stream_get_bytes(
+    pdfio_stream_t *st,			// I - Stream
+    void           *buffer,		// I - Buffer
+    size_t         bytes)		// I - Maximum number of bytes to read
+{
+  ssize_t	rbytes;			// Bytes read
+
+
+  if (st->a85buffer)
+  {
+    // Decode through the ASCII85Decode buffer...
+    char *bufptr = (char *)buffer;	// Pointer into read buffer
+
+    rbytes = 0;
+
+    // Read as much as we can...
+    while (bytes > 0 && (st->a85bufptr < st->a85bufend || st->remaining > 0))
+    {
+      unsigned	count,			// Number of ASCII85 chars
+		a85val;			// ASCII85 "chunk" value
+      char	*a85bufptr;		// Local copy of buffer pointer
+      size_t	declen;			// Decoded length
+
+
+      // First use up any remaining decoded chars...
+      if (st->a85decptr)
+      {
+        declen = (size_t)(st->a85decend - st->a85decptr);
+
+        if (bytes >= declen)
+        {
+          memcpy(bufptr, st->a85decptr, declen);
+          bufptr        += declen;
+          rbytes        += (ssize_t)declen;
+          st->a85decptr = NULL;
+          bytes         -= declen;
+
+          if (bytes == 0)
+            break;
+        }
+        else
+        {
+          memcpy(bufptr, st->a85decptr, bytes);
+          bufptr        += bytes;
+          rbytes        += (ssize_t)bytes;
+          st->a85decptr += bytes;
+          bytes         = 0;
+          break;
+        }
+      }
+
+      if ((st->a85bufend - st->a85bufptr) < 5 && st->remaining > 0)
+      {
+        // Fill the ASCII85Decode buffer...
+        ssize_t	a85bytes = st->a85bufend - st->a85bufptr;
+					// Bytes in the ASCII85Decode buffer
+        size_t	a85remaining = st->a85size - (size_t)a85bytes;
+					// Remaining capacity in the buffer
+
+        // First move any remaining bytes to the front of the buffer...
+        if (a85bytes > 0)
+          memmove(st->a85buffer, st->a85bufptr, (size_t)a85bytes);
+
+        st->a85bufptr = st->a85buffer;
+        st->a85bufend = st->a85buffer + a85bytes;
+
+        // Then read more data from the file...
+	if (a85remaining > st->remaining)
+	  a85bytes = _pdfioFileRead(st->pdf, st->a85bufend, st->remaining);
+	else
+	  a85bytes = _pdfioFileRead(st->pdf, st->a85bufend, a85remaining);
+
+	if (a85bytes > 0)
+	{
+	  st->remaining -= (size_t)a85bytes;
+
+	  if (st->crypto_cb)
+	    (st->crypto_cb)(&st->crypto_ctx, (uint8_t *)st->a85bufend, (uint8_t *)st->a85bufend, (size_t)a85bytes);
+
+	  st->a85bufend += a85bytes;
+	}
+	else
+	{
+	  _pdfioFileError(st->pdf, "Read error in stream.");
+	  return (-1);
+	}
+      }
+
+      // Grab the next chunk...
+      for (a85bufptr = st->a85bufptr, a85val = 0, count = 0; a85bufptr < st->a85bufend && count < 5; a85bufptr ++)
+      {
+        char a85ch = *a85bufptr;	// Current character
+
+        if (a85ch >= '!' && a85ch <= 'u')
+        {
+          // Valid ASCII85Decode character...
+          a85val = a85val * 85 + a85ch - '!';
+          count ++;
+        }
+        else if (!isspace(a85ch & 255))
+        {
+          // Invalid ASCII85Decode character...
+	  _pdfioFileError(st->pdf, "Invalid ASCII85Decode character in stream.");
+	  return (-1);
+	}
+      }
+
+      if (count < 2)
+      {
+        // Need at least 2 characters to decode a single byte...
+	_pdfioFileError(st->pdf, "Invalid ASCII85Decode character in stream.");
+	return (-1);
+      }
+
+      st->a85bufptr = a85bufptr;
+      declen        = count - 1;
+
+      // Add zero rounds to properly align the decoded value...
+      while (count < 5)
+      {
+        a85val *= 85;
+        count ++;
+      }
+
+      // Copy the bytes to the decode buffer...
+      st->a85decode[0] = (char)(a85val >> 24);
+      st->a85decode[1] = (char)((a85val >> 16) & 255);
+      st->a85decode[2] = (char)((a85val >> 8) & 255);
+      st->a85decode[3] = (char)(a85val & 255);
+
+      st->a85decptr    = st->a85decode;
+      st->a85decend    = st->a85decode + declen;
+    }
+
+    return (rbytes);
+  }
+  else
+  {
+    // Limit reads to the length of the stream...
+    if (bytes > st->remaining)
+      rbytes = _pdfioFileRead(st->pdf, buffer, st->remaining);
+    else
+      rbytes = _pdfioFileRead(st->pdf, buffer, bytes);
+
+    if (rbytes > 0)
+    {
+      st->remaining -= (size_t)rbytes;
+
+      if (st->crypto_cb)
+        (st->crypto_cb)(&st->crypto_ctx, (uint8_t *)buffer, (uint8_t *)buffer, (size_t)rbytes);
+    }
+
+    return (rbytes);
+  }
+}
+
+
+//
 // 'stream_paeth()' - PaethPredictor function for PNG decompression filter.
 //
 
@@ -1038,27 +1228,13 @@ stream_read(pdfio_stream_t *st,		// I - Stream
             char           *buffer,	// I - Buffer
             size_t         bytes)	// I - Number of bytes to read
 {
-  ssize_t	rbytes;			// Bytes read
   uInt		avail_in, avail_out;	// Previous flate values
 
 
   if (st->filter == PDFIO_FILTER_NONE)
   {
-    // No filtering, but limit reads to the length of the stream...
-    if (bytes > st->remaining)
-      rbytes = _pdfioFileRead(st->pdf, buffer, st->remaining);
-    else
-      rbytes = _pdfioFileRead(st->pdf, buffer, bytes);
-
-    if (rbytes > 0)
-    {
-      st->remaining -= (size_t)rbytes;
-
-      if (st->crypto_cb)
-        (st->crypto_cb)(&st->crypto_ctx, (uint8_t *)buffer, (uint8_t *)buffer, (size_t)rbytes);
-    }
-
-    return (rbytes);
+    // No filtering...
+    return (stream_get_bytes(st, buffer, bytes));
   }
   else if (st->filter == PDFIO_FILTER_FLATE)
   {
@@ -1073,18 +1249,12 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       if (st->flate.avail_in == 0)
       {
 	// Read more from the file...
-	if (st->cbsize > st->remaining)
-	  rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->remaining);
-	else
-	  rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->cbsize);
+        ssize_t rbytes = stream_get_bytes(st, st->cbuffer, st->cbsize);
+					// Bytes read
 
 	if (rbytes <= 0)
 	  return (-1);			// End of file...
 
-	if (st->crypto_cb)
-	  rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes);
-
-	st->remaining      -= (size_t)rbytes;
 	st->flate.next_in  = (Bytef *)st->cbuffer;
 	st->flate.avail_in = (uInt)rbytes;
       }
@@ -1129,18 +1299,12 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	if (st->flate.avail_in == 0)
 	{
 	  // Read more from the file...
-	  if (st->cbsize > st->remaining)
-	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->remaining);
-	  else
-	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->cbsize);
+	  ssize_t rbytes = stream_get_bytes(st, st->cbuffer, st->cbsize);
+					// Bytes read
 
 	  if (rbytes <= 0)
 	    return (-1);		// End of file...
 
-	  if (st->crypto_cb)
-	    rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes);
-
-	  st->remaining      -= (size_t)rbytes;
 	  st->flate.next_in  = (Bytef *)st->cbuffer;
 	  st->flate.avail_in = (uInt)rbytes;
 	}
@@ -1199,18 +1363,12 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	if (st->flate.avail_in == 0)
 	{
 	  // Read more from the file...
-	  if (st->cbsize > st->remaining)
-	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->remaining);
-	  else
-	    rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->cbsize);
+	  ssize_t rbytes = stream_get_bytes(st, st->cbuffer, st->cbsize);
+					// Bytes read
 
 	  if (rbytes <= 0)
 	    return (-1);		// End of file...
 
-	  if (st->crypto_cb)
-	    rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes);
-
-	  st->remaining      -= (size_t)rbytes;
 	  st->flate.next_in  = (Bytef *)st->cbuffer;
 	  st->flate.avail_in = (uInt)rbytes;
 	}
