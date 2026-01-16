@@ -1090,10 +1090,8 @@ stream_get_bytes(
         else
         {
           memcpy(bufptr, st->a85decptr, bytes);
-          bufptr        += bytes;
           rbytes        += (ssize_t)bytes;
           st->a85decptr += bytes;
-          bytes         = 0;
           break;
         }
       }
