@@ -51,6 +51,9 @@ _pdfioFileRead
 _pdfioFileSeek
 _pdfioFileTell
 _pdfioFileWrite
+_pdfioLZWCreate
+_pdfioLZWDelete
+_pdfioLZWInflate
 _pdfioObjDelete
 _pdfioObjGetExtension
 _pdfioObjLoad
