@@ -1300,9 +1300,7 @@ stream_inflate(pdfio_stream_t *st,	// I - Stream
   }
   while (bytes > 0 && exactly);
 
-  if (exactly && bytes > 0)
-    return (-1);
-  else if (st->filter == PDFIO_FILTER_FLATE)
+  if (st->filter == PDFIO_FILTER_FLATE)
     return (st->flate.next_out - (Bytef *)buffer);
   else
     return (st->lzw->next_out - (uint8_t *)buffer);
