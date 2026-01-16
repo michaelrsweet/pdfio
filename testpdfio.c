@@ -687,7 +687,7 @@ do_test_file(const char *filename,	// I - PDF filename
 	      }
 	      else
 	      {
-	        testEndMessage(false, "unable to open content stream");
+	        testEndMessage(false, "page #%d/obj %d is %gx%g, unable to open content stream", (int)n + 1, (int)pdfioObjGetNumber(obj), media_box.x2, media_box.y2);
 	        status = 1;
 	      }
 	    }
