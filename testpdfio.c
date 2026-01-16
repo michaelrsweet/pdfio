@@ -32,6 +32,7 @@
 //
 
 static int	do_crypto_tests(void);
+static int	do_lzw_tests(void);
 static int	do_pdfa_tests(void);
 static int	do_test_file(const char *filename, const char *outfile, int objnum, const char *password, bool verbose);
 static int	do_unit_tests(void);
@@ -379,6 +380,102 @@ do_crypto_tests(void)
   }
 
   return (ret);
+}
+
+
+//
+// 'do_lzw_tests()' - Test the various LZW functions in PDFio.
+//
+
+static int				// O - Exit status
+do_lzw_tests(void)
+{
+  int		status = 0;		// Exit status
+  _pdfio_lzw_t	*lzw;			// LZW state
+  uint8_t	buffer[8192];		// Output buffer
+  size_t	bytes;			// Output bytes
+  static uint8_t iso32000_in[] =	// ISO-32000-2 test case input
+  {
+    0x80, 0x0B, 0x60, 0x50, 0x22, 0x0C, 0x0C, 0x85, 0x01
+  };
+  static uint8_t iso32000_out[] =	// ISO-32000-2 test case output
+  {
+    45, 45, 45, 45, 45, 65, 45, 45, 45, 66
+  };
+
+
+  testBegin("_pdfioLZWCreate(8)");
+  testEnd((lzw = _pdfioLZWCreate(/*code_size*/8)) != NULL);
+  if (!lzw)
+    return (1);
+
+  testBegin("_pdfioLZWInflate(ISO 32000-2 test case)");
+
+  lzw->avail_in = sizeof(iso32000_in);
+  lzw->next_in  = iso32000_in;
+
+  lzw->avail_out = sizeof(buffer);
+  lzw->next_out  = buffer;
+
+  if (!_pdfioLZWInflate(lzw))
+  {
+    testEndMessage(false, "returned false");
+    status = 1;
+  }
+  else if ((bytes = sizeof(buffer) - lzw->avail_out) != sizeof(iso32000_out))
+  {
+    testEndMessage(false, "got %u bytes, expected %u bytes", (unsigned)bytes, (unsigned)sizeof(iso32000_out));
+    status = 1;
+  }
+  else if (memcmp(buffer, iso32000_out, bytes))
+  {
+    size_t	i;			// Looping var
+
+    testEndMessage(false, "got incorrect output");
+
+    testMessage("    EXPECTED %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", iso32000_out[0], iso32000_out[1], iso32000_out[2], iso32000_out[3], iso32000_out[4], iso32000_out[5], iso32000_out[6], iso32000_out[7], iso32000_out[8], iso32000_out[9]);
+
+    for (i = 0; i < bytes; i += 8)
+    {
+      switch (bytes - i)
+      {
+        case 1 :
+            testMessage("    %s %02X", i == 0 ? "GOT" : "   ", buffer[i + 0]);
+            break;
+        case 2 :
+            testMessage("    %s %02X %02X", i == 0 ? "GOT" : "   ", buffer[i + 0], buffer[i + 1]);
+            break;
+        case 3 :
+            testMessage("    %s %02X %02X %02X", i == 0 ? "GOT" : "   ", buffer[i + 0], buffer[i + 1], buffer[i + 2]);
+            break;
+        case 4 :
+            testMessage("    %s %02X %02X %02X %02X", i == 0 ? "GOT" : "   ", buffer[i + 0], buffer[i + 1], buffer[i + 2], buffer[i + 3]);
+            break;
+        case 5 :
+            testMessage("    %s %02X %02X %02X %02X %02X", i == 0 ? "GOT" : "   ", buffer[i + 0], buffer[i + 1], buffer[i + 2], buffer[i + 3], buffer[i + 4]);
+            break;
+        case 6 :
+            testMessage("    %s %02X %02X %02X %02X %02X %02X", i == 0 ? "GOT" : "   ", buffer[i + 0], buffer[i + 1], buffer[i + 2], buffer[i + 3], buffer[i + 4], buffer[i + 5]);
+            break;
+        case 7 :
+            testMessage("    %s %02X %02X %02X %02X %02X %02X %02X", i == 0 ? "GOT" : "   ", buffer[i + 0], buffer[i + 1], buffer[i + 2], buffer[i + 3], buffer[i + 4], buffer[i + 5], buffer[i + 6]);
+            break;
+        default :
+            testMessage("    %s %02X %02X %02X %02X %02X %02X %02X %02X", i == 0 ? "GOT" : "   ", buffer[i + 0], buffer[i + 1], buffer[i + 2], buffer[i + 3], buffer[i + 4], buffer[i + 5], buffer[i + 6], buffer[i + 7]);
+            break;
+      }
+    }
+
+    status = 1;
+  }
+  else
+  {
+    testEnd(true);
+  }
+
+  _pdfioLZWDelete(lzw);
+
+  return (status);
 }
 
 
@@ -1178,6 +1275,10 @@ do_unit_tests(void)
 
   // Do crypto tests...
   if (do_crypto_tests())
+    return (1);
+
+  // Do LZW tests...
+  if (do_lzw_tests())
     return (1);
 
   // Create a new PDF file...

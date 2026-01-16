@@ -1,7 +1,7 @@
 #
 # Makefile for PDFio.
 #
-# Copyright © 2021-2025 by Michael R Sweet.
+# Copyright © 2021-2026 by Michael R Sweet.
 #
 # Licensed under Apache License v2.0.  See the file "LICENSE" for more
 # information.
@@ -91,6 +91,7 @@ PUBOBJS		=	\
 			pdfio-crypto.o \
 			pdfio-dict.o \
 			pdfio-file.o \
+			pdfio-lzw.o \
 			pdfio-md5.o \
 			pdfio-object.o \
 			pdfio-page.o \

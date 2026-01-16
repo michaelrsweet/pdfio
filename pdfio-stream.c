@@ -15,6 +15,7 @@
 //
 
 static ssize_t		stream_get_bytes(pdfio_stream_t *st, void *buffer, size_t bytes);
+static ssize_t		stream_inflate(pdfio_stream_t *st, uint8_t *buffer, size_t bytes, bool exactly);
 static unsigned char	stream_paeth(unsigned char a, unsigned char b, unsigned char c);
 static ssize_t		stream_read(pdfio_stream_t *st, char *buffer, size_t bytes);
 static bool		stream_write(pdfio_stream_t *st, const void *buffer, size_t bytes);
@@ -40,6 +41,8 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
   {
     if (st->filter == PDFIO_FILTER_FLATE)
       inflateEnd(&(st->flate));
+    else if (st->filter == PDFIO_FILTER_LZW)
+      _pdfioLZWDelete(st->lzw);
   }
   else
   {
@@ -523,9 +526,9 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       // No filter, read as-is...
       st->filter = PDFIO_FILTER_NONE;
     }
-    else if (!strcmp(filter, "FlateDecode"))
+    else if (!strcmp(filter, "FlateDecode") || !strcmp(filter, "LZWDecode"))
     {
-      // Flate compression
+      // Flate or LZW compression
       pdfio_dict_t *params = pdfioDictGetDict(dict, "DecodeParms");
 					// Decoding parameters
       int bpc = (int)pdfioDictGetNumber(params, "BitsPerComponent");
@@ -536,12 +539,11 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
 					// Number of columns
       int predictor = (int)pdfioDictGetNumber(params, "Predictor");
 					// Predictory value, if any
-      int status;			// ZLIB status
       ssize_t rbytes;			// Bytes read
 
-      PDFIO_DEBUG("_pdfioStreamOpen: FlateDecode - BitsPerComponent=%d, Colors=%d, Columns=%d, Predictor=%d\n", bpc, colors, columns, predictor);
+      PDFIO_DEBUG("_pdfioStreamOpen: %s - BitsPerComponent=%d, Colors=%d, Columns=%d, Predictor=%d\n", filter, bpc, colors, columns, predictor);
 
-      st->filter = PDFIO_FILTER_FLATE;
+      st->filter = !strcmp(filter, "FlateDecode") ? PDFIO_FILTER_FLATE : PDFIO_FILTER_LZW;
 
       if (bpc == 0)
       {
@@ -613,40 +615,41 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       }
 
       PDFIO_DEBUG("_pdfioStreamOpen: pos=%ld\n", (long)_pdfioFileTell(st->pdf));
-      if (st->cbsize > st->remaining)
-	rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->remaining);
-      else
-	rbytes = _pdfioFileRead(st->pdf, st->cbuffer, st->cbsize);
-
-      if (rbytes <= 0)
+      if ((rbytes = stream_get_bytes(st, st->cbuffer, st->cbsize)) <= 0)
       {
 	_pdfioFileError(st->pdf, "Unable to read bytes for stream.");
 	goto error;
       }
 
-      if (st->crypto_cb)
-        rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes);
-
-      st->flate.next_in  = (Bytef *)st->cbuffer;
-      st->flate.avail_in = (uInt)rbytes;
-
-      PDFIO_DEBUG("_pdfioStreamOpen: avail_in=%u, cbuffer=<%02X%02X%02X%02X%02X%02X%02X%02X...>\n", st->flate.avail_in, st->cbuffer[0], st->cbuffer[1], st->cbuffer[2], st->cbuffer[3], st->cbuffer[4], st->cbuffer[5], st->cbuffer[6], st->cbuffer[7]);
-
-      if ((status = inflateInit(&(st->flate))) != Z_OK)
+      if (st->filter == PDFIO_FILTER_FLATE)
       {
-	_pdfioFileError(st->pdf, "Unable to start Flate filter: %s", zstrerror(status));
-	goto error;
-      }
+        // Flate decompression...
+        int status;			// ZLIB status
 
-      st->remaining -= st->flate.avail_in;
+	st->flate.next_in  = (Bytef *)st->cbuffer;
+	st->flate.avail_in = (uInt)rbytes;
+
+	PDFIO_DEBUG("_pdfioStreamOpen: avail_in=%u, cbuffer=<%02X%02X%02X%02X%02X%02X%02X%02X...>\n", st->flate.avail_in, st->cbuffer[0], st->cbuffer[1], st->cbuffer[2], st->cbuffer[3], st->cbuffer[4], st->cbuffer[5], st->cbuffer[6], st->cbuffer[7]);
+
+	if ((status = inflateInit(&(st->flate))) != Z_OK)
+	{
+	  _pdfioFileError(st->pdf, "Unable to start Flate filter: %s", zstrerror(status));
+	  goto error;
+	}
+      }
+      else
+      {
+        // LZW decompression...
+        if ((st->lzw = _pdfioLZWCreate(/*code_size*/8)) == NULL)
+        {
+	  _pdfioFileError(st->pdf, "Unable to initialize LZW filter: %s", strerror(errno));
+	  goto error;
+        }
+
+        st->lzw->next_in  = st->cbuffer;
+        st->lzw->avail_in = (size_t)rbytes;
+      }
     }
-#if 0 // TODO: Implement LZWDecode filter
-    else if (!strcmp(filter, "LZWDecode"))
-    {
-      // LZW compression
-      st->filter = PDFIO_FILTER_LZW;
-    }
-#endif // 0
     else
     {
       // Something else we don't support
@@ -1143,28 +1146,44 @@ stream_get_bytes(
           a85val = a85val * 85 + a85ch - '!';
           count ++;
         }
+        else if (a85ch == 'z' && count == 0)
+        {
+          // 'z' == 0's
+          a85val = 0;
+          count  = 5;
+
+          a85bufptr++;
+        }
+        else if (a85ch == '~')
+        {
+          break;
+        }
         else if (!isspace(a85ch & 255))
         {
           // Invalid ASCII85Decode character...
-	  _pdfioFileError(st->pdf, "Invalid ASCII85Decode character in stream.");
+	  _pdfioFileError(st->pdf, "Invalid ASCII85Decode character '%c' in stream.", a85ch);
 	  return (-1);
 	}
       }
 
+      st->a85bufptr = a85bufptr;
+
+      if (*a85bufptr == '~')
+        break;
+
       if (count < 2)
       {
         // Need at least 2 characters to decode a single byte...
-	_pdfioFileError(st->pdf, "Invalid ASCII85Decode character in stream.");
+	_pdfioFileError(st->pdf, "Invalid ASCII85Decode sequence in stream.");
 	return (-1);
       }
 
-      st->a85bufptr = a85bufptr;
-      declen        = count - 1;
+      declen = count - 1;
 
-      // Add zero rounds to properly align the decoded value...
+      // Add rounds to properly align the decoded value...
       while (count < 5)
       {
-        a85val *= 85;
+        a85val = a85val * 85 + 84;
         count ++;
       }
 
@@ -1177,6 +1196,8 @@ stream_get_bytes(
       st->a85decptr    = st->a85decode;
       st->a85decend    = st->a85decode + declen;
     }
+
+    PDFIO_DEBUG("stream_get_bytes: Returning %ld ASCII85 bytes for stream.\n", (long)rbytes);
 
     return (rbytes);
   }
@@ -1196,8 +1217,97 @@ stream_get_bytes(
         (st->crypto_cb)(&st->crypto_ctx, (uint8_t *)buffer, (uint8_t *)buffer, (size_t)rbytes);
     }
 
+    PDFIO_DEBUG("stream_get_bytes: Returning %ld raw bytes for stream.\n", (long)rbytes);
+
     return (rbytes);
   }
+}
+
+
+//
+// 'stream_inflate()' - Decompress bytes from a stream (Flate or LZW) into the specified buffer.
+//
+
+static ssize_t
+stream_inflate(pdfio_stream_t *st,	// I - Stream
+               uint8_t        *buffer,	// I - Output buffer
+               size_t         bytes,	// I - Number of bytes
+               bool           exactly)	// I - Require exactly the number of bytes
+{
+  ssize_t	rbytes;			// Bytes read
+
+
+  // Setup decompression to the output buffer...
+  if (st->filter == PDFIO_FILTER_FLATE)
+  {
+    st->flate.next_out  = (Bytef *)buffer;
+    st->flate.avail_out = (uInt)bytes;
+  }
+  else
+  {
+    st->lzw->next_out  = buffer;
+    st->lzw->avail_out = bytes;
+  }
+
+  // Loop to get the bytes...
+  do
+  {
+    if (st->filter == PDFIO_FILTER_FLATE)
+    {
+      // Flate decompress
+      int	status;			// Status of decompression
+
+      PDFIO_DEBUG("stream_inflate: avail_in=%u, avail_out=%u\n", st->flate.avail_in, st->flate.avail_out);
+
+      if (st->flate.avail_in == 0)
+      {
+	// Read more from the file...
+	if ((rbytes = stream_get_bytes(st, st->cbuffer, st->cbsize)) <= 0)
+	  return (-1);			// End of file...
+
+	st->flate.next_in  = (Bytef *)st->cbuffer;
+	st->flate.avail_in = (uInt)rbytes;
+      }
+
+      if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
+      {
+        PDFIO_DEBUG("stream_inflate: inflate() returned %d\n", status);
+	_pdfioFileError(st->pdf, "Unable to decompress stream data for object %ld: %s", (long)st->obj->number, zstrerror(status));
+	return (-1);
+      }
+
+      bytes = (size_t)st->flate.avail_out;
+    }
+    else
+    {
+      // LZW decompress
+      if (st->lzw->avail_in == 0)
+      {
+	// Read more from the file...
+	if ((rbytes = stream_get_bytes(st, st->cbuffer, st->cbsize)) <= 0)
+	  return (-1);			// End of file...
+
+	st->lzw->next_in  = st->cbuffer;
+	st->lzw->avail_in = (size_t)rbytes;
+      }
+
+      if (!_pdfioLZWInflate(st->lzw) && !st->lzw->saw_eod)
+      {
+	_pdfioFileError(st->pdf, "Unable to decompress stream data for object %ld: %s", (long)st->obj->number, st->lzw->error);
+	return (-1);
+      }
+
+      bytes = st->lzw->avail_out;
+    }
+  }
+  while (bytes > 0 && exactly);
+
+  if (exactly && bytes > 0)
+    return (-1);
+  else if (st->filter == PDFIO_FILTER_FLATE)
+    return (st->flate.next_out - (Bytef *)buffer);
+  else
+    return (st->lzw->next_out - (uint8_t *)buffer);
 }
 
 
@@ -1228,47 +1338,20 @@ stream_read(pdfio_stream_t *st,		// I - Stream
             char           *buffer,	// I - Buffer
             size_t         bytes)	// I - Number of bytes to read
 {
-  uInt		avail_in, avail_out;	// Previous flate values
-
-
   if (st->filter == PDFIO_FILTER_NONE)
   {
     // No filtering...
     return (stream_get_bytes(st, buffer, bytes));
   }
-  else if (st->filter == PDFIO_FILTER_FLATE)
+  else if (st->filter == PDFIO_FILTER_FLATE || st->filter == PDFIO_FILTER_LZW)
   {
-    // Deflate compression...
-    int	status;				// Status of decompression
-
+    // Flate or LZW compression...
     if (st->predictor == _PDFIO_PREDICTOR_NONE)
     {
       // Decompress into the buffer...
       PDFIO_DEBUG("stream_read: No predictor.\n");
 
-      if (st->flate.avail_in == 0)
-      {
-	// Read more from the file...
-        ssize_t rbytes = stream_get_bytes(st, st->cbuffer, st->cbsize);
-					// Bytes read
-
-	if (rbytes <= 0)
-	  return (-1);			// End of file...
-
-	st->flate.next_in  = (Bytef *)st->cbuffer;
-	st->flate.avail_in = (uInt)rbytes;
-      }
-
-      st->flate.next_out  = (Bytef *)buffer;
-      st->flate.avail_out = (uInt)bytes;
-
-      if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
-      {
-	_pdfioFileError(st->pdf, "Unable to decompress stream data for object %ld: %s", (long)st->obj->number, zstrerror(status));
-	return (-1);
-      }
-
-      return (st->flate.next_out - (Bytef *)buffer);
+      return (stream_inflate(st, (uint8_t *)buffer, bytes, /*exactly*/false));
     }
     else if (st->predictor == _PDFIO_PREDICTOR_TIFF2)
     {
@@ -1276,9 +1359,9 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 					// Size of pixel in bytes
       			remaining = st->pbsize;
 					// Remaining bytes
-      unsigned char	*bufptr = (unsigned char *)buffer,
+      uint8_t		*bufptr = (uint8_t *)buffer,
 					// Pointer into buffer
-			*bufsecond = (unsigned char *)buffer + pbpixel,
+			*bufsecond = (uint8_t *)buffer + pbpixel,
 					// Pointer to second pixel in buffer
 			*sptr = st->psbuffer;
 					// Current (raw) line
@@ -1291,37 +1374,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
         return (-1);
       }
 
-      st->flate.next_out  = (Bytef *)sptr;
-      st->flate.avail_out = (uInt)st->pbsize;
-
-      while (st->flate.avail_out > 0)
-      {
-	if (st->flate.avail_in == 0)
-	{
-	  // Read more from the file...
-	  ssize_t rbytes = stream_get_bytes(st, st->cbuffer, st->cbsize);
-					// Bytes read
-
-	  if (rbytes <= 0)
-	    return (-1);		// End of file...
-
-	  st->flate.next_in  = (Bytef *)st->cbuffer;
-	  st->flate.avail_in = (uInt)rbytes;
-	}
-
-        avail_in  = st->flate.avail_in;
-        avail_out = st->flate.avail_out;
-
-	if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
-	{
-	  _pdfioFileError(st->pdf, "Unable to decompress stream data for object %ld: %s", (long)st->obj->number, zstrerror(status));
-	  return (-1);
-	}
-	else if (status == Z_STREAM_END || (avail_in == st->flate.avail_in && avail_out == st->flate.avail_out))
-	  break;
-      }
-
-      if (st->flate.avail_out > 0)
+      if (stream_inflate(st, sptr, st->pbsize, /*exactly*/true) < 0)
         return (-1);			// Early end of stream
 
       for (; bufptr < bufsecond; remaining --, sptr ++)
@@ -1338,9 +1391,9 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 					// Size of pixel in bytes
       			remaining = st->pbsize - 1;
 					// Remaining bytes
-      unsigned char	*bufptr = (unsigned char *)buffer,
+      uint8_t		*bufptr = (uint8_t *)buffer,
 					// Pointer into buffer
-			*bufsecond = (unsigned char *)buffer + pbpixel,
+			*bufsecond = (uint8_t *)buffer + pbpixel,
 					// Pointer to second pixel in buffer
 			*sptr = st->psbuffer + 1,
 					// Current (raw) line
@@ -1355,40 +1408,10 @@ stream_read(pdfio_stream_t *st,		// I - Stream
         return (-1);
       }
 
-      st->flate.next_out  = (Bytef *)sptr - 1;
-      st->flate.avail_out = (uInt)st->pbsize;
-
-      while (st->flate.avail_out > 0)
-      {
-	if (st->flate.avail_in == 0)
-	{
-	  // Read more from the file...
-	  ssize_t rbytes = stream_get_bytes(st, st->cbuffer, st->cbsize);
-					// Bytes read
-
-	  if (rbytes <= 0)
-	    return (-1);		// End of file...
-
-	  st->flate.next_in  = (Bytef *)st->cbuffer;
-	  st->flate.avail_in = (uInt)rbytes;
-	}
-
-        avail_in  = st->flate.avail_in;
-        avail_out = st->flate.avail_out;
-
-	if ((status = inflate(&(st->flate), Z_NO_FLUSH)) < Z_OK)
-	{
-	  _pdfioFileError(st->pdf, "Unable to decompress stream data for object %ld: %s", (long)st->obj->number, zstrerror(status));
-	  return (-1);
-	}
-	else if (status == Z_STREAM_END || (avail_in == st->flate.avail_in && avail_out == st->flate.avail_out))
-	  break;
-      }
-
-      if (st->flate.avail_out > 0)
+      if (stream_inflate(st, sptr - 1, st->pbsize, /*exactly*/true) < 0)
       {
 	// Early end of stream
-        PDFIO_DEBUG("stream_read: Early EOF (remaining=%u, avail_in=%d, avail_out=%d, data_type=%d, next_in=<%02X%02X%02X%02X...>).\n", (unsigned)st->remaining, st->flate.avail_in, st->flate.avail_out, st->flate.data_type, st->flate.next_in[0], st->flate.next_in[1], st->flate.next_in[2], st->flate.next_in[3]);
+        PDFIO_DEBUG("stream_read: Early EOF (remaining=%u).\n", (unsigned)st->remaining);
         return (-1);
       }
 
@@ -1490,8 +1513,6 @@ stream_write(pdfio_stream_t *st,	// I - Stream
       {
         outbytes = cbytes;
       }
-
-//      fprintf(stderr, "stream_write: bytes=%u, outbytes=%u\n", (unsigned)bytes, (unsigned)outbytes);
 
       if (!_pdfioFileWrite(st->pdf, st->cbuffer, outbytes))
         return (false);

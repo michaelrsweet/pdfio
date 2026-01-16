@@ -1,7 +1,7 @@
 //
 // Public header file for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -72,11 +72,11 @@ typedef enum pdfio_filter_e		// Compression/decompression filters for streams
   PDFIO_FILTER_NONE,			// No filter
   PDFIO_FILTER_ASCIIHEX,		// ASCIIHexDecode filter (reading only)
   PDFIO_FILTER_ASCII85,			// ASCII85Decode filter (reading only)
-  PDFIO_FILTER_CCITTFAX,		// CCITTFaxDecode filter
+  PDFIO_FILTER_CCITTFAX,		// CCITTFaxDecode filter (reading only)
   PDFIO_FILTER_CRYPT,			// Encryption filter
   PDFIO_FILTER_DCT,			// DCTDecode (JPEG) filter
   PDFIO_FILTER_FLATE,			// FlateDecode filter
-  PDFIO_FILTER_JBIG2,			// JBIG2Decode filter
+  PDFIO_FILTER_JBIG2,			// JBIG2Decode filter (reading only)
   PDFIO_FILTER_JPX,			// JPXDecode filter (reading only)
   PDFIO_FILTER_LZW,			// LZWDecode filter (reading only)
   PDFIO_FILTER_RUNLENGTH,		// RunLengthDecode filter (reading only)

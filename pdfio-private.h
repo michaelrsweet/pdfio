@@ -211,6 +211,36 @@ typedef union _pdfio_crypto_ctx_u	// Cryptographic contexts
 } _pdfio_crypto_ctx_t;
 typedef size_t (*_pdfio_crypto_cb_t)(_pdfio_crypto_ctx_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len);
 
+typedef struct _pdfio_lzws_s		// LZW string table
+{
+  uint16_t	prefix_code,		// Prefix code
+		suffix;			// Suffix (character)
+} _pdfio_lzws_t;
+
+typedef struct _pdfio_lzw_s		// LZW state
+{
+  uint8_t	*next_in;		// Next input byte
+  size_t	avail_in;		// Available input bytes
+  uint8_t	in_bytes[256];		// Current input bytes
+  uint16_t	in_bit,			// Current input bit
+		in_bits;		// Total input bits
+  uint8_t	*next_out;		// Next output byte
+  size_t	avail_out;		// Available output bytes
+  uint8_t	cur_code_size,		// Current code size
+		def_code_size;		// Initial/default code size
+  uint16_t	clear_code,		// Clear code
+		eod_code,		// End code
+		next_code,		// Next code to be used
+		next_size_code,		// Code where we need to increase the code size
+		first_code,		// First code in sequence
+		old_code,		// Previous code in sequence
+		stack[8192],		// Output stack
+		*stptr;			// Current stack pointer
+  _pdfio_lzws_t	table[4096];		// String table
+  bool		saw_eod;		// Saw end-of-data code?
+  const char	*error;			// Error, if any
+} _pdfio_lzw_t;
+
 struct _pdfio_array_s
 {
   pdfio_file_t	*pdf;			// PDF file
@@ -349,11 +379,12 @@ struct _pdfio_stream_s			// Stream
 	        *a85decptr,		// Pointer into decoded characters
 	        *a85decend;		// Last decoded character
   z_stream	flate;			// Flate filter state
+  _pdfio_lzw_t	*lzw;			// LZW filter state
   _pdfio_predictor_t predictor;		// Predictor function, if any
   size_t	pbpixel,		// Size of a pixel in bytes
 		pbsize,			// Predictor buffer size, if any
 		cbsize;			// Compressed data buffer size
-  unsigned char	*cbuffer,		// Compressed data buffer
+  uint8_t	*cbuffer,		// Compressed data buffer
 		*prbuffer,		// Raw buffer (previous line), as needed
 		*psbuffer;		// PNG filter buffer, as needed
   _pdfio_crypto_cb_t crypto_cb;		// Encryption/descryption callback, if any
@@ -419,6 +450,10 @@ extern ssize_t		_pdfioFileRead(pdfio_file_t *pdf, void *buffer, size_t bytes) _P
 extern off_t		_pdfioFileSeek(pdfio_file_t *pdf, off_t offset, int whence) _PDFIO_INTERNAL;
 extern off_t		_pdfioFileTell(pdfio_file_t *pdf) _PDFIO_INTERNAL;
 extern bool		_pdfioFileWrite(pdfio_file_t *pdf, const void *buffer, size_t bytes) _PDFIO_INTERNAL;
+
+extern _pdfio_lzw_t	*_pdfioLZWCreate(int def_code_size) _PDFIO_INTERNAL;
+extern void		_pdfioLZWDelete(_pdfio_lzw_t *lzw) _PDFIO_INTERNAL;
+extern bool		_pdfioLZWInflate(_pdfio_lzw_t *lzw) _PDFIO_INTERNAL;
 
 extern void		_pdfioObjDelete(pdfio_obj_t *obj) _PDFIO_INTERNAL;
 extern void		*_pdfioObjGetExtension(pdfio_obj_t *obj) _PDFIO_INTERNAL;

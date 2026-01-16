@@ -160,6 +160,7 @@
     <ClCompile Include="pdfio-crypto.c" />
     <ClCompile Include="pdfio-dict.c" />
     <ClCompile Include="pdfio-file.c" />
+    <ClCompile Include="pdfio-lzwdecode.c" />
     <ClCompile Include="pdfio-md5.c" />
     <ClCompile Include="pdfio-object.c" />
     <ClCompile Include="pdfio-page.c" />

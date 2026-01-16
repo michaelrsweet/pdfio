@@ -96,6 +96,16 @@ static int test_progress;		// Current progress
 static char test_title[1024] = "";	// Current test title
 
 
+// Add printf syntax checking on supported compilers...
+#if defined(__has_extension) || defined(__GNUC__)
+#  define TEST_FORMAT(a,b) __attribute__ ((__format__(__printf__,a,b)))
+static inline void	testBegin(const char *title, ...) TEST_FORMAT(1,2);
+static inline void	testEndMessage(bool pass, const char *message, ...) TEST_FORMAT(2,3);
+static inline void	testError(const char *error, ...) TEST_FORMAT(1,2);
+static inline void	testMessage(const char *error, ...) TEST_FORMAT(1,2);
+#endif // __has_extension || __GNUC__
+
+
 // Start a test
 static inline void
 testBegin(const char *title, ...)	// I - printf-style title string
