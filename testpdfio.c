@@ -12,6 +12,7 @@
 //
 // Options:
 //
+//   --decode                 Decode object stream
 //   --help                   Show help
 //   --password PASSWORD      Set access password
 //   --verbose                Be verbose
@@ -34,7 +35,7 @@
 static int	do_crypto_tests(void);
 static int	do_lzw_tests(void);
 static int	do_pdfa_tests(void);
-static int	do_test_file(const char *filename, const char *outfile, int objnum, const char *password, bool verbose);
+static int	do_test_file(const char *filename, const char *outfile, int objnum, const char *password, bool decode, bool verbose);
 static int	do_unit_tests(void);
 static int	draw_image(pdfio_stream_t *st, const char *name, double x, double y, double w, double h, const char *label);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
@@ -75,11 +76,16 @@ main(int  argc,				// I - Number of command-line arguments
   {
     int		i;			// Looping var
     const char	*password = NULL;	// Password
-    bool	verbose = false;	// Be verbose?
+    bool	decode = false,		// Decode object stream?
+		verbose = false;	// Be verbose?
 
     for (i = 1; i < argc; i ++)
     {
-      if (!strcmp(argv[i], "--help"))
+      if (!strcmp(argv[i], "--decode"))
+      {
+        decode = true;
+      }
+      else if (!strcmp(argv[i], "--help"))
       {
         return (usage(stdout));
       }
@@ -108,14 +114,14 @@ main(int  argc,				// I - Number of command-line arguments
       else if ((i + 1) < argc && isdigit(argv[i + 1][0] & 255))
       {
         // filename.pdf object-number
-        if (do_test_file(argv[i], /*outfile*/NULL, atoi(argv[i + 1]), password, verbose))
+        if (do_test_file(argv[i], /*outfile*/NULL, atoi(argv[i + 1]), password, decode, verbose))
 	  ret = 1;
 
 	i ++;
       }
       else
       {
-        if (do_test_file(argv[i], argv[i + 1], /*objnum*/0, password, verbose))
+        if (do_test_file(argv[i], argv[i + 1], /*objnum*/0, password, decode, verbose))
           ret = 1;
 
         if (argv[i + 1])
@@ -405,7 +411,7 @@ do_lzw_tests(void)
 
 
   testBegin("_pdfioLZWCreate(8)");
-  testEnd((lzw = _pdfioLZWCreate(/*code_size*/8)) != NULL);
+  testEnd((lzw = _pdfioLZWCreate(/*code_size*/8, /*early*/1)) != NULL);
   if (!lzw)
     return (1);
 
@@ -538,6 +544,7 @@ do_test_file(const char *filename,	// I - PDF filename
              const char *outfile,	// I - Output filename, if any
              int        objnum,		// I - Object number to dump, if any
              const char *password,	// I - Password for file
+             bool       decode,		// I - Decode object?
              bool       verbose)	// I - Be verbose?
 {
   int		status = 0;		// Exit status
@@ -586,7 +593,7 @@ do_test_file(const char *filename,	// I - PDF filename
 
       filter = pdfioDictGetName(dict, "Filter");
 
-      if ((st = pdfioObjOpenStream(obj, filter && !strcmp(filter, "FlateDecode"))) == NULL)
+      if ((st = pdfioObjOpenStream(obj, decode || (filter && !strcmp(filter, "FlateDecode")))) == NULL)
       {
         _pdfioValueDebug(&obj->value, stdout);
 	putchar('\n');
@@ -655,10 +662,13 @@ do_test_file(const char *filename,	// I - PDF filename
 
 	      if (!pdfioDictGetRect(dict, "MediaBox", &media_box))
 	      {
-		if ((obj = pdfioDictGetObj(dict, "Parent")) != NULL)
+	        pdfio_obj_t *parent;	// Parent object
+
+		while ((parent = pdfioDictGetObj(dict, "Parent")) != NULL)
 		{
-		  dict = pdfioObjGetDict(obj);
-		  pdfioDictGetRect(dict, "MediaBox", &media_box);
+		  dict = pdfioObjGetDict(parent);
+		  if (pdfioDictGetRect(dict, "MediaBox", &media_box))
+		    break;
 		}
 	      }
 

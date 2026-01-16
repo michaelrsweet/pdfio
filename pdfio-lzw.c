@@ -28,7 +28,8 @@ static int	lzw_get_code(_pdfio_lzw_t *lzw);
 //
 
 _pdfio_lzw_t *				// O - LZW state
-_pdfioLZWCreate(int code_size)		// I - Data code size in bits (typically 8 for PDF, 2-8 for GIF)
+_pdfioLZWCreate(int code_size,		// I - Data code size in bits (typically 8 for PDF, 2-8 for GIF)
+                int early)		// I - Number of early codes
 {
   _pdfio_lzw_t	*lzw;			// LZW state
 
@@ -38,6 +39,7 @@ _pdfioLZWCreate(int code_size)		// I - Data code size in bits (typically 8 for P
     lzw->def_code_size = code_size + 1;
     lzw->clear_code    = (short)(1 << code_size);
     lzw->eod_code      = lzw->clear_code + 1;
+    lzw->early         = early;
 
     lzw_clear(lzw);
   }
@@ -81,6 +83,7 @@ _pdfioLZWInflate(_pdfio_lzw_t *lzw)	// I - LZW state
   {
     *(lzw->next_out++) = *(--lzw->stptr);
     lzw->avail_out --;
+    PDFIO_DEBUG("_pdfioLZWInflate: Unrolled value %d, stptr=%p(%ld), avail_out=%u\n", *(lzw->stptr), (void *)lzw->stptr, lzw->stptr - lzw->stack, (unsigned)lzw->avail_out);
   }
 
   // Loop as long as we have room in the output buffer and data in the input
@@ -121,19 +124,20 @@ _pdfioLZWInflate(_pdfio_lzw_t *lzw)	// I - LZW state
       continue;
     }
 
-    PDFIO_DEBUG("_pdfioLZWInflate: in_code=%d.\n", in_code);
+    PDFIO_DEBUG("_pdfioLZWInflate: in_code=%d, old_code=%d.\n", in_code, lzw->old_code);
 
     cur_code = in_code;
 
     if (cur_code >= lzw->next_code)
     {
+      PDFIO_DEBUG("_pdfioLZWInflate: New cur_code=%d, next_code=%d\n", cur_code, lzw->next_code);
       *(lzw->stptr++) = lzw->first_code;
       cur_code        = lzw->old_code;
     }
 
     while (cur_code >= lzw->clear_code)
     {
-      PDFIO_DEBUG("_pdfioLZWInflate: cur_code=%d\n", cur_code);
+      PDFIO_DEBUG("_pdfioLZWInflate: cur_code=%d (%d,%d)\n", cur_code, lzw->table[cur_code].prefix_code, lzw->table[cur_code].suffix);
 
       // Protect against overflow/loops...
       if (lzw->stptr >= (lzw->stack + sizeof(lzw->stack) / sizeof(lzw->stack[0])))
@@ -168,16 +172,17 @@ _pdfioLZWInflate(_pdfio_lzw_t *lzw)	// I - LZW state
 
     if ((cur_code = lzw->next_code) < 4096)
     {
-      PDFIO_DEBUG("_pdfioLZWInflate: Adding code %d (%d,%d)\n", cur_code, lzw->old_code, lzw->first_code);
+      PDFIO_DEBUG("_pdfioLZWInflate: Adding code %d (%d,%d), next_size_code=%d\n", cur_code, lzw->old_code, lzw->first_code, lzw->next_size_code);
 
       lzw->table[cur_code].prefix_code = lzw->old_code;
       lzw->table[cur_code].suffix      = lzw->first_code;
       lzw->next_code ++;
 
-      if (lzw->next_code >= lzw->next_size_code && lzw->next_size_code < 4096)
+      if (lzw->next_code >= lzw->next_size_code && lzw->cur_code_size < 12)
       {
-        lzw->next_size_code *= 2;
         lzw->cur_code_size ++;
+        lzw->next_size_code = (1 << lzw->cur_code_size) - lzw->early;
+        PDFIO_DEBUG("_pdfioLZWInflate: Increased code size to %u, next_size_code=%u\n", lzw->cur_code_size, lzw->next_size_code);
       }
     }
 
@@ -187,6 +192,7 @@ _pdfioLZWInflate(_pdfio_lzw_t *lzw)	// I - LZW state
     {
       *(lzw->next_out++) = *(--lzw->stptr);
       lzw->avail_out --;
+      PDFIO_DEBUG("_pdfioLZWInflate: Unrolled value %d, stptr=%p(%ld), avail_out=%u\n", *(lzw->stptr), (void *)lzw->stptr, lzw->stptr - lzw->stack, (unsigned)lzw->avail_out);
     }
   }
 
@@ -208,7 +214,7 @@ lzw_clear(_pdfio_lzw_t *lzw)		// I - LZW state
 
   lzw->cur_code_size  = lzw->def_code_size;
   lzw->next_code      = lzw->clear_code + 2;
-  lzw->next_size_code = 2 * lzw->clear_code;
+  lzw->next_size_code = (1 << lzw->cur_code_size)  - lzw->early;
   lzw->first_code     = 0xffff;
   lzw->old_code       = 0xffff;
 
@@ -281,7 +287,7 @@ lzw_get_code(_pdfio_lzw_t *lzw)		// I - LZW state
     }
   }
 
-  PDFIO_DEBUG("lzw_get_code: in_bit=%u, in_bits=%u, in_bytes=<...%02X%02X...>, cur_code_size=%u\n", lzw->in_bit, lzw->in_bits, lzw->in_bytes[lzw->in_bit / 8], lzw->in_bytes[lzw->in_bit / 8 + 1], lzw->cur_code_size);
+  PDFIO_DEBUG("lzw_get_code: in_bit=%u, in_bits=%u, in_bytes=<...%02X%02X%02X...>, cur_code_size=%u\n", lzw->in_bit, lzw->in_bits, lzw->in_bytes[lzw->in_bit / 8], lzw->in_bytes[lzw->in_bit / 8 + 1], lzw->in_bytes[lzw->in_bit / 8 + 2], lzw->cur_code_size);
 
   // Now extract the code from the buffer...
   for (code = 0, in_bit = lzw->in_bit, remaining = lzw->cur_code_size; remaining > 0; in_bit += bits, remaining -= bits)
@@ -303,7 +309,12 @@ lzw_get_code(_pdfio_lzw_t *lzw)		// I - LZW state
   // Save the updated position in the input buffer and return the code...
   lzw->in_bit = in_bit;
 
-  PDFIO_DEBUG("lzw_get_code: Returning %u.\n", code);
+#ifdef DEBUG
+  if (code >= 0x20 && code < 0x7f)
+    PDFIO_DEBUG("lzw_get_code: Returning %u('%c').\n", code, code);
+  else
+    PDFIO_DEBUG("lzw_get_code: Returning %u.\n", code);
+#endif // DEBUG
 
   return ((int)code);
 }

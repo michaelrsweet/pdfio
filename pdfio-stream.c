@@ -610,7 +610,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       st->cbsize = 4096;
       if ((st->cbuffer = malloc(st->cbsize)) == NULL)
       {
-	_pdfioFileError(st->pdf, "Unable to allocate %lu bytes for Flate compression buffer.", (unsigned long)st->cbsize);
+	_pdfioFileError(st->pdf, "Unable to allocate %lu bytes for FlateDecode decompression buffer.", (unsigned long)st->cbsize);
 	goto error;
       }
 
@@ -633,16 +633,28 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
 
 	if ((status = inflateInit(&(st->flate))) != Z_OK)
 	{
-	  _pdfioFileError(st->pdf, "Unable to start Flate filter: %s", zstrerror(status));
+	  _pdfioFileError(st->pdf, "Unable to start FlateDecode filter: %s", zstrerror(status));
 	  goto error;
 	}
       }
       else
       {
         // LZW decompression...
-        if ((st->lzw = _pdfioLZWCreate(/*code_size*/8)) == NULL)
+        int early = 1;
+
+        if (pdfioDictGetType(params, "EarlyChange") == PDFIO_VALTYPE_NUMBER)
         {
-	  _pdfioFileError(st->pdf, "Unable to initialize LZW filter: %s", strerror(errno));
+          early = (int)pdfioDictGetNumber(params, "EarlyChange");
+          if (early < 0 || early > 100)
+          {
+            _pdfioFileError(st->pdf, "Bad EarlyChange value %d for LZWDecode filter.", early);
+            goto error;
+          }
+        }
+
+        if ((st->lzw = _pdfioLZWCreate(/*code_size*/8, early)) == NULL)
+        {
+	  _pdfioFileError(st->pdf, "Unable to initialize LZWDecode filter: %s", strerror(errno));
 	  goto error;
         }
 

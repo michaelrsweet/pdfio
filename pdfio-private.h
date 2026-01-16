@@ -227,7 +227,8 @@ typedef struct _pdfio_lzw_s		// LZW state
   uint8_t	*next_out;		// Next output byte
   size_t	avail_out;		// Available output bytes
   uint8_t	cur_code_size,		// Current code size
-		def_code_size;		// Initial/default code size
+		def_code_size,		// Initial/default code size
+		early;			// Early code change offset
   uint16_t	clear_code,		// Clear code
 		eod_code,		// End code
 		next_code,		// Next code to be used
@@ -451,7 +452,7 @@ extern off_t		_pdfioFileSeek(pdfio_file_t *pdf, off_t offset, int whence) _PDFIO
 extern off_t		_pdfioFileTell(pdfio_file_t *pdf) _PDFIO_INTERNAL;
 extern bool		_pdfioFileWrite(pdfio_file_t *pdf, const void *buffer, size_t bytes) _PDFIO_INTERNAL;
 
-extern _pdfio_lzw_t	*_pdfioLZWCreate(int def_code_size) _PDFIO_INTERNAL;
+extern _pdfio_lzw_t	*_pdfioLZWCreate(int def_code_size, int early) _PDFIO_INTERNAL;
 extern void		_pdfioLZWDelete(_pdfio_lzw_t *lzw) _PDFIO_INTERNAL;
 extern bool		_pdfioLZWInflate(_pdfio_lzw_t *lzw) _PDFIO_INTERNAL;
 

@@ -1,7 +1,7 @@
 //
 // PDF page functions for PDFio.
 //
-// Copyright © 2021-2022 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -87,14 +87,28 @@ pdfioPageOpenStream(
 					// Contents value
 
 
+  PDFIO_DEBUG("pdfioPageOpenStream(page=%p(%lu), n=%lu, decode=%s)\n", (void *)page, page ? (unsigned long)page->number : 0, (unsigned long)n, decode ? "true" : "false");
+
   if (!contents)
+  {
+    PDFIO_DEBUG("pdfioPageOpenStream: No contents.\n");
     return (NULL);
+  }
   else if (contents->type == PDFIO_VALTYPE_ARRAY && n < pdfioArrayGetSize(contents->value.array))
+  {
+    PDFIO_DEBUG("pdfioPageOpenStream: Contents is array, opening numbered content stream.\n");
     return (pdfioObjOpenStream(pdfioArrayGetObj(contents->value.array, n), decode));
+  }
   else if (n)
+  {
+    PDFIO_DEBUG("pdfioPageOpenStream: Numbered stream does not exist.\n");
     return (NULL);
+  }
   else
+  {
+    PDFIO_DEBUG("pdfioPageOpenStream: Opening single content stream.\n");
     return (pdfioObjOpenStream(pdfioFileFindObj(page->pdf, contents->value.indirect.number), decode));
+  }
 }
 
 
