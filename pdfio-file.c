@@ -2621,19 +2621,19 @@ repair_xref(
 
 	    _pdfioTokenFlush(&tb);
 
-            if (type && !strcmp(line, "stream"))
+            if (!strcmp(line, "stream"))
             {
               // Possible object or XRef stream...
 	      obj->stream_offset = _pdfioFileTell(pdf);
 
-	      if (!strcmp(type, "ObjStm") && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
+	      if (type && !strcmp(type, "ObjStm") && num_sobjs < (sizeof(sobjs) / sizeof(sobjs[0])))
 	      {
 	        PDFIO_DEBUG("repair_xref: Object stream...\n");
 		sobjs[num_sobjs] = obj;
 		num_sobjs ++;
 	      }
 
-	      if (!strcmp(type, "XRef") && !pdf->trailer_dict)
+	      if (type && !strcmp(type, "XRef") && !pdf->trailer_dict)
 	      {
 		// Save the trailer dictionary...
 		pdfio_obj_t *encrypt_obj;

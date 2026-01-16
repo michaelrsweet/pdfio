@@ -547,6 +547,8 @@ pdfioObjOpenStream(pdfio_obj_t *obj,	// I - Object
   pdfio_stream_t	*st;		// Stream
 
 
+  PDFIO_DEBUG("pdfioObjOpenStream(obj=%p(%lu), decode=%s)\n", (void *)obj, obj ? (unsigned long)obj->number : 0, decode ? "true" : "false");
+
   // Range check input...
   if (!obj)
     return (NULL);
@@ -566,7 +568,10 @@ pdfioObjOpenStream(pdfio_obj_t *obj,	// I - Object
 
   // No stream if there is no dict or offset to a stream...
   if (obj->value.type != PDFIO_VALTYPE_DICT || !obj->stream_offset)
+  {
+    PDFIO_DEBUG("pdfioObjOpenStream: value.type=%d, stream_offset=%ld\n", obj->value.type, (long)obj->stream_offset);
     return (NULL);
+  }
 
   // Open the stream...
   if ((st = _pdfioStreamOpen(obj, decode)) != NULL)

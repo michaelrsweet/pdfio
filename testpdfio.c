@@ -552,10 +552,13 @@ do_test_file(const char *filename,	// I - PDF filename
 
 	      if (!pdfioDictGetRect(dict, "MediaBox", &media_box))
 	      {
-		if ((obj = pdfioDictGetObj(dict, "Parent")) != NULL)
+	        pdfio_obj_t *parent;	// Parent object
+
+		while ((parent = pdfioDictGetObj(dict, "Parent")) != NULL)
 		{
-		  dict = pdfioObjGetDict(obj);
-		  pdfioDictGetRect(dict, "MediaBox", &media_box);
+		  dict = pdfioObjGetDict(parent);
+		  if (pdfioDictGetRect(dict, "MediaBox", &media_box))
+		    break;
 		}
 	      }
 

@@ -105,6 +105,10 @@ pdfioPageOpenStream(
 static _pdfio_value_t *			// O - Value or NULL on error
 get_contents(pdfio_obj_t *page)		// I - Page object
 {
+  _pdfio_value_t *contents;		// Contents value
+  pdfio_obj_t	*obj;			// Contents object
+
+
   // Range check input...
   if (!page)
     return (NULL);
@@ -119,5 +123,24 @@ get_contents(pdfio_obj_t *page)		// I - Page object
   if (page->value.type != PDFIO_VALTYPE_DICT)
     return (NULL);
 
-  return (_pdfioDictGetValue(page->value.value.dict, "Contents"));
+  contents = _pdfioDictGetValue(page->value.value.dict, "Contents");
+
+  if (contents->type == PDFIO_VALTYPE_INDIRECT)
+  {
+    // See if the indirect object is a stream or an array of indirect object
+    // references...
+    if ((obj = pdfioFileFindObj(page->pdf, contents->value.indirect.number)) != NULL)
+    {
+      if (obj->value.type == PDFIO_VALTYPE_NONE)
+      {
+	if (!_pdfioObjLoad(obj))
+	  return (NULL);
+      }
+
+      if (obj->value.type == PDFIO_VALTYPE_ARRAY)
+        contents = &(obj->value);
+    }
+  }
+
+  return (contents);
 }
