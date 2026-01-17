@@ -9,6 +9,8 @@ v1.7.0 - YYYY-MM-DD
 - Added support for basic compound stream filters for ASCII85Decode support
   (Issue #11)
 - Added support for LZWDecode filters (Issue #11)
+- Added `pdfioPageGetXxx` functions to get values from the page dictionaries
+  (Issue #150)
 - Fixed a buffer overflow in the (still not enabled) AES-256 code.
 
 

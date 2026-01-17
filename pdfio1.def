@@ -258,7 +258,17 @@ pdfioPageCopy
 pdfioPageDictAddColorSpace
 pdfioPageDictAddFont
 pdfioPageDictAddImage
+pdfioPageGetArray
+pdfioPageGetBinary
+pdfioPageGetBoolean
+pdfioPageGetDate
+pdfioPageGetDict
+pdfioPageGetName
+pdfioPageGetNumber
 pdfioPageGetNumStreams
+pdfioPageGetObj
+pdfioPageGetRect
+pdfioPageGetString
 pdfioPageOpenStream
 pdfioStreamClose
 pdfioStreamConsume

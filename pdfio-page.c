@@ -15,6 +15,7 @@
 //
 
 static _pdfio_value_t	*get_contents(pdfio_obj_t *page);
+static _pdfio_value_t	*get_page_value(pdfio_obj_t *page, const char *key);
 
 
 //
@@ -53,6 +54,158 @@ pdfioPageCopy(pdfio_file_t *pdf,	// I - PDF file
 
 
 //
+// 'pdfioPageGetArray()' - Get an array value from the page dictionary.
+//
+// This function looks up an array value in the page dictionary, either in the
+// specified object or one of its parents.
+//
+// @since PDFio 1.7@
+//
+
+pdfio_array_t *				// O - Array or `NULL` if none
+pdfioPageGetArray(pdfio_obj_t *page,	// I - Page object
+                  const char  *key)	// I - Dictionary key
+{
+  _pdfio_value_t *v = get_page_value(page, key);
+					// Dictionary value
+
+
+  if (v && v->type == PDFIO_VALTYPE_ARRAY)
+    return (v->value.array);
+  else
+    return (NULL);
+}
+
+
+//
+// 'pdfioPageGetBinary()' - Get a binary value from the page dictionary.
+//
+// This function looks up a binary value in the page dictionary, either in the
+// specified object or one of its parents.
+//
+// @since PDFio 1.7@
+//
+
+unsigned char *				// O - Pointer to binary data or `NULL` if none
+pdfioPageGetBinary(pdfio_obj_t *page,	// I - Page object
+                   const char  *key,	// I - Dictionary key
+                   size_t      *length)	// O - Length of value
+{
+  _pdfio_value_t *v = get_page_value(page, key);
+					// Dictionary value
+
+
+  if (v && v->type == PDFIO_VALTYPE_BINARY)
+  {
+    if (length)
+      *length = v->value.binary.datalen;
+
+    return (v->value.binary.data);
+  }
+  else
+  {
+    return (NULL);
+  }
+}
+
+
+//
+// 'pdfioPageGetBoolean()' - Get a boolean value from the page dictionary.
+//
+// This function looks up a boolean value in the page dictionary, either in the
+// specified object or one of its parents.
+//
+// @since PDFio 1.7@
+//
+
+bool					// O - Boolean value or `false` if none
+pdfioPageGetBoolean(pdfio_obj_t *page,	// I - Page object
+                    const char  *key)	// I - Dictionary key
+{
+  _pdfio_value_t *v = get_page_value(page, key);
+					// Dictionary value
+
+
+  if (v && v->type == PDFIO_VALTYPE_ARRAY)
+    return (v->value.boolean);
+  else
+    return (NULL);
+}
+
+
+//
+// 'pdfioPageGetDate()' - Get a date value from the page dictionary.
+//
+// This function looks up a date value in the page dictionary, either in the
+// specified object or one of its parents.
+//
+// @since PDFio 1.7@
+//
+
+time_t					// O - Date/time or `0` if none
+pdfioPageGetDate(pdfio_obj_t *page,	// I - Page object
+                 const char  *key)	// I - Dictionary key
+{
+  _pdfio_value_t *v = get_page_value(page, key);
+					// Dictionary value
+
+
+  if (v && v->type == PDFIO_VALTYPE_DATE)
+    return (v->value.date);
+  else
+    return (0);
+}
+
+
+//
+// 'pdfioPageGetDict()' - Get a dictionary value from the page dictionary.
+//
+// This function looks up a dictionary value in the page dictionary, either in
+// the specified object or one of its parents.
+//
+// @since PDFio 1.7@
+//
+
+pdfio_dict_t *				// O - Dictionary or `NULL` if none
+pdfioPageGetDict(pdfio_obj_t *page,	// I - Page object
+                 const char  *key)	// I - Dictionary key
+{
+  _pdfio_value_t *v = get_page_value(page, key);
+					// Dictionary value
+
+
+  if (v && v->type == PDFIO_VALTYPE_DICT)
+    return (v->value.dict);
+  else
+    return (NULL);
+}
+
+
+//
+// 'pdfioPageGetName()' - Get a name value from the page dictionary.
+//
+// This function looks up a name value in the page dictionary, either in the
+// specified object or one of its parents.
+//
+// @since PDFio 1.7@
+//
+
+const char *				// O - Name string or `NULL` if none
+pdfioPageGetName(pdfio_obj_t *page,	// I - Page object
+                 const char  *key)	// I - Dictionary key
+{
+  _pdfio_value_t *v = get_page_value(page, key);
+					// Dictionary value
+
+
+  if (v && v->type == PDFIO_VALTYPE_NAME)
+    return (v->value.name);
+  else
+    return (NULL);
+}
+
+
+//
 // 'pdfioPageGetNumStreams()' - Get the number of content streams for a page object.
 //
 
@@ -70,6 +223,112 @@ pdfioPageGetNumStreams(
     return (pdfioArrayGetSize(contents->value.array));
   else
     return (1);
+}
+
+
+//
+// 'pdfioPageGetNumber()' - Get a number value from the page dictionary.
+//
+// This function looks up a number value in the page dictionary, either in the
+// specified object or one of its parents.
+//
+// @since PDFio 1.7@
+//
+
+double					// O - Number value or `0.0` if none
+pdfioPageGetNumber(pdfio_obj_t *page,	// I - Page object
+                   const char  *key)	// I - Dictionary key
+{
+  _pdfio_value_t *v = get_page_value(page, key);
+					// Dictionary value
+
+
+  if (v && v->type == PDFIO_VALTYPE_NUMBER)
+    return (v->value.number);
+  else
+    return (0.0);
+}
+
+
+//
+// 'pdfioPageGetObj()' - Get an indirect object value from the page dictionary.
+//
+// This function looks up an indirect object value in the page dictionary,
+// either in the specified object or one of its parents.
+//
+// @since PDFio 1.7@
+//
+
+pdfio_obj_t *				// O - Object or `NULL` if none
+pdfioPageGetObj(pdfio_obj_t *page,	// I - Page object
+                const char  *key)	// I - Dictionary key
+{
+  _pdfio_value_t *v = get_page_value(page, key);
+					// Dictionary value
+
+
+  if (v && v->type == PDFIO_VALTYPE_INDIRECT)
+    return (pdfioFileFindObj(page->pdf, v->value.indirect.number));
+  else
+    return (NULL);
+}
+
+
+//
+// 'pdfioPageGetRect()' - Get a rectangle value from the page dictionary.
+//
+// This function looks up a rectangle value in the page dictionary, either in
+// the specified object or one of its parents.
+//
+// @since PDFio 1.7@
+//
+
+pdfio_rect_t *				// O - Rectangle or `NULL` if none
+pdfioPageGetRect(pdfio_obj_t  *page,	// I - Page object
+                 const char   *key,	// I - Dictionary key
+		 pdfio_rect_t *rect)	// O - Rectangle
+{
+  _pdfio_value_t *v = get_page_value(page, key);
+					// Dictionary value
+
+
+  if (v && v->type == PDFIO_VALTYPE_ARRAY && pdfioArrayGetSize(v->value.array) == 4)
+  {
+    rect->x1 = pdfioArrayGetNumber(v->value.array, 0);
+    rect->y1 = pdfioArrayGetNumber(v->value.array, 1);
+    rect->x2 = pdfioArrayGetNumber(v->value.array, 2);
+    rect->y2 = pdfioArrayGetNumber(v->value.array, 3);
+
+    return (rect);
+  }
+  else
+  {
+    return (NULL);
+  }
+}
+
+
+//
+// 'pdfioPageGetString()' - Get a string value from the page dictionary.
+//
+// This function looks up a string value in the page dictionary, either in the
+// specified object or one of its parents.
+//
+// @since PDFio 1.7@
+//
+
+const char *				// O - String value or `NULL` if none
+pdfioPageGetString(pdfio_obj_t *page,	// I - Page object
+                   const char  *key)	// I - Dictionary key
+{
+  _pdfio_value_t *v = get_page_value(page, key);
+					// Dictionary value
+
+
+  if (v && v->type == PDFIO_VALTYPE_STRING)
+    return (v->value.string);
+  else
+    return (NULL);
 }
 
 
@@ -157,4 +416,36 @@ get_contents(pdfio_obj_t *page)		// I - Page object
   }
 
   return (contents);
+}
+
+
+//
+// 'get_page_value()' - Get a page dictionary value, including parents.
+//
+
+static _pdfio_value_t *			// O - Dictionary value or `NULL` if none
+get_page_value(pdfio_obj_t *page,	// I - Page object
+               const char  *key)	// I - Dictionary key
+{
+  _pdfio_value_t	*v = NULL;	// Dictionary value
+
+
+  while (page != NULL)
+  {
+    // Load the page object as needed...
+    if (page->value.type == PDFIO_VALTYPE_NONE && !_pdfioObjLoad(page))
+      break;
+
+    // If there isn't a dictionary for the object, stop...
+    if (page->value.type != PDFIO_VALTYPE_DICT)
+      break;
+
+    // Lookup the key...
+    if ((v = _pdfioDictGetValue(page->value.value.dict, key)) != NULL)
+      break;
+
+    page = pdfioDictGetObj(page->value.value.dict, "Parent");
+  }
+
+  return (v);
 }

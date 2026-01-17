@@ -238,7 +238,17 @@ extern const char	*pdfioObjGetType(pdfio_obj_t *obj) _PDFIO_PUBLIC;
 extern pdfio_stream_t	*pdfioObjOpenStream(pdfio_obj_t *obj, bool decode) _PDFIO_PUBLIC;
 
 extern bool		pdfioPageCopy(pdfio_file_t *pdf, pdfio_obj_t *srcpage) _PDFIO_PUBLIC;
+extern pdfio_array_t	*pdfioPageGetArray(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
+extern unsigned char	*pdfioPageGetBinary(pdfio_obj_t *page, const char *key, size_t *length) _PDFIO_PUBLIC;
+extern bool		pdfioPageGetBoolean(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
+extern time_t		pdfioDictPageDate(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
+extern pdfio_dict_t	*pdfioPageGetDict(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
+extern const char	*pdfioPageGetName(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
 extern size_t		pdfioPageGetNumStreams(pdfio_obj_t *page) _PDFIO_PUBLIC;
+extern double		pdfioPageGetNumber(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioPageGetObj(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
+extern pdfio_rect_t	*pdfioPageGetRect(pdfio_obj_t *page, const char *key, pdfio_rect_t *rect) _PDFIO_PUBLIC;
+extern const char	*pdfioPageGetString(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
 extern pdfio_stream_t	*pdfioPageOpenStream(pdfio_obj_t *page, size_t n, bool decode) _PDFIO_PUBLIC;
 
 extern bool		pdfioStreamClose(pdfio_stream_t *st) _PDFIO_PUBLIC;

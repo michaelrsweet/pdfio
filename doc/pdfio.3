@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2025-10-05" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2026-01-16" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -2555,7 +2555,7 @@ ASCIIHexDecode filter (reading only)
 .TP 5
 PDFIO_FILTER_CCITTFAX
 .br
-CCITTFaxDecode filter
+CCITTFaxDecode filter (reading only)
 .TP 5
 PDFIO_FILTER_CRYPT
 .br
@@ -2571,7 +2571,7 @@ FlateDecode filter
 .TP 5
 PDFIO_FILTER_JBIG2
 .br
-JBIG2Decode filter
+JBIG2Decode filter (reading only)
 .TP 5
 PDFIO_FILTER_JPX
 .br
@@ -4924,6 +4924,91 @@ bool  pdfioPageDictAddImage (
     pdfio_obj_t *obj
 );
 .fi
+.SS pdfioPageGetArray
+Get an array value from the page dictionary.
+.PP
+.nf
+pdfio_array_t * pdfioPageGetArray (
+    pdfio_obj_t *page,
+    const char *key
+);
+.fi
+.PP
+This function looks up an array value in the page dictionary, either in the
+specified object or one of its parents.
+
+
+.SS pdfioPageGetBinary
+Get a binary value from the page dictionary.
+.PP
+.nf
+unsigned char * pdfioPageGetBinary (
+    pdfio_obj_t *page,
+    const char *key,
+    size_t *length
+);
+.fi
+.PP
+This function looks up a binary value in the page dictionary, either in the
+specified object or one of its parents.
+
+
+.SS pdfioPageGetBoolean
+Get a boolean value from the page dictionary.
+.PP
+.nf
+bool  pdfioPageGetBoolean (
+    pdfio_obj_t *page,
+    const char *key
+);
+.fi
+.PP
+This function looks up a boolean value in the page dictionary, either in the
+specified object or one of its parents.
+
+
+.SS pdfioPageGetDate
+Get a date value from the page dictionary.
+.PP
+.nf
+time_t  pdfioPageGetDate (
+    pdfio_obj_t *page,
+    const char *key
+);
+.fi
+.PP
+This function looks up a date value in the page dictionary, either in the
+specified object or one of its parents.
+
+
+.SS pdfioPageGetDict
+Get a dictionary value from the page dictionary.
+.PP
+.nf
+pdfio_dict_t * pdfioPageGetDict (
+    pdfio_obj_t *page,
+    const char *key
+);
+.fi
+.PP
+This function looks up a dictionary value in the page dictionary, either in
+the specified object or one of its parents.
+
+
+.SS pdfioPageGetName
+Get a name value from the page dictionary.
+.PP
+.nf
+const char * pdfioPageGetName (
+    pdfio_obj_t *page,
+    const char *key
+);
+.fi
+.PP
+This function looks up a name value in the page dictionary, either in the
+specified object or one of its parents.
+
+
 .SS pdfioPageGetNumStreams
 Get the number of content streams for a page object.
 .PP
@@ -4932,6 +5017,63 @@ size_t  pdfioPageGetNumStreams (
     pdfio_obj_t *page
 );
 .fi
+.SS pdfioPageGetNumber
+Get a number value from the page dictionary.
+.PP
+.nf
+double  pdfioPageGetNumber (
+    pdfio_obj_t *page,
+    const char *key
+);
+.fi
+.PP
+This function looks up a number value in the page dictionary, either in the
+specified object or one of its parents.
+
+
+.SS pdfioPageGetObj
+Get an indirect object value from the page dictionary.
+.PP
+.nf
+pdfio_obj_t * pdfioPageGetObj (
+    pdfio_obj_t *page,
+    const char *key
+);
+.fi
+.PP
+This function looks up an indirect object value in the page dictionary,
+either in the specified object or one of its parents.
+
+
+.SS pdfioPageGetRect
+Get a rectangle value from the page dictionary.
+.PP
+.nf
+pdfio_rect_t * pdfioPageGetRect (
+    pdfio_obj_t *page,
+    const char *key,
+    pdfio_rect_t *rect
+);
+.fi
+.PP
+This function looks up a rectangle value in the page dictionary, either in
+the specified object or one of its parents.
+
+
+.SS pdfioPageGetString
+Get a string value from the page dictionary.
+.PP
+.nf
+const char * pdfioPageGetString (
+    pdfio_obj_t *page,
+    const char *key
+);
+.fi
+.PP
+This function looks up a string value in the page dictionary, either in the
+specified object or one of its parents.
+
+
 .SS pdfioPageOpenStream
 Open a content stream for a page.
 .PP

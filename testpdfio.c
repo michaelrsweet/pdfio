@@ -658,19 +658,7 @@ do_test_file(const char *filename,	// I - PDF filename
 	      pdfio_stream_t	*st;	// Page content stream
 
 	      memset(&media_box, 0, sizeof(media_box));
-	      dict = pdfioObjGetDict(obj);
-
-	      if (!pdfioDictGetRect(dict, "MediaBox", &media_box))
-	      {
-	        pdfio_obj_t *parent;	// Parent object
-
-		while ((parent = pdfioDictGetObj(dict, "Parent")) != NULL)
-		{
-		  dict = pdfioObjGetDict(parent);
-		  if (pdfioDictGetRect(dict, "MediaBox", &media_box))
-		    break;
-		}
-	      }
+	      pdfioPageGetRect(obj, "MediaBox", &media_box);
 
 	      if ((st = pdfioPageOpenStream(obj, /*number*/0, /*decode*/true)) != NULL)
 	      {

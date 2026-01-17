@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<title>PDFio Programming Manual v1.6.0</title>
+<title>PDFio Programming Manual v1.7.0</title>
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 <meta name="generator" content="codedoc v3.8">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
 <meta name="copyright" content="Copyright © 2021-2025 by Michael R Sweet">
-<meta name="version" content="1.6.0">
+<meta name="version" content="1.7.0">
 <style type="text/css"><!--
 body {
   background: white;
@@ -92,13 +92,16 @@ blockquote :first-child {
   margin-bottom: 0;
 }
 p code, li code, p.code, pre, ul.code li {
+  background: rgba(127,127,127,0.25);
+  border: thin dotted gray;
   font-family: monospace;
   hyphens: manual;
   -webkit-hyphens: manual;
 }
+p code, li code {
+  padding: 0 5px;
+}
 p.code, pre, ul.code li {
-  background: rgba(127,127,127,0.25);
-  border: thin dotted gray;
   padding: 10px;
   page-break-inside: avoid;
 }
@@ -217,6 +220,21 @@ span.string {
   a:link:hover, a:visited:hover, a:active {
     color: #f06;
   }
+  span.comment {
+    color: #7c7;
+  }
+  span.directive {
+    color: red;
+  }
+  span.number {
+    color: #c64;
+  }
+  span.reserved {
+    color: #77f;
+  }
+  span.string {
+    color: #f7f;
+  }
 }
 /* Show contents on left side in web browser */
 @media screen and (min-width: 800px) {
@@ -251,7 +269,7 @@ span.string {
 <body>
 <div class="header">
 <p><img class="title" src="pdfio-512.png"></p>
-<h1 class="title">PDFio Programming Manual v1.6.0</h1>
+<h1 class="title">PDFio Programming Manual v1.7.0</h1>
 <p>Michael R Sweet</p>
 <p>Copyright © 2021-2025 by Michael R Sweet</p>
 </div>
@@ -464,7 +482,17 @@ span.string {
 <li><a href="#pdfioPageDictAddColorSpace">pdfioPageDictAddColorSpace</a></li>
 <li><a href="#pdfioPageDictAddFont">pdfioPageDictAddFont</a></li>
 <li><a href="#pdfioPageDictAddImage">pdfioPageDictAddImage</a></li>
+<li><a href="#pdfioPageGetArray">pdfioPageGetArray</a></li>
+<li><a href="#pdfioPageGetBinary">pdfioPageGetBinary</a></li>
+<li><a href="#pdfioPageGetBoolean">pdfioPageGetBoolean</a></li>
+<li><a href="#pdfioPageGetDate">pdfioPageGetDate</a></li>
+<li><a href="#pdfioPageGetDict">pdfioPageGetDict</a></li>
+<li><a href="#pdfioPageGetName">pdfioPageGetName</a></li>
 <li><a href="#pdfioPageGetNumStreams">pdfioPageGetNumStreams</a></li>
+<li><a href="#pdfioPageGetNumber">pdfioPageGetNumber</a></li>
+<li><a href="#pdfioPageGetObj">pdfioPageGetObj</a></li>
+<li><a href="#pdfioPageGetRect">pdfioPageGetRect</a></li>
+<li><a href="#pdfioPageGetString">pdfioPageGetString</a></li>
 <li><a href="#pdfioPageOpenStream">pdfioPageOpenStream</a></li>
 <li><a href="#pdfioStreamClose">pdfioStreamClose</a></li>
 <li><a href="#pdfioStreamConsume">pdfioStreamConsume</a></li>
@@ -5409,6 +5437,116 @@ array that was created using the
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetArray">pdfioPageGetArray</a></h3>
+<p class="description">Get an array value from the page dictionary.</p>
+<p class="code">
+<a href="#pdfio_array_t">pdfio_array_t</a> *pdfioPageGetArray(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>page</th>
+<td class="description">Page object</td></tr>
+<tr><th>key</th>
+<td class="description">Dictionary key</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Array or <code>NULL</code> if none</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function looks up an array value in the page dictionary, either in the
+specified object or one of its parents.
+
+</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetBinary">pdfioPageGetBinary</a></h3>
+<p class="description">Get a binary value from the page dictionary.</p>
+<p class="code">
+<span class="reserved">unsigned</span> <span class="reserved">char</span> *pdfioPageGetBinary(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key, size_t *length);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>page</th>
+<td class="description">Page object</td></tr>
+<tr><th>key</th>
+<td class="description">Dictionary key</td></tr>
+<tr><th>length</th>
+<td class="description">Length of value</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Pointer to binary data or <code>NULL</code> if none</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function looks up a binary value in the page dictionary, either in the
+specified object or one of its parents.
+
+</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetBoolean">pdfioPageGetBoolean</a></h3>
+<p class="description">Get a boolean value from the page dictionary.</p>
+<p class="code">
+<span class="reserved">bool</span> pdfioPageGetBoolean(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>page</th>
+<td class="description">Page object</td></tr>
+<tr><th>key</th>
+<td class="description">Dictionary key</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Boolean value or <code>false</code> if none</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function looks up a boolean value in the page dictionary, either in the
+specified object or one of its parents.
+
+</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetDate">pdfioPageGetDate</a></h3>
+<p class="description">Get a date value from the page dictionary.</p>
+<p class="code">
+time_t pdfioPageGetDate(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>page</th>
+<td class="description">Page object</td></tr>
+<tr><th>key</th>
+<td class="description">Dictionary key</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Date/time or <code>0</code> if none</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function looks up a date value in the page dictionary, either in the
+specified object or one of its parents.
+
+</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetDict">pdfioPageGetDict</a></h3>
+<p class="description">Get a dictionary value from the page dictionary.</p>
+<p class="code">
+<a href="#pdfio_dict_t">pdfio_dict_t</a> *pdfioPageGetDict(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>page</th>
+<td class="description">Page object</td></tr>
+<tr><th>key</th>
+<td class="description">Dictionary key</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Dictionary or <code>NULL</code> if none</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function looks up a dictionary value in the page dictionary, either in
+the specified object or one of its parents.
+
+</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetName">pdfioPageGetName</a></h3>
+<p class="description">Get a name value from the page dictionary.</p>
+<p class="code">
+<span class="reserved">const</span> <span class="reserved">char</span> *pdfioPageGetName(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>page</th>
+<td class="description">Page object</td></tr>
+<tr><th>key</th>
+<td class="description">Dictionary key</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Name string or <code>NULL</code> if none</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function looks up a name value in the page dictionary, either in the
+specified object or one of its parents.
+
+</p>
 <h3 class="function"><a id="pdfioPageGetNumStreams">pdfioPageGetNumStreams</a></h3>
 <p class="description">Get the number of content streams for a page object.</p>
 <p class="code">
@@ -5420,6 +5558,80 @@ size_t pdfioPageGetNumStreams(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Number of streams</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetNumber">pdfioPageGetNumber</a></h3>
+<p class="description">Get a number value from the page dictionary.</p>
+<p class="code">
+<span class="reserved">double</span> pdfioPageGetNumber(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>page</th>
+<td class="description">Page object</td></tr>
+<tr><th>key</th>
+<td class="description">Dictionary key</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Number value or <code>0.0</code> if none</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function looks up a number value in the page dictionary, either in the
+specified object or one of its parents.
+
+</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetObj">pdfioPageGetObj</a></h3>
+<p class="description">Get an indirect object value from the page dictionary.</p>
+<p class="code">
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioPageGetObj(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>page</th>
+<td class="description">Page object</td></tr>
+<tr><th>key</th>
+<td class="description">Dictionary key</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Object or <code>NULL</code> if none</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function looks up an indirect object value in the page dictionary,
+either in the specified object or one of its parents.
+
+</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetRect">pdfioPageGetRect</a></h3>
+<p class="description">Get a rectangle value from the page dictionary.</p>
+<p class="code">
+<a href="#pdfio_rect_t">pdfio_rect_t</a> *pdfioPageGetRect(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key, <a href="#pdfio_rect_t">pdfio_rect_t</a> *rect);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>page</th>
+<td class="description">Page object</td></tr>
+<tr><th>key</th>
+<td class="description">Dictionary key</td></tr>
+<tr><th>rect</th>
+<td class="description">Rectangle</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Rectangle or <code>NULL</code> if none</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function looks up a rectangle value in the page dictionary, either in
+the specified object or one of its parents.
+
+</p>
+<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetString">pdfioPageGetString</a></h3>
+<p class="description">Get a string value from the page dictionary.</p>
+<p class="code">
+<span class="reserved">const</span> <span class="reserved">char</span> *pdfioPageGetString(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>page</th>
+<td class="description">Page object</td></tr>
+<tr><th>key</th>
+<td class="description">Dictionary key</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">String value or <code>NULL</code> if none</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function looks up a string value in the page dictionary, either in the
+specified object or one of its parents.
+
+</p>
 <h3 class="function"><a id="pdfioPageOpenStream">pdfioPageOpenStream</a></h3>
 <p class="description">Open a content stream for a page.</p>
 <p class="code">
@@ -5759,11 +5971,11 @@ typedef enum <a href="#pdfio_valtype_e">pdfio_valtype_e</a> pdfio_valtype_t;
 <table class="list"><tbody>
 <tr><th>PDFIO_FILTER_ASCII85 </th><td class="description">ASCII85Decode filter (reading only)</td></tr>
 <tr><th>PDFIO_FILTER_ASCIIHEX </th><td class="description">ASCIIHexDecode filter (reading only)</td></tr>
-<tr><th>PDFIO_FILTER_CCITTFAX </th><td class="description">CCITTFaxDecode filter</td></tr>
+<tr><th>PDFIO_FILTER_CCITTFAX </th><td class="description">CCITTFaxDecode filter (reading only)</td></tr>
 <tr><th>PDFIO_FILTER_CRYPT </th><td class="description">Encryption filter</td></tr>
 <tr><th>PDFIO_FILTER_DCT </th><td class="description">DCTDecode (JPEG) filter</td></tr>
 <tr><th>PDFIO_FILTER_FLATE </th><td class="description">FlateDecode filter</td></tr>
-<tr><th>PDFIO_FILTER_JBIG2 </th><td class="description">JBIG2Decode filter</td></tr>
+<tr><th>PDFIO_FILTER_JBIG2 </th><td class="description">JBIG2Decode filter (reading only)</td></tr>
 <tr><th>PDFIO_FILTER_JPX </th><td class="description">JPXDecode filter (reading only)</td></tr>
 <tr><th>PDFIO_FILTER_LZW </th><td class="description">LZWDecode filter (reading only)</td></tr>
 <tr><th>PDFIO_FILTER_NONE </th><td class="description">No filter</td></tr>
