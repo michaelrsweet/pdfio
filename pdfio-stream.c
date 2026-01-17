@@ -1,7 +1,7 @@
 //
 // PDF stream functions for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -614,11 +614,6 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       }
 
       st->remaining -= st->flate.avail_in;
-    }
-    else if (!strcmp(filter, "LZWDecode"))
-    {
-      // LZW compression
-      st->filter = PDFIO_FILTER_LZW;
     }
     else
     {
