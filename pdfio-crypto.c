@@ -693,6 +693,11 @@ _pdfioCryptoUnlock(
     _pdfioFileError(pdf, "Unsupported encryption V%d R%d.", version, revision);
     return (false);
   }
+  else if (length < 40 || length > 128)
+  {
+    _pdfioFileError(pdf, "Unsupported key length %d.", length);
+    return (false);
+  }
 
   // Grab the remaining values we need to unlock the PDF...
   pdf->file_keylen = (size_t)(length / 8);
