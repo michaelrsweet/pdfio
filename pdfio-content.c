@@ -2461,11 +2461,7 @@ pdfioPageDictAddImage(
   return (pdfioDictSetObj(xobject, name, obj));
 }
 
-
-//
 // 'copy_gif()' - Copy a GIF image.
-//
-
 static pdfio_obj_t *			// O - Object or `NULL` on error
 copy_gif(pdfio_dict_t *dict,		// I - Dictionary
          int          fd)		// I - File descriptor
@@ -2530,7 +2526,10 @@ copy_gif(pdfio_dict_t *dict,		// I - Dictionary
       goto finish;
 
     if (read(fd, global_ct, ct_bytes) != (ssize_t)ct_bytes)
+    {
+      _pdfioFileError(dict->pdf, "Unable to read color table.");
       goto finish;
+    }
   }
 
   // Scan for image descriptor
@@ -2570,7 +2569,10 @@ copy_gif(pdfio_dict_t *dict,		// I - Dictionary
 	  goto finish;
 
 	if (read(fd, local_ct, ct_bytes) != (ssize_t)ct_bytes)
+	{
+	  _pdfioFileError(dict->pdf, "Unable to read color table.");
 	  goto finish;
+	}
       }
 
       // Read LZW code size
@@ -2587,7 +2589,10 @@ copy_gif(pdfio_dict_t *dict,		// I - Dictionary
       while (read(fd, &block_size, 1) == 1 && block_size > 0)
       {
 	if (read(fd, buffer, block_size) != block_size)
+	{
+	  _pdfioFileError(dict->pdf, "Unable to read image data.");
 	  goto finish;
+	}
 
 	if (compressed_size + block_size > compressed_alloc)
 	{
@@ -2609,16 +2614,41 @@ copy_gif(pdfio_dict_t *dict,		// I - Dictionary
     }
     else if (block_type == 0x21)
     {
-      // Extension - skip it
+      // Extension
       unsigned char ext_type;
 
       if (read(fd, &ext_type, 1) != 1)
 	goto finish;
 
-      while (read(fd, &block_size, 1) == 1 && block_size > 0)
+      if (ext_type == 0xF9)
       {
-	if (lseek(fd, block_size, SEEK_CUR) < 0)
+	// Graphics Control Extension - check for transparency
+	unsigned char gce[4];
+
+	if (read(fd, &block_size, 1) != 1 || block_size != 4)
 	  goto finish;
+
+	if (read(fd, gce, 4) != 4)
+	  goto finish;
+
+	if (gce[0] & 0x01)
+	{
+	  _pdfioFileError(dict->pdf, "Transparent GIFs not supported.");
+	  goto finish;
+	}
+
+	// Read terminator
+	if (read(fd, &block_size, 1) != 1)
+	  goto finish;
+      }
+      else
+      {
+	// Skip other extensions
+	while (read(fd, &block_size, 1) == 1 && block_size > 0)
+	{
+	  if (lseek(fd, block_size, SEEK_CUR) < 0)
+	    goto finish;
+	}
       }
     }
     else if (block_type == 0x3B)
@@ -2640,6 +2670,12 @@ copy_gif(pdfio_dict_t *dict,		// I - Dictionary
 
   // Decompress
   pixels = (size_t)width * (size_t)height;
+
+  if (pixels > SIZE_MAX / 3)
+  {
+    _pdfioFileError(dict->pdf, "Image is too large.");
+    goto finish;
+  }
 
   if ((indices = (unsigned char *)malloc(pixels)) == NULL)
     goto finish;
