@@ -82,6 +82,7 @@ typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
 // Local functions...
 //
 
+static pdfio_obj_t	*copy_gif(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
 static bool		create_cp1252(pdfio_file_t *pdf);
@@ -2184,6 +2185,11 @@ pdfioFileCreateImageObjFromFile(
    // JPEG image...
     copy_func = copy_jpeg;
   }
+  else if (!memcmp(buffer, "GIF87a", 6) || !memcmp(buffer, "GIF89a", 6))
+  {
+    // GIF image...
+    copy_func = copy_gif;
+  }
   else
   {
     // Something else that isn't supported...
@@ -2453,6 +2459,258 @@ pdfioPageDictAddImage(
 
   // Now set the image reference in the XObject resource dictionary and return...
   return (pdfioDictSetObj(xobject, name, obj));
+}
+
+
+//
+// 'copy_gif()' - Copy a GIF image.
+//
+
+static pdfio_obj_t *			// O - Object or `NULL` on error
+copy_gif(pdfio_dict_t *dict,		// I - Dictionary
+         int          fd)		// I - File descriptor
+{
+  pdfio_obj_t	*obj = NULL;		// Image object
+  unsigned char	header[13],		// Header/screen descriptor
+		image_desc[9],		// Image descriptor
+		*global_ct = NULL,	// Global color table
+		*local_ct = NULL,	// Local color table
+		*color_table,		// Active color table
+		*compressed = NULL,	// Compressed data
+		*indices = NULL,	// Decompressed indices
+		*rgb = NULL,		// RGB pixel data
+		lzw_code_size,		// LZW min code size
+		block_type,
+		block_size,
+		buffer[256];
+  unsigned	width = 0, height = 0,	// Image dimensions
+		gct_size = 0,		// Global color table size
+		lct_size = 0,		// Local color table size
+		ct_size;		// Active color table size
+  size_t	compressed_size = 0,
+		compressed_alloc = 0,
+		pixels,
+		i;
+  bool		has_gct = false,
+		has_lct = false;
+  _pdfio_lzw_t	*lzw = NULL;
+
+
+  PDFIO_DEBUG("copy_gif(dict=%p, fd=%d)\n", (void *)dict, fd);
+
+  // Read header
+  if (read(fd, header, 6) != 6)
+  {
+    _pdfioFileError(dict->pdf, "Unable to read GIF header.");
+    goto finish;
+  }
+
+  if (memcmp(header, "GIF87a", 6) && memcmp(header, "GIF89a", 6))
+  {
+    _pdfioFileError(dict->pdf, "Bad GIF signature.");
+    goto finish;
+  }
+
+  // Read screen descriptor
+  if (read(fd, header, 7) != 7)
+    goto finish;
+
+  has_gct = (header[4] & 0x80) != 0;
+  if (has_gct)
+    gct_size = 1 << ((header[4] & 0x07) + 1);
+
+  PDFIO_DEBUG("copy_gif: GCT=%s (%u)\n", has_gct ? "yes" : "no", gct_size);
+
+  // Read global color table
+  if (has_gct)
+  {
+    size_t ct_bytes = gct_size * 3;
+
+    if ((global_ct = (unsigned char *)malloc(ct_bytes)) == NULL)
+      goto finish;
+
+    if (read(fd, global_ct, ct_bytes) != (ssize_t)ct_bytes)
+      goto finish;
+  }
+
+  // Scan for image descriptor
+  while (read(fd, &block_type, 1) == 1)
+  {
+    if (block_type == 0x2C)
+    {
+      // Image descriptor
+      if (read(fd, image_desc, 9) != 9)
+	goto finish;
+
+      width  = (unsigned)image_desc[4] | ((unsigned)image_desc[5] << 8);
+      height = (unsigned)image_desc[6] | ((unsigned)image_desc[7] << 8);
+
+      if (!width || !height)
+      {
+	_pdfioFileError(dict->pdf, "Bad GIF dimensions.");
+	goto finish;
+      }
+
+      if (image_desc[8] & 0x40)
+      {
+	_pdfioFileError(dict->pdf, "Interlaced GIFs not supported.");
+	goto finish;
+      }
+
+      has_lct = (image_desc[8] & 0x80) != 0;
+      if (has_lct)
+	lct_size = 1 << ((image_desc[8] & 0x07) + 1);
+
+      // Read local color table if present
+      if (has_lct)
+      {
+	size_t ct_bytes = lct_size * 3;
+
+	if ((local_ct = (unsigned char *)malloc(ct_bytes)) == NULL)
+	  goto finish;
+
+	if (read(fd, local_ct, ct_bytes) != (ssize_t)ct_bytes)
+	  goto finish;
+      }
+
+      // Read LZW code size
+      if (read(fd, &lzw_code_size, 1) != 1)
+	goto finish;
+
+      if (lzw_code_size < 2 || lzw_code_size > 8)
+      {
+	_pdfioFileError(dict->pdf, "Bad LZW code size.");
+	goto finish;
+      }
+
+      // Read compressed data
+      while (read(fd, &block_size, 1) == 1 && block_size > 0)
+      {
+	if (read(fd, buffer, block_size) != block_size)
+	  goto finish;
+
+	if (compressed_size + block_size > compressed_alloc)
+	{
+	  unsigned char *temp;
+	  size_t new_alloc = compressed_alloc + 4096;
+
+	  if ((temp = (unsigned char *)realloc(compressed, new_alloc)) == NULL)
+	    goto finish;
+
+	  compressed = temp;
+	  compressed_alloc = new_alloc;
+	}
+
+	memcpy(compressed + compressed_size, buffer, block_size);
+	compressed_size += block_size;
+      }
+
+      break;  // Only support single-frame
+    }
+    else if (block_type == 0x21)
+    {
+      // Extension - skip it
+      unsigned char ext_type;
+
+      if (read(fd, &ext_type, 1) != 1)
+	goto finish;
+
+      while (read(fd, &block_size, 1) == 1 && block_size > 0)
+      {
+	if (lseek(fd, block_size, SEEK_CUR) < 0)
+	  goto finish;
+      }
+    }
+    else if (block_type == 0x3B)
+    {
+      break;  // Trailer
+    }
+    else
+    {
+      _pdfioFileError(dict->pdf, "Unknown GIF block 0x%02X.", block_type);
+      goto finish;
+    }
+  }
+
+  if (!width)
+  {
+    _pdfioFileError(dict->pdf, "No image in GIF.");
+    goto finish;
+  }
+
+  // Decompress
+  pixels = (size_t)width * (size_t)height;
+
+  if ((indices = (unsigned char *)malloc(pixels)) == NULL)
+    goto finish;
+
+  if ((rgb = (unsigned char *)malloc(pixels * 3)) == NULL)
+    goto finish;
+
+  if ((lzw = _pdfioLZWCreate(lzw_code_size, 1)) == NULL)
+    goto finish;
+
+  lzw->next_in = compressed;
+  lzw->avail_in = compressed_size;
+  lzw->next_out = indices;
+  lzw->avail_out = pixels;
+
+  if (!_pdfioLZWInflate(lzw) || lzw->avail_out > 0)
+  {
+    _pdfioFileError(dict->pdf, "LZW decompression failed.");
+    goto finish;
+  }
+
+  // Pick color table
+  if (has_lct)
+  {
+    color_table = local_ct;
+    ct_size = lct_size;
+  }
+  else if (has_gct)
+  {
+    color_table = global_ct;
+    ct_size = gct_size;
+  }
+  else
+  {
+    _pdfioFileError(dict->pdf, "No color table.");
+    goto finish;
+  }
+
+  // Convert to RGB
+  for (i = 0; i < pixels; i ++)
+  {
+    unsigned char idx = indices[i];
+
+    if (idx >= ct_size)
+    {
+      _pdfioFileError(dict->pdf, "Bad color index.");
+      goto finish;
+    }
+
+    rgb[i * 3] = color_table[idx * 3];
+    rgb[i * 3 + 1] = color_table[idx * 3 + 1];
+    rgb[i * 3 + 2] = color_table[idx * 3 + 2];
+  }
+
+  pdfioDictSetNumber(dict, "Width", (double)width);
+  pdfioDictSetNumber(dict, "Height", (double)height);
+  pdfioDictSetNumber(dict, "BitsPerComponent", 8);
+  pdfioDictSetName(dict, "ColorSpace", "DeviceRGB");
+
+  obj = create_image(dict, rgb, width, height, 8, 3, false);
+
+finish:
+
+  free(global_ct);
+  free(local_ct);
+  free(compressed);
+  free(indices);
+  free(rgb);
+  _pdfioLZWDelete(lzw);
+
+  return (obj);
 }
 
 
