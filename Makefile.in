@@ -201,7 +201,7 @@ install:	$(TARGETS)
 
 # Test everything
 test:	testpdfio
-	./testpdfio 2>>test.log
+	./testpdfio 2>test.log
 	LANG=fr_FR.UTF-8 ./testpdfio 2>>test.log
 
 

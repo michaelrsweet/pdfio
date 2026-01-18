@@ -1,7 +1,7 @@
 //
 // Content helper functions for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -24,6 +24,10 @@
 //
 // Local constants...
 //
+
+#define _PDFIO_GIF_COLORBITS	0x07	// Color bits
+#define _PDFIO_GIF_INTERLACE	0x40	// Interlace flag
+#define _PDFIO_GIF_COLORMAP	0x80	// Colormap present flag
 
 #define _PDFIO_JPEG_SOF0	0xc0	// Start of frame (0)
 #define _PDFIO_JPEG_SOF1	0xc1	// Start of frame (1)
@@ -75,6 +79,8 @@
 // Local types...
 //
 
+typedef uint8_t	_pdfio_gif_cmap_t[256][3];
+
 typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
 
 
@@ -82,19 +88,27 @@ typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
 // Local functions...
 //
 
+static pdfio_obj_t	*copy_gif(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
 static bool		create_cp1252(pdfio_file_t *pdf);
 static pdfio_obj_t	*create_font(pdfio_obj_t *file_obj, ttf_t *font, bool unicode);
 static pdfio_obj_t	*create_image(pdfio_dict_t *dict, const unsigned char *data, size_t width, size_t height, size_t depth, size_t num_colors, bool alpha);
+
+static ssize_t		gif_get_block(pdfio_file_t *pdf, int fd, uint8_t *buffer, size_t bufsize);
+static bool		gif_read_image(pdfio_file_t *pdf, int fd, uint8_t *data, size_t width, size_t height, int *ncolors, _pdfio_gif_cmap_t cmap);
+
 #ifdef HAVE_LIBPNG
 static void		png_error_func(png_structp pp, png_const_charp message);
 static void		png_read_func(png_structp png_ptr, png_bytep data, size_t length);
 #endif // HAVE_LIBPNG
+
 static void		ttf_error_cb(pdfio_file_t *pdf, const char *message);
+
 #ifndef HAVE_LIBPNG
 static unsigned		update_png_crc(unsigned crc, const unsigned char *buffer, size_t length);
 #endif // !HAVE_LIBPNG
+
 static bool		write_array(pdfio_stream_t *st, pdfio_array_t *a);
 static bool		write_dict(pdfio_stream_t *st, pdfio_dict_t *dict);
 static bool		write_string(pdfio_stream_t *st, bool unicode, const char *s, bool *newline);
@@ -2174,7 +2188,12 @@ pdfioFileCreateImageObjFromFile(
 
   PDFIO_DEBUG("pdfioFileCreateImageObjFromFile: buffer=<%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X>\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5], buffer[6], buffer[7], buffer[8], buffer[9], buffer[10], buffer[11], buffer[12], buffer[13], buffer[14], buffer[15], buffer[16], buffer[17], buffer[18], buffer[19], buffer[20], buffer[21], buffer[22], buffer[23], buffer[24], buffer[25], buffer[26], buffer[27], buffer[28], buffer[29], buffer[30], buffer[31]);
 
-  if (!memcmp(buffer, "\211PNG\015\012\032\012\000\000\000\015IHDR", 16))
+  if (!memcmp(buffer, "GIF87a", 6) || !memcmp(buffer, "GIF89a", 6))
+  {
+    // GIF image...
+    copy_func = copy_gif;
+  }
+  else if (!memcmp(buffer, "\211PNG\015\012\032\012\000\000\000\015IHDR", 16))
   {
     // PNG image...
     copy_func = copy_png;
@@ -2453,6 +2472,155 @@ pdfioPageDictAddImage(
 
   // Now set the image reference in the XObject resource dictionary and return...
   return (pdfioDictSetObj(xobject, name, obj));
+}
+
+
+/*
+ * 'copy_gif()' - Copy a GIF image file.
+ */
+
+static pdfio_obj_t *			// O - Image object or `NULL` on error
+copy_gif(pdfio_dict_t *dict,		// I - Image dictionary
+         int          fd)		// I - File to read from
+{
+  pdfio_obj_t		*image_obj = NULL;
+					// Image object
+  uint8_t		header[13];	// Image header
+  _pdfio_gif_cmap_t	cmap;		// Colormap
+  int			ncolors,	// Number of colors/bits per pixel
+			transparent;	// Transparent color index
+  size_t		width,		// Width of image
+			height;		// Height of image
+  uint8_t		*data = NULL;	// Image data
+  size_t		datasize;	// Size of image data
+  uint8_t		desc,		// Descriptor header
+			extdesc;	// Extension descriptor
+  uint8_t		block[256];	// Extension block
+  ssize_t		blocklen;	// Length of block
+
+
+  // Read the header; we already know it is a GIF file...
+  if (read(fd, header, sizeof(header)) < sizeof(header))
+  {
+    _pdfioFileError(dict->pdf, "Unable to read GIF header: %s", strerror(errno));
+    return (NULL);
+  }
+
+  PDFIO_DEBUG("copy_gif: header=<%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X>\n", header[0], header[1], header[2], header[3], header[4], header[5], header[6], header[7], header[8], header[9], header[10], header[11], header[12]);
+
+  width   = (header[7] << 8) | header[6];
+  height  = (header[9] << 8) | header[8];
+  ncolors = 2 << (header[10] & _PDFIO_GIF_COLORBITS);
+
+  PDFIO_DEBUG("copy_gif: width=%u, height=%u, ncolors=%d\n", (unsigned)width, (unsigned)height, ncolors);
+
+  if (width < 1 || width > 16384 || height < 1 || height > 16384)
+  {
+    _pdfioFileError(dict->pdf, "Unsupported image dimensions %ux%ux%d.", (unsigned)width, (unsigned)height, ncolors);
+    return (NULL);
+  }
+
+  if (header[10] & _PDFIO_GIF_COLORMAP)
+  {
+    // Read colormap after the file header...
+    PDFIO_DEBUG("copy_gif: Have colormap.\n");
+    if (read(fd, cmap, ncolors * 3) < (ncolors * 3))
+    {
+      _pdfioFileError(dict->pdf, "Unable to read GIF colormap: %s", strerror(errno));
+      return (NULL);
+    }
+  }
+  else
+  {
+    // Make a grayscale colormap for the number of colors...
+    PDFIO_DEBUG("copy_gif: Using default grayscale colormap.\n");
+    for (int i = 0; i < ncolors; i ++)
+      cmap[i][0] = cmap[i][1] = cmap[i][2] = 255 * i / (ncolors - 1);
+  }
+
+#if DEBUG > 1
+  for (int i = 0; i < ncolors; i ++)
+    PDFIO_DEBUG("copy_gif: cmap[%d]={%4d,%4d,%4d}\n", i, cmap[i][0], cmap[i][1], cmap[i][2]);
+#endif // DEBUG > 1
+
+  transparent = -1;
+
+  // Allocate memory for the image and clear it to the background color...
+  datasize = width * height;
+
+  if ((data = malloc(datasize)) == NULL)
+  {
+    _pdfioFileError(dict->pdf, "Unable to allocate memory for GIF image: %s", strerror(errno));
+    return (NULL);
+  }
+
+  memset(data, header[11], datasize);
+
+  // Read the image...
+  while (read(fd, &desc, 1) > 0)
+  {
+    PDFIO_DEBUG("copy_gif: desc=%02X('%c')\n", desc, desc);
+
+    switch (desc)
+    {
+      case ';' :			// End of image
+	  pdfioDictSetNumber(dict, "Width", width);
+	  pdfioDictSetNumber(dict, "Height", height);
+	  pdfioDictSetNumber(dict, "BitsPerComponent", 8);
+          pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPalette(dict->pdf, ncolors, cmap[0]));
+
+          if (transparent >= 0)
+          {
+            pdfio_array_t *mask = pdfioArrayCreate(dict->pdf);
+            pdfioArrayAppendNumber(mask, transparent);
+            pdfioArrayAppendNumber(mask, transparent);
+
+            pdfioDictSetArray(dict, "Mask", mask);
+          }
+
+          image_obj = create_image(dict, data, width, height, 8, 1, /*alpha*/false);
+          goto done;
+
+      case '!' :	// Extension record
+          if (read(fd, &extdesc, 1) < 1)
+          {
+            _pdfioFileError(dict->pdf, "Unable to read extension descriptor.");
+            goto done;
+          }
+
+          if (extdesc == 0xf9)		// Graphic Control Extension
+          {
+            if ((blocklen = gif_get_block(dict->pdf, fd, block, sizeof(block))) < 4)
+              goto done;
+
+            if (block[0] & 1)		// Get transparent color index
+            {
+              transparent = block[3];
+              PDFIO_DEBUG("copy_gif: transparent=%d\n", transparent);
+            }
+          }
+
+          do
+          {
+          }
+          while ((blocklen = gif_get_block(dict->pdf, fd, block, sizeof(block))) > 0);
+
+          if (blocklen < 0)
+            goto done;
+          break;
+
+      case ',' :	// Image data
+          if (!gif_read_image(dict->pdf, fd, data, width, height, &ncolors, cmap))
+            goto done;
+          break;
+    }
+  }
+
+  done:
+
+  free(data);
+
+  return (image_obj);
 }
 
 
@@ -3816,6 +3984,225 @@ create_image(
   pdfioStreamClose(st);
 
   return (obj);
+}
+
+
+//
+// 'gif_get_block()' - Read a GIF data block...
+//
+
+static ssize_t				// O - Number characters read
+gif_get_block(pdfio_file_t *pdf,	// I - PDF file
+              int          fd,		// I - File to read from
+	      uint8_t      *buffer,	// I - Input buffer (at least 256 bytes)
+	      size_t       bufsize)	// I - Size of buffer
+{
+  uint8_t	count;			// Number of bytes to read
+
+
+  // Make sure the buffer is sufficiently large...
+  if (bufsize < 256)
+  {
+    _pdfioFileError(pdf, "GIF block buffer too small.");
+    return (-1);
+  }
+
+  // Read the count byte followed by the data from the file...
+  if (read(fd, &count, 1) < 1)
+  {
+    _pdfioFileError(pdf, "Unable to read GIF block length.");
+    return (-1);
+  }
+
+  PDFIO_DEBUG("gif_get_block: count=%u\n", count);
+
+  if (count > 0 && read(fd, buffer, count) < count)
+  {
+    _pdfioFileError(pdf, "Unable to read GIF block data.");
+    return (-1);
+  }
+
+  return (count);
+}
+
+
+//
+// 'gif_read_image()' - Read a GIF image stream...
+//
+
+static bool				// I - `true` on success, `false` on failure
+gif_read_image(
+    pdfio_file_t      *pdf,		// I - PDF file
+    int               fd,		// I - Input file
+    uint8_t           *data,		// I - Indexed image data
+    size_t            width,		// I - Width of image
+    size_t            height,		// I - Height of image
+    int               *ncolors,		// IO - Number of colors
+    _pdfio_gif_cmap_t cmap)		// I  - Colormap
+{
+  bool		ret = false;		// Return value
+  uint8_t	code_size;		// Code size
+  _pdfio_lzw_t	*lzw;			// LZW decompressor state
+  uint8_t	block[256];		// Data block from GIF file
+  ssize_t	blocklen;		// Length of data block
+  uint8_t	pixels[1024],		// Temporary pixel buffer
+		*pixptr = pixels,	// Pointer into pixel buffer
+		*pixend = pixels;	// End of pixel buffer
+  uint8_t	*dataptr;		// Current pixel in image
+  uint8_t	iheader[9];		// Image header
+  size_t	ileft,			// Left position
+		itop,			// Top position
+		iwidth,			// Width
+		iheight;		// Height
+  bool		interlace;		// Interlaced image?
+  size_t	xpos = 0,		// Current X position
+		ypos = 0,		// Current Y position
+		pass = 0,		// Current pass
+		remaining = width * height;
+					// Remaining pixels
+  bool		saw_endblock = false;	// Have we seen the 0-length block?
+  static size_t	xpasses[4] = { 8, 8, 4, 2 },
+		ypasses[5] = { 0, 4, 2, 1, 0 };
+
+
+  if (read(fd, iheader, sizeof(iheader)) < sizeof(iheader))
+  {
+    _pdfioFileError(pdf, "Unable to read GIF image header.");
+    return (false);
+  }
+
+  PDFIO_DEBUG("gif_read_image: iheader=<%02X%02X%02X%02X%02X%02X%02X%02X%02X>\n", iheader[0], iheader[1], iheader[2], iheader[3], iheader[4], iheader[5], iheader[6], iheader[7], iheader[8]);
+
+  ileft   = iheader[0] | (iheader[1] << 8);
+  itop    = iheader[2] | (iheader[3] << 8);
+  iwidth  = iheader[4] | (iheader[5] << 8);
+  iheight = iheader[6] | (iheader[7] << 8);
+  interlace = (iheader[8] & _PDFIO_GIF_INTERLACE) != 0;
+
+  PDFIO_DEBUG("gif_read_image: ileft=%u, itop=%u, iwidth=%u, iheight=%u, interlace=%s\n", (unsigned)ileft, (unsigned)itop, (unsigned)iwidth, (unsigned)iheight, interlace ? "true" : "false");
+
+  if ((ileft + iwidth) > width || (itop + iheight) > height)
+  {
+    _pdfioFileError(pdf, "Invalid GIF image %ux%u offset %ux%u.", (unsigned)iwidth, (unsigned)iheight, (unsigned)ileft, (unsigned)itop);
+    return (false);
+  }
+
+  iwidth  += ileft;
+  iheight += itop;
+
+  if (iheader[8] & _PDFIO_GIF_COLORMAP)
+  {
+    // Local image colormap...
+    int ncolors2 = 2 << (iheader[8] & _PDFIO_GIF_COLORBITS);
+
+    PDFIO_DEBUG("gif_read_image: Colormap with %d colors.\n", ncolors2);
+
+    if (read(fd, cmap, 3 * ncolors2) < (3 * ncolors2))
+    {
+      _pdfioFileError(pdf, "Unable to read GIF image colormap.");
+      return (false);
+    }
+
+    if (ncolors2 > *ncolors)
+      *ncolors = ncolors2;
+  }
+
+  xpos      = ileft;
+  ypos      = itop;
+  pass      = 0;
+  code_size = 0;
+
+  if (read(fd, &code_size, 1) < 1 || code_size < 2 || code_size > 12)
+  {
+    _pdfioFileError(pdf, "Invalid code size %u in GIF file.", code_size);
+    return (false);
+  }
+
+  PDFIO_DEBUG("gif_read_image: code_size=%u\n", code_size);
+
+  if ((lzw = _pdfioLZWCreate(code_size, /*early*/0, /*reversed*/true)) == NULL)
+  {
+    _pdfioFileError(pdf, "Unable to create GIF decompressor for code size %u.", code_size);
+    return (false);
+  }
+
+  // TODO: Support 1-bit and 4-bit per output data; current code is 8-bit only
+  dataptr = data + ypos * width + xpos;
+
+  while (remaining > 0)
+  {
+    // Fill the pixel buffer as needed...
+    while (pixptr >= pixend)
+    {
+      // Fill input buffer as needed...
+      if (lzw->avail_in == 0 && !saw_endblock)
+      {
+        blocklen     = gif_get_block(pdf, fd, block, sizeof(block));
+        saw_endblock = blocklen <= 0;
+
+        if (blocklen < 0)
+          goto done;
+
+        lzw->avail_in = (size_t)blocklen;
+        lzw->next_in  = block;
+      }
+
+      lzw->avail_out = sizeof(pixels);
+      lzw->next_out  = pixels;
+
+      if (!_pdfioLZWInflate(lzw))
+      {
+        _pdfioFileError(pdf, "Unable to decompress GIF image: %s", lzw->error);
+        goto done;
+      }
+
+      pixptr = pixels;
+      pixend = pixels + sizeof(pixels) - lzw->avail_out;
+    }
+
+    // Add this pixel and advance to the next one...
+    *dataptr++ = *pixptr++;
+    remaining --;
+    xpos ++;
+
+    if (xpos >= width)
+    {
+      // New line...
+      xpos = ileft;
+
+      if (interlace)
+      {
+        // Skip lines when the image is interlaced...
+        ypos += xpasses[pass];
+
+        if (ypos >= height)
+	{
+	  pass ++;
+          ypos = ypasses[pass] + itop;
+	}
+      }
+      else
+      {
+        // No interlacing, move to next line...
+	ypos ++;
+      }
+
+      dataptr = data + ypos * width + xpos;
+    }
+  }
+
+  ret = true;
+
+  done:
+
+  // Read any remaining blocks...
+  while (!saw_endblock)
+    saw_endblock = gif_get_block(pdf, fd, block, sizeof(block)) <= 0;
+
+  // Free the LZW decoder state and return...
+  _pdfioLZWDelete(lzw);
+
+  return (ret);
 }
 
 

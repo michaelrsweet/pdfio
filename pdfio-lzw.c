@@ -28,8 +28,9 @@ static int	lzw_get_code(_pdfio_lzw_t *lzw);
 //
 
 _pdfio_lzw_t *				// O - LZW state
-_pdfioLZWCreate(int code_size,		// I - Data code size in bits (typically 8 for PDF, 2-8 for GIF)
-                int early)		// I - Number of early codes
+_pdfioLZWCreate(int  code_size,		// I - Data code size in bits (typically 8 for PDF, 2-8 for GIF)
+                int  early,		// I - Number of early codes
+                bool reversed)		// I - Reversed (GIF) LZW bit encoding?
 {
   _pdfio_lzw_t	*lzw;			// LZW state
 
@@ -40,6 +41,7 @@ _pdfioLZWCreate(int code_size,		// I - Data code size in bits (typically 8 for P
     lzw->clear_code    = (short)(1 << code_size);
     lzw->eod_code      = lzw->clear_code + 1;
     lzw->early         = early;
+    lzw->reversed      = reversed;
 
     lzw_clear(lzw);
   }
@@ -244,6 +246,10 @@ lzw_get_code(_pdfio_lzw_t *lzw)		// I - LZW state
   {
     0xff, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f
   };
+  static uint8_t rbits[8] =		// Right-to-left bit masks
+  {
+    0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80
+  };
 
 
   // Fill input bytes as needed...
@@ -290,24 +296,36 @@ lzw_get_code(_pdfio_lzw_t *lzw)		// I - LZW state
   PDFIO_DEBUG("lzw_get_code: in_bit=%u, in_bits=%u, in_bytes=<...%02X%02X%02X...>, cur_code_size=%u\n", lzw->in_bit, lzw->in_bits, lzw->in_bytes[lzw->in_bit / 8], lzw->in_bytes[lzw->in_bit / 8 + 1], lzw->in_bytes[lzw->in_bit / 8 + 2], lzw->cur_code_size);
 
   // Now extract the code from the buffer...
-  for (code = 0, in_bit = lzw->in_bit, remaining = lzw->cur_code_size; remaining > 0; in_bit += bits, remaining -= bits)
+  if (lzw->reversed)
   {
-    // See how many bits we can extract from the current byte...
-    boff = (in_bit & 7);
-    byte = lzw->in_bytes[in_bit / 8];
-    bits = 8 - boff;
-    if (bits > remaining)
-      bits = remaining;
+    // Insane GIF-style right-to-left bit encoding...
+    for (code = 0, in_bit = lzw->in_bit + lzw->cur_code_size - 1, remaining = lzw->cur_code_size; remaining > 0; in_bit --, remaining --)
+    {
+      code = (code << 1) | ((lzw->in_bytes[in_bit / 8] & rbits[in_bit & 7]) != 0);
+    }
+  }
+  else
+  {
+    // TIFF/PDF-style left-to-right bit encoding...
+    for (code = 0, in_bit = lzw->in_bit, remaining = lzw->cur_code_size; remaining > 0; in_bit += bits, remaining -= bits)
+    {
+      // See how many bits we can extract from the current byte...
+      boff = (in_bit & 7);
+      byte = lzw->in_bytes[in_bit / 8];
+      bits = 8 - boff;
+      if (bits > remaining)
+	bits = remaining;
 
-    // Get those bits
-    if (bits == 8)			// Full byte from buffer
-      code = (code << 8) | byte;
-    else				// Partial byte from buffer
-      code = (code << bits) | ((byte >> (8 - bits - boff)) & mask[bits]);
+      // Get those bits
+      if (bits == 8)			// Full byte from buffer
+	code = (code << 8) | byte;
+      else				// Partial byte from buffer
+	code = (code << bits) | ((byte >> (8 - bits - boff)) & mask[bits]);
+    }
   }
 
-  // Save the updated position in the input buffer and return the code...
-  lzw->in_bit = in_bit;
+  // Update the position in the input buffer and return the code...
+  lzw->in_bit += lzw->cur_code_size;
 
 #ifdef DEBUG
   if (code >= 0x20 && code < 0x7f)

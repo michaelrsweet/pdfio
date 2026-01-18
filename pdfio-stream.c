@@ -652,7 +652,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
           }
         }
 
-        if ((st->lzw = _pdfioLZWCreate(/*code_size*/8, early)) == NULL)
+        if ((st->lzw = _pdfioLZWCreate(/*code_size*/8, early, /*reversed*/false)) == NULL)
         {
 	  _pdfioFileError(st->pdf, "Unable to initialize LZWDecode filter: %s", strerror(errno));
 	  goto error;

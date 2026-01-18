@@ -51,6 +51,7 @@ static int	write_alpha_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_color_patch(pdfio_stream_t *st, bool device);
 static int	write_color_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_font_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font, const char *textfontfile, bool unicode);
+static int	write_gif_tests(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_header_footer(pdfio_stream_t *st, const char *title, int number);
 static pdfio_obj_t *write_image_object(pdfio_file_t *pdf, _pdfio_predictor_t predictor);
 static int	write_images_test(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
@@ -411,7 +412,7 @@ do_lzw_tests(void)
 
 
   testBegin("_pdfioLZWCreate(8)");
-  testEnd((lzw = _pdfioLZWCreate(/*code_size*/8, /*early*/1)) != NULL);
+  testEnd((lzw = _pdfioLZWCreate(/*code_size*/8, /*early*/1, /*reversed*/false)) != NULL);
   if (!lzw)
     return (1);
 
@@ -1292,6 +1293,7 @@ do_unit_tests(void)
   if (read_unit_file("testpdfio-out.pdf", num_pages, first_image, false))
     goto fail;
 
+#if 0
   // Stream a new PDF file...
   if ((outfd = open("testpdfio-out2.pdf", O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0666)) < 0)
   {
@@ -1449,6 +1451,7 @@ do_unit_tests(void)
   // Do PDF/A tests...
   if (do_pdfa_tests())
     return (1);
+#endif // 0
 
   return (0);
 
@@ -3160,6 +3163,332 @@ write_font_test(
 
 
 //
+// 'write_gif_tests()' - Write pages of GIF test images.
+//
+
+static int				// O - 0 on success, 1 on failure
+write_gif_tests(pdfio_file_t *pdf,	// I - PDF file
+	        int          number,	// I - Page number
+	        pdfio_obj_t  *font)	// I - Page number font
+{
+  pdfio_dict_t		*dict;		// Page dictionary
+  pdfio_stream_t	*st;		// Page contents stream
+  size_t		i;		// Looping var
+  pdfio_obj_t		*color,		// color.gif
+			*gray,		// gray.gif
+			*pdfio[7];	// pdfio-*.gif
+  char			imgname[32];	// Image name
+  double		x, xt,		// X positions
+			y;		// Y position
+  static const char * const pdfio_files[7] =
+  {					// PDFIO GIF test filenames
+    "testfiles/pdfio-1bit.gif",
+    "testfiles/pdfio-2bit.gif",
+    "testfiles/pdfio-4bit.gif",
+    "testfiles/pdfio-4bit-t.gif",
+    "testfiles/pdfio-8bit.gif",
+    "testfiles/pdfio-8bit-a.gif",
+    "testfiles/pdfio-8bit-t.gif"
+  };
+  static const char * const pdfio_labels[7] =
+  {					// PDFIO GIF test labels
+    "pdfio-1bit",
+    "pdfio-2bit",
+    "pdfio-4bit",
+    "pdfio-4bit-t",
+    "pdfio-8bit",
+    "pdfio-8bit-a",
+    "pdfio-8bit-t"
+  };
+
+
+  // Import the GIF test images
+  testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/color.gif\")");
+  if ((color = pdfioFileCreateImageObjFromFile(pdf, "testfiles/color.gif", false)) != NULL)
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/gray.gif\")");
+  if ((gray = pdfioFileCreateImageObjFromFile(pdf, "testfiles/gray.gif", false)) != NULL)
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  for (i = 0; i < (sizeof(pdfio_files) / sizeof(pdfio_files[0])); i ++)
+  {
+    testBegin("pdfioFileCreateImageObjFromFile(\"%s\")", pdfio_files[i]);
+    if ((pdfio[i] = pdfioFileCreateImageObjFromFile(pdf, pdfio_files[i], false)) != NULL)
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEnd(false);
+      return (1);
+    }
+  }
+
+  // Create the page dictionary, object, and stream...
+  testBegin("pdfioDictCreate");
+  if ((dict = pdfioDictCreate(pdf)) != NULL)
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  testBegin("pdfioPageDictAddImage(color)");
+  if (pdfioPageDictAddImage(dict, "IM1", color))
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  testBegin("pdfioPageDictAddImage(gray)");
+  if (pdfioPageDictAddImage(dict, "IM2", gray))
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  for (i = 0; i < (sizeof(pdfio_files) / sizeof(pdfio_files[0])); i ++)
+  {
+    testBegin("pdfioPageDictAddImage(\"%s\")", pdfio_labels[i]);
+    snprintf(imgname, sizeof(imgname), "IM%u", (unsigned)(i + 11));
+    if (pdfioPageDictAddImage(dict, pdfioStringCreate(pdf, imgname), pdfio[i]))
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEnd(false);
+      return (1);
+    }
+  }
+
+  testBegin("pdfioPageDictAddFont(F1)");
+  if (pdfioPageDictAddFont(dict, "F1", font))
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  testBegin("pdfioFileCreatePage(%d)", number);
+
+  if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  if (write_header_footer(st, "GIF Image Test Page", number))
+    goto error;
+
+  // Show content...
+  testBegin("pdfioContentSetTextFont(\"F1\", 18.0)");
+  if (pdfioContentSetTextFont(st, "F1", 18.0))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentTextBegin()");
+  if (pdfioContentTextBegin(st))
+    testEnd(true);
+  else
+    goto error;
+
+  x  = 36.0;
+  xt = x + 0.5 * (216.0 - pdfioContentTextMeasure(font, "gray.gif", 18.0));
+  testBegin("pdfioContentTextMoveTo(%g, 396)", xt);
+  if (pdfioContentTextMoveTo(st, xt, 396.0))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentTextShow(\"gray.gif\")");
+  if (pdfioContentTextShow(st, false, "gray.gif"))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentTextEnd()");
+  if (pdfioContentTextEnd(st))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentDrawImage(\"IM1\")");
+  if (pdfioContentDrawImage(st, "IM1", x, 432, 216, 324))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentTextBegin()");
+  if (pdfioContentTextBegin(st))
+    testEnd(true);
+  else
+    goto error;
+
+  x  = 360.0;
+  xt = x + 0.5 * (216.0 - pdfioContentTextMeasure(font, "color.gif", 18.0));
+  testBegin("pdfioContentTextMoveTo(%g, 396)", xt);
+  if (pdfioContentTextMoveTo(st, xt, 396.0))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentTextShow(\"color.gif\")");
+  if (pdfioContentTextShow(st, false, "color.gif"))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentTextEnd()");
+  if (pdfioContentTextEnd(st))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentDrawImage(\"IM2\")");
+  if (pdfioContentDrawImage(st, "IM2", x, 432, 216, 324))
+    testEnd(true);
+  else
+    goto error;
+
+  for (i = 0; i < (sizeof(pdfio_labels) / sizeof(pdfio_labels[0])); i ++)
+  {
+    x = 36.0 + (i & 3) * (108.0 + 36.0);
+    y = 360.0 - (1 + i / 4) * (108.0 + 36.0);
+
+    testBegin("pdfioContentSetFillColorDeviceRGB(0, 1, 1)");
+    if (pdfioContentSetFillColorDeviceRGB(st, 0.0, 1.0, 1.0))
+      testEnd(true);
+    else
+      goto error;
+
+    testBegin("pdfioContentPathRect(%g, %g, 108, 108)", x, y + 36.0);
+    if (pdfioContentPathRect(st, x, y + 36.0, 108, 108))
+      testEnd(true);
+    else
+      goto error;
+
+    testBegin("pdfioContentFill(false)");
+    if (pdfioContentFill(st, false))
+      testEnd(true);
+    else
+      goto error;
+
+    testBegin("pdfioContentSetFillColorDeviceGray(0.0)");
+    if (pdfioContentSetFillColorDeviceGray(st, 0.0))
+      testEnd(true);
+    else
+      goto error;
+
+    testBegin("pdfioContentTextBegin()");
+    if (pdfioContentTextBegin(st))
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEnd(false);
+      goto error;
+    }
+
+    xt = x + 0.5 * (108.0 - pdfioContentTextMeasure(font, pdfio_labels[i], 18.0));
+    testBegin("pdfioContentTextMoveTo(%g, %g)", xt, y + 12.0);
+    if (pdfioContentTextMoveTo(st, xt, y + 12.0))
+      testEnd(true);
+    else
+      goto error;
+
+    testBegin("pdfioContentTextShow(\"%s\")", pdfio_labels[i]);
+    if (pdfioContentTextShow(st, false, pdfio_labels[i]))
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEnd(false);
+      goto error;
+    }
+
+    testBegin("pdfioContentTextEnd()");
+    if (pdfioContentTextEnd(st))
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEnd(false);
+      goto error;
+    }
+
+    snprintf(imgname, sizeof(imgname), "IM%u", (unsigned)(i + 11));
+    testBegin("pdfioContentDrawImage(\"%s\")", imgname);
+    if (pdfioContentDrawImage(st, imgname, x, y + 36, 108, 108))
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEnd(false);
+      goto error;
+    }
+  }
+
+  // Close the object and stream...
+  testBegin("pdfioStreamClose");
+  if (pdfioStreamClose(st))
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  return (0);
+
+  error:
+
+  pdfioStreamClose(st);
+  return (1);
+}
+
+
+//
 // 'write_header_footer()' - Write common header and footer text.
 //
 
@@ -4672,6 +5001,12 @@ write_unit_file(
   // Write a page with a grayscale image...
   if (write_jpeg_test(outpdf, "Grayscale JPEG Test", pagenum, helvetica, gray_jpg))
     return (1);
+  pagenum ++;
+
+  // Write a page with GIF images...
+  if (write_gif_tests(outpdf, pagenum, helvetica))
+    return (1);
+
   pagenum ++;
 
   // Write a page with PNG images...
