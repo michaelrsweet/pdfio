@@ -1293,7 +1293,6 @@ do_unit_tests(void)
   if (read_unit_file("testpdfio-out.pdf", num_pages, first_image, false))
     goto fail;
 
-#if 0
   // Stream a new PDF file...
   if ((outfd = open("testpdfio-out2.pdf", O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0666)) < 0)
   {
@@ -1451,7 +1450,6 @@ do_unit_tests(void)
   // Do PDF/A tests...
   if (do_pdfa_tests())
     return (1);
-#endif // 0
 
   return (0);
 
@@ -3176,35 +3174,37 @@ write_gif_tests(pdfio_file_t *pdf,	// I - PDF file
   size_t		i;		// Looping var
   pdfio_obj_t		*color,		// color.gif
 			*gray,		// gray.gif
-			*pdfio[7];	// pdfio-*.gif
+			*pdfio[8];	// pdfio-*.gif
   char			imgname[32];	// Image name
   double		x, xt,		// X positions
 			y;		// Y position
-  static const char * const pdfio_files[7] =
+  static const char * const pdfio_files[8] =
   {					// PDFIO GIF test filenames
-    "testfiles/pdfio-1bit.gif",
-    "testfiles/pdfio-2bit.gif",
-    "testfiles/pdfio-4bit.gif",
-    "testfiles/pdfio-4bit-t.gif",
-    "testfiles/pdfio-8bit.gif",
-    "testfiles/pdfio-8bit-a.gif",
-    "testfiles/pdfio-8bit-t.gif"
+    "testfiles/pdfio-1bit.gif",		// No transparency
+    "testfiles/pdfio-2bit.gif",		// No transparency
+    "testfiles/pdfio-4bit.gif",		// No transparency
+    "testfiles/pdfio-4bit-it.gif",	// Transparency, interlaced
+    "testfiles/pdfio-8bit-i.gif",	// No transparency, interlaced
+    "testfiles/pdfio-8bit-it.gif",	// Transparency, interlaced
+    "testfiles/pdfio-8bit-a.gif",	// Animation with full frames
+    "testfiles/pdfio-8bit-aipt.gif"	// Animation with partial frames, interlaced, transparency
   };
-  static const char * const pdfio_labels[7] =
+  static const char * const pdfio_labels[8] =
   {					// PDFIO GIF test labels
     "pdfio-1bit",
     "pdfio-2bit",
     "pdfio-4bit",
-    "pdfio-4bit-t",
-    "pdfio-8bit",
+    "pdfio-4bit-it",
+    "pdfio-8bit-i",
+    "pdfio-8bit-it",
     "pdfio-8bit-a",
-    "pdfio-8bit-t"
+    "pdfio-8bit-aipt"
   };
 
 
   // Import the GIF test images
-  testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/color.gif\")");
-  if ((color = pdfioFileCreateImageObjFromFile(pdf, "testfiles/color.gif", false)) != NULL)
+  testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/gray-4bit.gif\")");
+  if ((gray = pdfioFileCreateImageObjFromFile(pdf, "testfiles/gray-4bit.gif", false)) != NULL)
   {
     testEnd(true);
   }
@@ -3214,8 +3214,8 @@ write_gif_tests(pdfio_file_t *pdf,	// I - PDF file
     return (1);
   }
 
-  testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/gray.gif\")");
-  if ((gray = pdfioFileCreateImageObjFromFile(pdf, "testfiles/gray.gif", false)) != NULL)
+  testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/color-8bit-i.gif\")");
+  if ((color = pdfioFileCreateImageObjFromFile(pdf, "testfiles/color-8bit-i.gif", false)) != NULL)
   {
     testEnd(true);
   }
@@ -3251,8 +3251,8 @@ write_gif_tests(pdfio_file_t *pdf,	// I - PDF file
     return (1);
   }
 
-  testBegin("pdfioPageDictAddImage(color)");
-  if (pdfioPageDictAddImage(dict, "IM1", color))
+  testBegin("pdfioPageDictAddImage(gray-4bit)");
+  if (pdfioPageDictAddImage(dict, "IM1", gray))
   {
     testEnd(true);
   }
@@ -3262,8 +3262,8 @@ write_gif_tests(pdfio_file_t *pdf,	// I - PDF file
     return (1);
   }
 
-  testBegin("pdfioPageDictAddImage(gray)");
-  if (pdfioPageDictAddImage(dict, "IM2", gray))
+  testBegin("pdfioPageDictAddImage(color-8bit-i)");
+  if (pdfioPageDictAddImage(dict, "IM2", color))
   {
     testEnd(true);
   }
@@ -3328,15 +3328,17 @@ write_gif_tests(pdfio_file_t *pdf,	// I - PDF file
     goto error;
 
   x  = 36.0;
-  xt = x + 0.5 * (216.0 - pdfioContentTextMeasure(font, "gray.gif", 18.0));
-  testBegin("pdfioContentTextMoveTo(%g, 396)", xt);
-  if (pdfioContentTextMoveTo(st, xt, 396.0))
+  xt = x + 0.5 * (216.0 - pdfioContentTextMeasure(font, "gray-4bit", 18.0));
+  y  = 360.0;
+
+  testBegin("pdfioContentTextMoveTo(%g, %g)", xt, y + 12.0);
+  if (pdfioContentTextMoveTo(st, xt, y + 12.0))
     testEnd(true);
   else
     goto error;
 
-  testBegin("pdfioContentTextShow(\"gray.gif\")");
-  if (pdfioContentTextShow(st, false, "gray.gif"))
+  testBegin("pdfioContentTextShow(\"gray-4bit\")");
+  if (pdfioContentTextShow(st, false, "gray-4bit"))
     testEnd(true);
   else
     goto error;
@@ -3348,7 +3350,7 @@ write_gif_tests(pdfio_file_t *pdf,	// I - PDF file
     goto error;
 
   testBegin("pdfioContentDrawImage(\"IM1\")");
-  if (pdfioContentDrawImage(st, "IM1", x, 432, 216, 324))
+  if (pdfioContentDrawImage(st, "IM1", x, y + 36, 216, 324))
     testEnd(true);
   else
     goto error;
@@ -3359,16 +3361,16 @@ write_gif_tests(pdfio_file_t *pdf,	// I - PDF file
   else
     goto error;
 
-  x  = 360.0;
-  xt = x + 0.5 * (216.0 - pdfioContentTextMeasure(font, "color.gif", 18.0));
-  testBegin("pdfioContentTextMoveTo(%g, 396)", xt);
-  if (pdfioContentTextMoveTo(st, xt, 396.0))
+  x  = 343.0;
+  xt = x + 0.5 * (216.0 - pdfioContentTextMeasure(font, "color-8bit-i", 18.0));
+  testBegin("pdfioContentTextMoveTo(%g, %g)", xt, y + 12.0);
+  if (pdfioContentTextMoveTo(st, xt, y + 12.0))
     testEnd(true);
   else
     goto error;
 
-  testBegin("pdfioContentTextShow(\"color.gif\")");
-  if (pdfioContentTextShow(st, false, "color.gif"))
+  testBegin("pdfioContentTextShow(\"color-8bit-i\")");
+  if (pdfioContentTextShow(st, false, "color-8bit-i"))
     testEnd(true);
   else
     goto error;
@@ -3380,15 +3382,15 @@ write_gif_tests(pdfio_file_t *pdf,	// I - PDF file
     goto error;
 
   testBegin("pdfioContentDrawImage(\"IM2\")");
-  if (pdfioContentDrawImage(st, "IM2", x, 432, 216, 324))
+  if (pdfioContentDrawImage(st, "IM2", x, y + 36, 216, 324))
     testEnd(true);
   else
     goto error;
 
   for (i = 0; i < (sizeof(pdfio_labels) / sizeof(pdfio_labels[0])); i ++)
   {
-    x = 36.0 + (i & 3) * (108.0 + 36.0);
-    y = 360.0 - (1 + i / 4) * (108.0 + 36.0);
+    x = 36.0 + (i & 3) * (104.0 + 36.0);
+    y = 342.0 - (1 + i / 4) * (104.0 + 36.0);
 
     testBegin("pdfioContentSetFillColorDeviceRGB(0, 1, 1)");
     if (pdfioContentSetFillColorDeviceRGB(st, 0.0, 1.0, 1.0))
@@ -3396,8 +3398,8 @@ write_gif_tests(pdfio_file_t *pdf,	// I - PDF file
     else
       goto error;
 
-    testBegin("pdfioContentPathRect(%g, %g, 108, 108)", x, y + 36.0);
-    if (pdfioContentPathRect(st, x, y + 36.0, 108, 108))
+    testBegin("pdfioContentPathRect(%g, %g, 104, 104)", x, y + 36.0);
+    if (pdfioContentPathRect(st, x, y + 36.0, 104, 104))
       testEnd(true);
     else
       goto error;
@@ -3456,7 +3458,7 @@ write_gif_tests(pdfio_file_t *pdf,	// I - PDF file
 
     snprintf(imgname, sizeof(imgname), "IM%u", (unsigned)(i + 11));
     testBegin("pdfioContentDrawImage(\"%s\")", imgname);
-    if (pdfioContentDrawImage(st, imgname, x, y + 36, 108, 108))
+    if (pdfioContentDrawImage(st, imgname, x, y + 36, 104, 104))
     {
       testEnd(true);
     }

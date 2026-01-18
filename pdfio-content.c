@@ -4030,13 +4030,13 @@ gif_get_block(pdfio_file_t *pdf,	// I - PDF file
 // 'gif_read_image()' - Read a GIF image stream...
 //
 
-static bool				// I - `true` on success, `false` on failure
+static bool				// I  - `true` on success, `false` on failure
 gif_read_image(
-    pdfio_file_t      *pdf,		// I - PDF file
-    int               fd,		// I - Input file
-    uint8_t           *data,		// I - Indexed image data
-    size_t            width,		// I - Width of image
-    size_t            height,		// I - Height of image
+    pdfio_file_t      *pdf,		// I  - PDF file
+    int               fd,		// I  - Input file
+    uint8_t           *data,		// I  - Indexed image data
+    size_t            width,		// I  - Width of image
+    size_t            height,		// I  - Height of image
     int               *ncolors,		// IO - Number of colors
     _pdfio_gif_cmap_t cmap)		// I  - Colormap
 {
@@ -4058,8 +4058,7 @@ gif_read_image(
   size_t	xpos = 0,		// Current X position
 		ypos = 0,		// Current Y position
 		pass = 0,		// Current pass
-		remaining = width * height;
-					// Remaining pixels
+		remaining;		// Remaining pixels
   bool		saw_endblock = false;	// Have we seen the 0-length block?
   static size_t	xpasses[4] = { 8, 8, 4, 2 },
 		ypasses[5] = { 0, 4, 2, 1, 0 };
@@ -4087,6 +4086,7 @@ gif_read_image(
     return (false);
   }
 
+  remaining = iwidth * iheight;
   iwidth  += ileft;
   iheight += itop;
 
@@ -4165,7 +4165,7 @@ gif_read_image(
     remaining --;
     xpos ++;
 
-    if (xpos >= width)
+    if (xpos >= iwidth)
     {
       // New line...
       xpos = ileft;
@@ -4175,7 +4175,7 @@ gif_read_image(
         // Skip lines when the image is interlaced...
         ypos += xpasses[pass];
 
-        if (ypos >= height)
+        if (ypos >= iheight)
 	{
 	  pass ++;
           ypos = ypasses[pass] + itop;
