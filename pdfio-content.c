@@ -3976,66 +3976,80 @@ create_image(
   // Generate a mask image, as needed...
   if (alpha)
   {
-    // Create the image mask dictionary...
-    if ((mask_dict = pdfioDictCopy(pdf, dict)) == NULL)
+    // See if the image mask is actually needed...
+    size_t remaining = width * height;	// Remaining pixels
+
+    for (dataptr = data + bpp; remaining > 0; remaining --, dataptr += bpp + bpc)
     {
-      free(line);
-      return (NULL);
+      if (*dataptr < 255)
+        break;
+      if (bpc == 2 && dataptr[1] < 255)
+        break;
     }
 
-    // Transparency masks are always grayscale...
-    pdfioDictSetName(mask_dict, "ColorSpace", "DeviceGray");
-
-    // Set the automatic PNG predictor to optimize compression...
-    if ((decode = pdfioDictCreate(pdf)) == NULL)
+    if (remaining > 0)
     {
-      free(line);
-      return (NULL);
-    }
-
-    pdfioDictSetNumber(decode, "BitsPerComponent", (double)depth);
-    pdfioDictSetNumber(decode, "Colors", 1);
-    pdfioDictSetNumber(decode, "Columns", (double)width);
-    pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
-    pdfioDictSetDict(mask_dict, "DecodeParms", decode);
-
-    // Create the mask object and write the mask image...
-    if ((mask_obj = pdfioFileCreateObj(pdf, mask_dict)) == NULL)
-    {
-      free(line);
-      return (NULL);
-    }
-
-    if ((st = pdfioObjCreateStream(mask_obj, PDFIO_FILTER_FLATE)) == NULL)
-    {
-      free(line);
-      pdfioObjClose(mask_obj);
-      return (NULL);
-    }
-
-    for (y = height, dataptr = data + bpp; y > 0; y --)
-    {
-      if (bpc == 1)
+      // Create the image mask dictionary...
+      if ((mask_dict = pdfioDictCopy(pdf, dict)) == NULL)
       {
-	for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
-	  *lineptr++ = *dataptr++;
+	free(line);
+	return (NULL);
       }
-      else
+
+      // Transparency masks are always grayscale...
+      pdfioDictSetName(mask_dict, "ColorSpace", "DeviceGray");
+
+      // Set the automatic PNG predictor to optimize compression...
+      if ((decode = pdfioDictCreate(pdf)) == NULL)
       {
-	for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
+	free(line);
+	return (NULL);
+      }
+
+      pdfioDictSetNumber(decode, "BitsPerComponent", (double)depth);
+      pdfioDictSetNumber(decode, "Colors", 1);
+      pdfioDictSetNumber(decode, "Columns", (double)width);
+      pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
+      pdfioDictSetDict(mask_dict, "DecodeParms", decode);
+
+      // Create the mask object and write the mask image...
+      if ((mask_obj = pdfioFileCreateObj(pdf, mask_dict)) == NULL)
+      {
+	free(line);
+	return (NULL);
+      }
+
+      if ((st = pdfioObjCreateStream(mask_obj, PDFIO_FILTER_FLATE)) == NULL)
+      {
+	free(line);
+	pdfioObjClose(mask_obj);
+	return (NULL);
+      }
+
+      for (y = height, dataptr = data + bpp; y > 0; y --)
+      {
+	if (bpc == 1)
 	{
-	  *lineptr++ = *dataptr++;
-	  *lineptr++ = *dataptr++;
+	  for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
+	    *lineptr++ = *dataptr++;
 	}
+	else
+	{
+	  for (x = width, lineptr = line; x > 0; x --, dataptr += bpp)
+	  {
+	    *lineptr++ = *dataptr++;
+	    *lineptr++ = *dataptr++;
+	  }
+	}
+
+	pdfioStreamWrite(st, line, width * bpc);
       }
 
-      pdfioStreamWrite(st, line, width * bpc);
+      pdfioStreamClose(st);
+
+      // Use the transparency mask...
+      pdfioDictSetObj(dict, "SMask", mask_obj);
     }
-
-    pdfioStreamClose(st);
-
-    // Use the transparency mask...
-    pdfioDictSetObj(dict, "SMask", mask_obj);
   }
 
   // Set the automatic PNG predictor to optimize compression...
