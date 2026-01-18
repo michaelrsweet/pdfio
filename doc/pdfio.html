@@ -570,10 +570,13 @@ span.string {
 </li>
 <li><p>A POSIX-compliant <code>sh</code> program</p>
 </li>
-<li><p>ZLIB (<a href="https://www.zlib.net/">https://www.zlib.net/</a>) 1.0 or higher</p>
+<li><p>libpng (<a href="https://www.libpng.org/">https://www.libpng.org/</a>) 1.6 or later for full PNG image support (optional)</p>
+</li>
+<li><p>libwebp (<a href="https://developers.google.com/speed/webp">https://developers.google.com/speed/webp</a>) 1.0 or later for WebP image support (optional)</p>
+</li>
+<li><p>ZLIB (<a href="https://www.zlib.net/">https://www.zlib.net/</a>) 1.1 or later</p>
 </li>
 </ul>
-<p>PDFio will also use libpng 1.6 or higher (<a href="https://www.libpng.org/">https://www.libpng.org/</a>) to provide enhanced PNG image support.</p>
 <p>IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.</p>
 <h3 class="title" id="installing-pdfio">Installing PDFio</h3>
 <p>PDFio comes with a configure script that creates a portable makefile that will work on any POSIX-compliant system with ZLIB installed. To make it, run:</p>
@@ -1046,7 +1049,7 @@ pdfio_obj_t *img =
                                     <span class="comment">/*alpha*/</span><span class="reserved">true</span>, <span class="comment">/*interpolate*/</span><span class="reserved">false</span>);
 </code></pre>
 <p>The &quot;interpolate&quot; argument specifies whether the colors in the image should be smoothed/interpolated when scaling. This is most useful for photographs but should be <code>false</code> for screenshot and barcode images.</p>
-<p>If you have a GIF, JPEG, or PNG file, use the <a href="#pdfioFileCreateImageObjFromFile"><code>pdfioFileCreateImageObjFromFile</code></a> function to copy the image into a PDF image object, for example:</p>
+<p>If you have a GIF, JPEG, PNG, or WebP file, use the <a href="#pdfioFileCreateImageObjFromFile"><code>pdfioFileCreateImageObjFromFile</code></a> function to copy the image into a PDF image object, for example:</p>
 <pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
 pdfio_obj_t *img =
     pdfioFileCreateImageObjFromFile(pdf, <span class="string">&quot;myphoto.jpg&quot;</span>, <span class="comment">/*interpolate*/</span><span class="reserved">true</span>);
@@ -4480,10 +4483,10 @@ files do not support alpha-based transparency.</blockquote>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Object</p>
 <h4 class="discussion">Discussion</h4>
-<p class="discussion">This function creates an image object in a PDF file from a GIF, JPEG, or PNG
-file.  The &quot;filename&quot; parameter specifies the name of the GIF, JPEG, or PNG
-file, while the &quot;interpolate&quot; parameter specifies whether to interpolate when
-scaling the image on the page.<br>
+<p class="discussion">This function creates an image object in a PDF file from a GIF, JPEG, PNG, or
+WebP file.  The &quot;filename&quot; parameter specifies the name of the GIF, JPEG,
+PNG, or WebP file, while the &quot;interpolate&quot; parameter specifies whether to
+interpolate when scaling the image on the page.<br>
 <br>
 </p><blockquote>
 Note: PNG files containing transparency cannot be used when producing

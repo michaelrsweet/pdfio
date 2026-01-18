@@ -10,6 +10,7 @@ v1.7.0 - YYYY-MM-DD
   (Issue #11)
 - Added support for LZWDecode filters (Issue #11)
 - Added support for GIF files (Issue #145)
+- Added support for WebP files (Issue #144)
 - Added `pdfioPageGetXxx` functions to get values from the page dictionaries
   (Issue #150)
 - Fixed a buffer overflow in the (still not enabled) AES-256 code.

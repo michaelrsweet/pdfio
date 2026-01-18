@@ -52,11 +52,17 @@ A POSIX\-compliant sh program
 
 .IP \(bu 5
 .PP
-ZLIB (https://www.zlib.net/) 1.0 or higher
+libpng (https://www.libpng.org/) 1.6 or later for full PNG image support (optional)
 
-
+.IP \(bu 5
 .PP
-PDFio will also use libpng 1.6 or higher (https://www.libpng.org/) to provide enhanced PNG image support.
+libwebp (https://developers.google.com/speed/webp) 1.0 or later for WebP image support (optional)
+
+.IP \(bu 5
+.PP
+ZLIB (https://www.zlib.net/) 1.1 or later
+
+
 .PP
 IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
 .SS Installing PDFio
@@ -771,7 +777,7 @@ will create an object for a 1024x1024 RGBA image in memory, using the default co
 .PP
 The "interpolate" argument specifies whether the colors in the image should be smoothed/interpolated when scaling. This is most useful for photographs but should be false for screenshot and barcode images.
 .PP
-If you have a GIF, JPEG, or PNG file, use the pdfioFileCreateImageObjFromFile function to copy the image into a PDF image object, for example:
+If you have a GIF, JPEG, PNG, or WebP file, use the pdfioFileCreateImageObjFromFile function to copy the image into a PDF image object, for example:
 .nf
 
     pdfio_file_t *pdf = pdfioFileCreate(...);
@@ -4187,10 +4193,10 @@ pdfio_obj_t * pdfioFileCreateImageObjFromFile (
 );
 .fi
 .PP
-This function creates an image object in a PDF file from a GIF, JPEG, or PNG
-file.  The "filename" parameter specifies the name of the GIF, JPEG, or PNG
-file, while the "interpolate" parameter specifies whether to interpolate when
-scaling the image on the page.
+This function creates an image object in a PDF file from a GIF, JPEG, PNG, or
+WebP file.  The "filename" parameter specifies the name of the GIF, JPEG,
+PNG, or WebP file, while the "interpolate" parameter specifies whether to
+interpolate when scaling the image on the page.
 .PP
 .IP 5
 Note: PNG files containing transparency cannot be used when producing

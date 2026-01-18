@@ -60,6 +60,9 @@ static int	write_pdfa_file(const char *filename, const char *pdfa_version);
 static int	write_png_tests(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
 static int	write_text_test(pdfio_file_t *pdf, int first_page, pdfio_obj_t *font, const char *filename);
 static int	write_unit_file(pdfio_file_t *inpdf, const char *outname, pdfio_file_t *outpdf, size_t *num_pages, size_t *first_image);
+#ifdef HAVE_LIBWEBP
+static int	write_webp_tests(pdfio_file_t *pdf, int number, pdfio_obj_t *font);
+#endif // HAVE_LIBWEBP
 
 
 //
@@ -5021,6 +5024,14 @@ write_unit_file(
   pagenum ++;
 #endif // HAVE_LIBPNG
 
+#ifdef HAVE_LIBWEBP
+  // Write a page with WebP images...
+  if (write_webp_tests(outpdf, pagenum, helvetica))
+    return (1);
+
+  pagenum ++;
+#endif // HAVE_LIBWEBP
+
   // Write a page that tests multiple color spaces...
   if (write_color_test(outpdf, pagenum, helvetica))
     return (1);
@@ -5085,3 +5096,325 @@ write_unit_file(
 
   return (0);
 }
+
+
+#ifdef HAVE_LIBWEBP
+//
+// 'write_webp_tests()' - Write pages of WebP test images.
+//
+
+static int				// O - 0 on success, 1 on failure
+write_webp_tests(pdfio_file_t *pdf,	// I - PDF file
+	         int          number,	// I - Page number
+	         pdfio_obj_t  *font)	// I - Page number font
+{
+  pdfio_dict_t		*dict;		// Page dictionary
+  pdfio_stream_t	*st;		// Page contents stream
+  size_t		i;		// Looping var
+  pdfio_obj_t		*color,		// color.gif
+			*gray,		// gray.gif
+			*pdfio[3];	// pdfio-*.gif
+  char			imgname[32];	// Image name
+  double		x, xt,		// X positions
+			y;		// Y position
+  static const char * const pdfio_files[3] =
+  {					// PDFIO WebP test filenames
+    "testfiles/pdfio-color.webp",	// No transparency
+    "testfiles/pdfio-gray.webp",	// No transparency
+    "testfiles/pdfio-rgba.webp"		// Transparency
+  };
+  static const char * const pdfio_labels[3] =
+  {					// PDFIO WebP test labels
+    "pdfio-color",
+    "pdfio-gray",
+    "pdfio-rgba"
+  };
+
+
+  // Import the WebP test images
+  testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/gray.webp\")");
+  if ((gray = pdfioFileCreateImageObjFromFile(pdf, "testfiles/gray.webp", false)) != NULL)
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  testBegin("pdfioFileCreateImageObjFromFile(\"testfiles/color.webp\")");
+  if ((color = pdfioFileCreateImageObjFromFile(pdf, "testfiles/color.webp", false)) != NULL)
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  for (i = 0; i < (sizeof(pdfio_files) / sizeof(pdfio_files[0])); i ++)
+  {
+    testBegin("pdfioFileCreateImageObjFromFile(\"%s\")", pdfio_files[i]);
+    if ((pdfio[i] = pdfioFileCreateImageObjFromFile(pdf, pdfio_files[i], false)) != NULL)
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEnd(false);
+      return (1);
+    }
+  }
+
+  // Create the page dictionary, object, and stream...
+  testBegin("pdfioDictCreate");
+  if ((dict = pdfioDictCreate(pdf)) != NULL)
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  testBegin("pdfioPageDictAddImage(gray)");
+  if (pdfioPageDictAddImage(dict, "IM1", gray))
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  testBegin("pdfioPageDictAddImage(color)");
+  if (pdfioPageDictAddImage(dict, "IM2", color))
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  for (i = 0; i < (sizeof(pdfio_files) / sizeof(pdfio_files[0])); i ++)
+  {
+    testBegin("pdfioPageDictAddImage(\"%s\")", pdfio_labels[i]);
+    snprintf(imgname, sizeof(imgname), "IM%u", (unsigned)(i + 11));
+    if (pdfioPageDictAddImage(dict, pdfioStringCreate(pdf, imgname), pdfio[i]))
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEnd(false);
+      return (1);
+    }
+  }
+
+  testBegin("pdfioPageDictAddFont(F1)");
+  if (pdfioPageDictAddFont(dict, "F1", font))
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  testBegin("pdfioFileCreatePage(%d)", number);
+
+  if ((st = pdfioFileCreatePage(pdf, dict)) != NULL)
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  if (write_header_footer(st, "WebP Image Test Page", number))
+    goto error;
+
+  // Show content...
+  testBegin("pdfioContentSetTextFont(\"F1\", 18.0)");
+  if (pdfioContentSetTextFont(st, "F1", 18.0))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentTextBegin()");
+  if (pdfioContentTextBegin(st))
+    testEnd(true);
+  else
+    goto error;
+
+  x  = 36.0;
+  xt = x + 0.5 * (216.0 - pdfioContentTextMeasure(font, "gray", 18.0));
+  y  = 360.0;
+
+  testBegin("pdfioContentTextMoveTo(%g, %g)", xt, y + 12.0);
+  if (pdfioContentTextMoveTo(st, xt, y + 12.0))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentTextShow(\"gray\")");
+  if (pdfioContentTextShow(st, false, "gray"))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentTextEnd()");
+  if (pdfioContentTextEnd(st))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentDrawImage(\"IM1\")");
+  if (pdfioContentDrawImage(st, "IM1", x, y + 36, 216, 324))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentTextBegin()");
+  if (pdfioContentTextBegin(st))
+    testEnd(true);
+  else
+    goto error;
+
+  x  = 343.0;
+  xt = x + 0.5 * (216.0 - pdfioContentTextMeasure(font, "color", 18.0));
+  testBegin("pdfioContentTextMoveTo(%g, %g)", xt, y + 12.0);
+  if (pdfioContentTextMoveTo(st, xt, y + 12.0))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentTextShow(\"color\")");
+  if (pdfioContentTextShow(st, false, "color"))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentTextEnd()");
+  if (pdfioContentTextEnd(st))
+    testEnd(true);
+  else
+    goto error;
+
+  testBegin("pdfioContentDrawImage(\"IM2\")");
+  if (pdfioContentDrawImage(st, "IM2", x, y + 36, 216, 324))
+    testEnd(true);
+  else
+    goto error;
+
+  for (i = 0; i < (sizeof(pdfio_labels) / sizeof(pdfio_labels[0])); i ++)
+  {
+    x = 36.0 + (i & 3) * (150.0 + 36.0);
+    y = 342.0 - (1 + i / 3) * (150.0 + 36.0);
+
+    testBegin("pdfioContentSetFillColorDeviceRGB(0, 1, 1)");
+    if (pdfioContentSetFillColorDeviceRGB(st, 0.0, 1.0, 1.0))
+      testEnd(true);
+    else
+      goto error;
+
+    testBegin("pdfioContentPathRect(%g, %g, 150, 150)", x, y + 36.0);
+    if (pdfioContentPathRect(st, x, y + 36.0, 150, 150))
+      testEnd(true);
+    else
+      goto error;
+
+    testBegin("pdfioContentFill(false)");
+    if (pdfioContentFill(st, false))
+      testEnd(true);
+    else
+      goto error;
+
+    testBegin("pdfioContentSetFillColorDeviceGray(0.0)");
+    if (pdfioContentSetFillColorDeviceGray(st, 0.0))
+      testEnd(true);
+    else
+      goto error;
+
+    testBegin("pdfioContentTextBegin()");
+    if (pdfioContentTextBegin(st))
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEnd(false);
+      goto error;
+    }
+
+    xt = x + 0.5 * (150.0 - pdfioContentTextMeasure(font, pdfio_labels[i], 18.0));
+    testBegin("pdfioContentTextMoveTo(%g, %g)", xt, y + 12.0);
+    if (pdfioContentTextMoveTo(st, xt, y + 12.0))
+      testEnd(true);
+    else
+      goto error;
+
+    testBegin("pdfioContentTextShow(\"%s\")", pdfio_labels[i]);
+    if (pdfioContentTextShow(st, false, pdfio_labels[i]))
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEnd(false);
+      goto error;
+    }
+
+    testBegin("pdfioContentTextEnd()");
+    if (pdfioContentTextEnd(st))
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEnd(false);
+      goto error;
+    }
+
+    snprintf(imgname, sizeof(imgname), "IM%u", (unsigned)(i + 11));
+    testBegin("pdfioContentDrawImage(\"%s\")", imgname);
+    if (pdfioContentDrawImage(st, imgname, x, y + 36, 150, 150))
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEnd(false);
+      goto error;
+    }
+  }
+
+  // Close the object and stream...
+  testBegin("pdfioStreamClose");
+  if (pdfioStreamClose(st))
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  return (0);
+
+  error:
+
+  pdfioStreamClose(st);
+  return (1);
+}
+#endif // HAVE_LIBWEBP

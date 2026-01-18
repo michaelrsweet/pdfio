@@ -734,6 +734,7 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_libpng
+enable_libwebp
 enable_static
 enable_shared
 enable_debug
@@ -1372,7 +1373,9 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-libpng         use libpng for pdfioFileCreateImageObjFromFile,
+  --disable-libpng        use libpng for pdfioFileCreateImageObjFromFile,
+                          default=auto
+  --disable-libwebp       use libwebp for pdfioFileCreateImageObjFromFile,
                           default=auto
   --disable-static        do not install static library
   --enable-shared         install shared library
@@ -4297,6 +4300,51 @@ elif test x$enable_libpng = xyes
 then :
 
     as_fn_error $? "libpng-dev 1.6 or later required for --enable-libpng." "$LINENO" 5
+
+fi
+
+
+# Check whether --enable-libwebp was given.
+if test ${enable_libwebp+y}
+then :
+  enableval=$enable_libwebp;
+fi
+
+
+if test "x$PKGCONFIG" != x -a x$enable_libwebp != xno
+then :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libwebp" >&5
+printf %s "checking for libwebp... " >&6; }
+    if $PKGCONFIG --exists libwebp
+then :
+
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; };
+
+printf "%s\n" "#define HAVE_LIBWEBP 1" >>confdefs.h
+
+	CPPFLAGS="$($PKGCONFIG --cflags libwebp) -DHAVE_LIBWEBP=1 $CPPFLAGS"
+	LIBS="$($PKGCONFIG --libs libwebp) -lz $LIBS"
+	PKGCONFIG_REQUIRES_PRIVATE="libwebp, $PKGCONFIG_REQUIRES_PRIVATE"
+
+else $as_nop
+
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; };
+	if test x$enable_libwebp = xyes
+then :
+
+	    as_fn_error $? "libwebp-dev required for --enable-libwebp." "$LINENO" 5
+
+fi
+
+fi
+
+elif test x$enable_libwebp = xyes
+then :
+
+    as_fn_error $? "libwebp-dev required for --enable-libwebp." "$LINENO" 5
 
 fi
 

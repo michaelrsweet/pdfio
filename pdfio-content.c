@@ -12,9 +12,13 @@
 #include "pdfio-base-font-widths.h"
 #include "pdfio-cgats001-compat.h"
 #include "ttf.h"
+#include <sys/stat.h>
 #ifdef HAVE_LIBPNG
 #  include <png.h>
 #endif // HAVE_LIBPNG
+#ifdef HAVE_LIBWEBP
+#  include <webp/decode.h>
+#endif // HAVE_LIBWEBP
 #include <math.h>
 #ifndef M_PI
 #  define M_PI	3.14159265358979323846264338327950288
@@ -91,6 +95,9 @@ typedef pdfio_obj_t *(*_pdfio_image_func_t)(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_gif(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_jpeg(pdfio_dict_t *dict, int fd);
 static pdfio_obj_t	*copy_png(pdfio_dict_t *dict, int fd);
+#ifdef HAVE_LIBWEBP
+static pdfio_obj_t	*copy_webp(pdfio_dict_t *dict, int fd);
+#endif // HAVE_LIBWEBP
 static bool		create_cp1252(pdfio_file_t *pdf);
 static pdfio_obj_t	*create_font(pdfio_obj_t *file_obj, ttf_t *font, bool unicode);
 static pdfio_obj_t	*create_image(pdfio_dict_t *dict, const unsigned char *data, size_t width, size_t height, size_t depth, size_t num_colors, bool alpha);
@@ -2141,10 +2148,10 @@ pdfioFileCreateImageObjFromData(
 //
 // 'pdfioFileCreateImageObjFromFile()' - Add an image object to a PDF file from a file.
 //
-// This function creates an image object in a PDF file from a GIF, JPEG, or PNG
-// file.  The "filename" parameter specifies the name of the GIF, JPEG, or PNG
-// file, while the "interpolate" parameter specifies whether to interpolate when
-// scaling the image on the page.
+// This function creates an image object in a PDF file from a GIF, JPEG, PNG, or
+// WebP file.  The "filename" parameter specifies the name of the GIF, JPEG,
+// PNG, or WebP file, while the "interpolate" parameter specifies whether to
+// interpolate when scaling the image on the page.
 //
 // > Note: PNG files containing transparency cannot be used when producing
 // > PDF/A files.  Files containing animation yield the final frame of the
@@ -2201,9 +2208,16 @@ pdfioFileCreateImageObjFromFile(
   }
   else if (!memcmp(buffer, "\377\330\377", 3))
   {
-   // JPEG image...
+    // JPEG image...
     copy_func = copy_jpeg;
   }
+#ifdef HAVE_LIBWEBP
+  else if (!memcmp(buffer, "RIFF", 4) && !memcmp(buffer + 8, "WEBP", 4))
+  {
+    // WebP image
+    copy_func = copy_webp;
+  }
+#endif // HAVE_LIBWEBP
   else
   {
     // Something else that isn't supported...
@@ -2498,6 +2512,7 @@ copy_gif(pdfio_dict_t *dict,		// I - Image dictionary
 			extdesc;	// Extension descriptor
   uint8_t		block[256];	// Extension block
   ssize_t		blocklen;	// Length of block
+  pdfio_dict_t		*decode;	// Decode parameters
 
 
   // Read the header; we already know it is a GIF file...
@@ -2578,6 +2593,19 @@ copy_gif(pdfio_dict_t *dict,		// I - Image dictionary
 
             pdfioDictSetArray(dict, "Mask", mask);
           }
+
+	  if ((decode = pdfioDictCreate(dict->pdf)) == NULL)
+	  {
+	    _pdfioFileError(dict->pdf, "Unable to create decode parameters for WebP image.");
+	    goto done;
+	  }
+
+	  pdfioDictSetNumber(decode, "BitsPerComponent", 8);
+	  pdfioDictSetNumber(decode, "Colors", 1);
+	  pdfioDictSetNumber(decode, "Columns", width);
+	  pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
+	  pdfioDictSetDict(dict, "DecodeParms", decode);
+	  pdfioDictSetName(dict, "Filter", "FlateDecode");
 
           image_obj = create_image(dict, data, width, height, 8, 1, /*alpha*/false);
           goto done;
@@ -3451,6 +3479,86 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   return (NULL);
 #endif // HAVE_LIBPNG
 }
+
+
+#ifdef HAVE_LIBWEBP
+//
+// 'copy_webp()' - Copy a WebP image.
+//
+
+static pdfio_obj_t *			// O - Image object
+copy_webp(pdfio_dict_t *dict,		// I - Image dictionary
+          int          fd)		// I - Image file
+{
+  struct stat	finfo;			// Image file information
+  uint8_t	*fdata = NULL;		// Image file data
+  int		width,			// Width of image
+		height;			// Height of image
+  uint8_t	*pixels = NULL;		// Image pixel (RGBA) data
+  pdfio_obj_t	*obj = NULL;		// Image object
+  pdfio_dict_t	*decode;		// Stream decode parameters
+
+
+  if (fstat(fd, &finfo))
+  {
+    _pdfioFileError(dict->pdf, "Unable to get WebP file information: %s", strerror(errno));
+    return (NULL);
+  }
+
+  if (finfo.st_size > (1024 * 1024))
+  {
+    _pdfioFileError(dict->pdf, "WebP image is too large.");
+    goto done;
+  }
+
+  if ((fdata = malloc((size_t)finfo.st_size)) == NULL)
+  {
+    _pdfioFileError(dict->pdf, "Unable to allocate memory for WebP file: %s", strerror(errno));
+    goto done;
+  }
+
+  if (read(fd, fdata, (size_t)finfo.st_size) < (ssize_t)finfo.st_size)
+  {
+    _pdfioFileError(dict->pdf, "Unable to read WebP file.");
+    goto done;
+  }
+
+  if ((pixels = WebPDecodeRGBA(fdata, (size_t)finfo.st_size, &width, &height)) == NULL)
+  {
+    _pdfioFileError(dict->pdf, "Invalid WebP file.");
+    goto done;
+  }
+
+  pdfioDictSetNumber(dict, "Width", width);
+  pdfioDictSetNumber(dict, "Height", height);
+  pdfioDictSetNumber(dict, "BitsPerComponent", 8);
+  pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, /*num_colors*/3, PDFIO_CS_SRGB));
+  pdfioDictSetName(dict, "Filter", "FlateDecode");
+
+  if ((decode = pdfioDictCreate(dict->pdf)) == NULL)
+  {
+    _pdfioFileError(dict->pdf, "Unable to create decode parameters for WebP image.");
+    goto done;
+  }
+
+  pdfioDictSetNumber(decode, "BitsPerComponent", 8);
+  pdfioDictSetNumber(decode, "Colors", 3);
+  pdfioDictSetNumber(decode, "Columns", width);
+  pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
+  pdfioDictSetDict(dict, "DecodeParms", decode);
+
+  obj = create_image(dict, pixels, width, height, /*depth*/8, /*num_colors*/3, /*alpha*/true);
+
+  done:
+
+  free(fdata);
+
+  if (pixels)
+    WebPFree(pixels);
+
+  return (obj);
+}
+#endif // HAVE_LIBWEBP
 
 
 //

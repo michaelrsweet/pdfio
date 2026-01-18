@@ -28,8 +28,12 @@ PDFio requires the following to build the software:
 
 - A C99 compiler such as Clang, GCC, or MS Visual C
 - A POSIX-compliant `make` program
-- LIBPNG (1.6 or later) for full PNG image support (optional)
-- ZLIB (1.1 or later)
+- A POSIX-compliant `sh` program
+- libpng (<https://www.libpng.org/>) 1.6 or later for full PNG image support
+  (optional)
+- libwebp (<https://developers.google.com/speed/webp>) 1.0 or later for WebP
+  image support (optional)
+- ZLIB (<https://www.zlib.net/>) 1.1 or later
 
 IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
 

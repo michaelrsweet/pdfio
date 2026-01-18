@@ -1,7 +1,7 @@
 dnl
 dnl Configuration script for PDFio
 dnl
-dnl Copyright © 2023-2025 by Michael R Sweet
+dnl Copyright © 2023-2026 by Michael R Sweet
 dnl
 dnl Licensed under Apache License v2.0.  See the file "LICENSE" for more
 dnl information.
@@ -168,7 +168,7 @@ AS_IF([$PKGCONFIG --exists zlib], [
 
 
 dnl libpng...
-AC_ARG_ENABLE([libpng], AS_HELP_STRING([--enable-libpng], [use libpng for pdfioFileCreateImageObjFromFile, default=auto]))
+AC_ARG_ENABLE([libpng], AS_HELP_STRING([--disable-libpng], [use libpng for pdfioFileCreateImageObjFromFile, default=auto]))
 
 AS_IF([test "x$PKGCONFIG" != x -a x$enable_libpng != xno], [
     AC_MSG_CHECKING([for libpng-1.6.x])
@@ -186,6 +186,28 @@ AS_IF([test "x$PKGCONFIG" != x -a x$enable_libpng != xno], [
     ])
 ], [test x$enable_libpng = xyes], [
     AC_MSG_ERROR([libpng-dev 1.6 or later required for --enable-libpng.])
+])
+
+
+dnl libwebp...
+AC_ARG_ENABLE([libwebp], AS_HELP_STRING([--disable-libwebp], [use libwebp for pdfioFileCreateImageObjFromFile, default=auto]))
+
+AS_IF([test "x$PKGCONFIG" != x -a x$enable_libwebp != xno], [
+    AC_MSG_CHECKING([for libwebp])
+    AS_IF([$PKGCONFIG --exists libwebp], [
+	AC_MSG_RESULT([yes]);
+	AC_DEFINE([HAVE_LIBWEBP], 1, [Have WebP library?])
+	CPPFLAGS="$($PKGCONFIG --cflags libwebp) -DHAVE_LIBWEBP=1 $CPPFLAGS"
+	LIBS="$($PKGCONFIG --libs libwebp) -lz $LIBS"
+	PKGCONFIG_REQUIRES_PRIVATE="libwebp, $PKGCONFIG_REQUIRES_PRIVATE"
+    ], [
+	AC_MSG_RESULT([no]);
+	AS_IF([test x$enable_libwebp = xyes], [
+	    AC_MSG_ERROR([libwebp-dev required for --enable-libwebp.])
+	])
+    ])
+], [test x$enable_libwebp = xyes], [
+    AC_MSG_ERROR([libwebp-dev required for --enable-libwebp.])
 ])
 
 

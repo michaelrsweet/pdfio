@@ -28,10 +28,11 @@ PDFio requires the following to build the software:
 - A C99 compiler such as Clang, GCC, or MS Visual C
 - A POSIX-compliant `make` program
 - A POSIX-compliant `sh` program
-- ZLIB (<https://www.zlib.net/>) 1.0 or higher
-
-PDFio will also use libpng 1.6 or higher (<https://www.libpng.org/>) to provide
-enhanced PNG image support.
+- libpng (<https://www.libpng.org/>) 1.6 or later for full PNG image support
+  (optional)
+- libwebp (<https://developers.google.com/speed/webp>) 1.0 or later for WebP
+  image support (optional)
+- ZLIB (<https://www.zlib.net/>) 1.1 or later
 
 IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
 
@@ -752,7 +753,7 @@ The "interpolate" argument specifies whether the colors in the image should be
 smoothed/interpolated when scaling.  This is most useful for photographs but
 should be `false` for screenshot and barcode images.
 
-If you have a GIF, JPEG, or PNG file, use the
+If you have a GIF, JPEG, PNG, or WebP file, use the
 [`pdfioFileCreateImageObjFromFile`](@@) function to copy the image into a PDF
 image object, for example:
 
