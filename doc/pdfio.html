@@ -560,7 +560,7 @@ span.string {
 </li>
 </ul>
 <p>PDFio is <em>not</em> concerned with rendering or viewing a PDF file, although a PDF RIP or viewer could be written using it.</p>
-<p>PDFio is Copyright © 2021-2025 by Michael R Sweet and is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GPL2/LGPL2 software. See the files &quot;LICENSE&quot; and &quot;NOTICE&quot; for more information.</p>
+<p>PDFio is Copyright © 2021-2026 by Michael R Sweet and is licensed under the Apache License Version 2.0 with an (optional) exception to allow linking against GPL2/LGPL2 software. See the files &quot;LICENSE&quot; and &quot;NOTICE&quot; for more information.</p>
 <h3 class="title" id="requirements">Requirements</h3>
 <p>PDFio requires the following to build the software:</p>
 <ul>
@@ -792,39 +792,26 @@ pdfio_obj_t  *page;  <span class="comment">// Current page</span>
   <span class="comment">// do something with page</span>
 }
 </code></pre>
-<p>Each page is represented by a &quot;page tree&quot; object (what <a href="#pdfioFileGetPage"><code>pdfioFileGetPage</code></a> returns) that specifies information about the page and one or more &quot;content&quot; objects that contain the images, fonts, text, and graphics that appear on the page. Use the <a href="#pdfioPageGetNumStreams"><code>pdfioPageGetNumStreams</code></a> and <a href="#pdfioPageOpenStream"><code>pdfioPageOpenStream</code></a> functions to access the content streams for each page, and <a href="#pdfioObjGetDict"><code>pdfioObjGetDict</code></a> to get the associated page object dictionary. For example, if you want to display the media and crop boxes for a given page:</p>
+<p>Each page is represented by a &quot;page tree&quot; object (what <a href="#pdfioFileGetPage"><code>pdfioFileGetPage</code></a> returns) that specifies information about the page and one or more &quot;content&quot; objects that contain the images, fonts, text, and graphics that appear on the page. Use the <a href="#pdfioPageGetNumStreams"><code>pdfioPageGetNumStreams</code></a> and <a href="#pdfioPageOpenStream"><code>pdfioPageOpenStream</code></a> functions to access the content streams for each page, <a href="#pdfioObjGetDict"><code>pdfioObjGetDict</code></a> to get the associated page object dictionary, and <a href="#pdfioPageGetArray"><code>pdfioPageGetArray</code></a>, <a href="#pdfioPageGetBinary"><code>pdfioPageGetBinary</code></a>, <a href="#pdfioPageGetBoolean"><code>pdfioPageGetBoolean</code></a>, <a href="#pdfioPageGetDate"><code>pdfioPageGetDate</code></a>, <a href="#pdfioPageGetDict"><code>pdfioPageGetDict</code></a>, <a href="#pdfioPageGetName"><code>pdfioPageGetName</code></a>, <a href="#pdfioPageGetObj"><code>pdfioPageGetObj</code></a>, <a href="#pdfioPageGetRect"><code>pdfioPageGetRect</code></a>, and <a href="#pdfioPageGetString"><code>pdfioPageGetString</code></a> to get a value from the page object dictionary or its parents. For example, if you want to display the media and crop boxes for a given page:</p>
 <pre><code class="language-c">pdfio_file_t  *pdf;             <span class="comment">// PDF file</span>
 size_t        i;                <span class="comment">// Looping var</span>
 size_t        count;            <span class="comment">// Number of pages</span>
 pdfio_obj_t   *page;            <span class="comment">// Current page</span>
-pdfio_dict_t  *dict;            <span class="comment">// Current page dictionary</span>
-pdfio_array_t *media_box;       <span class="comment">// MediaBox array</span>
-<span class="reserved">double</span>        media_values[<span class="number">4</span>];  <span class="comment">// MediaBox values</span>
-pdfio_array_t *crop_box;        <span class="comment">// CropBox array</span>
-<span class="reserved">double</span>        crop_values[<span class="number">4</span>];   <span class="comment">// CropBox values</span>
+pdfio_rect_t  media_box;        <span class="comment">// MediaBox values</span>
+pdfio_rect_t  crop_box;         <span class="comment">// CropBox values</span>
 
 <span class="comment">// Iterate the pages in the PDF file</span>
 <span class="reserved">for</span> (i = <span class="number">0</span>, count = pdfioFileGetNumPages(pdf); i &lt; count; i ++)
 {
   page = pdfioFileGetPage(pdf, i);
-  dict = pdfioObjGetDict(page);
 
-  media_box       = pdfioDictGetArray(dict, <span class="string">&quot;MediaBox&quot;</span>);
-  media_values[<span class="number">0</span>] = pdfioArrayGetNumber(media_box, <span class="number">0</span>);
-  media_values[<span class="number">1</span>] = pdfioArrayGetNumber(media_box, <span class="number">1</span>);
-  media_values[<span class="number">2</span>] = pdfioArrayGetNumber(media_box, <span class="number">2</span>);
-  media_values[<span class="number">3</span>] = pdfioArrayGetNumber(media_box, <span class="number">3</span>);
-
-  crop_box       = pdfioDictGetArray(dict, <span class="string">&quot;CropBox&quot;</span>);
-  crop_values[<span class="number">0</span>] = pdfioArrayGetNumber(crop_box, <span class="number">0</span>);
-  crop_values[<span class="number">1</span>] = pdfioArrayGetNumber(crop_box, <span class="number">1</span>);
-  crop_values[<span class="number">2</span>] = pdfioArrayGetNumber(crop_box, <span class="number">2</span>);
-  crop_values[<span class="number">3</span>] = pdfioArrayGetNumber(crop_box, <span class="number">3</span>);
+  pdfioPageGetRect(page, <span class="string">&quot;MediaBox&quot;</span>, &amp;media_box);
+  pdfioPageGetRect(page, <span class="string">&quot;CropBox&quot;</span>, &amp;crop_box);
 
   printf(<span class="string">&quot;Page %u: MediaBox=[%g %g %g %g], CropBox=[%g %g %g %g]\n&quot;</span>,
          (<span class="reserved">unsigned</span>)(i + <span class="number">1</span>),
-         media_values[<span class="number">0</span>], media_values[<span class="number">1</span>], media_values[<span class="number">2</span>], media_values[<span class="number">3</span>],
-         crop_values[<span class="number">0</span>], crop_values[<span class="number">1</span>], crop_values[<span class="number">2</span>], crop_values[<span class="number">3</span>]);
+         media_box.x1, media_box.y1, media_box.x2, media_box.y2,
+         crop_box.x1, crop_box.y1, crop_box.x2, crop_box.y2);
 }
 </code></pre>
 <p>Page object dictionaries have several (mostly optional) key/value pairs, including:</p>
@@ -1059,14 +1046,11 @@ pdfio_obj_t *img =
                                     <span class="comment">/*alpha*/</span><span class="reserved">true</span>, <span class="comment">/*interpolate*/</span><span class="reserved">false</span>);
 </code></pre>
 <p>The &quot;interpolate&quot; argument specifies whether the colors in the image should be smoothed/interpolated when scaling. This is most useful for photographs but should be <code>false</code> for screenshot and barcode images.</p>
-<p>If you have a JPEG or PNG file, use the <a href="#pdfioFileCreateImageObjFromFile"><code>pdfioFileCreateImageObjFromFile</code></a> function to copy the image into a PDF image object, for example:</p>
+<p>If you have a GIF, JPEG, or PNG file, use the <a href="#pdfioFileCreateImageObjFromFile"><code>pdfioFileCreateImageObjFromFile</code></a> function to copy the image into a PDF image object, for example:</p>
 <pre><code class="language-c">pdfio_file_t *pdf = pdfioFileCreate(...);
 pdfio_obj_t *img =
     pdfioFileCreateImageObjFromFile(pdf, <span class="string">&quot;myphoto.jpg&quot;</span>, <span class="comment">/*interpolate*/</span><span class="reserved">true</span>);
 </code></pre>
-<blockquote>
-<p>Note: Currently <code>pdfioFileCreateImageObjFromFile</code> does not support 12 bit JPEG files or PNG files with an alpha channel.</p>
-</blockquote>
 <h4 id="page-dictionary-functions">Page Dictionary Functions</h4>
 <p>PDF pages each have an associated dictionary to specify the images, fonts, and color spaces used by the page. PDFio provides functions to add these resources to the dictionary:</p>
 <ul>
@@ -1322,16 +1306,10 @@ main(<span class="reserved">int</span>  argc,                         <span clas
   <span class="reserved">for</span> (cur = <span class="number">0</span>, prev = <span class="number">0</span>; cur &lt; num_pages; cur ++)
   {
     <span class="comment">// Find the MediaBox for this page in the page tree...</span>
-    <span class="reserved">for</span> (page = pdfioFileGetPage(pdf, cur);
-         page != NULL;
-         page = pdfioDictGetObj(page_dict, <span class="string">&quot;Parent&quot;</span>))
-    {
-      cur_box.x1 = cur_box.x2 = cur_box.y1 = cur_box.y2 = <span class="number">0.0</span>;
-      page_dict  = pdfioObjGetDict(page);
+    page = pdfioFileGetPage(pdf, cur);
 
-      <span class="reserved">if</span> (pdfioDictGetRect(page_dict, <span class="string">&quot;MediaBox&quot;</span>, &amp;cur_box))
-        <span class="reserved">break</span>;
-    }
+    cur_box.x1 = cur_box.x2 = cur_box.y1 = cur_box.y2 = <span class="number">0.0</span>;
+    pdfioPageGetRect(page, <span class="string">&quot;MediaBox&quot;</span>, &amp;cur_box);
 
     <span class="comment">// If this MediaBox is different from the previous one, show the range of</span>
     <span class="comment">// pages that have that size...</span>
@@ -1570,7 +1548,7 @@ load_encoding(
 }
 </code></pre>
 <h3 class="title" id="create-a-pdf-file-with-text-and-an-image">Create a PDF File With Text and an Image</h3>
-<p>The <code>image2pdf.c</code> example code creates a PDF file containing a JPEG or PNG image file and optional caption on a single page. The <code>create_pdf_image_file</code> function creates the PDF file, embeds a base font and the named JPEG or PNG image file, and then creates a page with the image centered on the page with any text centered below:</p>
+<p>The <code>image2pdf.c</code> example code creates a PDF file containing a GIF, JPEG, or PNG image file and optional caption on a single page. The <code>create_pdf_image_file</code> function creates the PDF file, embeds a base font and the named JPEG or PNG image file, and then creates a page with the image centered on the page with any text centered below:</p>
 <pre><code class="language-c"><span class="directive">#include &lt;pdfio.h&gt;</span>
 <span class="directive">#include &lt;pdfio-content.h&gt;</span>
 <span class="directive">#include &lt;string.h&gt;</span>
@@ -4502,14 +4480,15 @@ files do not support alpha-based transparency.</blockquote>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Object</p>
 <h4 class="discussion">Discussion</h4>
-<p class="discussion">This function creates an image object in a PDF file from a JPEG or PNG file.
-The &quot;filename&quot; parameter specifies the name of the JPEG or PNG file, while
-the &quot;interpolate&quot; parameter specifies whether to interpolate when scaling the
-image on the page.<br>
+<p class="discussion">This function creates an image object in a PDF file from a GIF, JPEG, or PNG
+file.  The &quot;filename&quot; parameter specifies the name of the GIF, JPEG, or PNG
+file, while the &quot;interpolate&quot; parameter specifies whether to interpolate when
+scaling the image on the page.<br>
 <br>
 </p><blockquote>
 Note: PNG files containing transparency cannot be used when producing
-PDF/A files.</blockquote>
+PDF/A files.  Files containing animation yield the final frame of the
+animation.</blockquote>
 <h3 class="function"><span class="info">&#160;PDFio v1.4&#160;</span><a id="pdfioFileCreateNameObj">pdfioFileCreateNameObj</a></h3>
 <p class="description">Create a new object in a PDF file containing a name.</p>
 <p class="code">

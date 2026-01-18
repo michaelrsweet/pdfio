@@ -1,7 +1,7 @@
 //
 // PDF metadata example for PDFio.
 //
-// Copyright © 2023-2025 by Michael R Sweet.
+// Copyright © 2023-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -113,16 +113,10 @@ main(int  argc,				// I - Number of command-line arguments
   for (cur = 0, prev = 0; cur < num_pages; cur ++)
   {
     // Find the MediaBox for this page in the page tree...
-    for (page = pdfioFileGetPage(pdf, cur);
-         page != NULL;
-         page = pdfioDictGetObj(page_dict, "Parent"))
-    {
-      cur_box.x1 = cur_box.x2 = cur_box.y1 = cur_box.y2 = 0.0;
-      page_dict  = pdfioObjGetDict(page);
+    page = pdfioFileGetPage(pdf, cur);
 
-      if (pdfioDictGetRect(page_dict, "MediaBox", &cur_box))
-        break;
-    }
+    cur_box.x1 = cur_box.x2 = cur_box.y1 = cur_box.y2 = 0.0;
+    pdfioPageGetRect(page, "MediaBox", &cur_box);
 
     // If this MediaBox is different from the previous one, show the range of
     // pages that have that size...

@@ -2141,13 +2141,14 @@ pdfioFileCreateImageObjFromData(
 //
 // 'pdfioFileCreateImageObjFromFile()' - Add an image object to a PDF file from a file.
 //
-// This function creates an image object in a PDF file from a JPEG or PNG file.
-// The "filename" parameter specifies the name of the JPEG or PNG file, while
-// the "interpolate" parameter specifies whether to interpolate when scaling the
-// image on the page.
+// This function creates an image object in a PDF file from a GIF, JPEG, or PNG
+// file.  The "filename" parameter specifies the name of the GIF, JPEG, or PNG
+// file, while the "interpolate" parameter specifies whether to interpolate when
+// scaling the image on the page.
 //
 // > Note: PNG files containing transparency cannot be used when producing
-// > PDF/A files.
+// > PDF/A files.  Files containing animation yield the final frame of the
+// > animation.
 //
 
 pdfio_obj_t *				// O - Object

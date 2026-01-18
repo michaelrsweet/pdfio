@@ -15,7 +15,7 @@ goals of PDFio are:
 PDFio is *not* concerned with rendering or viewing a PDF file, although a PDF
 RIP or viewer could be written using it.
 
-PDFio is Copyright © 2021-2025 by Michael R Sweet and is licensed under the
+PDFio is Copyright © 2021-2026 by Michael R Sweet and is licensed under the
 Apache License Version 2.0 with an (optional) exception to allow linking against
 GPL2/LGPL2 software.  See the files "LICENSE" and "NOTICE" for more information.
 
@@ -387,43 +387,35 @@ Each page is represented by a "page tree" object (what [`pdfioFileGetPage`](@@)
 returns) that specifies information about the page and one or more "content"
 objects that contain the images, fonts, text, and graphics that appear on the
 page.  Use the [`pdfioPageGetNumStreams`](@@) and [`pdfioPageOpenStream`](@@)
-functions to access the content streams for each page, and
-[`pdfioObjGetDict`](@@) to get the associated page object dictionary.  For
-example, if you want to display the media and crop boxes for a given page:
+functions to access the content streams for each page, [`pdfioObjGetDict`](@@)
+to get the associated page object dictionary, and [`pdfioPageGetArray`](@@),
+[`pdfioPageGetBinary`](@@), [`pdfioPageGetBoolean`](@@),
+[`pdfioPageGetDate`](@@), [`pdfioPageGetDict`](@@), [`pdfioPageGetName`](@@),
+[`pdfioPageGetObj`](@@), [`pdfioPageGetRect`](@@), and
+[`pdfioPageGetString`](@@) to get a value from the page object dictionary or its
+parents.  For example, if you want to display the media and crop boxes for a
+given page:
 
 ```c
 pdfio_file_t  *pdf;             // PDF file
 size_t        i;                // Looping var
 size_t        count;            // Number of pages
 pdfio_obj_t   *page;            // Current page
-pdfio_dict_t  *dict;            // Current page dictionary
-pdfio_array_t *media_box;       // MediaBox array
-double        media_values[4];  // MediaBox values
-pdfio_array_t *crop_box;        // CropBox array
-double        crop_values[4];   // CropBox values
+pdfio_rect_t  media_box;        // MediaBox values
+pdfio_rect_t  crop_box;         // CropBox values
 
 // Iterate the pages in the PDF file
 for (i = 0, count = pdfioFileGetNumPages(pdf); i < count; i ++)
 {
   page = pdfioFileGetPage(pdf, i);
-  dict = pdfioObjGetDict(page);
 
-  media_box       = pdfioDictGetArray(dict, "MediaBox");
-  media_values[0] = pdfioArrayGetNumber(media_box, 0);
-  media_values[1] = pdfioArrayGetNumber(media_box, 1);
-  media_values[2] = pdfioArrayGetNumber(media_box, 2);
-  media_values[3] = pdfioArrayGetNumber(media_box, 3);
-
-  crop_box       = pdfioDictGetArray(dict, "CropBox");
-  crop_values[0] = pdfioArrayGetNumber(crop_box, 0);
-  crop_values[1] = pdfioArrayGetNumber(crop_box, 1);
-  crop_values[2] = pdfioArrayGetNumber(crop_box, 2);
-  crop_values[3] = pdfioArrayGetNumber(crop_box, 3);
+  pdfioPageGetRect(page, "MediaBox", &media_box);
+  pdfioPageGetRect(page, "CropBox", &crop_box);
 
   printf("Page %u: MediaBox=[%g %g %g %g], CropBox=[%g %g %g %g]\n",
          (unsigned)(i + 1),
-         media_values[0], media_values[1], media_values[2], media_values[3],
-         crop_values[0], crop_values[1], crop_values[2], crop_values[3]);
+         media_box.x1, media_box.y1, media_box.x2, media_box.y2,
+         crop_box.x1, crop_box.y1, crop_box.x2, crop_box.y2);
 }
 ```
 
@@ -760,17 +752,15 @@ The "interpolate" argument specifies whether the colors in the image should be
 smoothed/interpolated when scaling.  This is most useful for photographs but
 should be `false` for screenshot and barcode images.
 
-If you have a JPEG or PNG file, use the [`pdfioFileCreateImageObjFromFile`](@@)
-function to copy the image into a PDF image object, for example:
+If you have a GIF, JPEG, or PNG file, use the
+[`pdfioFileCreateImageObjFromFile`](@@) function to copy the image into a PDF
+image object, for example:
 
 ```c
 pdfio_file_t *pdf = pdfioFileCreate(...);
 pdfio_obj_t *img =
     pdfioFileCreateImageObjFromFile(pdf, "myphoto.jpg", /*interpolate*/true);
 ```
-
-> Note: Currently `pdfioFileCreateImageObjFromFile` does not support 12 bit JPEG
-> files or PNG files with an alpha channel.
 
 
 ### Page Dictionary Functions
@@ -1029,16 +1019,10 @@ main(int  argc,                         // I - Number of command-line arguments
   for (cur = 0, prev = 0; cur < num_pages; cur ++)
   {
     // Find the MediaBox for this page in the page tree...
-    for (page = pdfioFileGetPage(pdf, cur);
-         page != NULL;
-         page = pdfioDictGetObj(page_dict, "Parent"))
-    {
-      cur_box.x1 = cur_box.x2 = cur_box.y1 = cur_box.y2 = 0.0;
-      page_dict  = pdfioObjGetDict(page);
+    page = pdfioFileGetPage(pdf, cur);
 
-      if (pdfioDictGetRect(page_dict, "MediaBox", &cur_box))
-        break;
-    }
+    cur_box.x1 = cur_box.x2 = cur_box.y1 = cur_box.y2 = 0.0;
+    pdfioPageGetRect(page, "MediaBox", &cur_box);
 
     // If this MediaBox is different from the previous one, show the range of
     // pages that have that size...
@@ -1342,7 +1326,7 @@ Unicode glyph for the current index:
 Create a PDF File With Text and an Image
 ----------------------------------------
 
-The `image2pdf.c` example code creates a PDF file containing a JPEG or PNG
+The `image2pdf.c` example code creates a PDF file containing a GIF, JPEG, or PNG
 image file and optional caption on a single page.  The `create_pdf_image_file`
 function creates the PDF file, embeds a base font and the named JPEG or PNG
 image file, and then creates a page with the image centered on the page with any
