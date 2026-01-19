@@ -1073,11 +1073,13 @@ _pdfioDictSetValue(
 //
 
 bool					// O - `true` on success, `false` on failure
-_pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
-		pdfio_obj_t  *obj,	// I - Object, if any
-                off_t        *length)	// I - Offset to length value
+_pdfioDictWrite(
+    _pdfio_printf_t cb,			// I - Printf callback function
+    void            *cbdata,		// I - Printf callback data
+    pdfio_obj_t     *obj,		// I - Object, if any
+    pdfio_dict_t    *dict,		// I - Dictionary
+    off_t           *length)		// I - Offset to length value
 {
-  pdfio_file_t	*pdf = dict->pdf;	// PDF file
   size_t	i;			// Looping var
   _pdfio_pair_t	*pair;			// Current key/value pair
 
@@ -1086,28 +1088,30 @@ _pdfioDictWrite(pdfio_dict_t *dict,	// I - Dictionary
     *length = 0;
 
   // Dictionaries are bounded by "<<" and ">>"...
-  if (!_pdfioFilePuts(pdf, "<<"))
+  if (!(cb)(cbdata, "<<"))
     return (false);
 
   // Write all of the key/value pairs...
   for (i = dict->num_pairs, pair = dict->pairs; i > 0; i --, pair ++)
   {
-    if (!_pdfioFilePrintf(pdf, "%N", pair->key))
+    if (!(cb)(cbdata, "%N", pair->key))
       return (false);
 
     if (length && !strcmp(pair->key, "Length") && pair->value.type == PDFIO_VALTYPE_NUMBER && pair->value.value.number <= 0.0)
     {
       // Writing an object dictionary with an undefined length
-      *length = _pdfioFileTell(pdf) + 1;
-      if (!_pdfioFilePuts(pdf, " 9999999999"))
+      *length = _pdfioFileTell(dict->pdf) + 1;
+      if (!(cb)(cbdata, " 9999999999"))
         return (false);
     }
-    else if (!_pdfioValueWrite(pdf, obj, &pair->value, NULL))
+    else if (!_pdfioValueWrite(cb, cbdata, obj, &pair->value, NULL))
+    {
       return (false);
+    }
   }
 
   // Close it up...
-  return (_pdfioFilePuts(pdf, ">>"));
+  return ((cb)(cbdata, ">>"));
 }
 
 

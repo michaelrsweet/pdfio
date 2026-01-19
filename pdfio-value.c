@@ -603,10 +603,12 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
 //
 
 bool					// O - `true` on success, `false` on failure
-_pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
-                 pdfio_obj_t    *obj,	// I - Object, if any
-                 _pdfio_value_t *v,	// I - Value
-                 off_t          *length)// O - Offset to /Length value, if any
+_pdfioValueWrite(
+    _pdfio_printf_t cb,			// I - Printf callback function
+    void            *cbdata,		// I - Printf callback data
+    pdfio_obj_t     *obj,		// I - Object, if any
+    _pdfio_value_t  *v,			// I - Value
+    off_t           *length)		// O - Offset to /Length value, if any
 {
   switch (v->type)
   {
@@ -614,7 +616,7 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
         return (false);
 
     case PDFIO_VALTYPE_ARRAY :
-        return (_pdfioArrayWrite(v->value.array, obj));
+        return (_pdfioArrayWrite(cb, cbdata, obj, v->value.array));
 
     case PDFIO_VALTYPE_BINARY :
         {
@@ -624,26 +626,26 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
           bool          ret = false;	// Return value
 
 
-          if (obj && pdf->encryption)
+          if (obj && obj->pdf->encryption)
           {
 	    // Write encrypted string...
 	    _pdfio_crypto_ctx_t ctx;	// Encryption context
-	    _pdfio_crypto_cb_t cb;	// Encryption callback
+	    _pdfio_crypto_cb_t ccb;	// Encryption callback
 	    size_t	ivlen;		// Number of initialization vector bytes
 
             if (v->value.binary.datalen > PDFIO_MAX_STRING)
             {
-	      _pdfioFileError(pdf, "Unable to write encrypted binary string - too long.");
+	      _pdfioFileError(obj->pdf, "Unable to write encrypted binary string - too long.");
 	      return (false);
             }
-            else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(pdf)) == NULL)
+            else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(obj->pdf)) == NULL)
             {
-	      _pdfioFileError(pdf, "Unable to write encrypted binary string - out of memory.");
+	      _pdfioFileError(obj->pdf, "Unable to write encrypted binary string - out of memory.");
 	      return (false);
             }
 
-	    cb        = _pdfioCryptoMakeWriter(pdf, obj, &ctx, temp, &ivlen);
-	    databytes = (cb)(&ctx, temp + ivlen, v->value.binary.data, v->value.binary.datalen) + ivlen;
+	    ccb       = _pdfioCryptoMakeWriter(obj->pdf, obj, &ctx, temp, &ivlen);
+	    databytes = (ccb)(&ctx, temp + ivlen, v->value.binary.data, v->value.binary.datalen) + ivlen;
 	    dataptr   = temp;
           }
           else
@@ -652,33 +654,33 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
             databytes = v->value.binary.datalen;
           }
 
-          if (!_pdfioFilePuts(pdf, "<"))
+          if (!(cb)(cbdata, "<"))
             goto bindone;
 
           for (; databytes > 1; databytes -= 2, dataptr += 2)
           {
-            if (!_pdfioFilePrintf(pdf, "%02X%02X", dataptr[0], dataptr[1]))
+            if (!(cb)(cbdata, "%02X%02X", dataptr[0], dataptr[1]))
               goto bindone;
           }
 
-          if (databytes > 0 && !_pdfioFilePrintf(pdf, "%02X", dataptr[0]))
+          if (databytes > 0 && !(cb)(cbdata, "%02X", dataptr[0]))
             goto bindone;
 
-	  ret = _pdfioFilePuts(pdf, ">");
+	  ret = (cb)(cbdata, ">");
 
           bindone:
 
           if (temp)
-            _pdfioStringFreeBuffer(pdf, (char *)temp);
+            _pdfioStringFreeBuffer(obj->pdf, (char *)temp);
 
           return (ret);
         }
 
     case PDFIO_VALTYPE_BOOLEAN :
         if (v->value.boolean)
-          return (_pdfioFilePuts(pdf, " true"));
+          return ((cb)(cbdata, " true"));
         else
-          return (_pdfioFilePuts(pdf, " false"));
+          return ((cb)(cbdata, " false"));
 
     case PDFIO_VALTYPE_DATE :
         {
@@ -693,64 +695,64 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
 
 	  snprintf(datestr, sizeof(datestr), "D:%04d%02d%02d%02d%02d%02dZ", date.tm_year + 1900, date.tm_mon + 1, date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
 
-	  if (obj && pdf->encryption)
+	  if (obj && obj->pdf->encryption)
 	  {
 	    // Write encrypted string...
 	    uint8_t	temp[64],	// Encrypted bytes
 			*tempptr;	// Pointer into encrypted bytes
 	    _pdfio_crypto_ctx_t ctx;	// Encryption context
-	    _pdfio_crypto_cb_t cb;	// Encryption callback
+	    _pdfio_crypto_cb_t ccb;	// Encryption callback
 	    size_t	len = strlen(datestr),
 					  // Length of value
 			ivlen,		// Number of initialization vector bytes
 			tempbytes;	// Number of output bytes
 
-	    cb        = _pdfioCryptoMakeWriter(pdf, obj, &ctx, temp, &ivlen);
-	    tempbytes = (cb)(&ctx, temp + ivlen, (const uint8_t *)datestr, len) + ivlen;
+	    ccb       = _pdfioCryptoMakeWriter(obj->pdf, obj, &ctx, temp, &ivlen);
+	    tempbytes = (ccb)(&ctx, temp + ivlen, (const uint8_t *)datestr, len) + ivlen;
 
-	    if (!_pdfioFilePuts(pdf, "<"))
+	    if (!(cb)(cbdata, "<"))
 	      return (false);
 
 	    for (tempptr = temp; tempbytes > 1; tempbytes -= 2, tempptr += 2)
 	    {
-	      if (!_pdfioFilePrintf(pdf, "%02X%02X", tempptr[0], tempptr[1]))
+	      if (!(cb)(cbdata, "%02X%02X", tempptr[0], tempptr[1]))
 		return (false);
 	    }
 
             if (tempbytes > 0)
-              return (_pdfioFilePrintf(pdf, "%02X>", *tempptr));
+              return ((cb)(cbdata, "%02X>", *tempptr));
             else
-	      return (_pdfioFilePuts(pdf, ">"));
+	      return ((cb)(cbdata, ">"));
 	  }
 	  else
 	  {
-	    return (_pdfioFilePrintf(pdf, "%S", datestr));
+	    return ((cb)(cbdata, "%S", datestr));
 	  }
         }
 
     case PDFIO_VALTYPE_DICT :
-        return (_pdfioDictWrite(v->value.dict, obj, length));
+        return (_pdfioDictWrite(cb, cbdata, obj, v->value.dict, length));
 
     case PDFIO_VALTYPE_INDIRECT :
-        return (_pdfioFilePrintf(pdf, " %lu %u R", (unsigned long)v->value.indirect.number, v->value.indirect.generation));
+        return ((cb)(cbdata, " %lu %u R", (unsigned long)v->value.indirect.number, v->value.indirect.generation));
 
     case PDFIO_VALTYPE_NAME :
-        return (_pdfioFilePrintf(pdf, "%N", v->value.name));
+        return ((cb)(cbdata, "%N", v->value.name));
 
     case PDFIO_VALTYPE_NULL :
-        return (_pdfioFilePuts(pdf, " null"));
+        return ((cb)(cbdata, " null"));
 
     case PDFIO_VALTYPE_NUMBER :
-        return (_pdfioFilePrintf(pdf, " %.6f", v->value.number));
+        return ((cb)(cbdata, " %.6f", v->value.number));
 
     case PDFIO_VALTYPE_STRING :
-        if (obj && pdf->encryption)
+        if (obj && obj->pdf->encryption)
         {
           // Write encrypted string...
           uint8_t	*temp = NULL,	// Encrypted bytes
 			*tempptr;	// Pointer into encrypted bytes
           _pdfio_crypto_ctx_t ctx;	// Encryption context
-          _pdfio_crypto_cb_t cb;	// Encryption callback
+          _pdfio_crypto_cb_t ccb;	// Encryption callback
           size_t	len = strlen(v->value.string),
 					// Length of value
 			ivlen,		// Number of initialization vector bytes
@@ -759,42 +761,42 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
 
           if (len > PDFIO_MAX_STRING)
           {
-            _pdfioFileError(pdf, "Unable to write encrypted string - too long.");
+            _pdfioFileError(obj->pdf, "Unable to write encrypted string - too long.");
             return (false);
           }
-          else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(pdf)) == NULL)
+          else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(obj->pdf)) == NULL)
           {
-            _pdfioFileError(pdf, "Unable to write encrypted string - out of memory.");
+            _pdfioFileError(obj->pdf, "Unable to write encrypted string - out of memory.");
             return (false);
           }
 
-          cb        = _pdfioCryptoMakeWriter(pdf, obj, &ctx, temp, &ivlen);
-          tempbytes = (cb)(&ctx, temp + ivlen, (const uint8_t *)v->value.string, len) + ivlen;
+          ccb       = _pdfioCryptoMakeWriter(obj->pdf, obj, &ctx, temp, &ivlen);
+          tempbytes = (ccb)(&ctx, temp + ivlen, (const uint8_t *)v->value.string, len) + ivlen;
 
-          if (!_pdfioFilePuts(pdf, "<"))
+          if (!(cb)(cbdata, "<"))
             goto strdone;
 
           for (tempptr = temp; tempbytes > 1; tempbytes -= 2, tempptr += 2)
           {
-            if (!_pdfioFilePrintf(pdf, "%02X%02X", tempptr[0], tempptr[1]))
+            if (!(cb)(cbdata, "%02X%02X", tempptr[0], tempptr[1]))
               goto strdone;
           }
 
-          if (tempbytes > 0 && !_pdfioFilePrintf(pdf, "%02X", *tempptr))
+          if (tempbytes > 0 && !(cb)(cbdata, "%02X", *tempptr))
             goto strdone;
 
-	  ret = _pdfioFilePuts(pdf, ">");
+	  ret = (cb)(cbdata, ">");
 
           strdone :
 
-          _pdfioStringFreeBuffer(pdf, (char *)temp);
+          _pdfioStringFreeBuffer(obj->pdf, (char *)temp);
 
           return (ret);
         }
         else
         {
           // Write unencrypted string...
-          return (_pdfioFilePrintf(pdf, "%S", v->value.string));
+          return ((cb)(cbdata, "%S", v->value.string));
         }
   }
 

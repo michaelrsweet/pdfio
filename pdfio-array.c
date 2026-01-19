@@ -670,27 +670,29 @@ pdfioArrayRemove(pdfio_array_t *a,	// I - Array
 //
 
 bool					// O - `true` on success, `false` otherwise
-_pdfioArrayWrite(pdfio_array_t *a,	// I - Array
-		 pdfio_obj_t   *obj)	// I - Object, if any
+_pdfioArrayWrite(
+    _pdfio_printf_t cb,			// I - Printf callback function
+    void            *cbdata,		// I - Printf callback data
+    pdfio_obj_t     *obj,		// I - Object, if any
+    pdfio_array_t   *a)			// I - Array
 {
-  pdfio_file_t	*pdf = a->pdf;		// PDF file
   size_t	i;			// Looping var
   _pdfio_value_t *v;			// Current value
 
 
   // Arrays are surrounded by square brackets ([ ... ])
-  if (!_pdfioFilePuts(pdf, "["))
+  if (!(cb)(cbdata, "["))
     return (false);
 
   // Write each value...
   for (i = a->num_values, v = a->values; i > 0; i --, v ++)
   {
-    if (!_pdfioValueWrite(pdf, obj, v, NULL))
+    if (!_pdfioValueWrite(cb, cbdata, obj, v, NULL))
       return (false);
   }
 
   // Closing bracket...
-  return (_pdfioFilePuts(pdf, "]"));
+  return ((cb)(cbdata, "]"));
 }
 
 

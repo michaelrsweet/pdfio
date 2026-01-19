@@ -96,8 +96,10 @@
 #  define PDFIO_MAX_DEPTH	32	// Maximum nesting depth for values
 #  define PDFIO_MAX_STRING	131072	// Maximum length of string
 
-typedef void (*_pdfio_extfree_t)(void *);
+typedef void (*_pdfio_extfree_t)(void *p);
 					// Extension data free function
+typedef bool (*_pdfio_printf_t)(void *data, const char *format, ...);
+					// "printf" function
 
 typedef enum _pdfio_mode_e		// Read/write mode
 {
@@ -408,7 +410,7 @@ extern void		_pdfioArrayDebug(pdfio_array_t *a, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioArrayDelete(pdfio_array_t *a) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioArrayGetValue(pdfio_array_t *a, size_t n) _PDFIO_INTERNAL;
 extern pdfio_array_t	*_pdfioArrayRead(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_token_t *ts, size_t depth) _PDFIO_INTERNAL;
-extern bool		_pdfioArrayWrite(pdfio_array_t *a, pdfio_obj_t *obj) _PDFIO_INTERNAL;
+extern bool		_pdfioArrayWrite(_pdfio_printf_t cb, void *cbdata, pdfio_obj_t *obj, pdfio_array_t *a) _PDFIO_INTERNAL;
 
 extern void		_pdfioCryptoAESInit(_pdfio_aes_t *ctx, const uint8_t *key, size_t keylen, const uint8_t *iv) _PDFIO_INTERNAL;
 extern size_t		_pdfioCryptoAESDecrypt(_pdfio_aes_t *ctx, uint8_t *outbuffer, const uint8_t *inbuffer, size_t len) _PDFIO_INTERNAL;
@@ -433,7 +435,7 @@ extern void		_pdfioDictDelete(pdfio_dict_t *dict) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioDictGetValue(pdfio_dict_t *dict, const char *key) _PDFIO_INTERNAL;
 extern pdfio_dict_t	*_pdfioDictRead(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_token_t *ts, size_t depth) _PDFIO_INTERNAL;
 extern bool		_pdfioDictSetValue(pdfio_dict_t *dict, const char *key, _pdfio_value_t *value) _PDFIO_INTERNAL;
-extern bool		_pdfioDictWrite(pdfio_dict_t *dict, pdfio_obj_t *obj, off_t *length) _PDFIO_INTERNAL;
+extern bool		_pdfioDictWrite(_pdfio_printf_t cb, void *cbdata, pdfio_obj_t *obj, pdfio_dict_t *dict, off_t *length) _PDFIO_INTERNAL;
 
 extern bool		_pdfioFileAddMappedObj(pdfio_file_t *pdf, pdfio_obj_t *dst_obj, pdfio_obj_t *src_obj) _PDFIO_INTERNAL;
 extern bool		_pdfioFileAddPage(pdfio_file_t *pdf, pdfio_obj_t *obj) _PDFIO_INTERNAL;
@@ -482,7 +484,7 @@ extern bool		_pdfioValueDecrypt(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_valu
 extern void		_pdfioValueDebug(_pdfio_value_t *v, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioValueDelete(_pdfio_value_t *v) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioValueRead(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_token_t *ts, _pdfio_value_t *v, size_t depth) _PDFIO_INTERNAL;
-extern bool		_pdfioValueWrite(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_value_t *v, off_t *length) _PDFIO_INTERNAL;
+extern bool		_pdfioValueWrite(_pdfio_printf_t cb, void *cbdata, pdfio_obj_t *obj, _pdfio_value_t *v, off_t *length) _PDFIO_INTERNAL;
 
 
 #endif // !PDFIO_PRIVATE_H

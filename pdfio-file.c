@@ -3124,7 +3124,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     pdfioDictSetObj(pdf->trailer_dict, "Root", pdf->root_obj);
     pdfioDictSetNumber(pdf->trailer_dict, "Size", (double)(pdf->num_objs + 1));
 
-    if (!_pdfioDictWrite(pdf->trailer_dict, NULL, NULL))
+    if (!_pdfioDictWrite((_pdfio_printf_t)_pdfioFilePrintf, pdf, /*obj*/NULL, pdf->trailer_dict, /*length*/NULL))
     {
       _pdfioFileError(pdf, "Unable to write trailer.");
       ret = false;

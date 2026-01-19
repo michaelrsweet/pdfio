@@ -608,7 +608,7 @@ _pdfioObjWriteHeader(pdfio_obj_t *obj)	// I - Object
   if (!_pdfioFilePrintf(obj->pdf, "%lu %u obj\n", (unsigned long)obj->number, obj->generation))
     return (false);
 
-  if (!_pdfioValueWrite(obj->pdf, obj, &obj->value, &obj->length_offset))
+  if (!_pdfioValueWrite((_pdfio_printf_t)_pdfioFilePrintf, obj->pdf, obj, &obj->value, &obj->length_offset))
     return (false);
 
   return (_pdfioFilePuts(obj->pdf, "\n"));
