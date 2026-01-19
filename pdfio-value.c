@@ -160,7 +160,7 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
 	  _pdfioFileError(pdf, "Unable to read encrypted binary string - too long.");
 	  return (false);
 	}
-	else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(pdf)) == NULL)
+	else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(pdf, /*bptr*/NULL)) == NULL)
 	{
 	  _pdfioFileError(pdf, "Unable to read encrypted binary string - out of memory.");
 	  return (false);
@@ -191,7 +191,7 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
 	  _pdfioFileError(pdf, "Unable to read encrypted string - too long.");
 	  return (false);
 	}
-	else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(pdf)) == NULL)
+	else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(pdf, /*bptr*/NULL)) == NULL)
 	{
 	  _pdfioFileError(pdf, "Unable to read encrypted binary string - out of memory.");
 	  return (false);
@@ -341,7 +341,7 @@ _pdfioValueRead(pdfio_file_t   *pdf,	// I - PDF file
                 size_t         depth)	// I - Depth of value
 {
   _pdfio_value_t *ret = NULL;		// Return value
-  char		*token = _pdfioStringAllocBuffer(pdf);
+  char		*token = _pdfioStringAllocBuffer(pdf, /*bptr*/NULL);
 					// Token buffer
   time_t	timeval;		// Date/time value
 #ifdef DEBUG
@@ -638,7 +638,7 @@ _pdfioValueWrite(
 	      _pdfioFileError(obj->pdf, "Unable to write encrypted binary string - too long.");
 	      return (false);
             }
-            else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(obj->pdf)) == NULL)
+            else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(obj->pdf, /*bptr*/NULL)) == NULL)
             {
 	      _pdfioFileError(obj->pdf, "Unable to write encrypted binary string - out of memory.");
 	      return (false);
@@ -764,7 +764,7 @@ _pdfioValueWrite(
             _pdfioFileError(obj->pdf, "Unable to write encrypted string - too long.");
             return (false);
           }
-          else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(obj->pdf)) == NULL)
+          else if ((temp = (uint8_t *)_pdfioStringAllocBuffer(obj->pdf, /*bptr*/NULL)) == NULL)
           {
             _pdfioFileError(obj->pdf, "Unable to write encrypted string - out of memory.");
             return (false);

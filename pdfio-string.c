@@ -674,7 +674,8 @@ _pdfio_vsnprintf(pdfio_file_t *pdf,	// I - PDF file
 
 char *					// O - Buffer or `NULL` on error
 _pdfioStringAllocBuffer(
-    pdfio_file_t *pdf)			// I - PDF file
+    pdfio_file_t    *pdf,		// I - PDF file
+    _pdfio_strbuf_t **bptr)		// O - String buffer pointer
 {
   _pdfio_strbuf_t	*current;	// Current string buffer
 
@@ -683,21 +684,34 @@ _pdfioStringAllocBuffer(
   for (current = pdf->strbuffers; current; current = current->next)
   {
     if (!current->bufused)
-    {
-      current->bufused = true;
-      return (current->buffer);
-    }
+      goto done;
   }
 
   // Didn't find one, allocate a new one...
   if ((current = calloc(1, sizeof(_pdfio_strbuf_t))) == NULL)
+  {
+    if (bptr)
+      *bptr = NULL;
+
     return (NULL);
+  }
 
   // Add to the linked list of string buffers...
-  current->next    = pdf->strbuffers;
+  current->pdf    = pdf;
+  current->next   = pdf->strbuffers;
+  pdf->strbuffers = current;
+
+  // Claim and return the free string buffer...
+  done:
+
   current->bufused = true;
 
-  pdf->strbuffers = current;
+  if (bptr)
+  {
+    *bptr              = current;
+    current->buffer[0] = '\0';
+    current->bufptr    = current->buffer;
+  }
 
   return (current->buffer);
 }
@@ -854,6 +868,36 @@ _pdfioStringIsAllocated(
   find_string(pdf, s, &diff);
 
   return (diff == 0);
+}
+
+
+//
+// '_pdfioStringPrintf()' - Append a formatted string to a string buffer.
+//
+
+bool					// O - `true` on success, `false` on failure
+_pdfioStringPrintf(
+    _pdfio_strbuf_t *bptr,		// I - String buffer
+    const char      *format,		// I - Format string
+    ...)				// I - Additional arguments as needed
+{
+  va_list	ap;			// Pointer to additional arguments
+  size_t	remaining;		// Remaining bytes
+  ssize_t	bytes;			// Formatted bytes
+
+
+  // Format the string in the buffer...
+  va_start(ap, format);
+
+  remaining = sizeof(bptr->buffer) - (size_t)(bptr->bufptr - bptr->buffer);
+  bytes     = _pdfio_vsnprintf(bptr->pdf, bptr->bufptr, remaining, format, ap);
+
+  va_end(ap);
+
+  // Advance the current position in the buffer and return.
+  bptr->bufptr += strlen(bptr->bufptr);
+
+  return (bytes < (ssize_t)remaining && bytes >= 0);
 }
 
 
