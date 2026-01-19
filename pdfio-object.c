@@ -32,8 +32,43 @@ pdfioObjClose(pdfio_obj_t *obj)		// I - Object
   }
 
   // Write what remains for the object...
-  if (!obj->offset)
+  if (!obj->offset && !obj->objstm_data)
   {
+    // Are we using object streams and is this object eligible?
+    if (obj->pdf->objstm_dict && !obj->pdf->objstm_obj && obj != obj->pdf->encrypt_obj && obj->pdf->num_objstm < 0x10000 && (obj->value.type == PDFIO_VALTYPE_ARRAY || obj->value.type == PDFIO_VALTYPE_DICT))
+    {
+      // Add this to the object stream...
+      _pdfio_strbuf_t	*bptr;		// String buffer
+
+      if (!_pdfioStringAllocBuffer(obj->pdf, &bptr))
+        goto regular_obj;
+
+      if (!_pdfioValueWrite((_pdfio_printf_t)_pdfioStringPrintf, bptr, /*obj*/NULL, &(obj->value), /*length*/NULL))
+      {
+        _pdfioStringFreeBuffer(obj->pdf, bptr->buffer);
+        goto regular_obj;
+      }
+
+      _pdfioStringPrintf(bptr, "\n");
+
+      if ((obj->objstm_data = pdfioStringCreate(obj->pdf, bptr->buffer)) == NULL)
+      {
+        _pdfioStringFreeBuffer(obj->pdf, bptr->buffer);
+        goto regular_obj;
+      }
+
+      // If we got this far then we have the value string and can assign an
+      // object number, which is all that is required for now...
+      obj->objstm_datalen = (size_t)(bptr->bufptr - bptr->buffer);
+      obj->objstm_number  = obj->pdf->num_objstm;
+      obj->pdf->num_objstm ++;
+
+      _pdfioStringFreeBuffer(obj->pdf, bptr->buffer);
+      return (true);
+    }
+
+    regular_obj:
+
     // Write the object value
     if (!_pdfioObjWriteHeader(obj))
       return (false);

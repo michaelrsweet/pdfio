@@ -29,6 +29,7 @@ static bool		load_pages(pdfio_file_t *pdf, pdfio_obj_t *obj, size_t depth);
 static bool		load_xref(pdfio_file_t *pdf, off_t xref_offset, pdfio_password_cb_t password_cb, void *password_data);
 static bool		repair_xref(pdfio_file_t *pdf, pdfio_password_cb_t password_cb, void *password_data);
 static bool		write_metadata(pdfio_file_t *pdf);
+static bool		write_objstm(pdfio_file_t *pdf);
 static bool		write_pages(pdfio_file_t *pdf);
 static bool		write_trailer(pdfio_file_t *pdf);
 
@@ -131,7 +132,7 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
     pdfioFileAddOutputIntent(pdf, /*subtype*/"GTS_PDFA1", /*condition*/"CMYK", /*cond_id*/"CGATS001", /*reg_name*/NULL, /*info*/"CMYK Printing", /*profile*/NULL);
 
     // Close and write out the last bits...
-    if (write_metadata(pdf) && pdfioObjClose(pdf->info_obj) && write_pages(pdf) && pdfioObjClose(pdf->root_obj) && write_trailer(pdf))
+    if (write_metadata(pdf) && pdfioObjClose(pdf->info_obj) && write_objstm(pdf) && write_pages(pdf) && pdfioObjClose(pdf->root_obj) && write_trailer(pdf))
       ret = _pdfioFileFlush(pdf);
   }
 
@@ -1714,6 +1715,15 @@ create_common(
   if ((pdf->root_obj = pdfioFileCreateObj(pdf, dict)) == NULL)
     goto error;
 
+  // For PDF 1.5 and later, create a (compressed) object stream for value objects...
+  if (strcmp(file_version, "1.5") >= 0 && !pdf->output_cb)
+  {
+    if ((pdf->objstm_dict = pdfioDictCreate(pdf)) == NULL)
+      goto error;
+
+    pdfioDictSetName(pdf->objstm_dict, "Type", "ObjStm");
+  }
+
   // Create random file ID values...
   _pdfioCryptoMakeRandom(id_value, sizeof(id_value));
 
@@ -2875,6 +2885,86 @@ write_metadata(pdfio_file_t *pdf)	// I - PDF file
 
 
 //
+// 'write_objstm()' - Write an object stream.
+//
+
+static bool				// O - `true` on success, `false` on failure
+write_objstm(pdfio_file_t *pdf)		// I - PDF file
+{
+  bool		ret = false;		// Return value
+  size_t	i;			// Looping var
+  pdfio_obj_t	*obj;			// Current object
+  pdfio_stream_t *st = NULL;		// Output stream
+  _pdfio_strbuf_t *bptr = NULL;		// String buffer
+  size_t	length;			// Length of stream objects
+
+
+  // If we aren't creating object streams, return now...
+  if (!pdf->objstm_dict || pdf->num_objstm == 0)
+    return (true);
+
+  // Create a string buffer to hold the list of objects in the stream...
+  if (!_pdfioStringAllocBuffer(pdf, &bptr))
+    return (false);
+
+  // Loop through the array of objects and
+  for (i = 0, length = 0; i < pdf->num_objs; i ++)
+  {
+    // Skip non-stream objects...
+    obj = pdf->objs[i];
+
+    if (!obj->objstm_data)
+      continue;
+
+    // Add this object to the initial list of objects and offsets for the stream...
+    _pdfioStringPrintf(bptr, "%lu %lu\n", (unsigned long)obj->number, (unsigned long)length);
+
+    length += obj->objstm_datalen;
+  }
+
+  // Now create the object stream with the collected data...
+  pdfioDictSetNumber(pdf->objstm_dict, "First", bptr->bufptr - bptr->buffer);
+  pdfioDictSetNumber(pdf->objstm_dict, "N", pdf->num_objstm);
+  pdfioDictSetName(pdf->objstm_dict, "Filter", "FlateDecode");
+
+  if ((pdf->objstm_obj = pdfioFileCreateObj(pdf, pdf->objstm_dict)) == NULL)
+    goto done;
+
+  if ((st = pdfioObjCreateStream(pdf->objstm_obj, PDFIO_FILTER_FLATE)) == NULL)
+  {
+    pdfioObjClose(pdf->objstm_obj);
+    goto done;
+  }
+
+  if (!pdfioStreamWrite(st, bptr->buffer, (size_t)(bptr->bufptr - bptr->buffer)))
+    goto done;
+
+  for (i = 0; i < pdf->num_objs; i ++)
+  {
+    // Skip non-stream objects...
+    obj = pdf->objs[i];
+
+    if (!obj->objstm_data)
+      continue;
+
+    // Write the stream data...
+    if (!pdfioStreamWrite(st, obj->objstm_data, obj->objstm_datalen))
+      goto done;
+  }
+
+  ret = true;
+
+  done:
+
+  pdfioStreamClose(st);
+
+  _pdfioStringFreeBuffer(pdf, bptr->buffer);
+
+  return (ret);
+}
+
+
+//
 // 'write_pages()' - Write the PDF pages objects.
 //
 
@@ -2923,31 +3013,37 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     pdfio_array_t	*w_array;	// W array
     pdfio_obj_t		*xref_obj;	// Object
     pdfio_stream_t	*xref_st;	// Stream
-    int			offsize;	// Size of object offsets
-    unsigned char	buffer[10];	// Buffer entry
+    int			offsize,	// Size of object offsets
+			idxsize;	// Size of object stream indexes
+    unsigned char	buffer[20];	// Buffer entry
     pdfio_encryption_t	encryption;	// PDF encryption mode
 
     // Disable encryption while we write the xref stream...
     encryption      = pdf->encryption;
     pdf->encryption = PDFIO_ENCRYPTION_NONE;
 
-    // Figure out how many bytes are needed for the object numbers
-    if (xref_offset < 0xff)
+    // Figure out how many bytes are needed for the object offsets
+    if (xref_offset < 0xff && pdf->num_objs < 0xff)
       offsize = 1;
-    else if (xref_offset < 0xffff)
+    else if (xref_offset < 0xffff && pdf->num_objs < 0xffff)
       offsize = 2;
-    else if (xref_offset < 0xffffff)
+    else if (xref_offset < 0xffffff && pdf->num_objs < 0xffffff)
       offsize = 3;
-    else if (xref_offset < 0xffffffff)
+    else if (xref_offset < 0xffffffff && pdf->num_objs < 0xffffffff)
       offsize = 4;
-    else if (xref_offset < 0xffffffffff)
+    else if (xref_offset < 0xffffffffff && pdf->num_objs < 0xffffffffff)
       offsize = 5;
-    else if (xref_offset < 0xffffffffffff)
+    else if (xref_offset < 0xffffffffffff && pdf->num_objs < 0xffffffffffff)
       offsize = 6;
-    else if (xref_offset < 0xffffffffffffff)
+    else if (xref_offset < 0xffffffffffffff && pdf->num_objs < 0xffffffffffffff)
       offsize = 7;
     else
       offsize = 8;
+
+    if (pdf->num_objstm <= 0x100)
+      idxsize = 1;
+    else				// pdfioObjClose limits number of object stream values to 64k
+      idxsize = 2;
 
     // Create the object...
     if ((w_array = pdfioArrayCreate(pdf)) == NULL)
@@ -2959,7 +3055,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
 
     pdfioArrayAppendNumber(w_array, 1);
     pdfioArrayAppendNumber(w_array, offsize);
-    pdfioArrayAppendNumber(w_array, 1);
+    pdfioArrayAppendNumber(w_array, idxsize);
 
     if ((xref_dict = pdfioDictCreate(pdf)) == NULL)
     {
@@ -3000,74 +3096,166 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
     pdfioStreamWrite(xref_st, buffer, (size_t)offsize + 2);
 
     // Then write the "allocated" objects...
-    buffer[0] = 1;
-
     for (i = 0; i < pdf->num_objs; i ++)
     {
       obj = pdf->objs[i];		// Current object
 
-      switch (offsize)
+      if (obj->objstm_data)
       {
-        case 1 :
-            buffer[1] = obj->offset & 255;
-            break;
-        case 2 :
-            buffer[1] = (obj->offset >> 8) & 255;
-            buffer[2] = obj->offset & 255;
-            break;
-        case 3 :
-            buffer[1] = (obj->offset >> 16) & 255;
-            buffer[2] = (obj->offset >> 8) & 255;
-            buffer[3] = obj->offset & 255;
-            break;
-#ifdef _WIN32
-	default :
-#endif // _WIN32
-        case 4 :
-            buffer[1] = (obj->offset >> 24) & 255;
-            buffer[2] = (obj->offset >> 16) & 255;
-            buffer[3] = (obj->offset >> 8) & 255;
-            buffer[4] = obj->offset & 255;
-            break;
+        // Stream object
+        size_t number = pdf->objstm_obj->number;
+					// Object stream object number
+
+	buffer[0] = 2;
+
+	switch (offsize)
+	{
+	  case 1 :
+	      buffer[1] = number & 255;
+	      break;
+	  case 2 :
+	      buffer[1] = (number >> 8) & 255;
+	      buffer[2] = number & 255;
+	      break;
+	  case 3 :
+	      buffer[1] = (number >> 16) & 255;
+	      buffer[2] = (number >> 8) & 255;
+	      buffer[3] = number & 255;
+	      break;
+	  case 4 :
+	      buffer[1] = (number >> 24) & 255;
+	      buffer[2] = (number >> 16) & 255;
+	      buffer[3] = (number >> 8) & 255;
+	      buffer[4] = number & 255;
+	      break;
+	  case 5 :
 #ifndef _WIN32 // Windows off_t is 32-bits?!?
-        case 5 :
-            buffer[1] = (obj->offset >> 32) & 255;
-            buffer[2] = (obj->offset >> 24) & 255;
-            buffer[3] = (obj->offset >> 16) & 255;
-            buffer[4] = (obj->offset >> 8) & 255;
-            buffer[5] = obj->offset & 255;
-            break;
-        case 6 :
-            buffer[1] = (obj->offset >> 40) & 255;
-            buffer[2] = (obj->offset >> 32) & 255;
-            buffer[3] = (obj->offset >> 24) & 255;
-            buffer[4] = (obj->offset >> 16) & 255;
-            buffer[5] = (obj->offset >> 8) & 255;
-            buffer[6] = obj->offset & 255;
-            break;
-        case 7 :
-            buffer[1] = (obj->offset >> 48) & 255;
-            buffer[2] = (obj->offset >> 40) & 255;
-            buffer[3] = (obj->offset >> 32) & 255;
-            buffer[4] = (obj->offset >> 24) & 255;
-            buffer[5] = (obj->offset >> 16) & 255;
-            buffer[6] = (obj->offset >> 8) & 255;
-            buffer[7] = obj->offset & 255;
-            break;
-        default :
-            buffer[1] = (obj->offset >> 56) & 255;
-            buffer[2] = (obj->offset >> 48) & 255;
-            buffer[3] = (obj->offset >> 40) & 255;
-            buffer[4] = (obj->offset >> 32) & 255;
-            buffer[5] = (obj->offset >> 24) & 255;
-            buffer[6] = (obj->offset >> 16) & 255;
-            buffer[7] = (obj->offset >> 8) & 255;
-            buffer[8] = obj->offset & 255;
-            break;
-#endif // !_WIN32
+	      buffer[1] = (number >> 32) & 255;
+#endif // _WIN32
+	      buffer[2] = (number >> 24) & 255;
+	      buffer[3] = (number >> 16) & 255;
+	      buffer[4] = (number >> 8) & 255;
+	      buffer[5] = number & 255;
+	      break;
+	  case 6 :
+#ifndef _WIN32 // Windows off_t is 32-bits?!?
+	      buffer[1] = (number >> 40) & 255;
+	      buffer[2] = (number >> 32) & 255;
+#endif // _WIN32
+	      buffer[3] = (number >> 24) & 255;
+	      buffer[4] = (number >> 16) & 255;
+	      buffer[5] = (number >> 8) & 255;
+	      buffer[6] = number & 255;
+	      break;
+	  case 7 :
+#ifndef _WIN32 // Windows off_t is 32-bits?!?
+	      buffer[1] = (number >> 48) & 255;
+	      buffer[2] = (number >> 40) & 255;
+	      buffer[3] = (number >> 32) & 255;
+#endif // _WIN32
+	      buffer[4] = (number >> 24) & 255;
+	      buffer[5] = (number >> 16) & 255;
+	      buffer[6] = (number >> 8) & 255;
+	      buffer[7] = number & 255;
+	      break;
+	  default :
+#ifndef _WIN32 // Windows off_t is 32-bits?!?
+	      buffer[1] = (number >> 56) & 255;
+	      buffer[2] = (number >> 48) & 255;
+	      buffer[3] = (number >> 40) & 255;
+	      buffer[4] = (number >> 32) & 255;
+#endif // _WIN32
+	      buffer[5] = (number >> 24) & 255;
+	      buffer[6] = (number >> 16) & 255;
+	      buffer[7] = (number >> 8) & 255;
+	      buffer[8] = number & 255;
+	      break;
+	}
+
+        switch (idxsize)
+        {
+          case 1 :
+              buffer[1 + offsize] = obj->objstm_number & 255;
+              break;
+          case 2 :
+          default :
+              buffer[1 + offsize] = (obj->objstm_number >> 8) & 255;
+              buffer[2 + offsize] = obj->objstm_number & 255;
+              break;
+        }
+      }
+      else
+      {
+        // Regular object
+	buffer[0] = 1;
+	memset(buffer + 1 + offsize, 0, idxsize);
+
+	switch (offsize)
+	{
+	  case 1 :
+	      buffer[1] = obj->offset & 255;
+	      break;
+	  case 2 :
+	      buffer[1] = (obj->offset >> 8) & 255;
+	      buffer[2] = obj->offset & 255;
+	      break;
+	  case 3 :
+	      buffer[1] = (obj->offset >> 16) & 255;
+	      buffer[2] = (obj->offset >> 8) & 255;
+	      buffer[3] = obj->offset & 255;
+	      break;
+	  case 4 :
+	      buffer[1] = (obj->offset >> 24) & 255;
+	      buffer[2] = (obj->offset >> 16) & 255;
+	      buffer[3] = (obj->offset >> 8) & 255;
+	      buffer[4] = obj->offset & 255;
+	      break;
+	  case 5 :
+#ifndef _WIN32 // Windows off_t is 32-bits?!?
+	      buffer[1] = (obj->offset >> 32) & 255;
+#endif // _WIN32
+	      buffer[2] = (obj->offset >> 24) & 255;
+	      buffer[3] = (obj->offset >> 16) & 255;
+	      buffer[4] = (obj->offset >> 8) & 255;
+	      buffer[5] = obj->offset & 255;
+	      break;
+	  case 6 :
+#ifndef _WIN32 // Windows off_t is 32-bits?!?
+	      buffer[1] = (obj->offset >> 40) & 255;
+	      buffer[2] = (obj->offset >> 32) & 255;
+#endif // _WIN32
+	      buffer[3] = (obj->offset >> 24) & 255;
+	      buffer[4] = (obj->offset >> 16) & 255;
+	      buffer[5] = (obj->offset >> 8) & 255;
+	      buffer[6] = obj->offset & 255;
+	      break;
+	  case 7 :
+#ifndef _WIN32 // Windows off_t is 32-bits?!?
+	      buffer[1] = (obj->offset >> 48) & 255;
+	      buffer[2] = (obj->offset >> 40) & 255;
+	      buffer[3] = (obj->offset >> 32) & 255;
+#endif // _WIN32
+	      buffer[4] = (obj->offset >> 24) & 255;
+	      buffer[5] = (obj->offset >> 16) & 255;
+	      buffer[6] = (obj->offset >> 8) & 255;
+	      buffer[7] = obj->offset & 255;
+	      break;
+	  default :
+#ifndef _WIN32 // Windows off_t is 32-bits?!?
+	      buffer[1] = (obj->offset >> 56) & 255;
+	      buffer[2] = (obj->offset >> 48) & 255;
+	      buffer[3] = (obj->offset >> 40) & 255;
+	      buffer[4] = (obj->offset >> 32) & 255;
+#endif // _WIN32
+	      buffer[5] = (obj->offset >> 24) & 255;
+	      buffer[6] = (obj->offset >> 16) & 255;
+	      buffer[7] = (obj->offset >> 8) & 255;
+	      buffer[8] = obj->offset & 255;
+	      break;
+	}
       }
 
-      if (!pdfioStreamWrite(xref_st, buffer, (size_t)offsize + 2))
+      if (!pdfioStreamWrite(xref_st, buffer, (size_t)(1 + offsize + idxsize)))
       {
 	_pdfioFileError(pdf, "Unable to write cross-reference table.");
 	ret = false;

@@ -323,7 +323,10 @@ struct _pdfio_file_s			// PDF file structure
   pdfio_dict_t	*encrypt_dict;		// De/Encryption dictionary
   pdfio_obj_t	*cgats001_obj,		// CGATS001 ICC profile object
 		*cp1252_obj,		// CP1252 font encoding object
-		*unicode_obj;		// Unicode font encoding object
+		*unicode_obj,		// Unicode font encoding object
+		*objstm_obj;		// Object stream object
+  pdfio_dict_t	*objstm_dict;		// Object stream dictionary
+  size_t	num_objstm;		// Number of objects in object stream
   pdfio_array_t	*id_array;		// ID array
   bool		encrypt_metadata;	// Encrypt metadata?
   pdfio_dict_t	*markinfo;		// MarkInfo dictionary, if any
@@ -363,6 +366,9 @@ struct _pdfio_obj_s			// Object
   size_t	stream_length;		// Length of stream, if any
   _pdfio_value_t value;			// Dictionary/number/etc. value
   pdfio_stream_t *stream;		// Open stream, if any
+  size_t	objstm_number;		// Object stream number
+  char		*objstm_data;		// Object stream data, if any
+  size_t	objstm_datalen;		// Object stream data length
   void		*data;			// Extension data, if any
   _pdfio_extfree_t datafree;		// Free callback for extension data
 };
