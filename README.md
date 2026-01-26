@@ -74,6 +74,12 @@ To install it, run:
     sudo make install
 
 
+On a stock Ubuntu or Debian installation, the following command will install
+the required build prerequisites:
+
+    sudo apt install build-essential libpng-dev zlib1g-dev
+
+
 Visual Studio Project
 ---------------------
 
