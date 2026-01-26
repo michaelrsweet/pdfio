@@ -33,10 +33,6 @@ PDFio requires the following to build the software:
 
 IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
 
-On Ubuntu/Debian:
-
-    sudo apt install build-essential libpng-dev zlib1g-dev
-
 
 Documentation
 -------------
@@ -72,6 +68,12 @@ To test it, run:
 To install it, run:
 
     sudo make install
+
+
+On a stock Ubuntu or Debian installation, the following command will install
+the required build prerequisites:
+
+    sudo apt install build-essential libpng-dev zlib1g-dev
 
 
 Visual Studio Project
