@@ -396,7 +396,8 @@ get_contents(pdfio_obj_t *page)		// I - Page object
   if (page->value.type != PDFIO_VALTYPE_DICT)
     return (NULL);
 
-  contents = _pdfioDictGetValue(page->value.value.dict, "Contents");
+  if ((contents = _pdfioDictGetValue(page->value.value.dict, "Contents")) == NULL)
+    return (NULL);
 
   if (contents->type == PDFIO_VALTYPE_INDIRECT)
   {
