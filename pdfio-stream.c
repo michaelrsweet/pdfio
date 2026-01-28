@@ -1153,7 +1153,7 @@ stream_get_bytes(
         if (a85ch >= '!' && a85ch <= 'u')
         {
           // Valid ASCII85Decode character...
-          a85val = a85val * 85 + a85ch - '!';
+          a85val = a85val * 85 + (unsigned)a85ch - '!';
           count ++;
         }
         else if (a85ch == 'z' && count == 0)

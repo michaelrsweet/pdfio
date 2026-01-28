@@ -37,10 +37,10 @@ _pdfioLZWCreate(int  code_size,		// I - Data code size in bits (typically 8 for 
 
   if ((lzw = (_pdfio_lzw_t *)calloc(1, sizeof(_pdfio_lzw_t))) != NULL)
   {
-    lzw->def_code_size = code_size + 1;
-    lzw->clear_code    = (short)(1 << code_size);
+    lzw->def_code_size = (uint8_t)(code_size + 1);
+    lzw->clear_code    = (uint16_t)(1 << code_size);
     lzw->eod_code      = lzw->clear_code + 1;
-    lzw->early         = early;
+    lzw->early         = (uint8_t)early;
     lzw->reversed      = reversed;
 
     lzw_clear(lzw);
@@ -83,7 +83,7 @@ _pdfioLZWInflate(_pdfio_lzw_t *lzw)	// I - LZW state
   // Copy pending compressed data to the output buffer...
   while (lzw->stptr > lzw->stack && lzw->avail_out > 0)
   {
-    *(lzw->next_out++) = *(--lzw->stptr);
+    *(lzw->next_out++) = (uint8_t)*(--lzw->stptr);
     lzw->avail_out --;
     PDFIO_DEBUG("_pdfioLZWInflate: Unrolled value %d, stptr=%p(%ld), avail_out=%u\n", *(lzw->stptr), (void *)lzw->stptr, lzw->stptr - lzw->stack, (unsigned)lzw->avail_out);
   }
@@ -118,8 +118,8 @@ _pdfioLZWInflate(_pdfio_lzw_t *lzw)	// I - LZW state
     if (lzw->first_code == 0xffff)
     {
       // First code...
-      lzw->first_code    = lzw->old_code = in_code;
-      *(lzw->next_out++) = in_code;
+      lzw->first_code    = lzw->old_code = (uint16_t)in_code;
+      *(lzw->next_out++) = (uint8_t)in_code;
       lzw->avail_out --;
 
       PDFIO_DEBUG("_pdfioLZWInflate: first_code=%d.\n", in_code);
@@ -183,7 +183,7 @@ _pdfioLZWInflate(_pdfio_lzw_t *lzw)	// I - LZW state
       if (lzw->next_code >= lzw->next_size_code && lzw->cur_code_size < 12)
       {
         lzw->cur_code_size ++;
-        lzw->next_size_code = (1 << lzw->cur_code_size) - lzw->early;
+        lzw->next_size_code = (uint16_t)((1 << lzw->cur_code_size) - lzw->early);
         PDFIO_DEBUG("_pdfioLZWInflate: Increased code size to %u, next_size_code=%u\n", lzw->cur_code_size, lzw->next_size_code);
       }
     }
@@ -192,7 +192,7 @@ _pdfioLZWInflate(_pdfio_lzw_t *lzw)	// I - LZW state
 
     while (lzw->stptr > lzw->stack && lzw->avail_out > 0)
     {
-      *(lzw->next_out++) = *(--lzw->stptr);
+      *(lzw->next_out++) = (uint8_t)*(--lzw->stptr);
       lzw->avail_out --;
       PDFIO_DEBUG("_pdfioLZWInflate: Unrolled value %d, stptr=%p(%ld), avail_out=%u\n", *(lzw->stptr), (void *)lzw->stptr, lzw->stptr - lzw->stack, (unsigned)lzw->avail_out);
     }
@@ -216,7 +216,7 @@ lzw_clear(_pdfio_lzw_t *lzw)		// I - LZW state
 
   lzw->cur_code_size  = lzw->def_code_size;
   lzw->next_code      = lzw->clear_code + 2;
-  lzw->next_size_code = (1 << lzw->cur_code_size)  - lzw->early;
+  lzw->next_size_code = (uint16_t)((1 << lzw->cur_code_size)  - lzw->early);
   lzw->first_code     = 0xffff;
   lzw->old_code       = 0xffff;
 
@@ -278,7 +278,7 @@ lzw_get_code(_pdfio_lzw_t *lzw)		// I - LZW state
     }
 
     if ((in_add = sizeof(lzw->in_bytes) - in_used) > lzw->avail_in)
-      in_add = lzw->avail_in;
+      in_add = (uint16_t)lzw->avail_in;
 
     memcpy(lzw->in_bytes + in_used, lzw->next_in, in_add);
     lzw->next_in  += in_add;
@@ -301,7 +301,7 @@ lzw_get_code(_pdfio_lzw_t *lzw)		// I - LZW state
     // Insane GIF-style right-to-left bit encoding...
     for (code = 0, in_bit = lzw->in_bit + lzw->cur_code_size - 1, remaining = lzw->cur_code_size; remaining > 0; in_bit --, remaining --)
     {
-      code = (code << 1) | ((lzw->in_bytes[in_bit / 8] & rbits[in_bit & 7]) != 0);
+      code = (uint16_t)((code << 1) | ((lzw->in_bytes[in_bit / 8] & rbits[in_bit & 7]) != 0));
     }
   }
   else
@@ -318,9 +318,9 @@ lzw_get_code(_pdfio_lzw_t *lzw)		// I - LZW state
 
       // Get those bits
       if (bits == 8)			// Full byte from buffer
-	code = (code << 8) | byte;
+	code = (uint16_t)((code << 8) | byte);
       else				// Partial byte from buffer
-	code = (code << bits) | ((byte >> (8 - bits - boff)) & mask[bits]);
+	code = (uint16_t)((code << bits) | ((byte >> (8 - bits - boff)) & mask[bits]));
     }
   }
 

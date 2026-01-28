@@ -22,6 +22,7 @@
 		273440CD263D727800FBFD63 /* pdfio-page.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440C2263D727800FBFD63 /* pdfio-page.c */; };
 		273440D8263D72E100FBFD63 /* testpdfio.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440D7263D72E100FBFD63 /* testpdfio.c */; };
 		273440E4263DD7EA00FBFD63 /* pdfio-token.c in Sources */ = {isa = PBXBuildFile; fileRef = 273440E3263DD7EA00FBFD63 /* pdfio-token.c */; };
+		273707A52F299C3100953C95 /* pdfio-lzw.c in Sources */ = {isa = PBXBuildFile; fileRef = 273707A42F299C3100953C95 /* pdfio-lzw.c */; };
 		2741C9A22F05872C002D93F2 /* ttf-cache.c in Sources */ = {isa = PBXBuildFile; fileRef = 2741C99F2F05872C002D93F2 /* ttf-cache.c */; };
 		2741C9A32F05872C002D93F2 /* ttf-file.c in Sources */ = {isa = PBXBuildFile; fileRef = 2741C9A02F05872C002D93F2 /* ttf-file.c */; };
 		2741C9A42F05872C002D93F2 /* ttf-private.h in Headers */ = {isa = PBXBuildFile; fileRef = 2741C9A12F05872C002D93F2 /* ttf-private.h */; };
@@ -84,6 +85,7 @@
 		273440E1263D73A300FBFD63 /* pdfio.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = pdfio.html; path = doc/pdfio.html; sourceTree = "<group>"; };
 		273440E2263D73A300FBFD63 /* pdfio.3 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = pdfio.3; path = doc/pdfio.3; sourceTree = "<group>"; };
 		273440E3263DD7EA00FBFD63 /* pdfio-token.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "pdfio-token.c"; sourceTree = "<group>"; };
+		273707A42F299C3100953C95 /* pdfio-lzw.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = "pdfio-lzw.c"; sourceTree = "<group>"; };
 		2741C99E2F05872C002D93F2 /* ttf.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ttf.h; path = ttf/ttf.h; sourceTree = "<group>"; };
 		2741C99F2F05872C002D93F2 /* ttf-cache.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = "ttf-cache.c"; path = "ttf/ttf-cache.c"; sourceTree = "<group>"; };
 		2741C9A02F05872C002D93F2 /* ttf-file.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = "ttf-file.c"; path = "ttf/ttf-file.c"; sourceTree = "<group>"; };
@@ -174,6 +176,7 @@
 				27F2F05F2710BE92008ECD36 /* pdfio-crypto.c */,
 				273440BE263D727800FBFD63 /* pdfio-dict.c */,
 				273440BD263D727800FBFD63 /* pdfio-file.c */,
+				273707A42F299C3100953C95 /* pdfio-lzw.c */,
 				27F2F05D2710BE92008ECD36 /* pdfio-md5.c */,
 				273440BC263D727800FBFD63 /* pdfio-object.c */,
 				273440C2263D727800FBFD63 /* pdfio-page.c */,
@@ -305,6 +308,7 @@
 				273440C9263D727800FBFD63 /* pdfio-dict.c in Sources */,
 				273440C8263D727800FBFD63 /* pdfio-file.c in Sources */,
 				273440CB263D727800FBFD63 /* pdfio-value.c in Sources */,
+				273707A52F299C3100953C95 /* pdfio-lzw.c in Sources */,
 				273440CA263D727800FBFD63 /* pdfio-stream.c in Sources */,
 				273440CD263D727800FBFD63 /* pdfio-page.c in Sources */,
 				27F2F0622710BE92008ECD36 /* pdfio-crypto.c in Sources */,

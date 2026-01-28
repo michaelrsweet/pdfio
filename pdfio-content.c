@@ -2516,7 +2516,7 @@ copy_gif(pdfio_dict_t *dict,		// I - Image dictionary
 
 
   // Read the header; we already know it is a GIF file...
-  if (read(fd, header, sizeof(header)) < sizeof(header))
+  if (read(fd, header, sizeof(header)) < (ssize_t)sizeof(header))
   {
     _pdfioFileError(dict->pdf, "Unable to read GIF header: %s", strerror(errno));
     return (NULL);
@@ -2524,8 +2524,8 @@ copy_gif(pdfio_dict_t *dict,		// I - Image dictionary
 
   PDFIO_DEBUG("copy_gif: header=<%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X>\n", header[0], header[1], header[2], header[3], header[4], header[5], header[6], header[7], header[8], header[9], header[10], header[11], header[12]);
 
-  width   = (header[7] << 8) | header[6];
-  height  = (header[9] << 8) | header[8];
+  width   = (size_t)((header[7] << 8) | header[6]);
+  height  = (size_t)((header[9] << 8) | header[8]);
   ncolors = 2 << (header[10] & _PDFIO_GIF_COLORBITS);
 
   PDFIO_DEBUG("copy_gif: width=%u, height=%u, ncolors=%d\n", (unsigned)width, (unsigned)height, ncolors);
@@ -2540,7 +2540,7 @@ copy_gif(pdfio_dict_t *dict,		// I - Image dictionary
   {
     // Read colormap after the file header...
     PDFIO_DEBUG("copy_gif: Have colormap.\n");
-    if (read(fd, cmap, ncolors * 3) < (ncolors * 3))
+    if (read(fd, cmap, (size_t)(ncolors * 3)) < (ssize_t)(ncolors * 3))
     {
       _pdfioFileError(dict->pdf, "Unable to read GIF colormap: %s", strerror(errno));
       return (NULL);
@@ -2551,7 +2551,7 @@ copy_gif(pdfio_dict_t *dict,		// I - Image dictionary
     // Make a grayscale colormap for the number of colors...
     PDFIO_DEBUG("copy_gif: Using default grayscale colormap.\n");
     for (int i = 0; i < ncolors; i ++)
-      cmap[i][0] = cmap[i][1] = cmap[i][2] = 255 * i / (ncolors - 1);
+      cmap[i][0] = cmap[i][1] = cmap[i][2] = (uint8_t)(255 * i / (ncolors - 1));
   }
 
 #if DEBUG > 1
@@ -2583,7 +2583,7 @@ copy_gif(pdfio_dict_t *dict,		// I - Image dictionary
 	  pdfioDictSetNumber(dict, "Width", width);
 	  pdfioDictSetNumber(dict, "Height", height);
 	  pdfioDictSetNumber(dict, "BitsPerComponent", 8);
-          pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPalette(dict->pdf, ncolors, cmap[0]));
+          pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPalette(dict->pdf, (size_t)ncolors, cmap[0]));
 
           if (transparent >= 0)
           {
@@ -2619,7 +2619,7 @@ copy_gif(pdfio_dict_t *dict,		// I - Image dictionary
 
           if (extdesc == 0xf9)		// Graphic Control Extension
           {
-            if ((blocklen = gif_get_block(dict->pdf, fd, block, sizeof(block))) < 4)
+            if (gif_get_block(dict->pdf, fd, block, sizeof(block)) < 4)
               goto done;
 
             if (block[0] & 1)		// Get transparent color index
@@ -4187,7 +4187,7 @@ gif_read_image(
 		ypasses[5] = { 0, 4, 2, 1, 0 };
 
 
-  if (read(fd, iheader, sizeof(iheader)) < sizeof(iheader))
+  if (read(fd, iheader, sizeof(iheader)) < (ssize_t)sizeof(iheader))
   {
     _pdfioFileError(pdf, "Unable to read GIF image header.");
     return (false);
@@ -4195,10 +4195,10 @@ gif_read_image(
 
   PDFIO_DEBUG("gif_read_image: iheader=<%02X%02X%02X%02X%02X%02X%02X%02X%02X>\n", iheader[0], iheader[1], iheader[2], iheader[3], iheader[4], iheader[5], iheader[6], iheader[7], iheader[8]);
 
-  ileft   = iheader[0] | (iheader[1] << 8);
-  itop    = iheader[2] | (iheader[3] << 8);
-  iwidth  = iheader[4] | (iheader[5] << 8);
-  iheight = iheader[6] | (iheader[7] << 8);
+  ileft   = (size_t)(iheader[0] | (iheader[1] << 8));
+  itop    = (size_t)(iheader[2] | (iheader[3] << 8));
+  iwidth  = (size_t)(iheader[4] | (iheader[5] << 8));
+  iheight = (size_t)(iheader[6] | (iheader[7] << 8));
   interlace = (iheader[8] & _PDFIO_GIF_INTERLACE) != 0;
 
   PDFIO_DEBUG("gif_read_image: ileft=%u, itop=%u, iwidth=%u, iheight=%u, interlace=%s\n", (unsigned)ileft, (unsigned)itop, (unsigned)iwidth, (unsigned)iheight, interlace ? "true" : "false");
@@ -4220,7 +4220,7 @@ gif_read_image(
 
     PDFIO_DEBUG("gif_read_image: Colormap with %d colors.\n", ncolors2);
 
-    if (read(fd, cmap, 3 * ncolors2) < (3 * ncolors2))
+    if (read(fd, cmap, (size_t)(3 * ncolors2)) < (ssize_t)(3 * ncolors2))
     {
       _pdfioFileError(pdf, "Unable to read GIF image colormap.");
       return (false);
