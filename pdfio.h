@@ -241,7 +241,7 @@ extern bool		pdfioPageCopy(pdfio_file_t *pdf, pdfio_obj_t *srcpage) _PDFIO_PUBLI
 extern pdfio_array_t	*pdfioPageGetArray(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
 extern unsigned char	*pdfioPageGetBinary(pdfio_obj_t *page, const char *key, size_t *length) _PDFIO_PUBLIC;
 extern bool		pdfioPageGetBoolean(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
-extern time_t		pdfioDictPageDate(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
+extern time_t		pdfioPageGetDate(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
 extern pdfio_dict_t	*pdfioPageGetDict(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
 extern const char	*pdfioPageGetName(pdfio_obj_t *page, const char *key) _PDFIO_PUBLIC;
 extern size_t		pdfioPageGetNumStreams(pdfio_obj_t *page) _PDFIO_PUBLIC;
