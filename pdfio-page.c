@@ -1,7 +1,7 @@
 //
 // PDF page functions for PDFio.
 //
-// Copyright © 2021-2022 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -123,7 +123,8 @@ get_contents(pdfio_obj_t *page)		// I - Page object
   if (page->value.type != PDFIO_VALTYPE_DICT)
     return (NULL);
 
-  contents = _pdfioDictGetValue(page->value.value.dict, "Contents");
+  if ((contents = _pdfioDictGetValue(page->value.value.dict, "Contents")) == NULL)
+    return (NULL);
 
   if (contents->type == PDFIO_VALTYPE_INDIRECT)
   {
