@@ -794,7 +794,7 @@ pdfioFileFindObj(
   if (number == pdf->objs[current]->number)
   {
     // Fast match...
-    PDFIO_DEBUG("pdfioFileFindObj: Returning %lu (%p)\n", (unsigned long)current, (void *)pdf->objs[current]);
+    PDFIO_DEBUG("pdfioFileFindObj(%lu): Returning %lu (%p)\n", (unsigned long)number, (unsigned long)current, (void *)pdf->objs[current]);
     return (pdf->objs[current]);
   }
   else if (number < pdf->objs[current]->number)
@@ -822,17 +822,17 @@ pdfioFileFindObj(
 
   if (number == pdf->objs[left]->number)
   {
-    PDFIO_DEBUG("pdfioFileFindObj: Returning %lu (%p)\n", (unsigned long)left, (void *)pdf->objs[left]);
+    PDFIO_DEBUG("pdfioFileFindObj(%lu): Returning %lu (%p)\n", (unsigned long)number, (unsigned long)left, (void *)pdf->objs[left]);
     return (pdf->objs[left]);
   }
   else if (number == pdf->objs[right]->number)
   {
-    PDFIO_DEBUG("pdfioFileFindObj: Returning %lu (%p)\n", (unsigned long)right, (void *)pdf->objs[right]);
+    PDFIO_DEBUG("pdfioFileFindObj(%lu): Returning %lu (%p)\n", (unsigned long)number, (unsigned long)right, (void *)pdf->objs[right]);
     return (pdf->objs[right]);
   }
   else
   {
-    PDFIO_DEBUG("pdfioFileFindObj: Returning NULL\n");
+    PDFIO_DEBUG("pdfioFileFindObj(%lu): Returning NULL\n", (unsigned long)number);
     return (NULL);
   }
 }
