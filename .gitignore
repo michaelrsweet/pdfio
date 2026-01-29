@@ -25,4 +25,5 @@
 /pdfio-*.zip*
 /testpdfio
 /testpdfio-*.pdf
+/testfiles/testpdfio-*.pdf
 /x64

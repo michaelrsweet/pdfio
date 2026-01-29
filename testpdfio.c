@@ -502,19 +502,19 @@ do_pdfa_tests(void)
 
 
   // Test creation of files using various PDF/A standards
-  status |= write_pdfa_file("testpdfio-pdfa-1a.pdf", "PDF/A-1a");
-  status |= write_pdfa_file("testpdfio-pdfa-1b.pdf", "PDF/A-1b");
-  status |= write_pdfa_file("testpdfio-pdfa-2a.pdf", "PDF/A-2a");
-  status |= write_pdfa_file("testpdfio-pdfa-2b.pdf", "PDF/A-2b");
-  status |= write_pdfa_file("testpdfio-pdfa-2u.pdf", "PDF/A-2u");
-  status |= write_pdfa_file("testpdfio-pdfa-3a.pdf", "PDF/A-3a");
-  status |= write_pdfa_file("testpdfio-pdfa-3b.pdf", "PDF/A-3b");
-  status |= write_pdfa_file("testpdfio-pdfa-3u.pdf", "PDF/A-3u");
-  status |= write_pdfa_file("testpdfio-pdfa-4.pdf", "PDF/A-4");
+  status |= write_pdfa_file("testfiles/testpdfio-pdfa-1a.pdf", "PDF/A-1a");
+  status |= write_pdfa_file("testfiles/testpdfio-pdfa-1b.pdf", "PDF/A-1b");
+  status |= write_pdfa_file("testfiles/testpdfio-pdfa-2a.pdf", "PDF/A-2a");
+  status |= write_pdfa_file("testfiles/testpdfio-pdfa-2b.pdf", "PDF/A-2b");
+  status |= write_pdfa_file("testfiles/testpdfio-pdfa-2u.pdf", "PDF/A-2u");
+  status |= write_pdfa_file("testfiles/testpdfio-pdfa-3a.pdf", "PDF/A-3a");
+  status |= write_pdfa_file("testfiles/testpdfio-pdfa-3b.pdf", "PDF/A-3b");
+  status |= write_pdfa_file("testfiles/testpdfio-pdfa-3u.pdf", "PDF/A-3u");
+  status |= write_pdfa_file("testfiles/testpdfio-pdfa-4.pdf", "PDF/A-4");
 
   // Test that encryption is not allowed for PDF/A files
   testBegin("pdfioFileCreate(testpdfio-pdfa-rc4.pdf)");
-  if ((pdf = pdfioFileCreate("testpdfio-pdfa-rc4.pdf", "PDF/A-1b", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) == NULL)
+  if ((pdf = pdfioFileCreate("testfiles/testpdfio-pdfa-rc4.pdf", "PDF/A-1b", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) == NULL)
   {
     testEnd(false);
     return (1);
@@ -1284,22 +1284,22 @@ do_unit_tests(void)
     return (1);
 
   // Create a new PDF file...
-  testBegin("pdfioFileCreate(\"testpdfio-out.pdf\", ...)");
-  if ((outpdf = pdfioFileCreate("testpdfio-out.pdf", /*version*/"1.7", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  testBegin("pdfioFileCreate(\"testfiles/testpdfio-out.pdf\", ...)");
+  if ((outpdf = pdfioFileCreate("testfiles/testpdfio-out.pdf", /*version*/"1.7", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
     testEnd(true);
   else
     goto fail;
 
-  if (write_unit_file(inpdf, "testpdfio-out.pdf", outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "testfiles/testpdfio-out.pdf", outpdf, &num_pages, &first_image))
     goto fail;
 
-  if (read_unit_file("testpdfio-out.pdf", num_pages, first_image, false))
+  if (read_unit_file("testfiles/testpdfio-out.pdf", num_pages, first_image, false))
     goto fail;
 
   // Stream a new PDF file...
-  if ((outfd = open("testpdfio-out2.pdf", O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0666)) < 0)
+  if ((outfd = open("testfiles/testpdfio-out2.pdf", O_CREAT | O_TRUNC | O_WRONLY | O_BINARY, 0666)) < 0)
   {
-    perror("Unable to open \"testpdfio-out2.pdf\"");
+    perror("Unable to open \"testfiles/testpdfio-out2.pdf\"");
     goto fail;
   }
 
@@ -1309,17 +1309,17 @@ do_unit_tests(void)
   else
     goto fail;
 
-  if (write_unit_file(inpdf, "testpdfio-out2.pdf", outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "testfiles/testpdfio-out2.pdf", outpdf, &num_pages, &first_image))
     goto fail;
 
   close(outfd);
 
-  if (read_unit_file("testpdfio-out2.pdf", num_pages, first_image, true))
+  if (read_unit_file("testfiles/testpdfio-out2.pdf", num_pages, first_image, true))
     goto fail;
 
   // Create new encrypted PDF files...
-  testBegin("pdfioFileCreate(\"testpdfio-rc4.pdf\", ...)");
-  if ((outpdf = pdfioFileCreate("testpdfio-rc4.pdf", /*version*/"2.0", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  testBegin("pdfioFileCreate(\"testfiles/testpdfio-rc4.pdf\", ...)");
+  if ((outpdf = pdfioFileCreate("testfiles/testpdfio-rc4.pdf", /*version*/"2.0", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
     testEnd(true);
   }
@@ -1340,15 +1340,15 @@ do_unit_tests(void)
     return (1);
   }
 
-  if (write_unit_file(inpdf, "testpdfio-rc4.pdf", outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "testfiles/testpdfio-rc4.pdf", outpdf, &num_pages, &first_image))
     return (1);
 
-  if (read_unit_file("testpdfio-rc4.pdf", num_pages, first_image, false))
+  if (read_unit_file("testfiles/testpdfio-rc4.pdf", num_pages, first_image, false))
     return (1);
 
   // Create new encrypted PDF files...
-  testBegin("pdfioFileCreate(\"testpdfio-rc4p.pdf\", ...)");
-  if ((outpdf = pdfioFileCreate("testpdfio-rc4p.pdf", /*version*/"1.7", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  testBegin("pdfioFileCreate(\"testfiles/testpdfio-rc4p.pdf\", ...)");
+  if ((outpdf = pdfioFileCreate("testfiles/testpdfio-rc4p.pdf", /*version*/"1.7", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
     testEnd(true);
   }
@@ -1369,14 +1369,14 @@ do_unit_tests(void)
     return (1);
   }
 
-  if (write_unit_file(inpdf, "testpdfio-rc4p.pdf", outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "testfiles/testpdfio-rc4p.pdf", outpdf, &num_pages, &first_image))
     return (1);
 
-  if (read_unit_file("testpdfio-rc4p.pdf", num_pages, first_image, false))
+  if (read_unit_file("testfiles/testpdfio-rc4p.pdf", num_pages, first_image, false))
     return (1);
 
-  testBegin("pdfioFileCreate(\"testpdfio-aes.pdf\", ...)");
-  if ((outpdf = pdfioFileCreate("testpdfio-aes.pdf", /*version*/"2.0", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  testBegin("pdfioFileCreate(\"testfiles/testpdfio-aes.pdf\", ...)");
+  if ((outpdf = pdfioFileCreate("testfiles/testpdfio-aes.pdf", /*version*/"2.0", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
     testEnd(true);
   }
@@ -1397,14 +1397,14 @@ do_unit_tests(void)
     return (1);
   }
 
-  if (write_unit_file(inpdf, "testpdfio-aes.pdf", outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "testfiles/testpdfio-aes.pdf", outpdf, &num_pages, &first_image))
     return (1);
 
-  if (read_unit_file("testpdfio-aes.pdf", num_pages, first_image, false))
+  if (read_unit_file("testfiles/testpdfio-aes.pdf", num_pages, first_image, false))
     return (1);
 
-  testBegin("pdfioFileCreate(\"testpdfio-aesp.pdf\", ...)");
-  if ((outpdf = pdfioFileCreate("testpdfio-aesp.pdf", /*version*/"2.0", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
+  testBegin("pdfioFileCreate(\"testfiles/testpdfio-aesp.pdf\", ...)");
+  if ((outpdf = pdfioFileCreate("testfiles/testpdfio-aesp.pdf", /*version*/"2.0", /*media_box*/NULL, /*crop_box*/NULL, (pdfio_error_cb_t)error_cb, &error)) != NULL)
   {
     testEnd(true);
   }
@@ -1425,10 +1425,10 @@ do_unit_tests(void)
     return (1);
   }
 
-  if (write_unit_file(inpdf, "testpdfio-aesp.pdf", outpdf, &num_pages, &first_image))
+  if (write_unit_file(inpdf, "testfiles/testpdfio-aesp.pdf", outpdf, &num_pages, &first_image))
     return (1);
 
-  if (read_unit_file("testpdfio-aesp.pdf", num_pages, first_image, false))
+  if (read_unit_file("testfiles/testpdfio-aesp.pdf", num_pages, first_image, false))
     return (1);
 
   testBegin("pdfioFileCreateTemporary");
@@ -1847,7 +1847,7 @@ read_unit_file(const char *filename,	// I - File to read
   }
 
   // Close the new PDF file...
-  testBegin("pdfioFileClose(\"testpdfio-out.pdf\")");
+  testBegin("pdfioFileClose(\"testfiles/testpdfio-out.pdf\")");
   if (pdfioFileClose(pdf))
   {
     testEnd(true);
