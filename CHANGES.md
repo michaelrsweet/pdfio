@@ -24,6 +24,7 @@ v1.6.2 - YYYY-MM-DD
 - Added missing range checks to `pdfioArrayCopy` and `pdfioDictCopy`.
 - Refactored PDF encryption code to fix unlocking with certain files.
 - Improved xref table loop detection (Issue #148)
+- Changed how duplicate objects are handled in PDF files (Issue #155)
 - Fixed xref reconstruction for objects lacking a `Type` value.
 - Fixed `pdfioPageOpenStream` for indirect `Contents` arrays.
 - Fixed an error propagation bug when reading too-long values (Issue #146)

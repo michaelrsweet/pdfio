@@ -2236,20 +2236,26 @@ load_xref(
 	  // Create a placeholder for the object in memory...
 	  if ((current = pdfioFileFindObj(pdf, (size_t)number)) != NULL)
 	  {
-	    PDFIO_DEBUG("load_xref: existing object, prev offset=%u\n", (unsigned)current->offset);
+	    PDFIO_DEBUG("load_xref: existing object, prev offset=%u, generation=%u, new generation=%u\n", (unsigned)current->offset, (unsigned)current->generation, (unsigned)generation);
 
-            if (w[0] == 0 || buffer[0] == 1)
+            if (generation > current->generation)
             {
-              // Location of object...
-	      current->offset = (off_t)offset;
-	    }
-	    else if (number != offset)
-	    {
-	      // Object is part of a stream, offset is the object number...
-	      current->offset = 0;
-	    }
+              // Newer version of an existing object - update the references...
+              current->generation = generation;
 
-	    PDFIO_DEBUG("load_xref: new offset=%u\n", (unsigned)current->offset);
+	      if (w[0] == 0 || buffer[0] == 1)
+	      {
+		// Location of object...
+		current->offset = (off_t)offset;
+	      }
+	      else if (number != offset)
+	      {
+		// Object is part of a stream, offset is the object number...
+		current->offset = 0;
+	      }
+
+	      PDFIO_DEBUG("load_xref: new offset=%u\n", (unsigned)current->offset);
+	    }
 	  }
 
 	  if (w[0] > 0 && buffer[0] == 2)
