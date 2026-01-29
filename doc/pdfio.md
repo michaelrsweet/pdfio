@@ -15,9 +15,9 @@ goals of PDFio are:
 PDFio is *not* concerned with rendering or viewing a PDF file, although a PDF
 RIP or viewer could be written using it.
 
-PDFio is Copyright © 2021-2026 by Michael R Sweet and is licensed under the
-Apache License Version 2.0 with an (optional) exception to allow linking against
-GPL2/LGPL2 software.  See the files "LICENSE" and "NOTICE" for more information.
+Copyright © 2021-2026 by Michael R Sweet.  PDFio is licensed under the Apache
+License Version 2.0 with an (optional) exception to allow linking against GNU
+GPL2-only software.  See the files `LICENSE` and `NOTICE` for more information.
 
 
 Requirements
