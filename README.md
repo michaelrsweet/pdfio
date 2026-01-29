@@ -1,4 +1,4 @@
-pdfio - PDF Read/Write Library
+PDFio - PDF Read/Write Library
 ==============================
 
 ![Version](https://img.shields.io/github/v/release/michaelrsweet/pdfio?include_prereleases)
@@ -20,88 +20,30 @@ goals of PDFio are:
 PDFio is *not* concerned with rendering or viewing a PDF file, although a PDF
 RIP or viewer could be written using it.
 
-
-Requirements
-------------
-
-PDFio requires the following to build the software:
-
-- A C99 compiler such as Clang, GCC, or MS Visual C
-- A POSIX-compliant `make` program
-- A POSIX-compliant `sh` program
-- libpng (<https://www.libpng.org/>) 1.6 or later for full PNG image support
-  (optional)
-- libwebp (<https://developers.google.com/speed/webp>) 1.0 or later for WebP
-  image support (optional)
-- ZLIB (<https://www.zlib.net/>) 1.1 or later
-
-IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
+PDFio is Copyright © 2021-2026 by Michael R Sweet and is licensed under the
+Apache License Version 2.0 with an (optional) exception to allow linking against
+GNU GPL2-only software.  See the files `LICENSE` and `NOTICE` for more
+information.
 
 
-Documentation
--------------
+Reading the Documentation
+-------------------------
 
-See the man page (`pdfio.3`) and full HTML documentation (`pdfio.html`) for
-information on using PDFio.
+Initial documentation to get you started is provided in the root directory of
+the PDFio sources:
 
+- `CHANGES.md`: A list of changes for each release of PDFio.
+- `CODE_OF_CONDUCT.md`: Code of conduct for the project.
+- `CONTRIBUTING.md`: Guidelines for contributing to the project.
+- `INSTALL.md`: Instructions for building, testing, and installing PDFio.
+- `LICENSE`: The PDFio license agreement (Apache 2.0).
+- `NOTICE`: Copyright notices and exceptions to the PDFio license agreement.
+- `README.md`: This file.
+- `SECURITY.md`: How (and when) to report security issues.
 
-Installing PDFio
-----------------
+You will find the PDFio documentation in HTML, EPUB, and man formats in the
+`doc` directory.
 
-PDFio uses a configure script on Unix systems to generate a makefile:
+Examples can be found in the `examples` directory.
 
-    ./configure
-
-If you want a shared library, run:
-
-    ./configure --enable-shared
-
-The default installation location is "/usr/local".  Pass the `--prefix` option
-to make to install it to another location:
-
-    ./configure --prefix=/some/other/directory
-
-Once configured, run the following to make the library:
-
-    make all
-
-To test it, run:
-
-    make test
-
-To install it, run:
-
-    sudo make install
-
-
-On a stock Ubuntu or Debian installation, the following command will install
-the required build prerequisites:
-
-    sudo apt install build-essential libpng-dev zlib1g-dev
-
-
-Visual Studio Project
----------------------
-
-The Visual Studio solution ("pdfio.sln") is provided for Windows developers and
-generates the PDFIO1 DLL.  You can also use NuGet to install the `pdfio_native`
-package.
-
-
-Xcode Project
--------------
-
-There is also an Xcode project ("pdfio.xcodeproj") you can use on macOS which
-generates a static library that will be installed under "/usr/local" with:
-
-    sudo xcodebuild install
-
-
-Legal Stuff
------------
-
-PDFio is Copyright © 2021-2026 by Michael R Sweet.
-
-This software is licensed under the Apache License Version 2.0 with an
-(optional) exception to allow linking against GPL2/LGPL2 software.  See the
-files "LICENSE" and "NOTICE" for more information.
+*Please read the documentation before asking questions.*

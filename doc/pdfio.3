@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2026-01-18" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2026-01-29" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -60,12 +60,18 @@ libwebp (https://developers.google.com/speed/webp) 1.0 or later for WebP image s
 
 .IP \(bu 5
 .PP
-ZLIB (https://www.zlib.net/) 1.1 or later
+ZLIB (https://www.zlib.net/) 1.1 or later for compression support
 
 
 .PP
 IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
-.SS Installing PDFio
+.PP
+On a stock Ubuntu install, the following command will install the various prerequisites:
+.nf
+
+    sudo apt\-get install build\-essential libpng\-dev libwebp\-dev zlib1g\-dev
+.fi
+.SS Building and Installing PDFio on Linux/Unix
 .PP
 PDFio comes with a configure script that creates a portable makefile that will work on any POSIX\-compliant system with ZLIB installed. To make it, run:
 .nf
@@ -105,16 +111,22 @@ Other configure options can be found using the \-\-help option:
 
     \./configure \-\-help
 .fi
-.SS Visual Studio Project
+.SS Building on Windows with Visual Studio
 .PP
-The Visual Studio solution ("pdfio.sln") is provided for Windows developers and generates both a static library and DLL.
-.SS Xcode Project
+The Visual Studio solution ("pdfio.sln") is provided for Windows developers and generates the PDFIO1 DLL. You can also use NuGet to install the pdfio_native package.
 .PP
-There is also an Xcode project ("pdfio.xcodeproj") you can use on macOS which generates a static library that will be installed under "/usr/local" with:
+You can build and run the testpdfio unit tests target from within Visual Studio to verify the functioning of the library.
+.SS Building on macOS with Xcode
+.PP
+The Xcode project (pdfio.xcodeproj) is provided for macOS developer which generates a static library that will be installed under "/usr/local". Run the following command to build and install PDFio on macOS:
 .nf
 
     sudo xcodebuild install
 .fi
+.PP
+Alternately you can add the Xcode project to a workspace and reference the PDFio library target as a dependency in your own project.
+.PP
+You can build and run the testpdfio unit tests target from within Xcode to verify the functioning of the library.
 .SS Detecting PDFio
 .PP
 PDFio can be detected using the pkg\-config command, for example:
@@ -5337,4 +5349,4 @@ typedef enum pdfio_valtype_e pdfio_valtype_t;
 Michael R Sweet
 .SH COPYRIGHT
 .PP
-Copyright (c) 2021-2025 by Michael R Sweet
+Copyright (c) 2021-2026 by Michael R Sweet

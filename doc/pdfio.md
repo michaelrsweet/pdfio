@@ -32,13 +32,18 @@ PDFio requires the following to build the software:
   (optional)
 - libwebp (<https://developers.google.com/speed/webp>) 1.0 or later for WebP
   image support (optional)
-- ZLIB (<https://www.zlib.net/>) 1.1 or later
+- ZLIB (<https://www.zlib.net/>) 1.1 or later for compression support
 
 IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.
 
+On a stock Ubuntu install, the following command will install the various
+prerequisites:
 
-Installing PDFio
-----------------
+    sudo apt-get install build-essential libpng-dev libwebp-dev zlib1g-dev
+
+
+Building and Installing PDFio on Linux/Unix
+-------------------------------------------
 
 PDFio comes with a configure script that creates a portable makefile that will
 work on any POSIX-compliant system with ZLIB installed.  To make it, run:
@@ -70,20 +75,31 @@ Other configure options can be found using the `--help` option:
     ./configure --help
 
 
-Visual Studio Project
----------------------
+Building on Windows with Visual Studio
+--------------------------------------
 
 The Visual Studio solution ("pdfio.sln") is provided for Windows developers and
-generates both a static library and DLL.
+generates the PDFIO1 DLL.  You can also use NuGet to install the `pdfio_native`
+package.
+
+You can build and run the `testpdfio` unit tests target from within Visual
+Studio to verify the functioning of the library.
 
 
-Xcode Project
--------------
+Building on macOS with Xcode
+----------------------------
 
-There is also an Xcode project ("pdfio.xcodeproj") you can use on macOS which
-generates a static library that will be installed under "/usr/local" with:
+The Xcode project (`pdfio.xcodeproj`) is provided for macOS developer which
+generates a static library that will be installed under "/usr/local".  Run the
+following command to build and install PDFio on macOS:
 
     sudo xcodebuild install
+
+Alternately you can add the Xcode project to a workspace and reference the PDFio
+library target as a dependency in your own project.
+
+You can build and run the `testpdfio` unit tests target from within Xcode to
+verify the functioning of the library.
 
 
 Detecting PDFio

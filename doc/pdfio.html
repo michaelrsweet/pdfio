@@ -6,7 +6,7 @@
 <meta name="generator" content="codedoc v3.8">
 <meta name="author" content="Michael R Sweet">
 <meta name="language" content="en-US">
-<meta name="copyright" content="Copyright © 2021-2025 by Michael R Sweet">
+<meta name="copyright" content="Copyright © 2021-2026 by Michael R Sweet">
 <meta name="version" content="1.7.0">
 <style type="text/css"><!--
 body {
@@ -271,16 +271,16 @@ span.string {
 <p><img class="title" src="pdfio-512.png"></p>
 <h1 class="title">PDFio Programming Manual v1.7.0</h1>
 <p>Michael R Sweet</p>
-<p>Copyright © 2021-2025 by Michael R Sweet</p>
+<p>Copyright © 2021-2026 by Michael R Sweet</p>
 </div>
 <div class="contents">
 <h2 class="title">Contents</h2>
 <ul class="contents">
 <li><a href="#introduction">Introduction</a><ul class="subcontents">
 <li><a href="#requirements">Requirements</a></li>
-<li><a href="#installing-pdfio">Installing PDFio</a></li>
-<li><a href="#visual-studio-project">Visual Studio Project</a></li>
-<li><a href="#xcode-project">Xcode Project</a></li>
+<li><a href="#building-and-installing-pdfio-on-linuxunix">Building and Installing PDFio on Linux/Unix</a></li>
+<li><a href="#building-on-windows-with-visual-studio">Building on Windows with Visual Studio</a></li>
+<li><a href="#building-on-macos-with-xcode">Building on macOS with Xcode</a></li>
 <li><a href="#detecting-pdfio">Detecting PDFio</a></li>
 <li><a href="#header-files">Header Files</a></li>
 <li><a href="#understanding-pdf-files">Understanding PDF Files</a></li>
@@ -574,11 +574,14 @@ span.string {
 </li>
 <li><p>libwebp (<a href="https://developers.google.com/speed/webp">https://developers.google.com/speed/webp</a>) 1.0 or later for WebP image support (optional)</p>
 </li>
-<li><p>ZLIB (<a href="https://www.zlib.net/">https://www.zlib.net/</a>) 1.1 or later</p>
+<li><p>ZLIB (<a href="https://www.zlib.net/">https://www.zlib.net/</a>) 1.1 or later for compression support</p>
 </li>
 </ul>
 <p>IDE files for Xcode (macOS/iOS) and Visual Studio (Windows) are also provided.</p>
-<h3 class="title" id="installing-pdfio">Installing PDFio</h3>
+<p>On a stock Ubuntu install, the following command will install the various prerequisites:</p>
+<pre><code>sudo apt-get install build-essential libpng-dev libwebp-dev zlib1g-dev
+</code></pre>
+<h3 class="title" id="building-and-installing-pdfio-on-linuxunix">Building and Installing PDFio on Linux/Unix</h3>
 <p>PDFio comes with a configure script that creates a portable makefile that will work on any POSIX-compliant system with ZLIB installed. To make it, run:</p>
 <pre><code>./configure
 make
@@ -600,12 +603,15 @@ sudo make install
 <p>Other configure options can be found using the <code>--help</code> option:</p>
 <pre><code>./configure --help
 </code></pre>
-<h3 class="title" id="visual-studio-project">Visual Studio Project</h3>
-<p>The Visual Studio solution (&quot;pdfio.sln&quot;) is provided for Windows developers and generates both a static library and DLL.</p>
-<h3 class="title" id="xcode-project">Xcode Project</h3>
-<p>There is also an Xcode project (&quot;pdfio.xcodeproj&quot;) you can use on macOS which generates a static library that will be installed under &quot;/usr/local&quot; with:</p>
+<h3 class="title" id="building-on-windows-with-visual-studio">Building on Windows with Visual Studio</h3>
+<p>The Visual Studio solution (&quot;pdfio.sln&quot;) is provided for Windows developers and generates the PDFIO1 DLL. You can also use NuGet to install the <code>pdfio_native</code> package.</p>
+<p>You can build and run the <code>testpdfio</code> unit tests target from within Visual Studio to verify the functioning of the library.</p>
+<h3 class="title" id="building-on-macos-with-xcode">Building on macOS with Xcode</h3>
+<p>The Xcode project (<code>pdfio.xcodeproj</code>) is provided for macOS developer which generates a static library that will be installed under &quot;/usr/local&quot;. Run the following command to build and install PDFio on macOS:</p>
 <pre><code>sudo xcodebuild install
 </code></pre>
+<p>Alternately you can add the Xcode project to a workspace and reference the PDFio library target as a dependency in your own project.</p>
+<p>You can build and run the <code>testpdfio</code> unit tests target from within Xcode to verify the functioning of the library.</p>
 <h3 class="title" id="detecting-pdfio">Detecting PDFio</h3>
 <p>PDFio can be detected using the <code>pkg-config</code> command, for example:</p>
 <pre><code>if pkg-config --exists pdfio; then

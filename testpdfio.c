@@ -20,7 +20,7 @@
 
 #include "pdfio-private.h"
 #include "pdfio-content.h"
-#include "test.h"
+#include "test-internal.h"
 #include <math.h>
 #include <locale.h>
 #ifndef M_PI

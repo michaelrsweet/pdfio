@@ -248,13 +248,13 @@ testpdfio:		testpdfio.o libpdfio.a
 # Dependencies
 $(OBJS):		pdfio.h pdfio-private.h Makefile
 pdfio-content.o:	pdfio-content.h
-testpdfio.o:		test.h
+testpdfio.o:		test-internal.h
 
 
 # Make documentation using Codedoc <https://www.msweet.org/codedoc>
 DOCFLAGS	=	\
 			--author "Michael R Sweet" \
-			--copyright "Copyright (c) 2021-2025 by Michael R Sweet" \
+			--copyright "Copyright (c) 2021-2026 by Michael R Sweet" \
 			--docversion $(PDFIO_VERSION)
 
 .PHONY: doc

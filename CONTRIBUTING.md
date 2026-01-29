@@ -110,10 +110,11 @@ same guidelines as allowed by the language.
 
 ### Source Files
 
-All source files names must be 16 characters or less in length to ensure
-compatibility with older UNIX filesystems.  Source files containing functions
-have an extension of ".c" for C source files.  All "include" files have an
-extension of ".h".  Tabs are set to 8 characters or columns.
+All source files names must be lowercase and should be 16 characters or less in
+length to ensure compatibility with older UNIX filesystems.  Source files
+containing functions have an extension of ".c" for C source files.  All
+"include" files have an extension of ".h".  Tabs are set every 8 characters,
+columns, or spaces, with an indentation of 2 spaces in code.
 
 The top of each source file contains a header giving the purpose or nature of
 the source file and the copyright and licensing notice:
@@ -141,8 +142,8 @@ private API header file will include the corresponding public API header file.
 All source code utilizes block comments within functions to describe the
 operations being performed by a group of statements; avoid putting a comment
 per line unless absolutely necessary, and then consider refactoring the code
-so that it is not necessary.  C source files use the C99 comment format
-("// comment"):
+so that it is not necessary.  C source files typically use the C99 comment
+format ("// comment"):
 
     // Clear the state array before we begin...
     for (i = 0; i < (sizeof(array) / sizeof(sizeof(array[0])); i ++)
@@ -158,6 +159,17 @@ so that it is not necessary.  C source files use the C99 comment format
       if (i == (sizeof(array) / sizeof(array[0])))
         sleep(1);
     } while (i == (sizeof(array) / sizeof(array[0])));
+
+When passing literal argument values to functions, the argument name should be
+supplied as an inline comment:
+
+    // This function call lacks any inline comments so it is hard to
+    // know what the numbers mean!
+    do_something(filename, 1, 42);
+
+    // This uses inline comments to specify what the numbers mean and
+    // makes the code easier to read and maintain:
+    do_something(filename, /*initial_value*/1, /*count*/42);
 
 
 ### Indentation
@@ -256,16 +268,16 @@ Return/output values are indicated using an "O" prefix, input values are
 indicated using the "I" prefix, and values that are both input and output use
 the "IO" prefix for the corresponding in-line comment.
 
-The [`codedoc` documentation generator][1] also understands the following
+The [`codedoc` documentation generator][CODEDOC] also understands the following
 special text in the function description comment:
 
     @deprecated@         - Marks the function as deprecated (not recommended
                            for new development and scheduled for removal)
-    @since version@      - Marks the function as new in the specified version.
+    @since VERSION@      - Marks the function as new in the specified version.
     @private@            - Marks the function as private (same as starting the
                            function name with an underscore)
 
-[1]: https://www.msweet.org/codedoc
+[CODEDOC]: https://www.msweet.org/codedoc
 
 
 ### Variables
@@ -373,11 +385,13 @@ The following variables are defined in the makefile:
 
 - `AR`; the static library archiver command,
 - `ARFLAGS`; options for the static library archiver,
+- `BUILDROOT`: the destination root directory when installing - also picks up
+  the value of the `DESTDIR`, `DSTROOT`, and/or `RPM_BUILD_ROOT` environment
+  variables,
 - `CC`; the C compiler command,
 - `CFLAGS`; options for the C compiler,
 - `CODESIGN_IDENTITY`: the code signing identity,
 - `CPPFLAGS`; options for the C preprocessor,
-- `DESTDIR`/`DSTROOT`: the destination root directory when installing.
 - `DSO`; the shared library building command,
 - `DSOFLAGS`; options for the shared library building command,
 - `LDFLAGS`; options for the linker,
@@ -395,5 +409,6 @@ The following standard targets are defined in the makefile:
 - `all`; creates the static library and unit test program.
 - `clean`; removes all target programs libraries, documentation files, and
   object files,
+- `doc`; creates the library documentation files using [`codedoc`][CODEDOC],
 - `install`; installs all distribution files in their corresponding locations.
 - `test`; runs the unit test program, building it as needed.
