@@ -48,6 +48,10 @@ information on using PDFio.
 Installing PDFio
 ----------------
 
+If you cloned this repository from GitHub, you must initialize the submodules before building:
+
+    git submodule update --init --recursive
+
 PDFio uses a configure script on Unix systems to generate a makefile:
 
     ./configure
