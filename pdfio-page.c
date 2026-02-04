@@ -59,7 +59,7 @@ pdfioPageCopy(pdfio_file_t *pdf,	// I - PDF file
 // This function looks up an array value in the page dictionary, either in the
 // specified object or one of its parents.
 //
-// @since PDFio 1.7@
+// @since PDFio v1.7@
 //
 
 pdfio_array_t *				// O - Array or `NULL` if none
@@ -83,7 +83,7 @@ pdfioPageGetArray(pdfio_obj_t *page,	// I - Page object
 // This function looks up a binary value in the page dictionary, either in the
 // specified object or one of its parents.
 //
-// @since PDFio 1.7@
+// @since PDFio v1.7@
 //
 
 unsigned char *				// O - Pointer to binary data or `NULL` if none
@@ -115,7 +115,7 @@ pdfioPageGetBinary(pdfio_obj_t *page,	// I - Page object
 // This function looks up a boolean value in the page dictionary, either in the
 // specified object or one of its parents.
 //
-// @since PDFio 1.7@
+// @since PDFio v1.7@
 //
 
 bool					// O - Boolean value or `false` if none
@@ -139,7 +139,7 @@ pdfioPageGetBoolean(pdfio_obj_t *page,	// I - Page object
 // This function looks up a date value in the page dictionary, either in the
 // specified object or one of its parents.
 //
-// @since PDFio 1.7@
+// @since PDFio v1.7@
 //
 
 time_t					// O - Date/time or `0` if none
@@ -163,7 +163,7 @@ pdfioPageGetDate(pdfio_obj_t *page,	// I - Page object
 // This function looks up a dictionary value in the page dictionary, either in
 // the specified object or one of its parents.
 //
-// @since PDFio 1.7@
+// @since PDFio v1.7@
 //
 
 pdfio_dict_t *				// O - Dictionary or `NULL` if none
@@ -187,7 +187,7 @@ pdfioPageGetDict(pdfio_obj_t *page,	// I - Page object
 // This function looks up a name value in the page dictionary, either in the
 // specified object or one of its parents.
 //
-// @since PDFio 1.7@
+// @since PDFio v1.7@
 //
 
 const char *				// O - Name string or `NULL` if none
@@ -232,7 +232,7 @@ pdfioPageGetNumStreams(
 // This function looks up a number value in the page dictionary, either in the
 // specified object or one of its parents.
 //
-// @since PDFio 1.7@
+// @since PDFio v1.7@
 //
 
 double					// O - Number value or `0.0` if none
@@ -256,7 +256,7 @@ pdfioPageGetNumber(pdfio_obj_t *page,	// I - Page object
 // This function looks up an indirect object value in the page dictionary,
 // either in the specified object or one of its parents.
 //
-// @since PDFio 1.7@
+// @since PDFio v1.7@
 //
 
 pdfio_obj_t *				// O - Object or `NULL` if none
@@ -280,7 +280,7 @@ pdfioPageGetObj(pdfio_obj_t *page,	// I - Page object
 // This function looks up a rectangle value in the page dictionary, either in
 // the specified object or one of its parents.
 //
-// @since PDFio 1.7@
+// @since PDFio v1.7@
 //
 
 pdfio_rect_t *				// O - Rectangle or `NULL` if none
@@ -314,7 +314,7 @@ pdfioPageGetRect(pdfio_obj_t  *page,	// I - Page object
 // This function looks up a string value in the page dictionary, either in the
 // specified object or one of its parents.
 //
-// @since PDFio 1.7@
+// @since PDFio v1.7@
 //
 
 const char *				// O - String value or `NULL` if none

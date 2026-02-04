@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2026-01-29" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2026-02-04" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -4215,7 +4215,11 @@ Note: PNG files containing transparency cannot be used when producing
 .IP 5
 PDF/A files.  Files containing animation yield the final frame of the
 .IP 5
-animation.
+animation.  GIF and (optional) WebP support first appeared in PDFio v1.7.
+.IP 5
+WebP content is added as a Flate-compressed image with alpha mask as
+.IP 5
+needed and is usually significantly larger than the original image.
 .SS pdfioFileCreateNameObj
 Create a new object in a PDF file containing a name.
 .PP

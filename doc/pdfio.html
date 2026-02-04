@@ -2835,7 +2835,7 @@ size_t pdfioArrayGetSize(<a href="#pdfio_array_t">pdfio_array_t</a> *a);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> otherwise</p>
-<h3 class="function"><span class="info">&#160;PDFio 1.6&#160;</span><a id="pdfioContentBeginMarked">pdfioContentBeginMarked</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.6&#160;</span><a id="pdfioContentBeginMarked">pdfioContentBeginMarked</a></h3>
 <p class="description">Start marked content with an optional dictionary.</p>
 <p class="code">
 <span class="reserved">bool</span> pdfioContentBeginMarked(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st, <span class="reserved">const</span> <span class="reserved">char</span> *tag, <a href="#pdfio_dict_t">pdfio_dict_t</a> *dict);</p>
@@ -2901,7 +2901,7 @@ the document catalog.  The caller is responsible for setting the
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">The object name must be part of the page dictionary resources, typically
 using the <a href="#pdfioPageDictAddImage"><code>pdfioPageDictAddImage</code></a> function.</p>
-<h3 class="function"><span class="info">&#160;PDFio 1.6&#160;</span><a id="pdfioContentEndMarked">pdfioContentEndMarked</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.6&#160;</span><a id="pdfioContentEndMarked">pdfioContentEndMarked</a></h3>
 <p class="description">End marked content.</p>
 <p class="code">
 <span class="reserved">bool</span> pdfioContentEndMarked(<a href="#pdfio_stream_t">pdfio_stream_t</a> *st);</p>
@@ -4160,7 +4160,7 @@ have been iterated.
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
-<h3 class="function"><span class="info">&#160;PDFio 1.6&#160;</span><a id="pdfioFileAddOutputIntent">pdfioFileAddOutputIntent</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.6&#160;</span><a id="pdfioFileAddOutputIntent">pdfioFileAddOutputIntent</a></h3>
 <p class="description">Add an OutputIntent to a file.</p>
 <p class="code">
 <span class="reserved">void</span> pdfioFileAddOutputIntent(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *subtype, <span class="reserved">const</span> <span class="reserved">char</span> *condition, <span class="reserved">const</span> <span class="reserved">char</span> *cond_id, <span class="reserved">const</span> <span class="reserved">char</span> *reg_name, <span class="reserved">const</span> <span class="reserved">char</span> *info, <a href="#pdfio_obj_t">pdfio_obj_t</a> *profile);</p>
@@ -4497,7 +4497,9 @@ interpolate when scaling the image on the page.<br>
 </p><blockquote>
 Note: PNG files containing transparency cannot be used when producing
 PDF/A files.  Files containing animation yield the final frame of the
-animation.</blockquote>
+animation.  GIF and (optional) WebP support first appeared in PDFio v1.7.
+WebP content is added as a Flate-compressed image with alpha mask as
+needed and is usually significantly larger than the original image.</blockquote>
 <h3 class="function"><span class="info">&#160;PDFio v1.4&#160;</span><a id="pdfioFileCreateNameObj">pdfioFileCreateNameObj</a></h3>
 <p class="description">Create a new object in a PDF file containing a name.</p>
 <p class="code">
@@ -4760,7 +4762,7 @@ list of objects while this function takes the object number.</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Author or <code>NULL</code> for none</p>
-<h3 class="function"><span class="info">&#160;PDFio 1.3&#160;</span><a id="pdfioFileGetCatalog">pdfioFileGetCatalog</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.3&#160;</span><a id="pdfioFileGetCatalog">pdfioFileGetCatalog</a></h3>
 <p class="description">Get the document catalog dictionary.</p>
 <p class="code">
 <a href="#pdfio_dict_t">pdfio_dict_t</a> *pdfioFileGetCatalog(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
@@ -4815,7 +4817,7 @@ time_t pdfioFileGetCreationDate(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);<
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Keywords string or <code>NULL</code> for none</p>
-<h3 class="function"><span class="info">&#160;PDFio 1.6&#160;</span><a id="pdfioFileGetLanguage">pdfioFileGetLanguage</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.6&#160;</span><a id="pdfioFileGetLanguage">pdfioFileGetLanguage</a></h3>
 <p class="description">Get the language metadata for a PDF file.</p>
 <p class="code">
 <span class="reserved">const</span> <span class="reserved">char</span> *pdfioFileGetLanguage(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf);</p>
@@ -5060,7 +5062,7 @@ ignore the return value of the error callback.</blockquote>
 <tr><th>value</th>
 <td class="description">Value</td></tr>
 </tbody></table>
-<h3 class="function"><span class="info">&#160;PDFio 1.6&#160;</span><a id="pdfioFileSetLanguage">pdfioFileSetLanguage</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.6&#160;</span><a id="pdfioFileSetLanguage">pdfioFileSetLanguage</a></h3>
 <p class="description">Set the language metadata for a PDF file.</p>
 <p class="code">
 <span class="reserved">void</span> pdfioFileSetLanguage(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *value);</p>
@@ -5425,7 +5427,7 @@ array that was created using the
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description"><code>true</code> on success, <code>false</code> on failure</p>
-<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetArray">pdfioPageGetArray</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.7&#160;</span><a id="pdfioPageGetArray">pdfioPageGetArray</a></h3>
 <p class="description">Get an array value from the page dictionary.</p>
 <p class="code">
 <a href="#pdfio_array_t">pdfio_array_t</a> *pdfioPageGetArray(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
@@ -5443,7 +5445,7 @@ array that was created using the
 specified object or one of its parents.
 
 </p>
-<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetBinary">pdfioPageGetBinary</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.7&#160;</span><a id="pdfioPageGetBinary">pdfioPageGetBinary</a></h3>
 <p class="description">Get a binary value from the page dictionary.</p>
 <p class="code">
 <span class="reserved">unsigned</span> <span class="reserved">char</span> *pdfioPageGetBinary(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key, size_t *length);</p>
@@ -5463,7 +5465,7 @@ specified object or one of its parents.
 specified object or one of its parents.
 
 </p>
-<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetBoolean">pdfioPageGetBoolean</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.7&#160;</span><a id="pdfioPageGetBoolean">pdfioPageGetBoolean</a></h3>
 <p class="description">Get a boolean value from the page dictionary.</p>
 <p class="code">
 <span class="reserved">bool</span> pdfioPageGetBoolean(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
@@ -5481,7 +5483,7 @@ specified object or one of its parents.
 specified object or one of its parents.
 
 </p>
-<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetDate">pdfioPageGetDate</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.7&#160;</span><a id="pdfioPageGetDate">pdfioPageGetDate</a></h3>
 <p class="description">Get a date value from the page dictionary.</p>
 <p class="code">
 time_t pdfioPageGetDate(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
@@ -5499,7 +5501,7 @@ time_t pdfioPageGetDate(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span clas
 specified object or one of its parents.
 
 </p>
-<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetDict">pdfioPageGetDict</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.7&#160;</span><a id="pdfioPageGetDict">pdfioPageGetDict</a></h3>
 <p class="description">Get a dictionary value from the page dictionary.</p>
 <p class="code">
 <a href="#pdfio_dict_t">pdfio_dict_t</a> *pdfioPageGetDict(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
@@ -5517,7 +5519,7 @@ specified object or one of its parents.
 the specified object or one of its parents.
 
 </p>
-<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetName">pdfioPageGetName</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.7&#160;</span><a id="pdfioPageGetName">pdfioPageGetName</a></h3>
 <p class="description">Get a name value from the page dictionary.</p>
 <p class="code">
 <span class="reserved">const</span> <span class="reserved">char</span> *pdfioPageGetName(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
@@ -5546,7 +5548,7 @@ size_t pdfioPageGetNumStreams(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page);</p>
 </tbody></table>
 <h4 class="returnvalue">Return Value</h4>
 <p class="description">Number of streams</p>
-<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetNumber">pdfioPageGetNumber</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.7&#160;</span><a id="pdfioPageGetNumber">pdfioPageGetNumber</a></h3>
 <p class="description">Get a number value from the page dictionary.</p>
 <p class="code">
 <span class="reserved">double</span> pdfioPageGetNumber(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
@@ -5564,7 +5566,7 @@ size_t pdfioPageGetNumStreams(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page);</p>
 specified object or one of its parents.
 
 </p>
-<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetObj">pdfioPageGetObj</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.7&#160;</span><a id="pdfioPageGetObj">pdfioPageGetObj</a></h3>
 <p class="description">Get an indirect object value from the page dictionary.</p>
 <p class="code">
 <a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioPageGetObj(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>
@@ -5582,7 +5584,7 @@ specified object or one of its parents.
 either in the specified object or one of its parents.
 
 </p>
-<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetRect">pdfioPageGetRect</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.7&#160;</span><a id="pdfioPageGetRect">pdfioPageGetRect</a></h3>
 <p class="description">Get a rectangle value from the page dictionary.</p>
 <p class="code">
 <a href="#pdfio_rect_t">pdfio_rect_t</a> *pdfioPageGetRect(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key, <a href="#pdfio_rect_t">pdfio_rect_t</a> *rect);</p>
@@ -5602,7 +5604,7 @@ either in the specified object or one of its parents.
 the specified object or one of its parents.
 
 </p>
-<h3 class="function"><span class="info">&#160;PDFio 1.7&#160;</span><a id="pdfioPageGetString">pdfioPageGetString</a></h3>
+<h3 class="function"><span class="info">&#160;PDFio v1.7&#160;</span><a id="pdfioPageGetString">pdfioPageGetString</a></h3>
 <p class="description">Get a string value from the page dictionary.</p>
 <p class="code">
 <span class="reserved">const</span> <span class="reserved">char</span> *pdfioPageGetString(<a href="#pdfio_obj_t">pdfio_obj_t</a> *page, <span class="reserved">const</span> <span class="reserved">char</span> *key);</p>

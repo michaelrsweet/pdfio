@@ -497,7 +497,7 @@ pdfioArrayCreateColorFromStandard(
 // the document catalog.  The caller is responsible for setting the
 // "StructTreeRoot" dictionary when creating marked content.
 //
-// @since PDFio 1.6@
+// @since PDFio v1.6@
 //
 
 bool					// O - `true` on success, `false` on failure
@@ -580,7 +580,7 @@ pdfioContentDrawImage(
 // This function ends an area of marked content that was started using the
 // @link pdfioContentBeginMarked@ function.
 //
-// @since PDFio 1.6@
+// @since PDFio v1.6@
 //
 
 bool					// O - `true` on success, `false` on failure
@@ -1619,7 +1619,7 @@ pdfioContentTextShowJustified(
 // condition.  If `NULL`, the PDF consumer will attempt to look up the correct
 // profile using the "cond_id" value.
 //
-// @since PDFio 1.6@
+// @since PDFio v1.6@
 //
 
 void
@@ -2155,7 +2155,9 @@ pdfioFileCreateImageObjFromData(
 //
 // > Note: PNG files containing transparency cannot be used when producing
 // > PDF/A files.  Files containing animation yield the final frame of the
-// > animation.
+// > animation.  GIF and (optional) WebP support first appeared in PDFio v1.7.
+// > WebP content is added as a Flate-compressed image with alpha mask as
+// > needed and is usually significantly larger than the original image.
 //
 
 pdfio_obj_t *				// O - Object

@@ -852,7 +852,7 @@ pdfioFileGetAuthor(pdfio_file_t *pdf)	// I - PDF file
 //
 // 'pdfioFileGetCatalog()' - Get the document catalog dictionary.
 //
-// @since PDFio 1.3@
+// @since PDFio v1.3@
 //
 
 pdfio_dict_t *				// O - Catalog dictionary
@@ -915,7 +915,7 @@ pdfioFileGetKeywords(pdfio_file_t *pdf)	// I - PDF file
 // "lang-REGION".  For example, the string "en-CA" specifies Canadian English
 // and the string "fr-CA" specifies Canadian French.
 //
-// @since PDFio 1.6@
+// @since PDFio v1.6@
 //
 
 const char *				// O - Language or `NULL` for none
@@ -1318,7 +1318,7 @@ pdfioFileSetKeywords(
 // "lang-REGION".  For example, the string "en-CA" specifies Canadian English
 // and the string "fr-CA" specifies Canadian French.
 //
-// @since PDFio 1.6@
+// @since PDFio v1.6@
 //
 
 void
