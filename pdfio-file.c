@@ -1515,6 +1515,87 @@ add_obj(pdfio_file_t   *pdf,		// I - PDF file
 }
 
 
+#if _WIN32
+//
+// '_pdfio_win32_open()' - Open or create a file.
+//
+// This function handles mapping of UTF-8 filenames to UTF-16 on Windows.
+//
+
+int					// O - File descriptor or -1 on error
+_pdfio_win32_open(const char *filename,	// I - UTF-8 filename
+		  int        oflag,	// I - Open flags
+		  int        mode)	// I - File permissions
+{
+  wchar_t	utf16name[MAXPATHLEN + 1],
+  					// UTF-16 filename
+		*utf16ptr;		// Pointer into UTF-16 filename
+  int		unich;			// Unicode character
+
+
+  // Convert the UTF-8 string to UTF-16...
+  utf16ptr = utf16name;
+  while (*filename && utf16ptr < (utf16name + sizeof(utf16name) / sizeof(utf16name[0]) - 2);)
+  {
+    if ((unich = *filename++) & 0x80)
+    {
+      if ((unich & 0xe0) == 0xc0 && (*filename & 0xc0) == 0x80)
+      {
+        // 2-byte UTF-8
+        unich = ((unich & 0x1f) << 6) | (*filename & 0x3f);
+        filename ++;
+      }
+      else if ((unich & 0xf0) == 0xe0 && (*filename & 0xc0) == 0x80 && (filename[1] & 0xc0) == 0x80)
+      {
+        // 3-byte UTF-8
+        unich = ((unich & 0x0f) << 12) | ((*filename & 0x3f) << 6) | (filename[1] & 0x3f);
+        filename += 2;
+      }
+      else if ((unich & 0xf8) == 0xf0 && (*filename & 0xc0) == 0x80 && (filename[1] & 0xc0) == 0x80 && (filename[2] & 0xc0) == 0x80)
+      {
+        // 4-byte UTF-8
+        unich = ((unich & 0x07) << 18) | ((*filename & 0x3f) << 12) | ((filename[1] & 0x3f) << 6) | (filename[2] & 0x3f);
+        filename += 3;
+      }
+      else
+      {
+        // Invalid UTF-8 char...
+        errno = EINVAL;
+        return (-1);
+      }
+    }
+
+    // Copy the unicode character...
+    if (unich > 0xffff)
+    {
+      // Two-word sequence...
+      *utf16ptr++ = 0xd800 | ((unich >> 10) & 0x03ff);
+      *utf16ptr++ = 0xdc00 | (unich 0x03ff);
+    }
+    else
+    {
+      // One-word...
+      *utf16ptr++ = unich;
+    }
+  }
+
+  *utf16ptr = '\0';
+
+  if (*filename)
+  {
+    // Filename too long...
+    errno = EINVAL;
+    return (-1);
+  }
+  else
+  {
+    // Pass on to _wopen...
+    return (_wopen(utf16name, oflag, mode));
+  }
+}
+#endif // WIN32
+
+
 //
 // 'compare_objmaps()' - Compare two object maps...
 //

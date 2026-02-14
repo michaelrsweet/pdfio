@@ -9,6 +9,7 @@ v1.7.0 - YYYY-MM-DD
 - Added support for basic compound stream filters for ASCII85Decode support
   (Issue #11)
 - Added support for LZWDecode filters (Issue #11)
+- Added support for Unicode filenames on Windows (Issue #18)
 - Added support for writing object streams (Issue #101)
 - Added support for GIF files (Issue #145)
 - Added support for WebP files (Issue #144)

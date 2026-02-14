@@ -30,7 +30,7 @@
 #    define fileno	_fileno
 #    define lseek(f,o,w) (off_t)_lseek((f),(long)(o),(w))
 #    define mkdir(d,p)	_mkdir(d)
-#    define open	_open
+#    define open	_pdfio_win32_open
 #    define read(f,b,s)	_read((f),(b),(unsigned)(s))
 #    define rmdir	_rmdir
 #    define snprintf	_snprintf
@@ -412,6 +412,7 @@ extern size_t		_pdfio_strlcpy(char *dst, const char *src, size_t dstsize) _PDFIO
 extern double		_pdfio_strtod(pdfio_file_t *pdf, const char *s) _PDFIO_INTERNAL;
 extern void		_pdfio_utf16cpy(char *dst, const unsigned char *src, size_t srclen, size_t dstsize) _PDFIO_INTERNAL;
 extern ssize_t		_pdfio_vsnprintf(pdfio_file_t *pdf, char *buffer, size_t bufsize, const char *format, va_list ap) _PDFIO_INTERNAL;
+extern int		_pdfio_win32_open(const char *filename, int oflag, int mode) _PDFIO_INTERNAL;
 
 extern bool		_pdfioArrayDecrypt(pdfio_file_t *pdf, pdfio_obj_t *obj, pdfio_array_t *a, size_t depth) _PDFIO_INTERNAL;
 extern void		_pdfioArrayDebug(pdfio_array_t *a, FILE *fp) _PDFIO_INTERNAL;
