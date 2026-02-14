@@ -1468,7 +1468,7 @@ _pdfio_win32_open(const char *filename,	// I - UTF-8 filename
     {
       // Two-word sequence...
       *utf16ptr++ = 0xd800 | ((unich >> 10) & 0x03ff);
-      *utf16ptr++ = 0xdc00 | (unich 0x03ff);
+      *utf16ptr++ = 0xdc00 | (unich & 0x03ff);
     }
     else
     {
