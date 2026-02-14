@@ -1433,7 +1433,7 @@ _pdfio_win32_open(const char *filename,	// I - UTF-8 filename
 
   // Convert the UTF-8 string to UTF-16...
   utf16ptr = utf16name;
-  while (*filename && utf16ptr < (utf16name + sizeof(utf16name) / sizeof(utf16name[0]) - 2);)
+  while (*filename && utf16ptr < (utf16name + sizeof(utf16name) / sizeof(utf16name[0]) - 2))
   {
     if ((unich = *filename++) & 0x80)
     {
