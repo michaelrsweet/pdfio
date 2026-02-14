@@ -1166,7 +1166,7 @@ pdfioFileOpen(
   pdf->permissions = PDFIO_PERMISSION_ALL;
 
   // Open the file...
-  if ((pdf->fd = open(filename, O_RDONLY | O_BINARY)) < 0)
+  if ((pdf->fd = open(filename, O_RDONLY | O_BINARY, 0)) < 0)
   {
     _pdfioFileError(pdf, "Unable to open file - %s", strerror(errno));
     free(pdf->filename);

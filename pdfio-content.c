@@ -1885,7 +1885,7 @@ pdfioFileCreateFontObjFromFile(
     return (NULL);
   }
 
-  if ((fd = open(filename, O_RDONLY | O_BINARY)) < 0)
+  if ((fd = open(filename, O_RDONLY | O_BINARY, 0)) < 0)
   {
     _pdfioFileError(pdf, "Unable to open font file '%s': %s", filename, strerror(errno));
     return (NULL);
@@ -2021,7 +2021,7 @@ pdfioFileCreateICCObjFromFile(
     return (NULL);
   }
 
-  if ((fd = open(filename, O_RDONLY | O_BINARY)) < 0)
+  if ((fd = open(filename, O_RDONLY | O_BINARY, 0)) < 0)
   {
     _pdfioFileError(pdf, "Unable to open ICC profile '%s': %s", filename, strerror(errno));
     return (NULL);
@@ -2180,7 +2180,7 @@ pdfioFileCreateImageObjFromFile(
     return (NULL);
 
   // Try opening the file...
-  if ((fd = open(filename, O_RDONLY | O_BINARY)) < 0)
+  if ((fd = open(filename, O_RDONLY | O_BINARY, 0)) < 0)
   {
     _pdfioFileError(pdf, "Unable to open image file '%s': %s", filename, strerror(errno));
     return (NULL);
