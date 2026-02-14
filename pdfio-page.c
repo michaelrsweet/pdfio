@@ -126,10 +126,10 @@ pdfioPageGetBoolean(pdfio_obj_t *page,	// I - Page object
 					// Dictionary value
 
 
-  if (v && v->type == PDFIO_VALTYPE_ARRAY)
+  if (v && v->type == PDFIO_VALTYPE_BOOLEAN)
     return (v->value.boolean);
   else
-    return (NULL);
+    return (false);
 }
 
 
