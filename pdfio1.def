@@ -1,6 +1,7 @@
 LIBRARY pdfio1
 VERSION 1.7
 EXPORTS
+_pdfio_win32_open
 _pdfio_strlcpy
 _pdfio_strtod
 _pdfio_utf16cpy
@@ -64,6 +65,7 @@ _pdfioStreamOpen
 _pdfioStringAllocBuffer
 _pdfioStringFreeBuffer
 _pdfioStringIsAllocated
+_pdfioStringPrintf
 _pdfioTokenClear
 _pdfioTokenFlush
 _pdfioTokenGet

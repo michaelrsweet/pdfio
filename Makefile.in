@@ -235,6 +235,7 @@ pdfio1.def: $(LIBOBJS) Makefile
 	echo "LIBRARY pdfio1" >$@
 	echo "VERSION $(PDFIO_VERSION_MAJOR).$(PDFIO_VERSION_MINOR)" >>$@
 	echo "EXPORTS" >>$@
+	echo "_pdfio_win32_open" >>$@
 	nm $(LIBOBJS) 2>/dev/null | grep "T _" | awk '{print $$3}' | \
 		grep -v '^_ttf' | sed -e '1,$$s/^_//' | sort >>$@
 
