@@ -229,7 +229,7 @@ _pdfio_utf16cpy(
     else
     {
       // 4-byte UTF-8
-      *dstptr++ = (char)(0xe0 | (ch >> 18));
+      *dstptr++ = (char)(0xf0 | (ch >> 18));
       *dstptr++ = (char)(0x80 | ((ch >> 12) & 0x3f));
       *dstptr++ = (char)(0x80 | ((ch >> 6) & 0x3f));
       *dstptr++ = (char)(0x80 | (ch & 0x3f));

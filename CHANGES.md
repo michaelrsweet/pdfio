@@ -13,6 +13,7 @@ v1.6.2 - YYYY-MM-DD
 - Fixed xref reconstruction for objects lacking a `Type` value.
 - Fixed `pdfioPageOpenStream` for indirect `Contents` arrays.
 - Fixed an error propagation bug when reading too-long values (Issue #146)
+- Fixed a bug when converting Unicode characters above plane 0 (issue #159)
 - Fixed a Clang warning.
 
 
