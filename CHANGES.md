@@ -18,7 +18,7 @@ v1.7.0 - YYYY-MM-DD
 - Fixed a buffer overflow in the (still not enabled) AES-256 code.
 
 
-v1.6.2 - YYYY-MM-DD
+v1.6.2 - 2026-02-15
 -------------------
 
 - Increased the maximum length of a single string to 128k (Issue #146)
