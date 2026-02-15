@@ -2,7 +2,7 @@ Changes in PDFio
 ================
 
 
-v1.6.2 - YYYY-MM-DD
+v1.6.2 - 2026-02-15
 -------------------
 
 - Increased the maximum length of a single string to 128k (Issue #146)
