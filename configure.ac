@@ -1,7 +1,7 @@
 dnl
 dnl Configuration script for PDFio
 dnl
-dnl Copyright © 2023-2025 by Michael R Sweet
+dnl Copyright © 2023-2026 by Michael R Sweet
 dnl
 dnl Licensed under Apache License v2.0.  See the file "LICENSE" for more
 dnl information.
@@ -21,7 +21,7 @@ AC_PREREQ([2.70])
 
 
 dnl Package name and version...
-AC_INIT([pdfio], [1.6.2], [https://github.com/michaelrsweet/pdfio/issues], [pdfio], [https://www.msweet.org/pdfio])
+AC_INIT([pdfio], [1.6.3], [https://github.com/michaelrsweet/pdfio/issues], [pdfio], [https://www.msweet.org/pdfio])
 
 PDFIO_VERSION="AC_PACKAGE_VERSION"
 PDFIO_VERSION_MAJOR="`echo AC_PACKAGE_VERSION | awk -F. '{print $1}'`"
