@@ -18,6 +18,13 @@ v1.7.0 - YYYY-MM-DD
 - Fixed a buffer overflow in the (still not enabled) AES-256 code.
 
 
+v1.6.3 - YYYY-MM-DD
+-------------------
+
+- Fixed `pdfioPageCopy` implementation to not copy the source document's entire
+  page tree (Issue #161)
+
+
 v1.6.2 - 2026-02-15
 -------------------
 
