@@ -3392,8 +3392,8 @@ write_gif_tests(pdfio_file_t *pdf,	// I - PDF file
 
   for (i = 0; i < (sizeof(pdfio_labels) / sizeof(pdfio_labels[0])); i ++)
   {
-    x = 36.0 + (i & 3) * (104.0 + 36.0);
-    y = 342.0 - (1 + i / 4) * (104.0 + 36.0);
+    x = 36.0 + (double)(i & 3) * (104.0 + 36.0);
+    y = 342.0 - (double)(1 + i / 4) * (104.0 + 36.0);
 
     testBegin("pdfioContentSetFillColorDeviceRGB(0, 1, 1)");
     if (pdfioContentSetFillColorDeviceRGB(st, 0.0, 1.0, 1.0))
@@ -4489,8 +4489,8 @@ write_png_tests(pdfio_file_t *pdf,	// I - PDF file
 
   for (i = 0; i < (sizeof(pngsuite_files) / sizeof(pngsuite_files[0])); i ++)
   {
-    double x = (i % 8) * 69.0 + 36;	// X position
-    double y = 671 - (i / 8) * 64.0;	// Y position
+    double x = (double)(i & 7) * 69.0 + 36;	// X position
+    double y = 671 - (double)(i / 8) * 64.0;	// Y position
 
     testBegin("pdfioContentTextBegin()");
     if (pdfioContentTextBegin(st))
@@ -4534,8 +4534,8 @@ write_png_tests(pdfio_file_t *pdf,	// I - PDF file
 
   for (i = 0; i < (sizeof(pngsuite_files) / sizeof(pngsuite_files[0])); i ++)
   {
-    double x = (i % 8) * 69.0 + 36;	// X position
-    double y = 671 - (i / 8) * 64.0;	// Y position
+    double x = (double)(i & 7) * 69.0 + 36;	// X position
+    double y = 671 - (double)(i / 8) * 64.0;	// Y position
 
     snprintf(imgname, sizeof(imgname), "IM%u", (unsigned)(i + 1));
     testBegin("pdfioContentDrawImage(\"%s\")", imgname);

@@ -2321,7 +2321,7 @@ load_xref(
             if (generation > current->generation)
             {
               // Newer version of an existing object - update the references...
-              current->generation = generation;
+              current->generation = (unsigned short)generation;
 
 	      if (w[0] == 0 || buffer[0] == 1)
 	      {
@@ -3009,8 +3009,8 @@ write_objstm(pdfio_file_t *pdf)		// I - PDF file
   }
 
   // Now create the object stream with the collected data...
-  pdfioDictSetNumber(pdf->objstm_dict, "First", bptr->bufptr - bptr->buffer);
-  pdfioDictSetNumber(pdf->objstm_dict, "N", pdf->num_objstm);
+  pdfioDictSetNumber(pdf->objstm_dict, "First", (double)(bptr->bufptr - bptr->buffer));
+  pdfioDictSetNumber(pdf->objstm_dict, "N", (double)pdf->num_objstm);
   pdfioDictSetName(pdf->objstm_dict, "Filter", "FlateDecode");
 
   if ((pdf->objstm_obj = pdfioFileCreateObj(pdf, pdf->objstm_dict)) == NULL)
