@@ -2582,8 +2582,8 @@ copy_gif(pdfio_dict_t *dict,		// I - Image dictionary
     switch (desc)
     {
       case ';' :			// End of image
-	  pdfioDictSetNumber(dict, "Width", width);
-	  pdfioDictSetNumber(dict, "Height", height);
+	  pdfioDictSetNumber(dict, "Width", (double)width);
+	  pdfioDictSetNumber(dict, "Height", (double)height);
 	  pdfioDictSetNumber(dict, "BitsPerComponent", 8);
           pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromPalette(dict->pdf, (size_t)ncolors, cmap[0]));
 
@@ -2604,7 +2604,7 @@ copy_gif(pdfio_dict_t *dict,		// I - Image dictionary
 
 	  pdfioDictSetNumber(decode, "BitsPerComponent", 8);
 	  pdfioDictSetNumber(decode, "Colors", 1);
-	  pdfioDictSetNumber(decode, "Columns", width);
+	  pdfioDictSetNumber(decode, "Columns", (double)width);
 	  pdfioDictSetNumber(decode, "Predictor", _PDFIO_PREDICTOR_PNG_AUTO);
 	  pdfioDictSetDict(dict, "DecodeParms", decode);
 	  pdfioDictSetName(dict, "Filter", "FlateDecode");
