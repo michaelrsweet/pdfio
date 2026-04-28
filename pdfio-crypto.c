@@ -983,7 +983,7 @@ make_owner_key(
 
   // Copy and encrypt the padded user password...
   memcpy(owner_key, user_pad, 32);
-  decrypt_ou_key(encryption, key, file_keylen, owner_key);
+  encrypt_ou_key(encryption, key, file_keylen, owner_key);
 }
 
 
