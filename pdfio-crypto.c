@@ -192,10 +192,10 @@ _pdfioCryptoLock(
 
 	  pdfioDictSetName(filter_dict, "Type", "CryptFilter");
 	  pdfioDictSetName(filter_dict, "CFM", "AESV2");
-	  pdfioDictSetDict(cf_dict, "PDFio", filter_dict);
+	  pdfioDictSetDict(cf_dict, "StdCF", filter_dict);
 	  pdfioDictSetDict(dict, "CF", cf_dict);
-	  pdfioDictSetName(dict, "StmF", "PDFio");
-	  pdfioDictSetName(dict, "StrF", "PDFio");
+	  pdfioDictSetName(dict, "StmF", "StdCF");
+	  pdfioDictSetName(dict, "StrF", "StdCF");
 	  pdfioDictSetBoolean(dict, "EncryptMetadata", true);
 	}
 	break;
