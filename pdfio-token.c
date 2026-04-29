@@ -1,7 +1,7 @@
 //
 // PDF token parsing functions for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -393,7 +393,7 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 	  return (false);
 	}
 
-        if ((bufptr - buffer) > 3 && ((bufptr - buffer) & 1) != 0 && (!memcmp(buffer, "(\377\376", 3) || !memcmp(buffer, "(\376\377", 3)))
+        if ((bufptr - buffer) >= 3 && ((bufptr - buffer) & 1) != 0 && (!memcmp(buffer, "(\377\376", 3) || !memcmp(buffer, "(\376\377", 3)))
         {
           // UTF-16 string, convert to UTF-8...
           PDFIO_DEBUG("_pdfioTokenRead: Converting string to UTF-8.\n", stderr);

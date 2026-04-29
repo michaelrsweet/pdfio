@@ -25,6 +25,7 @@ v1.6.3 - YYYY-MM-DD
   page tree (Issue #161)
 - Fixed AES encryption dictionary name (Issue #163)
 - Fixed AES owner key generation (Issue #164)
+- Fixed support for empty UTF-16 strings (Issue #165)
 
 
 v1.6.2 - 2026-02-15
