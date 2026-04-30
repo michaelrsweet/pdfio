@@ -2,7 +2,7 @@ Changes in PDFio
 ================
 
 
-v1.6.3 - YYYY-MM-DD
+v1.6.3 - 2026-04-30
 -------------------
 
 - Fixed `pdfioPageCopy` implementation to not copy the source document's entire
