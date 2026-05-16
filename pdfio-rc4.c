@@ -1,7 +1,7 @@
 //
 // RC4 functions for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Original code by Tim Martin
 // Copyright © 1999 by Carnegie Mellon University, All Rights Reserved
