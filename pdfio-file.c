@@ -2983,6 +2983,7 @@ write_objstm(pdfio_file_t *pdf)		// I - PDF file
   pdfio_stream_t *st = NULL;		// Output stream
   _pdfio_strbuf_t *bptr = NULL;		// String buffer
   size_t	length;			// Length of stream objects
+  size_t	idx;			// Object stream index
 
 
   // If we aren't creating object streams, return now...
@@ -2994,7 +2995,7 @@ write_objstm(pdfio_file_t *pdf)		// I - PDF file
     return (false);
 
   // Loop through the array of objects and
-  for (i = 0, length = 0; i < pdf->num_objs; i ++)
+  for (i = 0, length = 0, idx = 0; i < pdf->num_objs; i ++)
   {
     // Skip non-stream objects...
     obj = pdf->objs[i];
@@ -3003,6 +3004,8 @@ write_objstm(pdfio_file_t *pdf)		// I - PDF file
       continue;
 
     // Add this object to the initial list of objects and offsets for the stream...
+    obj->objstm_number  = idx ++;
+
     _pdfioStringPrintf(bptr, "%lu %lu\n", (unsigned long)obj->number, (unsigned long)length);
 
     length += obj->objstm_datalen;
@@ -3179,7 +3182,7 @@ write_trailer(pdfio_file_t *pdf)	// I - PDF file
 
     // Write the "free" 0 object...
     memset(buffer, 0, sizeof(buffer));
-    pdfioStreamWrite(xref_st, buffer, (size_t)offsize + 2);
+    pdfioStreamWrite(xref_st, buffer, (size_t)offsize + (size_t)idxsize + 1);
 
     // Then write the "allocated" objects...
     for (i = 0; i < pdf->num_objs; i ++)

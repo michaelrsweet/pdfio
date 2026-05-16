@@ -60,7 +60,6 @@ pdfioObjClose(pdfio_obj_t *obj)		// I - Object
       // If we got this far then we have the value string and can assign an
       // object number, which is all that is required for now...
       obj->objstm_datalen = (size_t)(bptr->bufptr - bptr->buffer);
-      obj->objstm_number  = obj->pdf->num_objstm;
       obj->pdf->num_objstm ++;
 
       _pdfioStringFreeBuffer(obj->pdf, bptr->buffer);
