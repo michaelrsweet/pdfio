@@ -203,7 +203,7 @@ do_crypto_tests(void)
   }
 
   _pdfioCryptoAESInit(&aes, key, 16, iv);
-  _pdfioCryptoAESEncrypt(&aes, buffer, (uint8_t *)text, strlen(text));
+  _pdfioCryptoAESEncrypt(&aes, buffer, (uint8_t *)text, strlen(text), /*last*/true);
 
   if (!memcmp(aes128text, buffer, sizeof(aes128text)))
   {
@@ -226,7 +226,7 @@ do_crypto_tests(void)
 
   testBegin("_pdfioAESInit/Decrypt(128-bit CBC)");
   _pdfioCryptoAESInit(&aes, key, 16, iv);
-  _pdfioCryptoAESDecrypt(&aes, buffer2, buffer, sizeof(aes128text));
+  _pdfioCryptoAESDecrypt(&aes, buffer2, buffer, sizeof(aes128text), /*last*/true);
 
   if (!memcmp(buffer2, text, strlen(text)))
   {
@@ -255,7 +255,7 @@ do_crypto_tests(void)
   }
 
   _pdfioCryptoAESInit(&aes, key, 32, iv);
-  _pdfioCryptoAESEncrypt(&aes, buffer, (uint8_t *)text, strlen(text));
+  _pdfioCryptoAESEncrypt(&aes, buffer, (uint8_t *)text, strlen(text), /*last*/true);
 
   if (!memcmp(aes256text, buffer, sizeof(aes256text)))
   {
@@ -278,7 +278,7 @@ do_crypto_tests(void)
 
   testBegin("_pdfioAESInit/Decrypt(256-bit CBC)");
   _pdfioCryptoAESInit(&aes, key, 32, iv);
-  _pdfioCryptoAESDecrypt(&aes, buffer2, buffer, sizeof(aes256text));
+  _pdfioCryptoAESDecrypt(&aes, buffer2, buffer, sizeof(aes256text), /*last*/true);
 
   if (!memcmp(buffer2, text, strlen(text)))
   {
@@ -319,7 +319,7 @@ do_crypto_tests(void)
     key[i] = (uint8_t)i + 1;
 
   _pdfioCryptoRC4Init(&rc4, key, 16);
-  _pdfioCryptoRC4Crypt(&rc4, buffer, (uint8_t *)text, strlen(text));
+  _pdfioCryptoRC4Crypt(&rc4, buffer, (uint8_t *)text, strlen(text), /*last*/true);
 
   if (!memcmp(rc4text, buffer, sizeof(rc4text)))
   {
@@ -342,7 +342,7 @@ do_crypto_tests(void)
 
   testBegin("_pdfioRC4Init/Decrypt(128-bit)");
   _pdfioCryptoRC4Init(&rc4, key, 16);
-  _pdfioCryptoRC4Crypt(&rc4, buffer2, buffer, strlen(text));
+  _pdfioCryptoRC4Crypt(&rc4, buffer2, buffer, strlen(text), /*last*/true);
 
   if (!memcmp(buffer2, text, strlen(text)))
   {

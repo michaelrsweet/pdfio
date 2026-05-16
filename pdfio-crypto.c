@@ -838,7 +838,7 @@ decrypt_ou_key(
   {
     // Encrypt the result once...
     _pdfioCryptoRC4Init(&rc4, file_key, 5);
-    _pdfioCryptoRC4Crypt(&rc4, ou_key, ou_key, 32);
+    _pdfioCryptoRC4Crypt(&rc4, ou_key, ou_key, 32, /*last*/true);
   }
   else
   {
@@ -854,7 +854,7 @@ decrypt_ou_key(
 	key[j] = (uint8_t)(file_key[j] ^ i);
 
       _pdfioCryptoRC4Init(&rc4, key, file_keylen);
-      _pdfioCryptoRC4Crypt(&rc4, ou_key, ou_key, 32);
+      _pdfioCryptoRC4Crypt(&rc4, ou_key, ou_key, 32, /*last*/true);
     }
   }
 }
@@ -879,7 +879,7 @@ encrypt_ou_key(
   {
     // Encrypt the result once...
     _pdfioCryptoRC4Init(&rc4, file_key, 5);
-    _pdfioCryptoRC4Crypt(&rc4, ou_key, ou_key, 32);
+    _pdfioCryptoRC4Crypt(&rc4, ou_key, ou_key, 32, /*last*/true);
   }
   else
   {
@@ -893,7 +893,7 @@ encrypt_ou_key(
 	key[j] = (uint8_t)(file_key[j] ^ i);
 
       _pdfioCryptoRC4Init(&rc4, key, file_keylen);
-      _pdfioCryptoRC4Crypt(&rc4, ou_key, ou_key, 32);
+      _pdfioCryptoRC4Crypt(&rc4, ou_key, ou_key, 32, /*last*/true);
     }
   }
 }

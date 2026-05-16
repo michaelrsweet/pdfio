@@ -170,15 +170,11 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
 	if ((cb = _pdfioCryptoMakeReader(pdf, obj, &ctx, v->value.binary.data, &ivlen)) == NULL)
 	  return (false);
 
-	templen = (cb)(&ctx, temp, v->value.binary.data + ivlen, v->value.binary.datalen - ivlen);
+	templen = (cb)(&ctx, temp, v->value.binary.data + ivlen, v->value.binary.datalen - ivlen, /*last*/true);
 
 	// Copy the decrypted string back to the value and adjust the length...
 	memcpy(v->value.binary.data, temp, templen);
-
-	if (pdf->encryption >= PDFIO_ENCRYPTION_AES_128 && temp[templen - 1] <= templen)
-	  v->value.binary.datalen = templen - temp[templen - 1];
-	else
-	  v->value.binary.datalen = templen;
+	v->value.binary.datalen = templen;
 
         _pdfioStringFreeBuffer(pdf, (char *)temp);
 	break;
@@ -201,11 +197,7 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
 	if ((cb = _pdfioCryptoMakeReader(pdf, obj, &ctx, (uint8_t *)v->value.string, &ivlen)) == NULL)
 	  return (false);
 
-	templen = (cb)(&ctx, temp, (uint8_t *)v->value.string + ivlen, templen - ivlen);
-
-	if (pdf->encryption >= PDFIO_ENCRYPTION_AES_128 && temp[templen - 1] <= templen)
-	  templen -= temp[templen - 1];
-
+	templen = (cb)(&ctx, temp, (uint8_t *)v->value.string + ivlen, templen - ivlen, /*last*/true);
 	temp[templen] = '\0';
 
         if ((templen & 1) == 0 && (!memcmp(temp, "\376\377", 2) || !memcmp(temp, "\377\376", 2)))
@@ -643,7 +635,7 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
             }
 
 	    cb        = _pdfioCryptoMakeWriter(pdf, obj, &ctx, temp, &ivlen);
-	    databytes = (cb)(&ctx, temp + ivlen, v->value.binary.data, v->value.binary.datalen) + ivlen;
+	    databytes = (cb)(&ctx, temp + ivlen, v->value.binary.data, v->value.binary.datalen, /*last*/true) + ivlen;
 	    dataptr   = temp;
           }
           else
@@ -706,7 +698,7 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
 			tempbytes;	// Number of output bytes
 
 	    cb        = _pdfioCryptoMakeWriter(pdf, obj, &ctx, temp, &ivlen);
-	    tempbytes = (cb)(&ctx, temp + ivlen, (const uint8_t *)datestr, len) + ivlen;
+	    tempbytes = (cb)(&ctx, temp + ivlen, (const uint8_t *)datestr, len, /*last*/true) + ivlen;
 
 	    if (!_pdfioFilePuts(pdf, "<"))
 	      return (false);
@@ -769,7 +761,7 @@ _pdfioValueWrite(pdfio_file_t   *pdf,	// I - PDF file
           }
 
           cb        = _pdfioCryptoMakeWriter(pdf, obj, &ctx, temp, &ivlen);
-          tempbytes = (cb)(&ctx, temp + ivlen, (const uint8_t *)v->value.string, len) + ivlen;
+          tempbytes = (cb)(&ctx, temp + ivlen, (const uint8_t *)v->value.string, len, /*last*/true) + ivlen;
 
           if (!_pdfioFilePuts(pdf, "<"))
             goto strdone;

@@ -1,7 +1,7 @@
 //
 // RC4 functions for PDFio.
 //
-// Copyright © 2021 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Original code by Tim Martin
 // Copyright © 1999 by Carnegie Mellon University, All Rights Reserved
@@ -74,13 +74,16 @@ _pdfioCryptoRC4Crypt(
     _pdfio_rc4_t  *ctx,			// I - Context
     uint8_t       *outbuffer,		// I - Output buffer
     const uint8_t *inbuffer,		// I - Input buffer
-    size_t        len)			// I - Size of buffers
+    size_t        len,			// I - Size of buffers
+    bool          last)			// I - Unused for RC4
 {
   uint8_t	tmp,			// Swap variable
 		i, j,			// Looping vars
 		t;			// Current S box
   size_t	outbytes = len;		// Number of output bytes
 
+
+  (void)last;
 
   // Loop through the entire buffer...
   i = ctx->i;

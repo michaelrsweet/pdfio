@@ -64,7 +64,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 	if (st->crypto_cb)
 	{
 	  // Encrypt it first...
-	  outbytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, bytes & (size_t)~15);
+	  outbytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, bytes & (size_t)~15, /*last*/false);
 	}
 	else
 	{
@@ -101,7 +101,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 	if (st->crypto_cb)
 	{
 	  // Encrypt it first...
-	  bytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, bytes);
+	  bytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, bytes, /*last*/true);
 	}
 
 	if (!_pdfioFileWrite(st->pdf, st->cbuffer, bytes))
@@ -119,7 +119,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
       uint8_t	temp[8192];		// Temporary buffer
       size_t	outbytes;		// Output bytes
 
-      outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, (uint8_t *)st->buffer, (size_t)(st->bufptr - st->buffer));
+      outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, (uint8_t *)st->buffer, (size_t)(st->bufptr - st->buffer), /*last*/true);
       if (!_pdfioFileWrite(st->pdf, temp, outbytes))
       {
         ret = false;
@@ -600,7 +600,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       }
 
       if (st->crypto_cb)
-        rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes);
+        rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes, /*last*/false);
 
       st->flate.next_in  = (Bytef *)st->cbuffer;
       st->flate.avail_in = (uInt)rbytes;
@@ -875,7 +875,7 @@ pdfioStreamWrite(
           if (st->bufptr >= st->bufend)
           {
             // Encrypt and flush
-	    outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, (uint8_t *)st->buffer, sizeof(st->buffer));
+	    outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, (uint8_t *)st->buffer, sizeof(st->buffer), /*last*/false);
 	    if (!_pdfioFileWrite(st->pdf, temp, outbytes))
 	      return (false);
 
@@ -893,7 +893,7 @@ pdfioStreamWrite(
             cbytes &= (size_t)~15;
           }
 
-	  outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, bufptr, cbytes);
+	  outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, bufptr, cbytes, /*last*/false);
 	  if (!_pdfioFileWrite(st->pdf, temp, outbytes))
 	    return (false);
         }
@@ -1050,7 +1050,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       st->remaining -= (size_t)rbytes;
 
       if (st->crypto_cb)
-        (st->crypto_cb)(&st->crypto_ctx, (uint8_t *)buffer, (uint8_t *)buffer, (size_t)rbytes);
+        rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, (uint8_t *)buffer, (uint8_t *)buffer, (size_t)rbytes, /*last*/false);
     }
 
     return (rbytes);
@@ -1077,7 +1077,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	  return (-1);			// End of file...
 
 	if (st->crypto_cb)
-	  rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes);
+	  rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes, /*last*/false);
 
 	st->remaining      -= (size_t)rbytes;
 	st->flate.next_in  = (Bytef *)st->cbuffer;
@@ -1133,7 +1133,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	    return (-1);		// End of file...
 
 	  if (st->crypto_cb)
-	    rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes);
+	    rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes, /*last*/false);
 
 	  st->remaining      -= (size_t)rbytes;
 	  st->flate.next_in  = (Bytef *)st->cbuffer;
@@ -1203,7 +1203,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	    return (-1);		// End of file...
 
 	  if (st->crypto_cb)
-	    rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes);
+	    rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes, /*last*/false);
 
 	  st->remaining      -= (size_t)rbytes;
 	  st->flate.next_in  = (Bytef *)st->cbuffer;
@@ -1321,7 +1321,7 @@ stream_write(pdfio_stream_t *st,	// I - Stream
       if (st->crypto_cb)
       {
         // Encrypt it first...
-        outbytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, cbytes & (size_t)~15);
+        outbytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, cbytes & (size_t)~15, /*last*/false);
       }
       else
       {

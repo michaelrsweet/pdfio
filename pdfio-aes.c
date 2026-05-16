@@ -1,7 +1,7 @@
 //
 // AES functions for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -170,7 +170,8 @@ _pdfioCryptoAESDecrypt(
     _pdfio_aes_t  *ctx,			// I - AES context
     uint8_t       *outbuffer,		// I - Output buffer
     const uint8_t *inbuffer,		// I - Input buffer
-    size_t        len)			// I - Number of bytes to decrypt
+    size_t        len,			// I - Number of bytes to decrypt
+    bool          last)			// I - Is this the last block?
 {
   uint8_t	next_iv[16];		// Next IV value
   size_t	outbytes = 0;		// Output bytes
@@ -195,6 +196,12 @@ _pdfioCryptoAESDecrypt(
     outbytes += 16;
   }
 
+  if (last)
+  {
+    if (outbuffer[-1] <= 0x10)
+      outbytes -= outbuffer[-1];
+  }
+
   return (outbytes);
 }
 
@@ -211,7 +218,8 @@ _pdfioCryptoAESEncrypt(
     _pdfio_aes_t  *ctx,			// I - AES context
     uint8_t       *outbuffer,		// I - Output buffer
     const uint8_t *inbuffer,		// I - Input buffer
-    size_t        len)			// I - Number of bytes to decrypt
+    size_t        len,			// I - Number of bytes to encrypt
+    bool          last)			// I - Is this the last call?
 {
   uint8_t	*iv = ctx->iv;		// Current IV for CBC
   size_t	outbytes = 0;		// Output bytes
@@ -238,7 +246,7 @@ _pdfioCryptoAESEncrypt(
     outbytes += 16;
   }
 
-  if (len > 0)
+  if (len > 0 || last)
   {
     // Pad the final buffer with (16 - len)...
     memset(outbuffer + len, (int)(16 - len), 16 - len);
