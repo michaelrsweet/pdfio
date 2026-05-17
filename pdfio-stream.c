@@ -27,7 +27,8 @@ static const char	*zstrerror(int error);
 bool					// O - `true` on success, `false` on failure
 pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 {
-  bool ret = true;			// Return value
+  bool	ret = true;			// Return value
+  uint8_t temp[PDFIO_BUF_SIZE + 32];	// Temporary buffer
 
 
   // Range check input...
@@ -92,7 +93,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 	st->flate.avail_out = (uInt)(st->cbsize - bytes);
       }
 
-      if (st->flate.avail_out < (uInt)st->cbsize)
+      if (st->flate.avail_out < (uInt)st->cbsize || st->crypto_cb)
       {
         // Write any residuals...
         size_t bytes = st->cbsize - st->flate.avail_out;
@@ -101,10 +102,15 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 	if (st->crypto_cb)
 	{
 	  // Encrypt it first...
-	  bytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, bytes, /*last*/true);
-	}
+	  bytes = (st->crypto_cb)(&st->crypto_ctx, temp, st->cbuffer, bytes, /*last*/true);
 
-	if (!_pdfioFileWrite(st->pdf, st->cbuffer, bytes))
+	  if (bytes > 0 && !_pdfioFileWrite(st->pdf, temp, bytes))
+	  {
+	    ret = false;
+	    goto done;
+	  }
+	}
+	else if (!_pdfioFileWrite(st->pdf, st->cbuffer, bytes))
 	{
 	  ret = false;
 	  goto done;
@@ -113,14 +119,13 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 
       deflateEnd(&st->flate);
     }
-    else if (st->crypto_cb && st->bufptr > st->buffer)
+    else if (st->crypto_cb && st->bufptr >= st->buffer)
     {
       // Encrypt and flush
-      uint8_t	temp[8192];		// Temporary buffer
       size_t	outbytes;		// Output bytes
 
       outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, (uint8_t *)st->buffer, (size_t)(st->bufptr - st->buffer), /*last*/true);
-      if (!_pdfioFileWrite(st->pdf, temp, outbytes))
+      if (outbytes > 0 && !_pdfioFileWrite(st->pdf, temp, outbytes))
       {
         ret = false;
         goto done;
@@ -856,7 +861,7 @@ pdfioStreamWrite(
     if (st->crypto_cb)
     {
       // Encrypt data before writing...
-      uint8_t	temp[8192];		// Temporary buffer
+      uint8_t	temp[PDFIO_BUF_SIZE];	// Temporary buffer
       size_t	cbytes,			// Current bytes
 		outbytes;		// Output bytes
 
@@ -1050,7 +1055,7 @@ stream_read(pdfio_stream_t *st,		// I - Stream
       st->remaining -= (size_t)rbytes;
 
       if (st->crypto_cb)
-        rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, (uint8_t *)buffer, (uint8_t *)buffer, (size_t)rbytes, /*last*/false);
+        rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, (uint8_t *)buffer, (uint8_t *)buffer, (size_t)rbytes, /*last*/st->remaining == 0);
     }
 
     return (rbytes);
@@ -1076,10 +1081,11 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	if (rbytes <= 0)
 	  return (-1);			// End of file...
 
-	if (st->crypto_cb)
-	  rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes, /*last*/false);
+	st->remaining -= (size_t)rbytes;
 
-	st->remaining      -= (size_t)rbytes;
+	if (st->crypto_cb)
+	  rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes, /*last*/st->remaining == 0);
+
 	st->flate.next_in  = (Bytef *)st->cbuffer;
 	st->flate.avail_in = (uInt)rbytes;
       }
@@ -1132,10 +1138,11 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	  if (rbytes <= 0)
 	    return (-1);		// End of file...
 
-	  if (st->crypto_cb)
-	    rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes, /*last*/false);
+	  st->remaining -= (size_t)rbytes;
 
-	  st->remaining      -= (size_t)rbytes;
+	  if (st->crypto_cb)
+	    rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes, /*last*/st->remaining == 0);
+
 	  st->flate.next_in  = (Bytef *)st->cbuffer;
 	  st->flate.avail_in = (uInt)rbytes;
 	}
@@ -1202,10 +1209,11 @@ stream_read(pdfio_stream_t *st,		// I - Stream
 	  if (rbytes <= 0)
 	    return (-1);		// End of file...
 
-	  if (st->crypto_cb)
-	    rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes, /*last*/false);
+	  st->remaining -= (size_t)rbytes;
 
-	  st->remaining      -= (size_t)rbytes;
+	  if (st->crypto_cb)
+	    rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, (size_t)rbytes, /*last*/st->remaining == 0);
+
 	  st->flate.next_in  = (Bytef *)st->cbuffer;
 	  st->flate.avail_in = (uInt)rbytes;
 	}

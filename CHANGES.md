@@ -6,7 +6,7 @@ v1.6.4 - YYYY-MM-DD
 -------------------
 
 - Fixed `pdfioPageCopy` implementation to not force a CropBox value (Issue #166)
-- Fixed AES padding (Issue #167)
+- Fixed AES padding (Issue #167, Issue #169)
 
 
 v1.6.3 - 2026-04-30

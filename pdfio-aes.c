@@ -225,7 +225,7 @@ _pdfioCryptoAESEncrypt(
   size_t	outbytes = 0;		// Output bytes
 
 
-  if (len == 0)
+  if (len == 0 && !last)
     return (0);
 
   if (inbuffer != outbuffer)
