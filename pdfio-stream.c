@@ -29,7 +29,8 @@ static const char	*zstrerror(int error);
 bool					// O - `true` on success, `false` on failure
 pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 {
-  bool ret = true;			// Return value
+  bool	ret = true;			// Return value
+  uint8_t temp[PDFIO_BUF_SIZE + 32];	// Temporary buffer
 
 
   // Range check input...
@@ -105,10 +106,15 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 	if (st->crypto_cb)
 	{
 	  // Encrypt it first...
-	  bytes = (st->crypto_cb)(&st->crypto_ctx, st->cbuffer, st->cbuffer, bytes, /*last*/true);
-	}
+	  bytes = (st->crypto_cb)(&st->crypto_ctx, temp, st->cbuffer, bytes, /*last*/true);
 
-	if (!_pdfioFileWrite(st->pdf, st->cbuffer, bytes))
+	  if (!_pdfioFileWrite(st->pdf, temp, bytes))
+	  {
+	    ret = false;
+	    goto done;
+	  }
+	}
+	else if (!_pdfioFileWrite(st->pdf, st->cbuffer, bytes))
 	{
 	  ret = false;
 	  goto done;
@@ -120,7 +126,6 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
     else if (st->crypto_cb && st->bufptr > st->buffer)
     {
       // Encrypt and flush
-      uint8_t	temp[8192];		// Temporary buffer
       size_t	outbytes;		// Output bytes
 
       outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, (uint8_t *)st->buffer, (size_t)(st->bufptr - st->buffer), /*last*/true);
@@ -904,7 +909,7 @@ pdfioStreamWrite(
     if (st->crypto_cb)
     {
       // Encrypt data before writing...
-      uint8_t	temp[8192];		// Temporary buffer
+      uint8_t	temp[PDFIO_BUF_SIZE];	// Temporary buffer
       size_t	cbytes,			// Current bytes
 		outbytes;		// Output bytes
 

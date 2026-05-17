@@ -93,6 +93,7 @@
 // Types and constants...
 //
 
+#  define PDFIO_BUF_SIZE	8192	// File buffer size
 #  define PDFIO_MAX_DEPTH	32	// Maximum nesting depth for values
 #  define PDFIO_MAX_STRING	131072	// Maximum length of string
 
@@ -311,7 +312,7 @@ struct _pdfio_file_s			// PDF file structure
 
   // Active file data
   int		fd;			// File descriptor
-  char		buffer[8192],		// Read/write buffer
+  char		buffer[PDFIO_BUF_SIZE],	// Read/write buffer
 		*bufptr,		// Pointer into buffer
 		*bufend;		// End of buffer
   off_t		bufpos;			// Position in file for start of buffer
@@ -380,7 +381,7 @@ struct _pdfio_stream_s			// Stream
   pdfio_obj_t	*length_obj;		// Length object, if any
   pdfio_filter_t filter;		// Compression/decompression filter
   size_t	remaining;		// Remaining bytes in stream
-  char		buffer[8192],		// Read/write buffer
+  char		buffer[PDFIO_BUF_SIZE],	// Read/write buffer
 		*bufptr,		// Current position in buffer
 	        *bufend;		// End of buffer
   size_t	a85size;		// Size of ASCII85Decode buffer
