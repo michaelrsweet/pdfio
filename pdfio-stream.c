@@ -97,7 +97,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 	st->flate.avail_out = (uInt)(st->cbsize - bytes);
       }
 
-      if (st->flate.avail_out < (uInt)st->cbsize)
+      if (st->flate.avail_out < (uInt)st->cbsize || st->crypto_cb)
       {
         // Write any residuals...
         size_t bytes = st->cbsize - st->flate.avail_out;
@@ -108,7 +108,7 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 	  // Encrypt it first...
 	  bytes = (st->crypto_cb)(&st->crypto_ctx, temp, st->cbuffer, bytes, /*last*/true);
 
-	  if (!_pdfioFileWrite(st->pdf, temp, bytes))
+	  if (bytes > 0 && !_pdfioFileWrite(st->pdf, temp, bytes))
 	  {
 	    ret = false;
 	    goto done;
@@ -123,13 +123,13 @@ pdfioStreamClose(pdfio_stream_t *st)	// I - Stream
 
       deflateEnd(&st->flate);
     }
-    else if (st->crypto_cb && st->bufptr > st->buffer)
+    else if (st->crypto_cb && st->bufptr >= st->buffer)
     {
       // Encrypt and flush
       size_t	outbytes;		// Output bytes
 
       outbytes = (st->crypto_cb)(&st->crypto_ctx, temp, (uint8_t *)st->buffer, (size_t)(st->bufptr - st->buffer), /*last*/true);
-      if (!_pdfioFileWrite(st->pdf, temp, outbytes))
+      if (outbytes > 0 && !_pdfioFileWrite(st->pdf, temp, outbytes))
       {
         ret = false;
         goto done;
@@ -1139,7 +1139,7 @@ stream_get_bytes(
 	  st->remaining -= (size_t)a85bytes;
 
 	  if (st->crypto_cb)
-	    (st->crypto_cb)(&st->crypto_ctx, (uint8_t *)st->a85bufend, (uint8_t *)st->a85bufend, (size_t)a85bytes, /*last*/false);
+	    a85bytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, (uint8_t *)st->a85bufend, (uint8_t *)st->a85bufend, (size_t)a85bytes, /*last*/st->remaining == 0);
 
 	  st->a85bufend += a85bytes;
 	}
@@ -1229,7 +1229,7 @@ stream_get_bytes(
       st->remaining -= (size_t)rbytes;
 
       if (st->crypto_cb)
-        (st->crypto_cb)(&st->crypto_ctx, (uint8_t *)buffer, (uint8_t *)buffer, (size_t)rbytes, /*last*/false);
+        rbytes = (ssize_t)(st->crypto_cb)(&st->crypto_ctx, (uint8_t *)buffer, (uint8_t *)buffer, (size_t)rbytes, /*last*/st->remaining == 0);
     }
 
     PDFIO_DEBUG("stream_get_bytes: Returning %ld raw bytes for stream.\n", (long)rbytes);
