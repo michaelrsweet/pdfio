@@ -2,7 +2,7 @@ Changes in PDFio
 ================
 
 
-v1.6.4 - YYYY-MM-DD
+v1.6.4 - 2026-06-05
 -------------------
 
 - Fixed `pdfioPageCopy` implementation to not force a CropBox value (Issue #166)
