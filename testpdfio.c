@@ -36,6 +36,7 @@ static int	do_crypto_tests(void);
 static int	do_lzw_tests(void);
 static int	do_pdfa_tests(void);
 static int	do_test_file(const char *filename, const char *outfile, int objnum, const char *password, bool decode, bool verbose);
+static int	do_unicode_tests(void);
 static int	do_unit_tests(void);
 static int	draw_image(pdfio_stream_t *st, const char *name, double x, double y, double w, double h, const char *label);
 static bool	error_cb(pdfio_file_t *pdf, const char *message, bool *error);
@@ -484,6 +485,96 @@ do_lzw_tests(void)
   }
 
   _pdfioLZWDelete(lzw);
+
+  return (status);
+}
+
+
+//
+// 'do_unicode_tests()' - Test UTF-8 to UTF-16 conversion for Unicode strings.
+//
+
+static int				// O - Exit status
+do_unicode_tests(void)
+{
+  int		status = 0;		// Exit status
+  char		filename[1024];		// Temporary PDF filename
+  pdfio_file_t	*pdf;			// PDF file
+  pdfio_dict_t	*dict;			// Page dictionary
+  pdfio_obj_t	*page;			// Page object
+  pdfio_stream_t *st;			// Content stream
+  char		buffer[1024];		// Content stream buffer
+  ssize_t	bytes;			// Bytes read
+  // "A" (U+0041), e-acute (U+00E9, 2-byte), Euro sign (U+20AC, 3-byte), and
+  // grinning face (U+1F600, 4-byte, supplementary plane).
+  static const char text[] = "A\xC3\xA9\xE2\x82\xAC\xF0\x9F\x98\x80";
+  static const char expected[] = "<004100E920ACD83DDE00>";
+
+
+  // Write a page that shows the string with a Unicode font...
+  testBegin("pdfioFileCreateTemporary(Unicode)");
+  if ((pdf = pdfioFileCreateTemporary(filename, sizeof(filename), /*version*/"2.0", /*media_box*/NULL, /*crop_box*/NULL, /*error_cb*/NULL, /*error_data*/NULL)) != NULL)
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  dict = pdfioDictCreate(pdf);
+  pdfioPageDictAddFont(dict, "F1", pdfioFileCreateFontObjFromBase(pdf, "Helvetica"));
+
+  testBegin("pdfioContentTextShow(Unicode supplementary plane)");
+  if ((st = pdfioFileCreatePage(pdf, dict)) != NULL && pdfioContentTextBegin(st) && pdfioContentSetTextFont(st, "F1", 12.0) && pdfioContentTextMoveTo(st, 72.0, 720.0) && pdfioContentTextShow(st, /*unicode*/true, text) && pdfioContentTextEnd(st))
+  {
+    pdfioStreamClose(st);
+    pdfioFileClose(pdf);
+    testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  // Read the page content back and confirm the UTF-16 encoding...
+  testBegin("UTF-16 surrogate pair encoding");
+  if ((pdf = pdfioFileOpen(filename, /*password_cb*/NULL, /*password_data*/NULL, /*error_cb*/NULL, /*error_data*/NULL)) == NULL)
+  {
+    testEndMessage(false, "unable to reopen file");
+    return (1);
+  }
+
+  page = pdfioFileGetPage(pdf, 0);
+  dict = pdfioObjGetDict(page);
+
+  if ((st = pdfioObjOpenStream(pdfioDictGetObj(dict, "Contents"), /*decode*/true)) == NULL)
+  {
+    testEndMessage(false, "unable to open content stream");
+    pdfioFileClose(pdf);
+    return (1);
+  }
+
+  bytes = pdfioStreamRead(st, buffer, sizeof(buffer) - 1);
+  pdfioStreamClose(st);
+
+  if (bytes < 0)
+    bytes = 0;
+  buffer[bytes] = '\0';
+
+  if (strstr(buffer, expected))
+  {
+    testEnd(true);
+  }
+  else
+  {
+    testEndMessage(false, "expected \"%s\" in content stream", expected);
+    status = 1;
+  }
+
+  pdfioFileClose(pdf);
 
   return (status);
 }
@@ -1281,6 +1372,10 @@ do_unit_tests(void)
 
   // Do LZW tests...
   if (do_lzw_tests())
+    return (1);
+
+  // Do Unicode encoding tests...
+  if (do_unicode_tests())
     return (1);
 
   // Create a new PDF file...
