@@ -2,6 +2,13 @@ Changes in PDFio
 ================
 
 
+v1.6.5 - YYYY-MM-DD
+-------------------
+
+- Fixed `pdfioContentTextXxx` output with Unicode characters past U+FFFF
+  (Issue #171)
+
+
 v1.6.4 - 2026-06-05
 -------------------
 
