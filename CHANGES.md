@@ -18,6 +18,15 @@ v1.7.0 - YYYY-MM-DD
 - Fixed a buffer overflow in the (still not enabled) AES-256 code.
 
 
+v1.6.5 - YYYY-MM-DD
+-------------------
+
+- Fixed `pdfioContentTextXxx` output with Unicode characters past U+FFFF
+  (Issue #171)
+- Fixed issue with extended Unicode filenames on Windows (Issue #172)
+- Fixed `pdfioContentTextXxx` output with invalid UTF-8.
+
+
 v1.6.4 - 2026-06-05
 -------------------
 
