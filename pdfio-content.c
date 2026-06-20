@@ -1,7 +1,7 @@
 //
 // Content helper functions for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -3972,19 +3972,19 @@ write_string(pdfio_stream_t *st,	// I - Stream
   // Loop through the string, handling UTF-8 as needed...
   for (ptr = s; *ptr; ptr ++)
   {
-    if ((*ptr & 0xe0) == 0xc0)
+    if ((*ptr & 0xe0) == 0xc0 && (ptr[1] & 0xc0) == 0x80)
     {
       // Two-byte UTF-8
       ch = ((ptr[0] & 0x1f) << 6) | (ptr[1] & 0x3f);
       ptr ++;
     }
-    else if ((*ptr & 0xf0) == 0xe0)
+    else if ((*ptr & 0xf0) == 0xe0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80)
     {
       // Three-byte UTF-8
       ch = ((ptr[0] & 0x0f) << 12) | ((ptr[1] & 0x3f) << 6) | (ptr[2] & 0x3f);
       ptr += 2;
     }
-    else if ((*ptr & 0xf8) == 0xf0)
+    else if ((*ptr & 0xf8) == 0xf0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80 && (ptr[3] & 0xc0) == 0x80)
     {
       // Four-byte UTF-8
       ch = ((ptr[0] & 0x07) << 18) | ((ptr[1] & 0x3f) << 12) | ((ptr[2] & 0x3f) << 6) | (ptr[3] & 0x3f);

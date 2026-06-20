@@ -7,6 +7,7 @@ v1.6.5 - YYYY-MM-DD
 
 - Fixed `pdfioContentTextXxx` output with Unicode characters past U+FFFF
   (Issue #171)
+- Fixed `pdfioContentTextXxx` output with invalid UTF-8.
 
 
 v1.6.4 - 2026-06-05
