@@ -16,6 +16,7 @@ v1.7.0 - YYYY-MM-DD
 - Added `pdfioPageGetXxx` functions to get values from the page dictionaries
   (Issue #150)
 - Fixed a buffer overflow in the (still not enabled) AES-256 code.
+- Fixed UTF-16 encoding of supplementary plane characters (U+10000 and above).
 
 
 v1.6.5 - YYYY-MM-DD
