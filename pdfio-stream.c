@@ -477,7 +477,10 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
     if (ivlen > 0)
     {
       _pdfioFileConsume(st->pdf, ivlen);
-      st->remaining -= ivlen;
+      if (st->remaining >= ivlen)
+        st->remaining -= ivlen;
+      else
+        st->remaining = 0;
     }
 
     if (st->pdf->encryption >= PDFIO_ENCRYPTION_AES_128)

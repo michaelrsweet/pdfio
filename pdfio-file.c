@@ -256,7 +256,6 @@ pdfioFileCreate(
   if ((pdf = create_common(filename, fd, /*output_cb*/NULL, /*output_cbdata*/NULL, version, media_box, crop_box, error_cb, error_cbdata)) == NULL)
   {
     // Remove the newly created file if we can't create the PDF file object...
-    close(fd);
     unlink(filename);
   }
 
@@ -724,7 +723,6 @@ pdfioFileCreateTemporary(
   if ((pdf = create_common(buffer, fd, /*output_cb*/NULL, /*output_cbdata*/NULL, version, media_box, crop_box, error_cb, error_cbdata)) == NULL)
   {
     // Remove the temporary file if we can't create the PDF file object...
-    close(fd);
     unlink(buffer);
     *buffer = '\0';
   }
