@@ -21,7 +21,7 @@ static time_t	get_date_time(const char *s);
 // '_pdfioValueCopy()' - Copy a value to a PDF file.
 //
 
-_pdfio_value_t	*
+_pdfio_value_t	*			// O - Destination value or `NULL` on error
 _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
                 _pdfio_value_t *vdst,	// I - Destination value
                 pdfio_file_t   *pdfsrc,	// I - Source PDF file

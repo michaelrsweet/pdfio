@@ -102,7 +102,10 @@ pdfioPageCopy(pdfio_file_t *pdf,	// I - PDF file
       else if (srcdict == srcpage->value.value.dict || !_pdfioDictGetValue(dstdict, srcpair->key))
       {
         // New key/value pair...
-        _pdfioDictSetValue(dstdict, pdfioStringCreate(pdf, srcpair->key), _pdfioValueCopy(pdf, &dstvalue, srcpage->pdf, &srcpair->value));
+        if (_pdfioValueCopy(pdf, &dstvalue, srcpage->pdf, &srcpair->value))
+	  _pdfioDictSetValue(dstdict, pdfioStringCreate(pdf, srcpair->key), &dstvalue);
+	else
+	  return (false);
       }
     }
   }
