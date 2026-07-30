@@ -41,6 +41,42 @@ typedef enum pdfio_linejoin_e		// Line joining modes
   PDFIO_LINEJOIN_BEVEL			// Bevel joint
 } pdfio_linejoin_t;
 
+typedef enum pdfio_stretch_e		// Font stretch
+{
+  PDFIO_STRETCH_UNSPEC = -1,		// Unspecified
+  PDFIO_STRETCH_NORMAL,			// Normal
+  PDFIO_STRETCH_ULTRA_CONDENSED,	// Ultra-condensed
+  PDFIO_STRETCH_EXTRA_CONDENSED,	// Extra-condensed
+  PDFIO_STRETCH_CONDENSED,		// Condensed
+  PDFIO_STRETCH_SEMI_CONDENSED,	// Semi-condensed
+  PDFIO_STRETCH_SEMI_EXPANDED,	// Semi-expanded
+  PDFIO_STRETCH_EXPANDED,		// Expanded
+  PDFIO_STRETCH_EXTRA_EXPANDED,	// Extra-expanded
+  PDFIO_STRETCH_ULTRA_EXPANDED	// Ultra-expanded
+} pdfio_stretch_t;
+
+typedef enum pdfio_style_e		// Font style
+{
+  PDFIO_STYLE_UNSPEC = -1,		// Unspecified
+  PDFIO_STYLE_NORMAL,			// Normal
+  PDFIO_STYLE_ITALIC,			// Italic
+  PDFIO_STYLE_OBLIQUE			// Oblique
+} pdfio_style_t;
+
+typedef enum pdfio_weight_e		// Font weight
+{
+  PDFIO_WEIGHT_UNSPEC = -1,		// Unspecified
+  PDFIO_WEIGHT_100 = 100,		// Thin
+  PDFIO_WEIGHT_200 = 200,		// Extra-light
+  PDFIO_WEIGHT_300 = 300,		// Light
+  PDFIO_WEIGHT_400 = 400,		// Normal/Regular
+  PDFIO_WEIGHT_500 = 500,		// Medium
+  PDFIO_WEIGHT_600 = 600,		// Semi-bold
+  PDFIO_WEIGHT_700 = 700,		// Bold
+  PDFIO_WEIGHT_800 = 800,		// Extra-bold
+  PDFIO_WEIGHT_900 = 900		// Black
+} pdfio_weight_t;
+
 typedef double pdfio_matrix_t[3][2];	// Transform matrix
 
 typedef enum pdfio_textrendering_e	// Text rendering modes
@@ -134,6 +170,7 @@ extern void		pdfioFileAddOutputIntent(pdfio_file_t *pdf, const char *subtype, co
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromBase(pdfio_file_t *pdf, const char *name) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromData(pdfio_file_t *pdf, const void *data, size_t datasize, bool unicode) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromFile(pdfio_file_t *pdf, const char *filename, bool unicode) _PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateFontObjFromSystem(pdfio_file_t *pdf, const char *family, pdfio_style_t style, pdfio_weight_t weight, pdfio_stretch_t stretch, bool unicode) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateICCObjFromData(pdfio_file_t *pdf, const unsigned char *data, size_t datalen, size_t num_colors) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateICCObjFromFile(pdfio_file_t *pdf, const char *filename, size_t num_colors) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateImageObjFromData(pdfio_file_t *pdf, const unsigned char *data, size_t width, size_t height, size_t num_colors, pdfio_array_t *color_data, bool alpha, bool interpolate) _PDFIO_PUBLIC;
