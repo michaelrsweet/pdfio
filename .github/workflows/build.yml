@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - name: Checkout PDFio sources
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         submodules: recursive
     - name: Update Build Environment
@@ -39,7 +39,7 @@ jobs:
 
     steps:
     - name: Checkout PDFio sources
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         submodules: recursive
     - name: Configure PDFio
@@ -57,7 +57,7 @@ jobs:
 
     steps:
     - name: Checkout PDFio sources
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         submodules: recursive
     - name: Setup MSBuild
