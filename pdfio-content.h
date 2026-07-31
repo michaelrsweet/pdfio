@@ -1,7 +1,7 @@
 //
 // Public content header file for PDFio.
 //
-// Copyright © 2021-2025 by Michael R Sweet.
+// Copyright © 2021-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -41,41 +41,41 @@ typedef enum pdfio_linejoin_e		// Line joining modes
   PDFIO_LINEJOIN_BEVEL			// Bevel joint
 } pdfio_linejoin_t;
 
-typedef enum pdfio_fstyle_e		// Font style
+typedef enum pdfio_fontstyle_e		// Font style
 {
-  PDFIO_FSTYLE_UNSPEC = -1,		// Unspecified
-  PDFIO_FSTYLE_NORMAL,			// Normal
-  PDFIO_FSTYLE_ITALIC,			// Italic
-  PDFIO_FSTYLE_OBLIQUE			// Oblique
-} pdfio_fstyle_t;
+  PDFIO_FONTSTYLE_UNSPEC = -1,		// Unspecified
+  PDFIO_FONTSTYLE_NORMAL,		// Normal
+  PDFIO_FONTSTYLE_ITALIC,		// Italic
+  PDFIO_FONTSTYLE_OBLIQUE		// Oblique
+} pdfio_fontstyle_t;
 
-typedef enum pdfio_fweight_e		// Font weight
+typedef enum pdfio_fontweight_e		// Font weight
 {
-  PDFIO_FWEIGHT_UNSPEC = -1,		// Unspecified
-  PDFIO_FWEIGHT_100 = 100,		// Thin
-  PDFIO_FWEIGHT_200 = 200,		// Extra-light
-  PDFIO_FWEIGHT_300 = 300,		// Light
-  PDFIO_FWEIGHT_400 = 400,		// Normal/Regular
-  PDFIO_FWEIGHT_500 = 500,		// Medium
-  PDFIO_FWEIGHT_600 = 600,		// Semi-bold
-  PDFIO_FWEIGHT_700 = 700,		// Bold
-  PDFIO_FWEIGHT_800 = 800,		// Extra-bold
-  PDFIO_FWEIGHT_900 = 900		// Black
-} pdfio_fweight_t;
+  PDFIO_FONTWEIGHT_UNSPEC = -1,		// Unspecified
+  PDFIO_FONTWEIGHT_100 = 100,		// Thin
+  PDFIO_FONTWEIGHT_200 = 200,		// Extra-light
+  PDFIO_FONTWEIGHT_300 = 300,		// Light
+  PDFIO_FONTWEIGHT_400 = 400,		// Normal/Regular
+  PDFIO_FONTWEIGHT_500 = 500,		// Medium
+  PDFIO_FONTWEIGHT_600 = 600,		// Semi-bold
+  PDFIO_FONTWEIGHT_700 = 700,		// Bold
+  PDFIO_FONTWEIGHT_800 = 800,		// Extra-bold
+  PDFIO_FONTWEIGHT_900 = 900		// Black
+} pdfio_fontweight_t;
 
-typedef enum pdfio_fstretch_e		// Font stretch
+typedef enum pdfio_fontwidth_e		// Font width/stretching
 {
-  PDFIO_FSTRETCH_UNSPEC = -1,		// Unspecified
-  PDFIO_FSTRETCH_NORMAL,			// Normal
-  PDFIO_FSTRETCH_ULTRA_CONDENSED,	// Ultra-condensed
-  PDFIO_FSTRETCH_EXTRA_CONDENSED,	// Extra-condensed
-  PDFIO_FSTRETCH_CONDENSED,		// Condensed
-  PDFIO_FSTRETCH_SEMI_CONDENSED,	// Semi-condensed
-  PDFIO_FSTRETCH_SEMI_EXPANDED,	// Semi-expanded
-  PDFIO_FSTRETCH_EXPANDED,		// Expanded
-  PDFIO_FSTRETCH_EXTRA_EXPANDED,	// Extra-expanded
-  PDFIO_FSTRETCH_ULTRA_EXPANDED	// Ultra-expanded
-} pdfio_fstretch_t;
+  PDFIO_FONTWIDTH_UNSPEC = -1,		// Unspecified
+  PDFIO_FONTWIDTH_NORMAL,		// Normal
+  PDFIO_FONTWIDTH_ULTRA_CONDENSED,	// Ultra-condensed
+  PDFIO_FONTWIDTH_EXTRA_CONDENSED,	// Extra-condensed
+  PDFIO_FONTWIDTH_CONDENSED,		// Condensed
+  PDFIO_FONTWIDTH_SEMI_CONDENSED,	// Semi-condensed
+  PDFIO_FONTWIDTH_SEMI_EXPANDED,	// Semi-expanded
+  PDFIO_FONTWIDTH_EXPANDED,		// Expanded
+  PDFIO_FONTWIDTH_EXTRA_EXPANDED,	// Extra-expanded
+  PDFIO_FONTWIDTH_ULTRA_EXPANDED	// Ultra-expanded
+} pdfio_fontwidth_t;
 
 typedef double pdfio_matrix_t[3][2];	// Transform matrix
 
@@ -170,7 +170,7 @@ extern void		pdfioFileAddOutputIntent(pdfio_file_t *pdf, const char *subtype, co
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromBase(pdfio_file_t *pdf, const char *name) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromData(pdfio_file_t *pdf, const void *data, size_t datasize, bool unicode) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateFontObjFromFile(pdfio_file_t *pdf, const char *filename, bool unicode) _PDFIO_PUBLIC;
-extern pdfio_obj_t	*pdfioFileCreateFontObjFromSystem(pdfio_file_t *pdf, const char *family, pdfio_fstyle_t style, pdfio_fweight_t weight, pdfio_fstretch_t stretch, bool unicode) _PDFIO_PUBLIC;
+extern pdfio_obj_t	*pdfioFileCreateFontObjFromSystem(pdfio_file_t *pdf, const char *family, pdfio_fontstyle_t style, pdfio_fontweight_t weight, pdfio_fontwidth_t width, bool unicode) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateICCObjFromData(pdfio_file_t *pdf, const unsigned char *data, size_t datalen, size_t num_colors) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateICCObjFromFile(pdfio_file_t *pdf, const char *filename, size_t num_colors) _PDFIO_PUBLIC;
 extern pdfio_obj_t	*pdfioFileCreateImageObjFromData(pdfio_file_t *pdf, const unsigned char *data, size_t width, size_t height, size_t num_colors, pdfio_array_t *color_data, bool alpha, bool interpolate) _PDFIO_PUBLIC;
