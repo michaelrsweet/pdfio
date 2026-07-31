@@ -1,4 +1,3 @@
-#define DEBUG 1
 //
 // Content helper functions for PDFio.
 //
@@ -3656,7 +3655,7 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
     const int		*cmap;		// CMap entries
     int			min_glyph,	// First glyph
 			max_glyph;	// Last glyph
-    int			glyphs[262144];	// Glyph to Unicode mapping
+    unsigned short	glyphs[65536];	// Glyph to Unicode mapping
     unsigned char	buffer[16384],	// Read buffer
 			*bufptr,	// Pointer into buffer
 			*bufend;	// End of buffer
@@ -3695,7 +3694,7 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
       goto done;
 
     cmap      = ttfGetCMap(font, &num_cmap);
-    min_glyph = (int)(sizeof(glyphs) / sizeof(glyphs[0]));
+    min_glyph = 65536;
     max_glyph = 0;
     memset(glyphs, 0, sizeof(glyphs));
 
@@ -3703,7 +3702,7 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
 
     for (i = 0, bufptr = buffer, bufend = buffer + sizeof(buffer); i < num_cmap; i ++)
     {
-//      PDFIO_DEBUG("create_font: cmap[%u]=%d\n", (unsigned)i, cmap[i]);
+      PDFIO_DEBUG("create_font: cmap[%u]=%d\n", (unsigned)i, cmap[i]);
       if (cmap[i] < 0 || cmap[i] >= (int)(sizeof(glyphs) / sizeof(glyphs[0])))
       {
         // Map undefined glyph to .notdef...
@@ -3716,7 +3715,7 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
         *bufptr++ = (unsigned char)(cmap[i] >> 8);
         *bufptr++ = (unsigned char)(cmap[i] & 255);
 
-        glyphs[cmap[i]] = i;
+        glyphs[cmap[i]] = (unsigned short)i;
         if (cmap[i] < min_glyph)
           min_glyph = cmap[i];
         if (cmap[i] > max_glyph)
@@ -3748,13 +3747,10 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
 
     pdfioStreamClose(st);
 
-    PDFIO_DEBUG("create_font: min_glyph=%u, max_glyph=%u\n", min_glyph, max_glyph);
-
     // ToUnicode mapping object
     to_unicode = pdfioDictCreate(file_obj->pdf);
     pdfioDictSetName(to_unicode, "Type", "CMap");
-//    pdfioDictSetName(to_unicode, "CMapName", "Adobe-Identity-UCS2");
-    pdfioDictSetName(to_unicode, "CMapName", "Adobe-Identity-UCS");
+    pdfioDictSetName(to_unicode, "CMapName", "Adobe-Identity-UCS2");
     pdfioDictSetDict(to_unicode, "CIDSystemInfo", sidict);
 
 #ifndef DEBUG
@@ -3778,19 +3774,13 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
 		    "begincmap\n"
 		    "/CIDSystemInfo<<\n"
 		    "/Registry (Adobe)\n"
-//		    "/Ordering (UCS2)\n"
-		    "/Ordering (UCS)\n"
+		    "/Ordering (UCS2)\n"
 		    "/Supplement 0\n"
 		    ">> def\n"
-//		    "/CMapName /Adobe-Identity-UCS2 def\n"
-		    "/CMapName /Adobe-Identity-UCS def\n"
+		    "/CMapName /Adobe-Identity-UCS2 def\n"
 		    "/CMapType 2 def\n"
-//		    "1 begincodespacerange\n"
-//		    "<0000> <FFFF>\n"
-		    "3 begincodespacerange\n"
-		    "<0000> <D7FF>\n"
-		    "<D800DC00> <DBFFDFFF>\n"
-		    "<E000> <FFFF>\n"
+		    "1 begincodespacerange\n"
+		    "<0000> <FFFF>\n"
 		    "endcodespacerange\n"
                     "endcmap\n"
                     "CMapName currentdict /CMap defineresource pop\n"
@@ -3807,9 +3797,9 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
     if ((w_array = pdfioArrayCreate(file_obj->pdf)) == NULL)
       goto done;
 
-    for (i = 0, w0 = ttfGetWidth(font, 0), w1 = 0; i < num_cmap; w0 = w1)
+    for (i = 0, w0 = ttfGetWidth(font, 0), w1 = 0; i < 65536; w0 = w1)
     {
-      for (j = 1; (i + j) < num_cmap; j ++)
+      for (j = 1; (i + j) < 65536; j ++)
       {
         if ((w1 = ttfGetWidth(font, (int)(i + j))) != w0)
           break;
@@ -3834,9 +3824,9 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
 	  goto done;
 
         pdfioArrayAppendNumber(temp_array, w0);
-        for (i ++; i < num_cmap && pdfioArrayGetSize(temp_array) < 8191; i ++, w0 = w1)
+        for (i ++; i < 65536 && pdfioArrayGetSize(temp_array) < 8191; i ++, w0 = w1)
         {
-          if ((w1 = ttfGetWidth(font, (int)i)) == w0 && i < (num_cmap - 6))
+          if ((w1 = ttfGetWidth(font, (int)i)) == w0 && i < 65530)
           {
             for (j = 1; j < 4; j ++)
             {
@@ -4494,19 +4484,19 @@ write_string(pdfio_stream_t *st,	// I - Stream
   // Loop through the string, handling UTF-8 as needed...
   for (ptr = s; *ptr; ptr ++)
   {
-    if ((*ptr & 0xe0) == 0xc0 && (ptr[1] & 0xc0) == 0x80)
+    if ((*ptr & 0xe0) == 0xc0)
     {
       // Two-byte UTF-8
       ch = ((ptr[0] & 0x1f) << 6) | (ptr[1] & 0x3f);
       ptr ++;
     }
-    else if ((*ptr & 0xf0) == 0xe0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80)
+    else if ((*ptr & 0xf0) == 0xe0)
     {
       // Three-byte UTF-8
       ch = ((ptr[0] & 0x0f) << 12) | ((ptr[1] & 0x3f) << 6) | (ptr[2] & 0x3f);
       ptr += 2;
     }
-    else if ((*ptr & 0xf8) == 0xf0 && (ptr[1] & 0xc0) == 0x80 && (ptr[2] & 0xc0) == 0x80 && (ptr[3] & 0xc0) == 0x80)
+    else if ((*ptr & 0xf8) == 0xf0)
     {
       // Four-byte UTF-8
       ch = ((ptr[0] & 0x07) << 18) | ((ptr[1] & 0x3f) << 12) | ((ptr[2] & 0x3f) << 6) | (ptr[3] & 0x3f);
@@ -4523,7 +4513,7 @@ write_string(pdfio_stream_t *st,	// I - Stream
     if (unicode)
     {
       // Write UTF-16 in hex...
-      if (ch < 0x10000)
+      if (ch < 0x100000)
       {
         // Two-byte UTF-16
 	if (!pdfioStreamPrintf(st, "%04X", ch))
@@ -4532,8 +4522,6 @@ write_string(pdfio_stream_t *st,	// I - Stream
       else
       {
         // Four-byte UTF-16
-        ch -= 0x10000;
-
 	if (!pdfioStreamPrintf(st, "%04X%04X", 0xd800 | ((ch >> 10) & 0x03ff), 0xdc00 | (ch & 0x03ff)))
 	  return (false);
       }
