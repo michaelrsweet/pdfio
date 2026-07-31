@@ -53,6 +53,7 @@
 #    define O_BINARY	0		// Map Windows-specific open flag
 #  endif // _WIN32
 #  include <zlib.h>
+#  include "ttf.h"
 
 
 //
@@ -331,6 +332,7 @@ struct _pdfio_file_s			// PDF file structure
   pdfio_array_t	*id_array;		// ID array
   bool		encrypt_metadata;	// Encrypt metadata?
   pdfio_dict_t	*markinfo;		// MarkInfo dictionary, if any
+  ttf_cache_t	*cache;			// System font cache for pdfioFileCreateFontObjFromSystem
 
   // Allocated data elements
   size_t	num_arrays,		// Number of arrays

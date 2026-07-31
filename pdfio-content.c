@@ -1940,118 +1940,35 @@ pdfioFileCreateFontObjFromFile(
 
 
 //
-// 'pdfio_style_to_ttf()' - Map a pdfio style to a TTF style.
-//
-
-static ttf_style_t			// O - TTF style
-pdfio_style_to_ttf(pdfio_style_t style)	// I - PDFio style
-{
-  switch (style)
-  {
-    case PDFIO_STYLE_ITALIC :
-        return (TTF_STYLE_ITALIC);
-
-    case PDFIO_STYLE_OBLIQUE :
-        return (TTF_STYLE_OBLIQUE);
-
-    default :
-        return (TTF_STYLE_NORMAL);
-  }
-}
-
-
-//
-// 'pdfio_weight_to_ttf()' - Map a pdfio weight to a TTF weight.
-//
-
-static ttf_weight_t			// O - TTF weight
-pdfio_weight_to_ttf(pdfio_weight_t weight)	// I - PDFio weight
-{
-  switch (weight)
-  {
-    case PDFIO_WEIGHT_100 :
-        return (TTF_WEIGHT_100);
-
-    case PDFIO_WEIGHT_200 :
-        return (TTF_WEIGHT_200);
-
-    case PDFIO_WEIGHT_300 :
-        return (TTF_WEIGHT_300);
-
-    case PDFIO_WEIGHT_400 :
-        return (TTF_WEIGHT_400);
-
-    case PDFIO_WEIGHT_500 :
-        return (TTF_WEIGHT_500);
-
-    case PDFIO_WEIGHT_600 :
-        return (TTF_WEIGHT_600);
-
-    case PDFIO_WEIGHT_700 :
-        return (TTF_WEIGHT_700);
-
-    case PDFIO_WEIGHT_800 :
-        return (TTF_WEIGHT_800);
-
-    case PDFIO_WEIGHT_900 :
-        return (TTF_WEIGHT_900);
-
-    default :
-        return (TTF_WEIGHT_UNSPEC);
-  }
-}
-
-
-//
-// 'pdfio_stretch_to_ttf()' - Map a pdfio stretch to a TTF stretch.
-//
-
-static ttf_stretch_t			// O - TTF stretch
-pdfio_stretch_to_ttf(pdfio_stretch_t stretch)	// I - PDFio stretch
-{
-  switch (stretch)
-  {
-    case PDFIO_STRETCH_ULTRA_CONDENSED :
-        return (TTF_STRETCH_ULTRA_CONDENSED);
-
-    case PDFIO_STRETCH_EXTRA_CONDENSED :
-        return (TTF_STRETCH_EXTRA_CONDENSED);
-
-    case PDFIO_STRETCH_CONDENSED :
-        return (TTF_STRETCH_CONDENSED);
-
-    case PDFIO_STRETCH_SEMI_CONDENSED :
-        return (TTF_STRETCH_SEMI_CONDENSED);
-
-    case PDFIO_STRETCH_SEMI_EXPANDED :
-        return (TTF_STRETCH_SEMI_EXPANDED);
-
-    case PDFIO_STRETCH_EXPANDED :
-        return (TTF_STRETCH_EXPANDED);
-
-    case PDFIO_STRETCH_EXTRA_EXPANDED :
-        return (TTF_STRETCH_EXTRA_EXPANDED);
-
-    case PDFIO_STRETCH_ULTRA_EXPANDED :
-        return (TTF_STRETCH_ULTRA_EXPANDED);
-
-    default :
-        return (TTF_STRETCH_NORMAL);
-  }
-}
-
-
-//
 // 'pdfioFileCreateFontObjFromSystem()' - Create a font object from a system font.
 //
 // This function creates a font object by finding a matching system font based on
 // the specified family, style, weight, and stretch properties.  The font is
 // embedded in the PDF file.
 //
+// The "family" parameter is the font family name (e.g. "Helvetica").
+//
+// The "style" parameter specifies the font style: normal, italic, or oblique.
+//
+// The "weight" parameter specifies the font weight (e.g. 400 for normal,
+// 700 for bold).
+//
+// The "stretch" parameter specifies the font stretch (e.g. normal, condensed,
+// expanded).
+//
 // The "unicode" parameter controls whether the font is encoded for two-byte
 // characters (potentially full Unicode, but more typically a subset) or to only
 // support the Windows CP1252 (ISO-8859-1 with additional characters such as the
 // Euro symbol) subset of Unicode.
+//
+// The style, weight, and stretch parameters can use the special "unspecified"
+// value (-1) to act as a wildcard that matches any value for that property.
+//
+// When multiple system fonts match, the best match is selected by closest
+// weight first, then closest stretch, then closest style.
+//
+// A NULL is returned when the specified font cannot be found or there is an
+// error.
 //
 // @since PDFio v1.7@
 //
@@ -2060,14 +1977,13 @@ pdfio_obj_t *				// O - Font object or NULL on error
 pdfioFileCreateFontObjFromSystem(
     pdfio_file_t    *pdf,			// I - PDF file
     const char      *family,		// I - Font family name
-    pdfio_style_t   style,			// I - Font style
-    pdfio_weight_t  weight,		// I - Font weight
-    pdfio_stretch_t stretch,		// I - Font stretch
+    pdfio_fstyle_t  style,			// I - Font style
+    pdfio_fweight_t weight,		// I - Font weight
+    pdfio_fstretch_t stretch,		// I - Font stretch
     bool            unicode)		// I - Force Unicode
 {
-  ttf_cache_t	*cache;			// Font cache
   ttf_t		*font;			// Matching font
-  const char	*filename = NULL;	// Font file path
+  const char	*filename;		// Font file path
 
 
   // Range check input...
@@ -2082,35 +1998,18 @@ pdfioFileCreateFontObjFromSystem(
 
 
   // Create/get the font cache...
-  if ((cache = ttfCacheCreate("pdfio", (ttf_err_cb_t)ttf_error_cb, pdf)) == NULL)
-    return (NULL);
+  if (pdf->cache == NULL)
+  {
+    if ((pdf->cache = ttfCacheCreate("pdfio", (ttf_err_cb_t)ttf_error_cb, pdf)) == NULL)
+      return (NULL);
+  }
 
   // Find a matching font...
-  if ((font = ttfCacheFind(cache, family, pdfio_style_to_ttf(style), pdfio_weight_to_ttf(weight), pdfio_stretch_to_ttf(stretch))) == NULL)
-  {
-    _pdfioFileError(pdf, "Unable to find system font matching '%s'.", family);
-    ttfCacheDelete(cache);
+  if ((font = ttfCacheFind(pdf->cache, family, (ttf_style_t)style, (ttf_weight_t)weight, (ttf_stretch_t)stretch)) == NULL)
     return (NULL);
-  }
 
-  // Find the filename for the matching font in the cache...
-  {
-    size_t i; // Looping var
-    size_t num_fonts = ttfCacheGetNumFonts(cache); // Number of fonts in cache
-
-    for (i = 0; i < num_fonts; i ++)
-    {
-      if (ttfCacheGetFont(cache, i) == font)
-      {
-        filename = ttfCacheGetFilename(cache, i);
-        break;
-      }
-    }
-  }
-
-  ttfCacheDelete(cache);
-
-  if (!filename)
+  // Get the filename for the matching font...
+  if ((filename = ttfGetFilename(font)) == NULL)
   {
     _pdfioFileError(pdf, "Unable to get filename for system font '%s'.", family);
     return (NULL);

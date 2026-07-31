@@ -2975,7 +2975,7 @@ write_font_test(
     pdfio_obj_t *sysfont;
 
     // Test with a common font family
-    sysfont = pdfioFileCreateFontObjFromSystem(pdf, "Arial", PDFIO_STYLE_NORMAL, PDFIO_WEIGHT_400, PDFIO_STRETCH_NORMAL, false);
+    sysfont = pdfioFileCreateFontObjFromSystem(pdf, "Arial", PDFIO_FSTYLE_NORMAL, PDFIO_FWEIGHT_400, PDFIO_FSTRETCH_NORMAL, false);
 
     if (sysfont)
     {
@@ -2993,7 +2993,7 @@ write_font_test(
     pdfio_obj_t *sysfont;
 
     // Test with unicode=true
-    sysfont = pdfioFileCreateFontObjFromSystem(pdf, "Arial", PDFIO_STYLE_NORMAL, PDFIO_WEIGHT_400, PDFIO_STRETCH_NORMAL, true);
+    sysfont = pdfioFileCreateFontObjFromSystem(pdf, "Arial", PDFIO_FSTYLE_NORMAL, PDFIO_FWEIGHT_400, PDFIO_FSTRETCH_NORMAL, true);
 
     if (sysfont)
     {
