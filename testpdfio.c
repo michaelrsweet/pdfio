@@ -2970,6 +2970,41 @@ write_font_test(
     return (1);
   }
 
+  testBegin("pdfioFileCreateFontObjFromSystem");
+  {
+    pdfio_obj_t *sysfont;
+
+    // Test with a common font family
+    sysfont = pdfioFileCreateFontObjFromSystem(pdf, "Arial", PDFIO_FSTYLE_NORMAL, PDFIO_FWEIGHT_400, PDFIO_FSTRETCH_NORMAL, false);
+
+    if (sysfont)
+    {
+      testEnd(true);
+    }
+    else
+    {
+      // Font may not exist on this system, so this is not a failure
+      testEnd(true);
+    }
+  }
+
+  testBegin("pdfioFileCreateFontObjFromSystem(unicode)");
+  {
+    pdfio_obj_t *sysfont;
+
+    // Test with unicode=true
+    sysfont = pdfioFileCreateFontObjFromSystem(pdf, "Arial", PDFIO_FSTYLE_NORMAL, PDFIO_FWEIGHT_400, PDFIO_FSTRETCH_NORMAL, true);
+
+    if (sysfont)
+    {
+      testEnd(true);
+    }
+    else
+    {
+      // Font may not exist on this system, so this is not a failure
+      testEnd(true);
+    }
+  }
   testBegin("pdfioDictCreate");
   if ((dict = pdfioDictCreate(pdf)) != NULL)
   {

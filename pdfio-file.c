@@ -139,6 +139,9 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
   if (pdf->fd >= 0 && close(pdf->fd) < 0)
     ret = false;
 
+  // Free the system font cache, if any...
+  ttfCacheDelete(pdf->cache);
+
   // Free all data...
   free(pdf->filename);
   free(pdf->version);

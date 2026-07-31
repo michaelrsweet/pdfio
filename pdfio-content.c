@@ -11,7 +11,6 @@
 #include "pdfio-content.h"
 #include "pdfio-base-font-widths.h"
 #include "pdfio-cgats001-compat.h"
-#include "ttf.h"
 #include <sys/stat.h>
 #ifdef HAVE_LIBPNG
 #  include <png.h>
@@ -1940,6 +1939,87 @@ pdfioFileCreateFontObjFromFile(
 
 
 //
+// 'pdfioFileCreateFontObjFromSystem()' - Create a font object from a system font.
+//
+// This function creates a font object by finding a matching system font based on
+// the specified family, style, weight, and stretch properties.  The font is
+// embedded in the PDF file.
+//
+// The "family" parameter is the font family name (e.g. "Helvetica").
+//
+// The "style" parameter specifies the font style: `PDFIO_FSTYLE_NORMAL`,
+// `PDFIO_FSTYLE_ITALIC`, or `PDFIO_FSTYLE_OBLIQUE`.
+//
+// The "weight" parameter specifies the font weight (e.g. `PDFIO_FWEIGHT_NORMAL`
+// for regular text or `PDFIO_FWEIGHT_BOLD` for bold text).
+//
+// The "stretch" parameter specifies the font stretch (e.g. `PDFIO_FSTRETCH_NORMAL`
+// or `PDFIO_FSTRETCH_CONDENSED`).
+//
+// The "unicode" parameter controls whether the font is encoded for two-byte
+// characters (potentially full Unicode, but more typically a subset) or to only
+// support the Windows CP1252 (ISO-8859-1 with additional characters such as the
+// Euro symbol) subset of Unicode.
+//
+// The style, weight, and stretch parameters can use the special
+// `PDFIO_FSTYLE_UNSPEC`, `PDFIO_FWEIGHT_UNSPEC`, and `PDFIO_FSTRETCH_UNSPEC`
+// values to act as wildcards that match any value for that property.
+//
+// When multiple system fonts match, the best match is selected by closest
+// weight first, then closest stretch, then closest style.
+//
+// A NULL is returned when the specified font cannot be found or there is an
+// error.
+//
+// @since PDFio v1.7@
+//
+
+pdfio_obj_t *				// O - Font object or NULL on error
+pdfioFileCreateFontObjFromSystem(
+    pdfio_file_t    *pdf,			// I - PDF file
+    const char      *family,		// I - Font family name
+    pdfio_fstyle_t  style,			// I - Font style
+    pdfio_fweight_t weight,		// I - Font weight
+    pdfio_fstretch_t stretch,		// I - Font stretch
+    bool            unicode)		// I - Force Unicode
+{
+  ttf_t		*font;			// Matching font
+  const char	*filename;		// Font file path
+
+
+  // Range check input...
+  if (!pdf)
+    return (NULL);
+
+  if (!family)
+  {
+    _pdfioFileError(pdf, "No font family specified.");
+    return (NULL);
+  }
+
+
+  // Create/get the font cache...
+  if (pdf->cache == NULL)
+  {
+    if ((pdf->cache = ttfCacheCreate("pdfio", (ttf_err_cb_t)ttf_error_cb, pdf)) == NULL)
+      return (NULL);
+  }
+
+  // Find a matching font...
+  if ((font = ttfCacheFind(pdf->cache, family, (ttf_style_t)style, (ttf_weight_t)weight, (ttf_stretch_t)stretch)) == NULL)
+    return (NULL);
+
+  // Get the filename for the matching font...
+  if ((filename = ttfGetFilename(font)) == NULL)
+  {
+    _pdfioFileError(pdf, "Unable to get filename for system font '%s'.", family);
+    return (NULL);
+  }
+
+  return (pdfioFileCreateFontObjFromFile(pdf, filename, unicode));
+}
+
+
 // 'pdfioFileCreateICCObjFromData()' - Add ICC profile data to a PDF file.
 //
 

@@ -15,6 +15,8 @@ v1.7.0 - YYYY-MM-DD
 - Added support for WebP files (Issue #144)
 - Added `pdfioPageGetXxx` functions to get values from the page dictionaries
   (Issue #150)
+- Added `pdfioFileCreateFontObjFromSystem` function to create font objects
+  from system fonts (Issue #173)
 - Fixed a buffer overflow in the (still not enabled) AES-256 code.
 
 
