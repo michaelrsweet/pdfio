@@ -140,8 +140,7 @@ pdfioFileClose(pdfio_file_t *pdf)	// I - PDF file
     ret = false;
 
   // Free the system font cache, if any...
-  if (pdf->cache)
-    ttfCacheDelete(pdf->cache);
+  ttfCacheDelete(pdf->cache);
 
   // Free all data...
   free(pdf->filename);

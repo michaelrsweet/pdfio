@@ -11,7 +11,6 @@
 #include "pdfio-content.h"
 #include "pdfio-base-font-widths.h"
 #include "pdfio-cgats001-compat.h"
-#include "ttf.h"
 #include <sys/stat.h>
 #ifdef HAVE_LIBPNG
 #  include <png.h>
@@ -1948,21 +1947,23 @@ pdfioFileCreateFontObjFromFile(
 //
 // The "family" parameter is the font family name (e.g. "Helvetica").
 //
-// The "style" parameter specifies the font style: normal, italic, or oblique.
+// The "style" parameter specifies the font style: `PDFIO_FSTYLE_NORMAL`,
+// `PDFIO_FSTYLE_ITALIC`, or `PDFIO_FSTYLE_OBLIQUE`.
 //
-// The "weight" parameter specifies the font weight (e.g. 400 for normal,
-// 700 for bold).
+// The "weight" parameter specifies the font weight (e.g. `PDFIO_FWEIGHT_NORMAL`
+// for regular text or `PDFIO_FWEIGHT_BOLD` for bold text).
 //
-// The "stretch" parameter specifies the font stretch (e.g. normal, condensed,
-// expanded).
+// The "stretch" parameter specifies the font stretch (e.g. `PDFIO_FSTRETCH_NORMAL`
+// or `PDFIO_FSTRETCH_CONDENSED`).
 //
 // The "unicode" parameter controls whether the font is encoded for two-byte
 // characters (potentially full Unicode, but more typically a subset) or to only
 // support the Windows CP1252 (ISO-8859-1 with additional characters such as the
 // Euro symbol) subset of Unicode.
 //
-// The style, weight, and stretch parameters can use the special "unspecified"
-// value (-1) to act as a wildcard that matches any value for that property.
+// The style, weight, and stretch parameters can use the special
+// `PDFIO_FSTYLE_UNSPEC`, `PDFIO_FWEIGHT_UNSPEC`, and `PDFIO_FSTRETCH_UNSPEC`
+// values to act as wildcards that match any value for that property.
 //
 // When multiple system fonts match, the best match is selected by closest
 // weight first, then closest stretch, then closest style.
@@ -1983,7 +1984,7 @@ pdfioFileCreateFontObjFromSystem(
     bool            unicode)		// I - Force Unicode
 {
   ttf_t		*font;			// Matching font
-  const char	*filename = NULL;	// Font file path
+  const char	*filename;		// Font file path
 
 
   // Range check input...
@@ -2008,22 +2009,8 @@ pdfioFileCreateFontObjFromSystem(
   if ((font = ttfCacheFind(pdf->cache, family, (ttf_style_t)style, (ttf_weight_t)weight, (ttf_stretch_t)stretch)) == NULL)
     return (NULL);
 
-  // Find the filename for the matching font in the cache...
-  {
-    size_t i; // Looping var
-    size_t num_fonts = ttfCacheGetNumFonts(pdf->cache); // Number of fonts in cache
-
-    for (i = 0; i < num_fonts; i ++)
-    {
-      if (ttfCacheGetFont(pdf->cache, i) == font)
-      {
-        filename = ttfCacheGetFilename(pdf->cache, i);
-        break;
-      }
-    }
-  }
-
-  if (!filename)
+  // Get the filename for the matching font...
+  if ((filename = ttfGetFilename(font)) == NULL)
   {
     _pdfioFileError(pdf, "Unable to get filename for system font '%s'.", family);
     return (NULL);
