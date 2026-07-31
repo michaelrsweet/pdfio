@@ -1983,7 +1983,7 @@ pdfioFileCreateFontObjFromSystem(
     bool            unicode)		// I - Force Unicode
 {
   ttf_t		*font;			// Matching font
-  const char	*filename;		// Font file path
+  const char	*filename = NULL;	// Font file path
 
 
   // Range check input...
@@ -2008,8 +2008,22 @@ pdfioFileCreateFontObjFromSystem(
   if ((font = ttfCacheFind(pdf->cache, family, (ttf_style_t)style, (ttf_weight_t)weight, (ttf_stretch_t)stretch)) == NULL)
     return (NULL);
 
-  // Get the filename for the matching font...
-  if ((filename = ttfGetFilename(font)) == NULL)
+  // Find the filename for the matching font in the cache...
+  {
+    size_t i; // Looping var
+    size_t num_fonts = ttfCacheGetNumFonts(pdf->cache); // Number of fonts in cache
+
+    for (i = 0; i < num_fonts; i ++)
+    {
+      if (ttfCacheGetFont(pdf->cache, i) == font)
+      {
+        filename = ttfCacheGetFilename(pdf->cache, i);
+        break;
+      }
+    }
+  }
+
+  if (!filename)
   {
     _pdfioFileError(pdf, "Unable to get filename for system font '%s'.", family);
     return (NULL);
