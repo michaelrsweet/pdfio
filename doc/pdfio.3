@@ -1,4 +1,4 @@
-.TH pdfio 3 "pdf read/write library" "2026-02-04" "pdf read/write library"
+.TH pdfio 3 "pdf read/write library" "2026-07-31" "pdf read/write library"
 .SH NAME
 pdfio \- pdf read/write library
 .SH Introduction
@@ -2584,6 +2584,108 @@ No filter
 PDFIO_FILTER_RUNLENGTH
 .br
 RunLengthDecode filter (reading only)
+.SS pdfio_fontstyle_e
+Font style
+.TP 5
+PDFIO_FONTSTYLE_ITALIC
+.br
+Italic
+.TP 5
+PDFIO_FONTSTYLE_NORMAL
+.br
+Normal
+.TP 5
+PDFIO_FONTSTYLE_OBLIQUE
+.br
+Oblique
+.TP 5
+PDFIO_FONTSTYLE_UNSPEC
+.br
+Unspecified
+.SS pdfio_fontweight_e
+Font weight
+.TP 5
+PDFIO_FONTWEIGHT_100
+.br
+Thin
+.TP 5
+PDFIO_FONTWEIGHT_200
+.br
+Extra-light
+.TP 5
+PDFIO_FONTWEIGHT_300
+.br
+Light
+.TP 5
+PDFIO_FONTWEIGHT_400
+.br
+Normal/Regular
+.TP 5
+PDFIO_FONTWEIGHT_500
+.br
+Medium
+.TP 5
+PDFIO_FONTWEIGHT_600
+.br
+Semi-bold
+.TP 5
+PDFIO_FONTWEIGHT_700
+.br
+Bold
+.TP 5
+PDFIO_FONTWEIGHT_800
+.br
+Extra-bold
+.TP 5
+PDFIO_FONTWEIGHT_900
+.br
+Black
+.TP 5
+PDFIO_FONTWEIGHT_UNSPEC
+.br
+Unspecified
+.SS pdfio_fontwidth_e
+Font width/stretching
+.TP 5
+PDFIO_FONTWIDTH_CONDENSED
+.br
+Condensed
+.TP 5
+PDFIO_FONTWIDTH_EXPANDED
+.br
+Expanded
+.TP 5
+PDFIO_FONTWIDTH_EXTRA_CONDENSED
+.br
+Extra-condensed
+.TP 5
+PDFIO_FONTWIDTH_EXTRA_EXPANDED
+.br
+Extra-expanded
+.TP 5
+PDFIO_FONTWIDTH_NORMAL
+.br
+Normal
+.TP 5
+PDFIO_FONTWIDTH_SEMI_CONDENSED
+.br
+Semi-condensed
+.TP 5
+PDFIO_FONTWIDTH_SEMI_EXPANDED
+.br
+Semi-expanded
+.TP 5
+PDFIO_FONTWIDTH_ULTRA_CONDENSED
+.br
+Ultra-condensed
+.TP 5
+PDFIO_FONTWIDTH_ULTRA_EXPANDED
+.br
+Ultra-expanded
+.TP 5
+PDFIO_FONTWIDTH_UNSPEC
+.br
+Unspecified
 .SS pdfio_linecap_e
 Line capping modes
 .TP 5
@@ -4118,7 +4220,7 @@ pdfio_obj_t * pdfioFileCreateFontObjFromData (
 .fi
 .PP
 This function embeds TrueType/OpenType font data into a PDF file.  The
-"unicode" parameter controls whether the font is encoded for two-byte
+"unicode" parameter controls whether the font is encoded for Unicode
 characters (potentially full Unicode, but more typically a subset)
 or to only support the Windows CP1252 (ISO-8859-1 with additional
 characters such as the Euro symbol) subset of Unicode.
@@ -4136,10 +4238,56 @@ pdfio_obj_t * pdfioFileCreateFontObjFromFile (
 .fi
 .PP
 This function embeds a TrueType/OpenType font file into a PDF file.  The
-"unicode" parameter controls whether the font is encoded for two-byte
+"unicode" parameter controls whether the font is encoded for Unicode
 characters (potentially full Unicode, but more typically a subset)
 or to only support the Windows CP1252 (ISO-8859-1 with additional
 characters such as the Euro symbol) subset of Unicode.
+.SS pdfioFileCreateFontObjFromSystem
+Create a font object from a system font.
+.PP
+.nf
+pdfio_obj_t * pdfioFileCreateFontObjFromSystem (
+    pdfio_file_t *pdf,
+    const char *family,
+    pdfio_fontstyle_t style,
+    pdfio_fontweight_t weight,
+    pdfio_fontwidth_t width,
+    bool unicode
+);
+.fi
+.PP
+This function creates a font object by finding a matching system font based
+on the specified family, style, weight, and stretch properties.  The font is
+embedded in the PDF file.
+.PP
+The "family" parameter is the font family name such as "Arial" or
+"Helvetica".
+.PP
+The "style" parameter specifies the font style - \fBPDFIO_FONTSTYLE_UNSPEC\fR for
+any style, \fBPDFIO_FONTSTYLE_NORMAL\fR for normal text,
+\fBPDFIO_FONTSTYLE_ITALIC\fR for italic text, or \fBPDFIO_FONTSTYLE_OBLIQUE\fR for
+oblique (angled) text.
+.PP
+The "weight" parameter specifies the font weight such as
+\fBPDFIO_FONTWEIGHT_UNSPEC\fR for any weight, \fBPDFIO_FONTWEIGHT_NORMAL\fR for
+normal/regular text, and \fBPDFIO_FONTWEIGHT_BOLD\fR for bold text.
+.PP
+The "width" parameter specifies the font width/stretching such as
+\fBPDFIO_FONTCLASS_UNSPEC\fR for any width, \fBPDFIO_FONTCLASS_NORMAL\fR for normal
+width text, and \fBPDFIO_FONTCLASS_CONDENSED\fR for condensed-width text.
+.PP
+The "unicode" parameter controls whether the font is encoded for Unicode
+characters (potentially full Unicode, but more typically a subset) or to only
+support the Windows CP1252 (ISO-8859-1 with additional characters such as the
+Euro symbol) subset of Unicode.
+.PP
+If multiple system fonts match, the best match is selected by closest weight
+first, then closest width, then closest style.
+.PP
+\fBNULL\fR is returned when the specified font cannot be found or there is an
+error.
+
+
 .SS pdfioFileCreateICCObjFromData
 Add ICC profile data to a PDF file.
 .PP
@@ -5282,6 +5430,24 @@ Compression/decompression filters for streams
 .nf
 typedef enum pdfio_filter_e pdfio_filter_t;
 .fi
+.SS pdfio_fontstyle_t
+Font style
+.PP
+.nf
+typedef enum pdfio_fontstyle_e pdfio_fontstyle_t;
+.fi
+.SS pdfio_fontweight_t
+Font weight
+.PP
+.nf
+typedef enum pdfio_fontweight_e pdfio_fontweight_t;
+.fi
+.SS pdfio_matrix_t[3][2]
+Font width/stretching
+.PP
+.nf
+typedef typedef double pdfio_matrix_t[3][2];
+.fi
 .SS pdfio_linecap_t
 Line capping modes
 .PP
@@ -5293,12 +5459,6 @@ Line joining modes
 .PP
 .nf
 typedef enum pdfio_linejoin_e pdfio_linejoin_t;
-.fi
-.SS pdfio_matrix_t[3][2]
-Transform matrix
-.PP
-.nf
-typedef double pdfio_matrix_t[3][2];
 .fi
 .SS pdfio_obj_t
 Numbered object in PDF file

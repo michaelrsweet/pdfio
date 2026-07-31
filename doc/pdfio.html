@@ -423,6 +423,7 @@ span.string {
 <li><a href="#pdfioFileCreateFontObjFromBase">pdfioFileCreateFontObjFromBase</a></li>
 <li><a href="#pdfioFileCreateFontObjFromData">pdfioFileCreateFontObjFromData</a></li>
 <li><a href="#pdfioFileCreateFontObjFromFile">pdfioFileCreateFontObjFromFile</a></li>
+<li><a href="#pdfioFileCreateFontObjFromSystem">pdfioFileCreateFontObjFromSystem</a></li>
 <li><a href="#pdfioFileCreateICCObjFromData">pdfioFileCreateICCObjFromData</a></li>
 <li><a href="#pdfioFileCreateICCObjFromFile">pdfioFileCreateICCObjFromFile</a></li>
 <li><a href="#pdfioFileCreateImageObjFromData">pdfioFileCreateImageObjFromData</a></li>
@@ -515,9 +516,11 @@ span.string {
 <li><a href="#pdfio_error_cb_t">pdfio_error_cb_t</a></li>
 <li><a href="#pdfio_file_t">pdfio_file_t</a></li>
 <li><a href="#pdfio_filter_t">pdfio_filter_t</a></li>
+<li><a href="#pdfio_fontstyle_t">pdfio_fontstyle_t</a></li>
+<li><a href="#pdfio_fontweight_t">pdfio_fontweight_t</a></li>
+<li><a href="#pdfio_matrix_t[3][2]">pdfio_matrix_t[3][2]</a></li>
 <li><a href="#pdfio_linecap_t">pdfio_linecap_t</a></li>
 <li><a href="#pdfio_linejoin_t">pdfio_linejoin_t</a></li>
-<li><a href="#pdfio_matrix_t[3][2]">pdfio_matrix_t[3][2]</a></li>
 <li><a href="#pdfio_obj_t">pdfio_obj_t</a></li>
 <li><a href="#pdfio_output_cb_t">pdfio_output_cb_t</a></li>
 <li><a href="#pdfio_password_cb_t">pdfio_password_cb_t</a></li>
@@ -534,6 +537,9 @@ span.string {
 <li><a href="#pdfio_cs_e">pdfio_cs_e</a></li>
 <li><a href="#pdfio_encryption_e">pdfio_encryption_e</a></li>
 <li><a href="#pdfio_filter_e">pdfio_filter_e</a></li>
+<li><a href="#pdfio_fontstyle_e">pdfio_fontstyle_e</a></li>
+<li><a href="#pdfio_fontweight_e">pdfio_fontweight_e</a></li>
+<li><a href="#pdfio_fontwidth_e">pdfio_fontwidth_e</a></li>
 <li><a href="#pdfio_linecap_e">pdfio_linecap_e</a></li>
 <li><a href="#pdfio_linejoin_e">pdfio_linejoin_e</a></li>
 <li><a href="#pdfio_permission_e">pdfio_permission_e</a></li>
@@ -4373,7 +4379,7 @@ Note: This function cannot be used when producing PDF/A files.</blockquote>
 <p class="description">Font object</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">This function embeds TrueType/OpenType font data into a PDF file.  The
-&quot;unicode&quot; parameter controls whether the font is encoded for two-byte
+&quot;unicode&quot; parameter controls whether the font is encoded for Unicode
 characters (potentially full Unicode, but more typically a subset)
 or to only support the Windows CP1252 (ISO-8859-1 with additional
 characters such as the Euro symbol) subset of Unicode.
@@ -4396,10 +4402,64 @@ characters such as the Euro symbol) subset of Unicode.
 <p class="description">Font object</p>
 <h4 class="discussion">Discussion</h4>
 <p class="discussion">This function embeds a TrueType/OpenType font file into a PDF file.  The
-&quot;unicode&quot; parameter controls whether the font is encoded for two-byte
+&quot;unicode&quot; parameter controls whether the font is encoded for Unicode
 characters (potentially full Unicode, but more typically a subset)
 or to only support the Windows CP1252 (ISO-8859-1 with additional
 characters such as the Euro symbol) subset of Unicode.</p>
+<h3 class="function"><span class="info">&#160;PDFio v1.7&#160;</span><a id="pdfioFileCreateFontObjFromSystem">pdfioFileCreateFontObjFromSystem</a></h3>
+<p class="description">Create a font object from a system font.</p>
+<p class="code">
+<a href="#pdfio_obj_t">pdfio_obj_t</a> *pdfioFileCreateFontObjFromSystem(<a href="#pdfio_file_t">pdfio_file_t</a> *pdf, <span class="reserved">const</span> <span class="reserved">char</span> *family, <a href="#pdfio_fontstyle_t">pdfio_fontstyle_t</a> style, <a href="#pdfio_fontweight_t">pdfio_fontweight_t</a> weight, pdfio_fontwidth_t width, <span class="reserved">bool</span> unicode);</p>
+<h4 class="parameters">Parameters</h4>
+<table class="list"><tbody>
+<tr><th>pdf</th>
+<td class="description">PDF file</td></tr>
+<tr><th>family</th>
+<td class="description">Font family name</td></tr>
+<tr><th>style</th>
+<td class="description">Font style</td></tr>
+<tr><th>weight</th>
+<td class="description">Font weight</td></tr>
+<tr><th>width</th>
+<td class="description">Font width/stretching</td></tr>
+<tr><th>unicode</th>
+<td class="description">Force Unicode</td></tr>
+</tbody></table>
+<h4 class="returnvalue">Return Value</h4>
+<p class="description">Font object or <code>NULL</code> on error</p>
+<h4 class="discussion">Discussion</h4>
+<p class="discussion">This function creates a font object by finding a matching system font based
+on the specified family, style, weight, and stretch properties.  The font is
+embedded in the PDF file.<br>
+<br>
+The &quot;family&quot; parameter is the font family name such as &quot;Arial&quot; or
+&quot;Helvetica&quot;.<br>
+<br>
+The &quot;style&quot; parameter specifies the font style - <code>PDFIO_FONTSTYLE_UNSPEC</code> for
+any style, <code>PDFIO_FONTSTYLE_NORMAL</code> for normal text,
+<code>PDFIO_FONTSTYLE_ITALIC</code> for italic text, or <code>PDFIO_FONTSTYLE_OBLIQUE</code> for
+oblique (angled) text.<br>
+<br>
+The &quot;weight&quot; parameter specifies the font weight such as
+<code>PDFIO_FONTWEIGHT_UNSPEC</code> for any weight, <code>PDFIO_FONTWEIGHT_NORMAL</code> for
+normal/regular text, and <code>PDFIO_FONTWEIGHT_BOLD</code> for bold text.<br>
+<br>
+The &quot;width&quot; parameter specifies the font width/stretching such as
+<code>PDFIO_FONTCLASS_UNSPEC</code> for any width, <code>PDFIO_FONTCLASS_NORMAL</code> for normal
+width text, and <code>PDFIO_FONTCLASS_CONDENSED</code> for condensed-width text.<br>
+<br>
+The &quot;unicode&quot; parameter controls whether the font is encoded for Unicode
+characters (potentially full Unicode, but more typically a subset) or to only
+support the Windows CP1252 (ISO-8859-1 with additional characters such as the
+Euro symbol) subset of Unicode.<br>
+<br>
+If multiple system fonts match, the best match is selected by closest weight
+first, then closest width, then closest style.<br>
+<br>
+<code>NULL</code> is returned when the specified font cannot be found or there is an
+error.
+
+</p>
 <h3 class="function"><a id="pdfioFileCreateICCObjFromData">pdfioFileCreateICCObjFromData</a></h3>
 <p class="description">Add ICC profile data to a PDF file.</p>
 <p class="code">
@@ -5861,6 +5921,21 @@ typedef struct _pdfio_file_s pdfio_file_t;
 <p class="code">
 typedef enum <a href="#pdfio_filter_e">pdfio_filter_e</a> pdfio_filter_t;
 </p>
+<h3 class="typedef"><a id="pdfio_fontstyle_t">pdfio_fontstyle_t</a></h3>
+<p class="description">Font style</p>
+<p class="code">
+typedef enum <a href="#pdfio_fontstyle_e">pdfio_fontstyle_e</a> pdfio_fontstyle_t;
+</p>
+<h3 class="typedef"><a id="pdfio_fontweight_t">pdfio_fontweight_t</a></h3>
+<p class="description">Font weight</p>
+<p class="code">
+typedef enum <a href="#pdfio_fontweight_e">pdfio_fontweight_e</a> pdfio_fontweight_t;
+</p>
+<h3 class="typedef"><a id="pdfio_matrix_t[3][2]">pdfio_matrix_t[3][2]</a></h3>
+<p class="description">Font width/stretching</p>
+<p class="code">
+typedef typedef double pdfio_matrix_t[3][2];
+</p>
 <h3 class="typedef"><a id="pdfio_linecap_t">pdfio_linecap_t</a></h3>
 <p class="description">Line capping modes</p>
 <p class="code">
@@ -5870,11 +5945,6 @@ typedef enum <a href="#pdfio_linecap_e">pdfio_linecap_e</a> pdfio_linecap_t;
 <p class="description">Line joining modes</p>
 <p class="code">
 typedef enum <a href="#pdfio_linejoin_e">pdfio_linejoin_e</a> pdfio_linejoin_t;
-</p>
-<h3 class="typedef"><a id="pdfio_matrix_t[3][2]">pdfio_matrix_t[3][2]</a></h3>
-<p class="description">Transform matrix</p>
-<p class="code">
-typedef double pdfio_matrix_t[3][2];
 </p>
 <h3 class="typedef"><a id="pdfio_obj_t">pdfio_obj_t</a></h3>
 <p class="description">Numbered object in PDF file</p>
@@ -5970,6 +6040,45 @@ typedef enum <a href="#pdfio_valtype_e">pdfio_valtype_e</a> pdfio_valtype_t;
 <tr><th>PDFIO_FILTER_LZW </th><td class="description">LZWDecode filter (reading only)</td></tr>
 <tr><th>PDFIO_FILTER_NONE </th><td class="description">No filter</td></tr>
 <tr><th>PDFIO_FILTER_RUNLENGTH </th><td class="description">RunLengthDecode filter (reading only)</td></tr>
+</tbody></table>
+<h3 class="enumeration"><a id="pdfio_fontstyle_e">pdfio_fontstyle_e</a></h3>
+<p class="description">Font style</p>
+<h4 class="constants">Constants</h4>
+<table class="list"><tbody>
+<tr><th>PDFIO_FONTSTYLE_ITALIC </th><td class="description">Italic</td></tr>
+<tr><th>PDFIO_FONTSTYLE_NORMAL </th><td class="description">Normal</td></tr>
+<tr><th>PDFIO_FONTSTYLE_OBLIQUE </th><td class="description">Oblique</td></tr>
+<tr><th>PDFIO_FONTSTYLE_UNSPEC </th><td class="description">Unspecified</td></tr>
+</tbody></table>
+<h3 class="enumeration"><a id="pdfio_fontweight_e">pdfio_fontweight_e</a></h3>
+<p class="description">Font weight</p>
+<h4 class="constants">Constants</h4>
+<table class="list"><tbody>
+<tr><th>PDFIO_FONTWEIGHT_100 </th><td class="description">Thin</td></tr>
+<tr><th>PDFIO_FONTWEIGHT_200 </th><td class="description">Extra-light</td></tr>
+<tr><th>PDFIO_FONTWEIGHT_300 </th><td class="description">Light</td></tr>
+<tr><th>PDFIO_FONTWEIGHT_400 </th><td class="description">Normal/Regular</td></tr>
+<tr><th>PDFIO_FONTWEIGHT_500 </th><td class="description">Medium</td></tr>
+<tr><th>PDFIO_FONTWEIGHT_600 </th><td class="description">Semi-bold</td></tr>
+<tr><th>PDFIO_FONTWEIGHT_700 </th><td class="description">Bold</td></tr>
+<tr><th>PDFIO_FONTWEIGHT_800 </th><td class="description">Extra-bold</td></tr>
+<tr><th>PDFIO_FONTWEIGHT_900 </th><td class="description">Black</td></tr>
+<tr><th>PDFIO_FONTWEIGHT_UNSPEC </th><td class="description">Unspecified</td></tr>
+</tbody></table>
+<h3 class="enumeration"><a id="pdfio_fontwidth_e">pdfio_fontwidth_e</a></h3>
+<p class="description">Font width/stretching</p>
+<h4 class="constants">Constants</h4>
+<table class="list"><tbody>
+<tr><th>PDFIO_FONTWIDTH_CONDENSED </th><td class="description">Condensed</td></tr>
+<tr><th>PDFIO_FONTWIDTH_EXPANDED </th><td class="description">Expanded</td></tr>
+<tr><th>PDFIO_FONTWIDTH_EXTRA_CONDENSED </th><td class="description">Extra-condensed</td></tr>
+<tr><th>PDFIO_FONTWIDTH_EXTRA_EXPANDED </th><td class="description">Extra-expanded</td></tr>
+<tr><th>PDFIO_FONTWIDTH_NORMAL </th><td class="description">Normal</td></tr>
+<tr><th>PDFIO_FONTWIDTH_SEMI_CONDENSED </th><td class="description">Semi-condensed</td></tr>
+<tr><th>PDFIO_FONTWIDTH_SEMI_EXPANDED </th><td class="description">Semi-expanded</td></tr>
+<tr><th>PDFIO_FONTWIDTH_ULTRA_CONDENSED </th><td class="description">Ultra-condensed</td></tr>
+<tr><th>PDFIO_FONTWIDTH_ULTRA_EXPANDED </th><td class="description">Ultra-expanded</td></tr>
+<tr><th>PDFIO_FONTWIDTH_UNSPEC </th><td class="description">Unspecified</td></tr>
 </tbody></table>
 <h3 class="enumeration"><a id="pdfio_linecap_e">pdfio_linecap_e</a></h3>
 <p class="description">Line capping modes</p>
