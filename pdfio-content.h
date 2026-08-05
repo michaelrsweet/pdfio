@@ -67,14 +67,14 @@ typedef enum pdfio_fontwidth_e		// Font width/stretching
 {
   PDFIO_FONTWIDTH_UNSPEC = -1,		// Unspecified
   PDFIO_FONTWIDTH_NORMAL,		// Normal
-  PDFIO_FONTWIDTH_ULTRA_CONDENSED,	// Ultra-condensed
-  PDFIO_FONTWIDTH_EXTRA_CONDENSED,	// Extra-condensed
-  PDFIO_FONTWIDTH_CONDENSED,		// Condensed
-  PDFIO_FONTWIDTH_SEMI_CONDENSED,	// Semi-condensed
-  PDFIO_FONTWIDTH_SEMI_EXPANDED,	// Semi-expanded
-  PDFIO_FONTWIDTH_EXPANDED,		// Expanded
-  PDFIO_FONTWIDTH_EXTRA_EXPANDED,	// Extra-expanded
-  PDFIO_FONTWIDTH_ULTRA_EXPANDED	// Ultra-expanded
+  PDFIO_FONTWIDTH_ULTRA_CONDENSED,	// Ultra-condensed (50% of normal)
+  PDFIO_FONTWIDTH_EXTRA_CONDENSED,	// Extra-condensed (62.5% of normal)
+  PDFIO_FONTWIDTH_CONDENSED,		// Condensed (75% of normal)
+  PDFIO_FONTWIDTH_SEMI_CONDENSED,	// Semi-condensed (87.5% of normal)
+  PDFIO_FONTWIDTH_SEMI_EXPANDED,	// Semi-expanded (112.5% of normal)
+  PDFIO_FONTWIDTH_EXPANDED,		// Expanded (125% of normal)
+  PDFIO_FONTWIDTH_EXTRA_EXPANDED,	// Extra-expanded (150% of normal)
+  PDFIO_FONTWIDTH_ULTRA_EXPANDED	// Ultra-expanded (200% of normal)
 } pdfio_fontwidth_t;
 
 typedef double pdfio_matrix_t[3][2];	// Transform matrix
