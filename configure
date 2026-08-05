@@ -4157,7 +4157,7 @@ PKGCONFIG_REQUIRES_PRIVATE="ttf"
 printf %s "checking for ttf library... " >&6; }
 
 
-if $PKGCONFIG --exists ttf
+if $PKGCONFIG --exists ttf --atleast-version=1.2.0
 then :
 
     # Use installed TTF library...

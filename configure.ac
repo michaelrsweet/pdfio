@@ -130,7 +130,7 @@ AC_SUBST([PKGCONFIG_REQUIRES_PRIVATE])
 
 dnl TTF library for font support...
 AC_MSG_CHECKING([for ttf library])
-AS_IF([$PKGCONFIG --exists ttf], [
+AS_IF([$PKGCONFIG --exists ttf --atleast-version=1.2.0], [
     # Use installed TTF library...
     AC_MSG_RESULT([yes])
     CPPFLAGS="$CPPFLAGS $($PKGCONFIG --cflags ttf)"
