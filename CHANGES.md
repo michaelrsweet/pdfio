@@ -18,6 +18,7 @@ v1.7.0 - YYYY-MM-DD
 - Added `pdfioFileCreateFontObjFromSystem` function to create font objects
   from system fonts (Issue #173)
 - Fixed a buffer overflow in the (still not enabled) AES-256 code.
+- Fixed UTF-16 encoding of supplementary plane characters (U+10000 and above).
 
 
 v1.6.5 - YYYY-MM-DD
