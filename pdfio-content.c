@@ -4595,7 +4595,7 @@ write_string(pdfio_stream_t *st,	// I - Stream
     if (unicode)
     {
       // Write UTF-16 in hex...
-      if (ch < 0x100000)
+      if (ch < 0x10000)
       {
         // Two-byte UTF-16
 	if (!pdfioStreamPrintf(st, "%04X", ch))
