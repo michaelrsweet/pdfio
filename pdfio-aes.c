@@ -177,6 +177,9 @@ _pdfioCryptoAESDecrypt(
   size_t	outbytes = 0;		// Output bytes
 
 
+  if (len == 0)
+    return (0);
+
   if (inbuffer != outbuffer)
   {
     // Not the most efficient, but we can optimize later - the sample AES code
@@ -196,7 +199,7 @@ _pdfioCryptoAESDecrypt(
     outbytes += 16;
   }
 
-  if (last)
+  if (last && outbytes > 0)
   {
     if (outbuffer[-1] <= 0x10)
       outbytes -= outbuffer[-1];

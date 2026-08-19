@@ -23,6 +23,7 @@ v1.7.0 - YYYY-MM-DD
 v1.6.5 - YYYY-MM-DD
 -------------------
 
+- CVE-2016-NNNNN: Fixed reading of invalid empty AES-encrypted strings.
 - Fixed `pdfioContentTextXxx` output with Unicode characters past U+FFFF
   (Issue #171)
 - Fixed `pdfioPageCopy` with a damaged input PDF file (Issue #174)
