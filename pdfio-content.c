@@ -4569,18 +4569,27 @@ write_string(pdfio_stream_t *st,	// I - Stream
     if ((*ptr & 0xe0) == 0xc0)
     {
       // Two-byte UTF-8
+      if ((ptr[1] & 0xc0) != 0x80)
+        return (false);
+
       ch = ((ptr[0] & 0x1f) << 6) | (ptr[1] & 0x3f);
       ptr ++;
     }
     else if ((*ptr & 0xf0) == 0xe0)
     {
       // Three-byte UTF-8
+      if ((ptr[1] & 0xc0) != 0x80 || (ptr[2] & 0xc0) != 0x80)
+        return (false);
+
       ch = ((ptr[0] & 0x0f) << 12) | ((ptr[1] & 0x3f) << 6) | (ptr[2] & 0x3f);
       ptr += 2;
     }
     else if ((*ptr & 0xf8) == 0xf0)
     {
       // Four-byte UTF-8
+      if ((ptr[1] & 0xc0) != 0x80 || (ptr[2] & 0xc0) != 0x80 || (ptr[3] & 0xc0) != 0x80)
+        return (false);
+
       ch = ((ptr[0] & 0x07) << 18) | ((ptr[1] & 0x3f) << 12) | ((ptr[2] & 0x3f) << 6) | (ptr[3] & 0x3f);
       ptr += 3;
     }
@@ -4595,7 +4604,7 @@ write_string(pdfio_stream_t *st,	// I - Stream
     if (unicode)
     {
       // Write UTF-16 in hex...
-      if (ch < 0x100000)
+      if (ch < 0x10000)
       {
         // Two-byte UTF-16
 	if (!pdfioStreamPrintf(st, "%04X", ch))
@@ -4604,6 +4613,8 @@ write_string(pdfio_stream_t *st,	// I - Stream
       else
       {
         // Four-byte UTF-16
+        ch -= 0x10000;
+
 	if (!pdfioStreamPrintf(st, "%04X%04X", 0xd800 | ((ch >> 10) & 0x03ff), 0xdc00 | (ch & 0x03ff)))
 	  return (false);
       }
