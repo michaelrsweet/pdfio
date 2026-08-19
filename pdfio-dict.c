@@ -994,7 +994,7 @@ pdfioDictSetStringf(
   vsnprintf(buffer, sizeof(buffer), format, ap);
   va_end(ap);
 
-  return (pdfioDictSetString(dict, key, buffer));
+  return (pdfioDictSetString(dict, key, pdfioStringCreate(dict->pdf, buffer)));
 }
 
 

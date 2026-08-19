@@ -29,6 +29,8 @@ v1.6.5 - YYYY-MM-DD
 - Fixed `pdfioPageCopy` with a damaged input PDF file (Issue #174)
 - Fixed `pdfioContentTextXxx` output with invalid UTF-8.
 - Fixed import of 16-bit PNG files with alpha.
+- Fixed `pdfioDictSetStringf` which wasn't making a copy of the formatted
+  string.
 
 
 v1.6.4 - 2026-06-05
