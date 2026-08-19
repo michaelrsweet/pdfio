@@ -3061,10 +3061,11 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   PDFIO_DEBUG("copy_png: width=%u, height=%u, depth=%u, color_type=%u, num_colors=%d\n", width, height, depth, color_type, num_colors);
 
   // Set decoding options...
-  alpha    = (color_type & PNG_COLOR_MASK_ALPHA) != 0;
-  linesize = (width * num_colors * depth + 7) / 8;
+  alpha = (color_type & PNG_COLOR_MASK_ALPHA) != 0;
   if (alpha)
-    linesize += width;
+    linesize = (width * (num_colors + 1) * depth + 7) / 8;
+  else
+    linesize = (width * num_colors * depth + 7) / 8;
 
   PDFIO_DEBUG("copy_png: alpha=%s, linesize=%u\n", alpha ? "true" : "false", (unsigned)linesize);
 

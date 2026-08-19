@@ -27,6 +27,7 @@ v1.6.5 - YYYY-MM-DD
   (Issue #171)
 - Fixed `pdfioPageCopy` with a damaged input PDF file (Issue #174)
 - Fixed `pdfioContentTextXxx` output with invalid UTF-8.
+- Fixed import of 16-bit PNG files with alpha.
 
 
 v1.6.4 - 2026-06-05
