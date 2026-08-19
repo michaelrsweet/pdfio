@@ -1,5 +1,6 @@
 paths-ignore:
   - testpdfio.c
+  - ttf
 
 query-filters:
   - exclude:
