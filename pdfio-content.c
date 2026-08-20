@@ -3737,7 +3737,7 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
     const int		*cmap;		// CMap entries
     int			min_glyph,	// First glyph
 			max_glyph;	// Last glyph
-    unsigned short	glyphs[65536];	// Glyph to Unicode mapping
+    int			glyphs[262144];	// Glyph to Unicode mapping
     unsigned char	buffer[16384],	// Read buffer
 			*bufptr,	// Pointer into buffer
 			*bufend;	// End of buffer
@@ -3776,7 +3776,7 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
       goto done;
 
     cmap      = ttfGetCMap(font, &num_cmap);
-    min_glyph = 65536;
+    min_glyph = (int)(sizeof(glyphs) / sizeof(glyphs[0]));
     max_glyph = 0;
     memset(glyphs, 0, sizeof(glyphs));
 
@@ -3797,7 +3797,7 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
         *bufptr++ = (unsigned char)(cmap[i] >> 8);
         *bufptr++ = (unsigned char)(cmap[i] & 255);
 
-        glyphs[cmap[i]] = (unsigned short)i;
+        glyphs[cmap[i]] = i;
         if (cmap[i] < min_glyph)
           min_glyph = cmap[i];
         if (cmap[i] > max_glyph)
@@ -3832,7 +3832,7 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
     // ToUnicode mapping object
     to_unicode = pdfioDictCreate(file_obj->pdf);
     pdfioDictSetName(to_unicode, "Type", "CMap");
-    pdfioDictSetName(to_unicode, "CMapName", "Adobe-Identity-UCS2");
+    pdfioDictSetName(to_unicode, "CMapName", "Adobe-Identity-UCS");
     pdfioDictSetDict(to_unicode, "CIDSystemInfo", sidict);
 
 #ifndef DEBUG
@@ -3856,13 +3856,15 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
 		    "begincmap\n"
 		    "/CIDSystemInfo<<\n"
 		    "/Registry (Adobe)\n"
-		    "/Ordering (UCS2)\n"
+		    "/Ordering (UCS)\n"
 		    "/Supplement 0\n"
 		    ">> def\n"
-		    "/CMapName /Adobe-Identity-UCS2 def\n"
+		    "/CMapName /Adobe-Identity-UCS def\n"
 		    "/CMapType 2 def\n"
-		    "1 begincodespacerange\n"
-		    "<0000> <FFFF>\n"
+		    "3 begincodespacerange\n"
+		    "<0000> <D7FF>\n"
+		    "<D800DC00> <DBFFDFFF>\n"
+		    "<E000> <FFFF>\n"
 		    "endcodespacerange\n"
                     "endcmap\n"
                     "CMapName currentdict /CMap defineresource pop\n"
@@ -3879,9 +3881,9 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
     if ((w_array = pdfioArrayCreate(file_obj->pdf)) == NULL)
       goto done;
 
-    for (i = 0, w0 = ttfGetWidth(font, 0), w1 = 0; i < 65536; w0 = w1)
+    for (i = 0, w0 = ttfGetWidth(font, 0), w1 = 0; i < num_cmap; w0 = w1)
     {
-      for (j = 1; (i + j) < 65536; j ++)
+      for (j = 1; (i + j) < num_cmap; j ++)
       {
         if ((w1 = ttfGetWidth(font, (int)(i + j))) != w0)
           break;
@@ -3906,9 +3908,9 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
 	  goto done;
 
         pdfioArrayAppendNumber(temp_array, w0);
-        for (i ++; i < 65536 && pdfioArrayGetSize(temp_array) < 8191; i ++, w0 = w1)
+        for (i ++; i < num_cmap && pdfioArrayGetSize(temp_array) < 8191; i ++, w0 = w1)
         {
-          if ((w1 = ttfGetWidth(font, (int)i)) == w0 && i < 65530)
+          if ((w1 = ttfGetWidth(font, (int)i)) == w0 && i < (num_cmap - 6))
           {
             for (j = 1; j < 4; j ++)
             {

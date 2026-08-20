@@ -20,7 +20,7 @@ v1.7.0 - YYYY-MM-DD
 - Fixed a buffer overflow in the (still not enabled) AES-256 code.
 
 
-v1.6.5 - YYYY-MM-DD
+v1.6.5 - 2026-08-20
 -------------------
 
 - CVE-2016-NNNNN: Fixed reading of invalid empty AES-encrypted strings.
