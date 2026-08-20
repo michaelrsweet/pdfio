@@ -2,7 +2,7 @@ Changes in PDFio
 ================
 
 
-v1.6.5 - YYYY-MM-DD
+v1.6.5 - 2026-08-20
 -------------------
 
 - CVE-2016-NNNNN: Fixed reading of invalid empty AES-encrypted strings.
