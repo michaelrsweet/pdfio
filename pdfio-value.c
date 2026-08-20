@@ -168,7 +168,10 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
 
 	ivlen = v->value.binary.datalen;
 	if ((cb = _pdfioCryptoMakeReader(pdf, obj, &ctx, v->value.binary.data, &ivlen)) == NULL)
+	{
+	  _pdfioStringFreeBuffer(pdf, (char *)temp);
 	  return (false);
+	}
 
 	templen = (cb)(&ctx, temp, v->value.binary.data + ivlen, v->value.binary.datalen - ivlen, /*last*/true);
 
@@ -195,7 +198,10 @@ _pdfioValueDecrypt(pdfio_file_t   *pdf,	// I - PDF file
 
 	ivlen = templen;
 	if ((cb = _pdfioCryptoMakeReader(pdf, obj, &ctx, (uint8_t *)v->value.string, &ivlen)) == NULL)
+	{
+	  _pdfioStringFreeBuffer(pdf, (char *)temp);
 	  return (false);
+	}
 
 	templen = (cb)(&ctx, temp, (uint8_t *)v->value.string + ivlen, templen - ivlen, /*last*/true);
 	temp[templen] = '\0';
