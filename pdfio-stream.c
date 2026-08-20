@@ -1189,7 +1189,7 @@ stream_get_bytes(
 
       st->a85bufptr = a85bufptr;
 
-      if (*a85bufptr == '~')
+      if (a85bufptr < st->a85bufend && *a85bufptr == '~')
         break;
 
       if (count < 2)
