@@ -8,32 +8,14 @@ expectations are for security issues reported to this project.
 Supported Versions
 ------------------
 
-All production releases of this software are subject to this security policy.
-A production release is tagged and given a semantic version number of the
-form:
+This security policy only applies to production releases of this software.  A
+production release is tagged and given a semantic version number of the form
+"MAJOR.MINOR.PATCH" where "MAJOR" is an integer starting at 1 and "MINOR" and
+"PATCH" are integers starting at 0.
 
-    MAJOR.MINOR.PATCH
-
-where "MAJOR" is an integer starting at 1 and "MINOR" and "PATCH" are integers
-starting at 0.  A feature release has a "PATCH" value of 0, for example:
-
-    1.0.0
-    1.1.0
-    2.0.0
-
-Beta releases and release candidates are *not* production releases and use
-semantic version numbers of the form:
-
-    MAJOR.MINORbNUMBER
-    MAJOR.MINORrcNUMBER
-
-where "MAJOR" and "MINOR" identify the new feature release version number and
-"NUMBER" identifies a beta or release candidate number starting at 1, for
-example:
-
-    1.0b1
-    1.0b2
-    1.0rc1
+> *Note:* Please report security vulnerabilities that only affect unreleased
+> code as regular GitHub issues to
+> <https://github.com/michaelrsweet/pdfio/issues>.
 
 
 What is a Security Bug?
@@ -75,15 +57,24 @@ patch for the vulnerability, if applicable.
 You can expect a response within 5 business days.
 
 
-Responsible Disclosure
-----------------------
+Security Bug Processing
+-----------------------
 
-With *responsible disclosure*, a security issue (and its fix) is disclosed
+Security bugs are processed privately until disclosed.
+
+A Common Vulnerability Scoring System (CVSS) score is calculated to determine
+the severity of the issue.  Issues with a CVSS score of 7 or more use
+*responsible disclosure* where the security issue (and its fix) is disclosed
 only after a mutually-agreed period of time (the "embargo date").  The issue
 and fix are shared amongst and reviewed by the key stakeholders and the
-CERT/CC.  Fixes are released to the public on the agreed-upon date.
+CERT/CC, and a CVE is requested from the GitHub CNA.  Fixes are released to the
+public on the agreed-upon date.
 
-Responsible disclosure is used for security issues in production releases
-whose CVSS score is 7 or more.  Fixes for lesser security issues are typically
-pushed to the public GitHub repository after review and included in the next
-scheduled production release.
+Fixes for less serious issues are pushed to the public repository and published
+as soon as they are ready using the GitHub Security Advisory (GHSA) identifier.
+
+Security bug changes are listed in the `CHANGES.md` file with a SECURITY prefix
+and the CVSS score, for example:
+
+- SECURITY-7.8: Description of serious issue (CVE-YYYY-NNNNN)
+- SECURITY-2.2: Description of less serious issue (GHSA-xxxx-xxxx-xxx)
