@@ -5,7 +5,8 @@ Changes in PDFio
 v1.6.5 - 2026-08-20
 -------------------
 
-- CVE-2026-NNNNN: Fixed reading of invalid empty AES-encrypted strings.
+- SECURITY-4.0: Fixed reading of invalid empty AES-encrypted strings
+  (GHSA-527h-2p2v-g388)
 - Fixed `pdfioContentTextXxx` output with Unicode characters past U+FFFF
   (Issue #171)
 - Fixed `pdfioPageCopy` with a damaged input PDF file (Issue #174)
@@ -187,8 +188,8 @@ v1.3.2 - 2024-08-15
 v1.3.1 - 2024-08-05
 -------------------
 
-- CVE 2024-42358: Updated TrueType font reader to avoid large memory
-  allocations.
+- SECURITY-6.2: Updated TrueType font reader to avoid large memory
+  allocations (CVE-2024-42358)
 - Fixed some documentation errors and added examples (Issue #68, Issue #69)
 
 
@@ -262,14 +263,16 @@ v1.1.2 - 2023-10-10
 v1.1.1 - 2023-03-20
 -------------------
 
-- CVE-2023-28428: Fixed a potential denial-of-service with corrupt PDF files.
+- SECURITY-4.0: Fixed a potential denial-of-service with corrupt PDF files
+  (CVE-2023-28428)
 - Fixed a few build issues.
 
 
 v1.1.0 - 2023-02-06
 -------------------
 
-- CVE-2023-24808: Fixed a potential denial-of-service with corrupt PDF files.
+- SECURITY-4.0: Fixed a potential denial-of-service with corrupt PDF files
+  (CVE-2023-24808)
 - Added `pdfioFileCreateTemporary` function (Issue #29)
 - Added `pdfioDictIterateKeys` function (Issue #31)
 - Added `pdfioContentPathEnd` function.
