@@ -1207,13 +1207,20 @@ pdfioFileOpen(
   line[bytes] = '\0';
   end = line + bytes - 9;
 
-  for (ptr = line; ptr < end; ptr ++)
+  for (ptr = line, xref_offset = 0; ptr < end; ptr ++)
   {
-    if (!strncmp(ptr, "startxref", 9) && !strstr(ptr + 9, "startxref") && strtol(ptr + 9, NULL, 10) > 0)
-      break;
+    char	*temp_ptr;		// Pointer to characters after offset
+    off_t	temp_offset;		// Temporary offset value
+
+    if (!strncmp(ptr, "startxref", 9) && (temp_offset = strtol(ptr + 9, &temp_ptr, 10)) > 0 && temp_ptr)
+    {
+      PDFIO_DEBUG("pdfioFileOpen: startxref %lu\n", (unsigned long)temp_offset);
+      xref_offset = temp_offset;
+      ptr         = temp_ptr;
+    }
   }
 
-  if (ptr >= end)
+  if (xref_offset == 0)
   {
     if (!_pdfioFileError(pdf, "WARNING: Unable to find start of cross-reference table, will attempt to rebuild."))
       goto error;
@@ -1223,12 +1230,6 @@ pdfioFileOpen(
   }
   else
   {
-    PDFIO_DEBUG("pdfioFileOpen: line=%p,ptr=%p(\"%s\")\n", (void *)line, (void *)ptr, ptr);
-
-    xref_offset = (off_t)strtol(ptr + 9, NULL, 10);
-
-    PDFIO_DEBUG("pdfioFileOpen: xref_offset=%lu\n", (unsigned long)xref_offset);
-
     if (!load_xref(pdf, xref_offset, password_cb, password_cbdata))
       goto error;
   }
@@ -2259,8 +2260,12 @@ load_xref(
 	  count --;
 
 #ifdef DEBUG
-          if (w_total > 5)
-	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X...\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
+          if (w_total > 7)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X%02X%02X%02X...\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5], buffer[6], buffer[7]);
+	  else if (w_total == 7)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5], buffer[6]);
+	  else if (w_total == 6)
+	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5]);
 	  else if (w_total == 5)
 	    PDFIO_DEBUG("load_xref: number=%u %02X%02X%02X%02X%02X\n", (unsigned)number, buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]);
 	  else if (w_total == 4)
@@ -2314,6 +2319,8 @@ load_xref(
 		  generation = 65535;
 		break;
 	  }
+
+          PDFIO_DEBUG("load_xref: number=%u type=%u offset=%lu generation=%u\n", (unsigned)number, w[0] ? buffer[0] : 0, (unsigned long)offset, (unsigned)generation);
 
 	  // Create a placeholder for the object in memory...
 	  if ((current = pdfioFileFindObj(pdf, (size_t)number)) != NULL)

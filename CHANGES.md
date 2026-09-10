@@ -20,6 +20,12 @@ v1.7.0 - YYYY-MM-DD
 - Fixed a buffer overflow in the (still not enabled) AES-256 code.
 
 
+v1.6.6 - YYYY-MM-DD
+-------------------
+
+- Fixed reading of the last cross-reference table in a PDF file (Issue #181)
+
+
 v1.6.5 - 2026-08-20
 -------------------
 
