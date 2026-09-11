@@ -1890,7 +1890,14 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
   // Read the objects themselves...
   for (cur_obj = 0; cur_obj < num_objs; cur_obj ++)
   {
-    if (!_pdfioValueRead(obj->pdf, obj, &tb, &(objs[cur_obj]->value), 0))
+    _pdfio_value_t v, *vptr;		// Value
+
+    if (objs[cur_obj]->value.type == PDFIO_VALTYPE_NONE)
+      vptr = &(objs[cur_obj]->value);
+    else
+      vptr = &v;
+
+    if (!_pdfioValueRead(obj->pdf, obj, &tb, vptr, 0))
     {
       _pdfioFileError(obj->pdf, "Unable to read compressed object.");
       pdfioStreamClose(st);
@@ -2212,9 +2219,9 @@ load_xref(
 		generation = (buffer[w_3] << 8) | buffer[w_3 + 1];
 		break;
 	    case 3 :
-	        // Issue #46: Stupid Microsoft PDF generator using 3 bytes to
-	        // encode 16-bit generation numbers == 0 (probably a lazy coder
-	        // stuffing things into an array of 64-bit unsigned integers)
+		// Issue #46: Stupid Microsoft PDF generator using 3 bytes to
+		// encode 16-bit generation numbers == 0 (probably a lazy coder
+		// stuffing things into an array of 64-bit unsigned integers)
 		generation = (buffer[w_3] << 16) | (buffer[w_3 + 1] << 8) | buffer[w_3 + 2];
 		if (generation > 65535)
 		  generation = 65535;
