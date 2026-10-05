@@ -3,7 +3,7 @@
 //
 //     https://github.com/michaelrsweet/ttf
 //
-// Copyright © 2018-2025 by Michael R Sweet.
+// Copyright © 2018-2026 by Michael R Sweet.
 //
 // Licensed under Apache License v2.0.  See the file "LICENSE" for more
 // information.
@@ -635,7 +635,7 @@ ttfGetExtents(
   TTF_DEBUG("ttfGetExtents: width=%d\n", width);
 
   extents->bottom = size * font->y_min / font->units;
-  extents->right  = size * width / font->units + extents->left;
+  extents->right  = size * (float)width / font->units + extents->left;
   extents->top    = size * font->y_max / font->units;
 
   return (extents);
@@ -2046,7 +2046,7 @@ read_post(ttf_t           *font,	// I - Font
     return (false);
 
   /* version            = */read_ulong(font);
-  post->italicAngle     = (int)read_ulong(font) / 65536.0f;
+  post->italicAngle     = (float)read_ulong(font) / 65536.0f;
   /* underlinePosition  = */read_ushort(font);
   /* underlineThickness = */read_ushort(font);
   post->isFixedPitch    = read_ulong(font);

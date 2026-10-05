@@ -2243,7 +2243,7 @@ load_xref(
             if (generation > current->generation)
             {
               // Newer version of an existing object - update the references...
-              current->generation = generation;
+              current->generation = (unsigned short)generation;
 
 	      if (w[0] == 0 || buffer[0] == 1)
 	      {
