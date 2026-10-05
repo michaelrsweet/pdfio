@@ -4029,8 +4029,8 @@ write_png_tests(pdfio_file_t *pdf,	// I - PDF file
 
   for (i = 0; i < (sizeof(pngsuite_files) / sizeof(pngsuite_files[0])); i ++)
   {
-    double x = (i % 8) * 69.0 + 36;	// X position
-    double y = 671 - (i / 8) * 64.0;	// Y position
+    double x = (i % 8) * 69.0 + 36;		// X position
+    double y = 671 - (double)(i / 8) * 64.0;	// Y position
 
     testBegin("pdfioContentTextBegin()");
     if (pdfioContentTextBegin(st))
@@ -4074,8 +4074,8 @@ write_png_tests(pdfio_file_t *pdf,	// I - PDF file
 
   for (i = 0; i < (sizeof(pngsuite_files) / sizeof(pngsuite_files[0])); i ++)
   {
-    double x = (i % 8) * 69.0 + 36;	// X position
-    double y = 671 - (i / 8) * 64.0;	// Y position
+    double x = (i % 8) * 69.0 + 36;		// X position
+    double y = 671 - (double)(i / 8) * 64.0;	// Y position
 
     snprintf(imgname, sizeof(imgname), "IM%u", (unsigned)(i + 1));
     testBegin("pdfioContentDrawImage(\"%s\")", imgname);
