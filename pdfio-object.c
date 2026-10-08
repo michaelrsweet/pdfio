@@ -259,6 +259,8 @@ _pdfioObjDelete(pdfio_obj_t *obj)	// I - Object
 
     if (obj->datafree)
       (obj->datafree)(obj->data);
+
+    _pdfioValueDelete(&obj->value);
   }
 
   free(obj);
@@ -525,6 +527,12 @@ _pdfioObjLoad(pdfio_obj_t *obj)		// I - Object
 
   // Then grab the object value...
   _pdfioTokenInit(&tb, obj->pdf, (_pdfio_tconsume_cb_t)_pdfioFileConsume, (_pdfio_tpeek_cb_t)_pdfioFilePeek, obj->pdf);
+
+  if (obj->value.type != PDFIO_VALTYPE_NONE)
+  {
+    _pdfioValueDelete(&obj->value);
+    memset(&obj->value, 0, sizeof(obj->value));
+  }
 
   if (!_pdfioValueRead(obj->pdf, obj, &tb, &obj->value, 0))
   {

@@ -843,9 +843,12 @@ pdfioStreamRead(
   // Loop until we have the requested bytes or hit the end of the stream...
   while ((remaining = (size_t)(st->bufend - st->bufptr)) < bytes)
   {
-    memcpy(bufptr, st->bufptr, remaining);
-    bufptr += remaining;
-    bytes -= remaining;
+    if (remaining > 0)
+    {
+      memcpy(bufptr, st->bufptr, remaining);
+      bufptr += remaining;
+      bytes  -= remaining;
+    }
 
     if (bytes >= sizeof(st->buffer))
     {
