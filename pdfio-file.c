@@ -2104,6 +2104,7 @@ load_xref(
       else if (trailer.type != PDFIO_VALTYPE_DICT)
       {
         PDFIO_DEBUG("load_xref: Expected dictionary for cross-reference object (type=%d).", trailer.type);
+        _pdfioValueDelete(&trailer);
         goto repair;
       }
 
@@ -2450,6 +2451,7 @@ load_xref(
       else if (trailer.type != PDFIO_VALTYPE_DICT)
       {
         PDFIO_DEBUG("load_xref: Trailer not a dictionary (type=%d).\n", trailer.type);
+        _pdfioValueDelete(&trailer);
 	goto repair;
       }
 
@@ -2608,6 +2610,12 @@ repair_xref(
           if ((obj = pdfioFileFindObj(pdf, (size_t)number)) != NULL)
           {
             obj->offset = line_offset;
+
+            if (obj->value.type != PDFIO_VALTYPE_NONE)
+            {
+              _pdfioValueDelete(&obj->value);
+              memset(&obj->value, 0, sizeof(obj->value));
+            }
           }
           else if ((obj = add_obj(pdf, (size_t)number, (unsigned short)generation, line_offset)) == NULL)
 	  {
@@ -2628,8 +2636,11 @@ repair_xref(
 	  {
 	    if (!_pdfioFileError(pdf, "WARNING: Unable to read object dictionary/value."))
 	      return (false);
-	    else
-	      continue;
+
+            // Continue reading from the current file position, otherwise we'll
+            // just keep reading the same bad value...
+            line_offset = _pdfioFileTell(pdf);
+	    continue;
 	  }
 
 	  if (_pdfioTokenGet(&tb, line, sizeof(line)))
@@ -2709,6 +2720,7 @@ repair_xref(
       else if (trailer.type != PDFIO_VALTYPE_DICT)
       {
 	_pdfioFileError(pdf, "Trailer is not a dictionary.");
+	_pdfioValueDelete(&trailer);
 	return (false);
       }
 
