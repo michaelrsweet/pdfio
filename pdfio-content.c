@@ -3797,7 +3797,7 @@ create_font(pdfio_obj_t *file_obj,	// I - Font file object
         *bufptr++ = (unsigned char)(cmap[i] >> 8);
         *bufptr++ = (unsigned char)(cmap[i] & 255);
 
-        glyphs[cmap[i]] = i;
+        glyphs[cmap[i]] = (int)i;
         if (cmap[i] < min_glyph)
           min_glyph = cmap[i];
         if (cmap[i] > max_glyph)
