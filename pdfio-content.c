@@ -93,6 +93,7 @@ static void		png_read_func(png_structp png_ptr, png_bytep data, size_t length);
 #endif // HAVE_LIBPNG
 static void		ttf_error_cb(pdfio_file_t *pdf, const char *message);
 #ifndef HAVE_LIBPNG
+static unsigned		u32decode(unsigned char *ptr);
 static unsigned		update_png_crc(unsigned crc, const unsigned char *buffer, size_t length);
 #endif // !HAVE_LIBPNG
 static bool		write_array(pdfio_stream_t *st, pdfio_array_t *a);
@@ -2931,8 +2932,8 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   while (read(fd, buffer, 8) == 8)
   {
     // Get the chunk length and type values...
-    length = (unsigned)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
-    type   = (unsigned)((buffer[4] << 24) | (buffer[5] << 16) | (buffer[6] << 8) | buffer[7]);
+    length = u32decode(buffer);
+    type   = u32decode(buffer + 4);
     crc    = update_png_crc(0xffffffff, buffer + 4, 4);
 
     switch (type)
@@ -3024,8 +3025,8 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
           }
 
 	  crc    = update_png_crc(crc, buffer, length);
-	  width  = (unsigned)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
-	  height = (unsigned)((buffer[4] << 24) | (buffer[5] << 16) | (buffer[6] << 8) | buffer[7]);
+	  width  = u32decode(buffer);
+	  height = u32decode(buffer + 4);
 
 	  if (width == 0 || height == 0)
 	  {
@@ -3123,14 +3124,14 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 
 	  crc = update_png_crc(crc, buffer, length);
 
-          wx = 0.00001 * ((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
-          wy = 0.00001 * ((buffer[4] << 24) | (buffer[5] << 16) | (buffer[6] << 8) | buffer[7]);
-          rx = 0.00001 * ((buffer[8] << 24) | (buffer[9] << 16) | (buffer[10] << 8) | buffer[11]);
-          ry = 0.00001 * ((buffer[12] << 24) | (buffer[13] << 16) | (buffer[14] << 8) | buffer[15]);
-          gx = 0.00001 * ((buffer[16] << 24) | (buffer[17] << 16) | (buffer[18] << 8) | buffer[19]);
-          gy = 0.00001 * ((buffer[20] << 24) | (buffer[21] << 16) | (buffer[22] << 8) | buffer[23]);
-          bx = 0.00001 * ((buffer[24] << 24) | (buffer[25] << 16) | (buffer[26] << 8) | buffer[27]);
-          by = 0.00001 * ((buffer[28] << 24) | (buffer[29] << 16) | (buffer[30] << 8) | buffer[31]);
+          wx = 0.00001 * (double)u32decode(buffer);
+          wy = 0.00001 * (double)u32decode(buffer + 4);
+          rx = 0.00001 * (double)u32decode(buffer + 8);
+          ry = 0.00001 * (double)u32decode(buffer + 12);
+          gx = 0.00001 * (double)u32decode(buffer + 16);
+          gy = 0.00001 * (double)u32decode(buffer + 20);
+          bx = 0.00001 * (double)u32decode(buffer + 24);
+          by = 0.00001 * (double)u32decode(buffer + 28);
           break;
 
       case _PDFIO_PNG_CHUNK_gAMA : // Gamma correction
@@ -3148,7 +3149,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 
 	  crc = update_png_crc(crc, buffer, length);
 
-          gamma = 10000.0 / ((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
+          gamma = 10000.0 / (double)u32decode(buffer);
           break;
 
       case _PDFIO_PNG_CHUNK_tRNS : // Transparency information
@@ -3271,7 +3272,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
       return (NULL);
     }
 
-    temp = (unsigned)((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]);
+    temp = u32decode(buffer);
     if (temp != crc)
     {
       pdfioStreamClose(st);
@@ -3871,6 +3872,17 @@ ttf_error_cb(pdfio_file_t *pdf,		// I - PDF file
 
 
 #ifndef HAVE_LIBPNG
+//
+// 'u32decode()' - Decode a 32-bit unsigned integer from a char array.
+//
+
+unsigned				// O - 32-bit unsigned integer
+u32decode(unsigned char *ptr)		// I - Pointer to bytes
+{
+  return ((unsigned)(((unsigned)ptr[0] << 24) | ((unsigned)ptr[1] << 16) | ((unsigned)ptr[2] << 8) | (unsigned)ptr[3]));
+}
+
+
 //
 // 'update_png_crc()' - Update the CRC-32 value for a PNG chunk.
 //
