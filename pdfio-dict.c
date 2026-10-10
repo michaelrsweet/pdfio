@@ -491,7 +491,12 @@ pdfioDictGetString(pdfio_dict_t *dict,	// I - Dictionary
     PDFIO_DEBUG("pdfioDictGetString: Returning \"%s\".\n", value->value.string);
     return (value->value.string);
   }
-  else if (value && value->type == PDFIO_VALTYPE_BINARY && value->value.binary.datalen < 4096)
+  else if (value && value->type == PDFIO_VALTYPE_BINARY && value->value.binary.datalen == 0)
+  {
+    PDFIO_DEBUG("pdfioDictGetString: Returning \"\".\n");
+    return ("");
+  }
+  else if (value && value->type == PDFIO_VALTYPE_BINARY && value->value.binary.datalen > 3 && value->value.binary.datalen < 4096)
   {
     // Convert binary string to regular string...
     char	temp[4096];		// Temporary UTF-8 string
