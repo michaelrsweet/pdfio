@@ -6,6 +6,8 @@ v1.7.0 - YYYY-MM-DD
 -------------------
 
 - Now use TTF 1.1 or later for font support.
+- Fixed truncation of literal strings containing nul bytes written as octal
+  escapes such as `\000`, which corrupted Indexed color space lookup tables.
 - Added support for basic compound stream filters for ASCII85Decode support
   (Issue #11)
 - Added support for LZWDecode filters (Issue #11)
