@@ -295,9 +295,6 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
     case '(' : // Literal string
 	while ((ch = get_char(tb)) != EOF)
 	{
-	  if (ch == 0)
-	    saw_nul = true;
-
 	  if (ch == '\\')
 	  {
 	    // Quoted character...
@@ -371,6 +368,9 @@ _pdfioTokenRead(_pdfio_token_t *tb,	// I - Token buffer/stack
 
 	    parens --;
 	  }
+
+	  if (ch == 0)
+	    saw_nul = true;
 
 	  if (bufptr < bufend)
 	  {

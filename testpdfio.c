@@ -760,7 +760,11 @@ do_unit_tests(void)
     "/ENDK00GK3c9DZN2n 23693 0 R/EPDB0NGN3Q9GZP2t 23695 0 R"
     "/EpDA0kG03o9rZX21 23696 0 R/Im0 5475 0 R>>>>/Rotate 0/StructParents 2105"
     "/Tabs/S/Type/Page>>";
-  static const char	*cid_dict =	// CID font dictionary
+   static const char	*nul_string =	// Literal string with octal-escaped nul bytes
+    "(\\000\\000\\000\\377\\377\\377)";
+   static const unsigned char nul_bytes[6] = { 0, 0, 0, 255, 255, 255 };
+					// Expected binary value of nul_string
+   static const char	*cid_dict =	// CID font dictionary
     "<</BaseFont/ZGFJJN+Cambria/CIDSystemInfo 21459 0 R/CIDToGIDMap/I"
     "dentity/DW 1000/FontDescriptor 21458 0 R/Subtype/CIDFontType2/Ty"
     "pe/Font/W[0[658 0 220 220 623 611 563 662 575 537 611 687 324 30"
@@ -1275,6 +1279,34 @@ do_unit_tests(void)
   }
   else
     goto fail;
+
+  // Test that octal-escaped nul bytes in a literal string are preserved...
+  testBegin("_pdfioValueRead(nul_string)");
+  s = nul_string;
+  _pdfioTokenInit(&tb, inpdf, (_pdfio_tconsume_cb_t)token_consume_cb, (_pdfio_tpeek_cb_t)token_peek_cb, (void *)&s);
+  if (!_pdfioValueRead(inpdf, NULL, &tb, &value, 0))
+  {
+    goto fail;
+  }
+  else if (value.type != PDFIO_VALTYPE_BINARY)
+  {
+    testEndMessage(false, "got type %d, expected PDFIO_VALTYPE_BINARY", (int)value.type);
+    goto fail;
+  }
+  else if (value.value.binary.datalen != sizeof(nul_bytes))
+  {
+    testEndMessage(false, "got %u bytes, expected %u", (unsigned)value.value.binary.datalen, (unsigned)sizeof(nul_bytes));
+    goto fail;
+  }
+  else if (memcmp(value.value.binary.data, nul_bytes, sizeof(nul_bytes)))
+  {
+    testEndMessage(false, "got <%02X%02X%02X%02X%02X%02X>, expected <%02X%02X%02X%02X%02X%02X>", value.value.binary.data[0], value.value.binary.data[1], value.value.binary.data[2], value.value.binary.data[3], value.value.binary.data[4], value.value.binary.data[5], nul_bytes[0], nul_bytes[1], nul_bytes[2], nul_bytes[3], nul_bytes[4], nul_bytes[5]);
+    goto fail;
+  }
+  else
+  {
+    testEnd(true);
+  }
 
   // Do crypto tests...
   if (do_crypto_tests())
