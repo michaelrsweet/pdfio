@@ -10,6 +10,7 @@ v1.6.6 - YYYY-MM-DD
 - Fixed potential issues in the PNG fallback code (Issue #187)
 - Fixed a potential loop when repairing a broken PDF file (Issue #190)
 - Fixed an error decoding short UTF-16 hex strings (Issue #194)
+- Fixed an error decoding strings with escaped NUL characters (Issue #195)
 
 
 v1.6.5 - 2026-08-20
