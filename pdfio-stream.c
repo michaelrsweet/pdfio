@@ -242,13 +242,13 @@ _pdfioStreamCreate(
     // Flate compression
     pdfio_dict_t *params = pdfioDictGetDict(obj->value.value.dict, "DecodeParms");
 					// Decoding parameters
-    int bpc = (int)pdfioDictGetNumber(params, "BitsPerComponent");
+    int bpc = _pdfioDictGetInteger(params, "BitsPerComponent");
 					// Bits per component
-    int colors = (int)pdfioDictGetNumber(params, "Colors");
+    int colors = _pdfioDictGetInteger(params, "Colors");
 					// Number of colors
-    int columns = (int)pdfioDictGetNumber(params, "Columns");
+    int columns = _pdfioDictGetInteger(params, "Columns");
 					// Number of columns
-    int predictor = (int)pdfioDictGetNumber(params, "Predictor");
+    int predictor = _pdfioDictGetInteger(params, "Predictor");
 					// Predictory value, if any
     int status;				// ZLIB status code
 
@@ -542,13 +542,13 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
       // Flate or LZW compression
       pdfio_dict_t *params = pdfioDictGetDict(dict, "DecodeParms");
 					// Decoding parameters
-      int bpc = (int)pdfioDictGetNumber(params, "BitsPerComponent");
+      int bpc = _pdfioDictGetInteger(params, "BitsPerComponent");
 					// Bits per component
-      int colors = (int)pdfioDictGetNumber(params, "Colors");
+      int colors = _pdfioDictGetInteger(params, "Colors");
 					// Number of colors
-      int columns = (int)pdfioDictGetNumber(params, "Columns");
+      int columns = _pdfioDictGetInteger(params, "Columns");
 					// Number of columns
-      int predictor = (int)pdfioDictGetNumber(params, "Predictor");
+      int predictor = _pdfioDictGetInteger(params, "Predictor");
 					// Predictory value, if any
       ssize_t rbytes;			// Bytes read
 
@@ -655,7 +655,7 @@ _pdfioStreamOpen(pdfio_obj_t *obj,	// I - Object
 
         if (pdfioDictGetType(params, "EarlyChange") == PDFIO_VALTYPE_NUMBER)
         {
-          early = (int)pdfioDictGetNumber(params, "EarlyChange");
+          early = _pdfioDictGetInteger(params, "EarlyChange");
           if (early < 0 || early > 100)
           {
             _pdfioFileError(st->pdf, "Bad EarlyChange value %d for LZWDecode filter.", early);

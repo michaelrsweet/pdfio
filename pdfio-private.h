@@ -444,6 +444,8 @@ extern bool		_pdfioCryptoUnlock(pdfio_file_t *pdf, pdfio_password_cb_t password_
 extern bool		_pdfioDictDecrypt(pdfio_file_t *pdf, pdfio_obj_t *obj, pdfio_dict_t *dict, size_t depth) _PDFIO_INTERNAL;
 extern void		_pdfioDictDebug(pdfio_dict_t *dict, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioDictDelete(pdfio_dict_t *dict) _PDFIO_INTERNAL;
+extern int		_pdfioDictGetInteger(pdfio_dict_t *dict, const char *key) _PDFIO_INTERNAL;
+extern size_t		_pdfioDictGetSize(pdfio_dict_t *dict, const char *key) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioDictGetValue(pdfio_dict_t *dict, const char *key) _PDFIO_INTERNAL;
 extern pdfio_dict_t	*_pdfioDictRead(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_token_t *ts, size_t depth) _PDFIO_INTERNAL;
 extern bool		_pdfioDictSetValue(pdfio_dict_t *dict, const char *key, _pdfio_value_t *value) _PDFIO_INTERNAL;

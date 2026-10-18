@@ -595,9 +595,9 @@ _pdfioCryptoUnlock(
   // See if we support the type of encryption specified by the Encrypt
   // dictionary...
   handler  = pdfioDictGetName(pdf->encrypt_dict, "Filter");
-  version  = (int)pdfioDictGetNumber(pdf->encrypt_dict, "V");
-  revision = (int)pdfioDictGetNumber(pdf->encrypt_dict, "R");
-  length   = (int)pdfioDictGetNumber(pdf->encrypt_dict, "Length");
+  version  = _pdfioDictGetInteger(pdf->encrypt_dict, "V");
+  revision = _pdfioDictGetInteger(pdf->encrypt_dict, "R");
+  length   = _pdfioDictGetInteger(pdf->encrypt_dict, "Length");
 
   if ((value = _pdfioDictGetValue(pdf->encrypt_dict, "EncryptMetadata")) != NULL && value->type == PDFIO_VALTYPE_BOOLEAN)
     pdf->encrypt_metadata = value->value.boolean;
