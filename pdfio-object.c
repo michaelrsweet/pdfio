@@ -311,7 +311,7 @@ pdfioObjGetLength(pdfio_obj_t *obj)	// I - Object
     return (0);
 
   // Try getting the length, directly or indirectly
-  if ((length = (size_t)pdfioDictGetNumber(obj->value.value.dict, "Length")) > 0)
+  if ((length = _pdfioDictGetSize(obj->value.value.dict, "Length")) > 0)
   {
     PDFIO_DEBUG("pdfioObjGetLength(obj=%p) returning %lu.\n", (void *)obj, (unsigned long)length);
     return (length);

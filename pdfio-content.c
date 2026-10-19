@@ -2231,16 +2231,16 @@ pdfioImageGetBytesPerLine(
     return (0);
 
   params = pdfioDictGetDict(obj->value.value.dict, "DecodeParms");
-  bpc    = (int)pdfioDictGetNumber(params, "BitsPerComponent");
-  colors = (int)pdfioDictGetNumber(params, "Colors");
-  width  = (int)pdfioDictGetNumber(params, "Columns");
+  bpc    = _pdfioDictGetInteger(params, "BitsPerComponent");
+  colors = _pdfioDictGetInteger(params, "Colors");
+  width  = _pdfioDictGetInteger(params, "Columns");
 
   if (width == 0)
-    width = (int)pdfioDictGetNumber(obj->value.value.dict, "Width");
+    width = _pdfioDictGetInteger(obj->value.value.dict, "Width");
 
   if (bpc == 0)
   {
-    if ((bpc = (int)pdfioDictGetNumber(obj->value.value.dict, "BitsPerComponent")) == 0)
+    if ((bpc = _pdfioDictGetInteger(obj->value.value.dict, "BitsPerComponent")) == 0)
       bpc = 8;
   }
 

@@ -1847,7 +1847,7 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
     return (false);
   }
 
-  count = (int)pdfioDictGetNumber(pdfioObjGetDict(obj), "N");
+  count = _pdfioDictGetInteger(pdfioObjGetDict(obj), "N");
 
   PDFIO_DEBUG("load_obj_stream: N=%d\n", count);
 
@@ -2488,7 +2488,7 @@ load_xref(
     PDFIO_DEBUG_VALUE(&trailer);
     PDFIO_DEBUG("\n");
 
-    off_t new_offset = (off_t)pdfioDictGetNumber(trailer.value.dict, "Prev");
+    off_t new_offset = _pdfioDictGetSize(trailer.value.dict, "Prev");
 
     if (new_offset <= 0)
     {
