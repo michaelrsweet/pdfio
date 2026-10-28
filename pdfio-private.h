@@ -420,6 +420,7 @@ extern int		_pdfio_win32_open(const char *filename, int oflag, int mode) _PDFIO_
 extern bool		_pdfioArrayDecrypt(pdfio_file_t *pdf, pdfio_obj_t *obj, pdfio_array_t *a, size_t depth) _PDFIO_INTERNAL;
 extern void		_pdfioArrayDebug(pdfio_array_t *a, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioArrayDelete(pdfio_array_t *a) _PDFIO_INTERNAL;
+extern size_t		_pdfioArrayGetSize(pdfio_array_t *a, size_t n) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioArrayGetValue(pdfio_array_t *a, size_t n) _PDFIO_INTERNAL;
 extern pdfio_array_t	*_pdfioArrayRead(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_token_t *ts, size_t depth) _PDFIO_INTERNAL;
 extern bool		_pdfioArrayWrite(_pdfio_printf_t cb, void *cbdata, pdfio_obj_t *obj, pdfio_array_t *a) _PDFIO_INTERNAL;

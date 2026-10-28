@@ -549,6 +549,30 @@ pdfioArrayGetSize(pdfio_array_t *a)	// I - Array
 
 
 //
+// '_pdfioArrayGetSize()' - Get a size_t value from an array.
+//
+
+size_t					// O - Value
+_pdfioArrayGetSize(pdfio_array_t *a,	// I - Array
+                   size_t        n)	// I - Index
+{
+  size_t	sizevalue;		// Value
+  _pdfio_value_t *value;		// Pointer to value
+
+
+  if (!a || n >= a->num_values || a->values[n].type != PDFIO_VALTYPE_NUMBER)
+    return (0);
+
+  value = a->values + n;
+
+  if (value->value.number >= (double)0 && value->value.number <= (double)SIZE_MAX && (double)(sizevalue = (size_t)value->value.number) == value->value.number)
+    return (sizevalue);
+  else
+    return (0);
+}
+
+
+//
 // 'pdfioArrayGetString()' - Get a string value from an array.
 //
 
