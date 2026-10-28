@@ -1997,6 +1997,9 @@ load_obj_stream(pdfio_obj_t *obj)	// I - Object to load
       pdfioStreamClose(st);
       return (false);
     }
+
+    if (vptr == &v)
+      _pdfioValueDelete(vptr);
   }
 
   // Close the stream and return
