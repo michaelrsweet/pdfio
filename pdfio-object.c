@@ -65,7 +65,7 @@ pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
   pdfio_obj_t	*dstobj;		// Destination object
   pdfio_stream_t *srcst,		// Source stream
 		*dstst;			// Destination stream
-  char		buffer[32768];		// Copy buffer
+  char		*buffer;		// Copy buffer
   ssize_t	bytes;			// Bytes read
 
 
@@ -104,20 +104,28 @@ pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
   if (srcobj->stream_offset)
   {
     // Copy stream data...
+    if ((buffer = malloc(PDFIO_BUF_SIZE)) == NULL)
+    {
+      pdfioObjClose(dstobj);
+      return (NULL);
+    }
+
     if ((srcst = pdfioObjOpenStream(srcobj, false)) == NULL)
     {
+      free(buffer);
       pdfioObjClose(dstobj);
       return (NULL);
     }
 
     if ((dstst = pdfioObjCreateStream(dstobj, PDFIO_FILTER_NONE)) == NULL)
     {
+      free(buffer);
       pdfioStreamClose(srcst);
       pdfioObjClose(dstobj);
       return (NULL);
     }
 
-    while ((bytes = pdfioStreamRead(srcst, buffer, sizeof(buffer))) > 0)
+    while ((bytes = pdfioStreamRead(srcst, buffer, PDFIO_BUF_SIZE)) > 0)
     {
       if (!pdfioStreamWrite(dstst, buffer, (size_t)bytes))
       {
@@ -126,6 +134,7 @@ pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
       }
     }
 
+    free(buffer);
     pdfioStreamClose(srcst);
     pdfioStreamClose(dstst);
 
@@ -133,7 +142,9 @@ pdfioObjCopy(pdfio_file_t *pdf,		// I - PDF file
       return (NULL);
   }
   else
+  {
     pdfioObjClose(dstobj);
+  }
 
   return (dstobj);
 }
