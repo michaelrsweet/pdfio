@@ -2,7 +2,7 @@ Changes in PDFio
 ================
 
 
-v1.6.6 - YYYY-MM-DD
+v1.6.6 - 2026-10-28
 -------------------
 
 - Fixed reading of the last cross-reference table in a PDF file (Issue #181)
