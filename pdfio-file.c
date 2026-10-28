@@ -2168,8 +2168,8 @@ load_xref(
 	}
 	else
 	{
-          number = (intmax_t)pdfioArrayGetNumber(index_array, index_n);
-          count  = (size_t)pdfioArrayGetNumber(index_array, index_n + 1);
+          number = (intmax_t)_pdfioArrayGetSize(index_array, index_n);
+          count  = _pdfioArrayGetSize(index_array, index_n + 1);
 	}
 
 	while (count > 0 && pdfioStreamRead(st, buffer, w_total) > 0)
@@ -2206,8 +2206,8 @@ load_xref(
 	    }
 	  }
 
-          // Offset
-	  for (i = 1, offset = buffer[w_2]; i < w[1]; i ++)
+          // Offset (only support 2^63-1 maximum)
+	  for (i = 1, offset = w[1] == 8 ? buffer[w_2] & 127 : buffer[w_2]; i < w[1]; i ++)
 	    offset = (offset << 8) | buffer[w_2 + i];
 
           // Generation number
@@ -2226,14 +2226,16 @@ load_xref(
 		// Issue #46: Stupid Microsoft PDF generator using 3 bytes to
 		// encode 16-bit generation numbers == 0 (probably a lazy coder
 		// stuffing things into an array of 64-bit unsigned integers)
-		generation = (buffer[w_3] << 16) | (buffer[w_3 + 1] << 8) | buffer[w_3 + 2];
-		if (generation > 65535)
+		if (buffer[w_3])
 		  generation = 65535;
+		else
+		  generation = (buffer[w_3 + 1] << 8) | buffer[w_3 + 2];
 		break;
 	    case 4 : // Even stupider :)
-		generation = (buffer[w_3] << 24) | (buffer[w_3 + 1] << 16) | (buffer[w_3 + 2] << 8) | buffer[w_3 + 3];
-		if (generation > 65535)
+		if (buffer[w_3] || buffer[w_3 + 1])
 		  generation = 65535;
+		else
+		  generation = (buffer[w_3 + 2] << 8) | buffer[w_3 + 3];
 		break;
 	  }
 

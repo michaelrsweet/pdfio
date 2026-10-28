@@ -367,6 +367,7 @@ extern ssize_t		_pdfio_vsnprintf(pdfio_file_t *pdf, char *buffer, size_t bufsize
 extern bool		_pdfioArrayDecrypt(pdfio_file_t *pdf, pdfio_obj_t *obj, pdfio_array_t *a, size_t depth) _PDFIO_INTERNAL;
 extern void		_pdfioArrayDebug(pdfio_array_t *a, FILE *fp) _PDFIO_INTERNAL;
 extern void		_pdfioArrayDelete(pdfio_array_t *a) _PDFIO_INTERNAL;
+extern size_t		_pdfioArrayGetSize(pdfio_array_t *a, size_t n) _PDFIO_INTERNAL;
 extern _pdfio_value_t	*_pdfioArrayGetValue(pdfio_array_t *a, size_t n) _PDFIO_INTERNAL;
 extern pdfio_array_t	*_pdfioArrayRead(pdfio_file_t *pdf, pdfio_obj_t *obj, _pdfio_token_t *ts, size_t depth) _PDFIO_INTERNAL;
 extern bool		_pdfioArrayWrite(pdfio_array_t *a, pdfio_obj_t *obj) _PDFIO_INTERNAL;
