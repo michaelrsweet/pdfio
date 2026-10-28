@@ -336,40 +336,39 @@ pdfioObjGetGeneration(pdfio_obj_t *obj)	// I - Object
 size_t					// O - Length in bytes or `0` for none
 pdfioObjGetLength(pdfio_obj_t *obj)	// I - Object
 {
-  size_t	length;			// Length of stream
+  size_t	length = 0;		// Length of stream
   pdfio_obj_t	*lenobj;		// Length object
 
 
   // Range check input...
   if (!obj || !obj->stream_offset || obj->value.type != PDFIO_VALTYPE_DICT)
-    return (0);
+    goto done;
 
   // Try getting the length, directly or indirectly
   if ((length = _pdfioDictGetSize(obj->value.value.dict, "Length")) > 0)
-  {
-    PDFIO_DEBUG("pdfioObjGetLength(obj=%p) returning %lu.\n", (void *)obj, (unsigned long)length);
-    return (length);
-  }
+    goto done;
 
   if ((lenobj = pdfioDictGetObj(obj->value.value.dict, "Length")) == NULL)
   {
     if (!_pdfioDictGetValue(obj->value.value.dict, "Length"))
       _pdfioFileError(obj->pdf, "Unable to get length of stream.");
-    return (0);
+    goto done;
   }
 
   if (lenobj->value.type == PDFIO_VALTYPE_NONE)
     _pdfioObjLoad(lenobj);
 
-  if (lenobj->value.type != PDFIO_VALTYPE_NUMBER || lenobj->value.value.number <= 0.0)
+  if (lenobj->value.type != PDFIO_VALTYPE_NUMBER || lenobj->value.value.number <= 0.0 || lenobj->value.value.number > (double)SIZE_MAX || (double)(length = (size_t)lenobj->value.value.number) != lenobj->value.value.number)
   {
     _pdfioFileError(obj->pdf, "Unable to get length of stream.");
-    return (0);
+    length = 0;
   }
 
-  PDFIO_DEBUG("pdfioObjGetLength(obj=%p) returning %lu.\n", (void *)obj, (unsigned long)lenobj->value.value.number);
+  done:
 
-  return ((size_t)lenobj->value.value.number);
+  PDFIO_DEBUG("pdfioObjGetLength(obj=%p) returning %lu.\n", (void *)obj, (unsigned long)length);
+
+  return (length);
 }
 
 

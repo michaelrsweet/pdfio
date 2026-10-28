@@ -2472,6 +2472,12 @@ load_xref(
 	  goto repair;
 	}
 
+        if (number < 0 || num_objects < 1 || number > (INTMAX_MAX - num_objects))
+        {
+          PDFIO_DEBUG("load_xref: Start or count out-of-range.\n");
+          goto repair;
+        }
+
 	// Read this group of objects...
 	for (; num_objects > 0; num_objects --, number ++)
 	{
