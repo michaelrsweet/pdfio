@@ -2499,7 +2499,7 @@ load_xref(
     PDFIO_DEBUG_VALUE(&trailer);
     PDFIO_DEBUG("\n");
 
-    off_t new_offset = _pdfioDictGetSize(trailer.value.dict, "Prev");
+    off_t new_offset = (off_t)_pdfioDictGetSize(trailer.value.dict, "Prev");
 
     if (new_offset <= 0)
     {
