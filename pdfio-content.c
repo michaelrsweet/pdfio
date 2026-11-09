@@ -2713,10 +2713,11 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
 		linesize;		// Bytes per line
   bool		alpha;			// Alpha transparency?
   int		srgb_intent;		// sRGB color?
-  png_color	*palette;		// Color palette information
-  int		num_palette;		// Number of colors
-  int		num_trans;		// Number of transparent colors
-  png_color_16	*trans;			// Transparent colors
+  png_colorp	palette = NULL;		// Color palette information
+  int		num_palette = 0;	// Number of palette colors
+  int		num_trans = 0;		// Number of transparent color indices
+  png_bytep	trans = NULL;		// Transparent color indices
+  png_color_16p	trans_color = NULL;	// Transparent color values
   png_charp	icc_name;		// ICC profile name
   png_bytep	icc_data;		// ICC profile data
   png_uint_32	icc_datalen;		// Length of ICC profile data
@@ -2842,46 +2843,45 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
     pdfioDictSetArray(dict, "ColorSpace", pdfioArrayCreateColorFromStandard(dict->pdf, num_colors, PDFIO_CS_SRGB));
   }
 
-  if (png_get_tRNS(pp, info, /*trans_alpha*/NULL, &num_trans, &trans))
+  if (png_get_tRNS(pp, info, &trans, &num_trans, &trans_color))
   {
     int			m;		// Looping var
-    pdfio_array_t	*mask;		// Mask array
+    pdfio_array_t	*mask = NULL;	// Mask array
 
-    mask = pdfioArrayCreate(dict->pdf);
-
-    if (color_type & PNG_COLOR_MASK_PALETTE)
+    if ((color_type & PNG_COLOR_MASK_PALETTE) && num_trans > 0 && trans)
     {
       // List color indices that are transparent...
+      mask = pdfioArrayCreate(dict->pdf);
+
       for (m = 0; m < num_trans; m ++)
       {
-	pdfioArrayAppendNumber(mask, trans[m].index);
-	pdfioArrayAppendNumber(mask, trans[m].index);
+	pdfioArrayAppendNumber(mask, trans[m]);
+	pdfioArrayAppendNumber(mask, trans[m]);
       }
     }
-    else if (num_colors == 1)
+    else if (num_colors == 1 && trans_color)
     {
-      // List grayscale values that are transparent...
-      for (m = 0; m < num_trans; m ++)
-      {
-	pdfioArrayAppendNumber(mask, trans[m].gray >> (16 - depth));
-	pdfioArrayAppendNumber(mask, trans[m].gray >> (16 - depth));
-      }
+      // Grayscale level is transparent...
+      mask = pdfioArrayCreate(dict->pdf);
+
+      pdfioArrayAppendNumber(mask, trans_color->gray >> (16 - depth));
+      pdfioArrayAppendNumber(mask, trans_color->gray >> (16 - depth));
     }
-    else
+    else if (num_colors == 3 && trans_color)
     {
-      // List RGB color values that are transparent...
-      for (m = 0; m < num_trans; m ++)
-      {
-	pdfioArrayAppendNumber(mask, trans[m].red >> (16 - depth));
-	pdfioArrayAppendNumber(mask, trans[m].green >> (16 - depth));
-	pdfioArrayAppendNumber(mask, trans[m].blue >> (16 - depth));
-	pdfioArrayAppendNumber(mask, trans[m].red >> (16 - depth));
-	pdfioArrayAppendNumber(mask, trans[m].green >> (16 - depth));
-	pdfioArrayAppendNumber(mask, trans[m].blue >> (16 - depth));
-      }
+      // RGB color is transparent...
+      mask = pdfioArrayCreate(dict->pdf);
+
+      pdfioArrayAppendNumber(mask, trans_color->red >> (16 - depth));
+      pdfioArrayAppendNumber(mask, trans_color->green >> (16 - depth));
+      pdfioArrayAppendNumber(mask, trans_color->blue >> (16 - depth));
+      pdfioArrayAppendNumber(mask, trans_color->red >> (16 - depth));
+      pdfioArrayAppendNumber(mask, trans_color->green >> (16 - depth));
+      pdfioArrayAppendNumber(mask, trans_color->blue >> (16 - depth));
     }
 
-    pdfioDictSetArray(dict, "Mask", mask);
+    if (mask)
+      pdfioDictSetArray(dict, "Mask", mask);
   }
 
   // Create the image object...
