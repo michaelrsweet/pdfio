@@ -2714,7 +2714,7 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
   bool		alpha;			// Alpha transparency?
   int		srgb_intent;		// sRGB color?
   png_color	*palette;		// Color palette information
-  int		num_palette;		// Number of colors
+  int		num_palette = 0;	// Number of palette colors
   int		num_trans;		// Number of transparent colors
   png_color_16	*trans;			// Transparent colors
   png_charp	icc_name;		// ICC profile name
@@ -2854,6 +2854,9 @@ copy_png(pdfio_dict_t *dict,		// I - Dictionary
       // List color indices that are transparent...
       for (m = 0; m < num_trans; m ++)
       {
+        if (trans[m].index >= num_palette)
+          continue;
+
 	pdfioArrayAppendNumber(mask, trans[m].index);
 	pdfioArrayAppendNumber(mask, trans[m].index);
       }
