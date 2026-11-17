@@ -2917,13 +2917,13 @@ write_font_test(
     return (1);
   }
 
-  if ((ptr = strrchr(textfontfile, '/')) != NULL)
+  if ((ptr = (char *)strrchr(textfontfile, '/')) != NULL)
     strncpy(textname, ptr + 1, sizeof(textname) - 1);
   else
     strncpy(textname, textfontfile, sizeof(textname) - 1);
 
   textname[sizeof(textname) - 1] = '\0';
-  if ((ptr = strrchr(textname, '.')) != NULL)
+  if ((ptr = (char *)strrchr(textname, '.')) != NULL)
     *ptr = '\0';
 
   if (unicode)
