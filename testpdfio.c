@@ -5163,7 +5163,9 @@ write_unit_file(
 			*helvetica,	// Helvetica font
 			*page;		// Page from test PDF file
   int			pagenum = 1;	// Current page number
-  pdfio_dict_t		*catalog;	// Catalog dictionary
+  pdfio_dict_t		*catalog,	// Catalog dictionary
+			*nulldict,	// Dictionary with null values
+			*nullcopy;	// Copy of dictionary with null values
 
 
   // Get the root object/catalog dictionary
@@ -5336,6 +5338,26 @@ write_unit_file(
   if (pdfioPageCopy(outpdf, page))
   {
     testEnd(true);
+  }
+  else
+  {
+    testEnd(false);
+    return (1);
+  }
+
+  // Copy a dictionary with null values from the test PDF file...
+  testBegin("pdfioDictCopy(null values)");
+  if ((nulldict = pdfioDictCreate(inpdf)) != NULL && pdfioDictSetNull(nulldict, "Title") && pdfioDictSetName(nulldict, "Type", "Test") && (nullcopy = pdfioDictCopy(outpdf, nulldict)) != NULL)
+  {
+    if (pdfioDictGetType(nullcopy, "Title") == PDFIO_VALTYPE_NULL && pdfioDictGetName(nullcopy, "Type") && !strcmp(pdfioDictGetName(nullcopy, "Type"), "Test"))
+    {
+      testEnd(true);
+    }
+    else
+    {
+      testEndMessage(false, "null value not preserved");
+      return (1);
+    }
   }
   else
   {
