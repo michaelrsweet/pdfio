@@ -93,6 +93,7 @@ _pdfioValueCopy(pdfio_file_t   *pdfdst,	// I - Destination PDF file
 
     case PDFIO_VALTYPE_BOOLEAN :
     case PDFIO_VALTYPE_DATE :
+    case PDFIO_VALTYPE_NULL :
     case PDFIO_VALTYPE_NUMBER :
 	*vdst = *vsrc;
         return (vdst);
