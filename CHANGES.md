@@ -1,7 +1,7 @@
 Changes in PDFio
 ================
 
-v1.6.7 - YYYY-MM-DD
+v1.6.7 - 2026-11-27
 -------------------
 
 - SECURITY-4.0: Fixed PNG tRNS chunk processing (GHSA-556p-f65h-4xv2)
